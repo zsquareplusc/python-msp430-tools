@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.6 2004/09/08 14:55:42 cliechti Exp $
+# $Id: jtag.py,v 1.7 2004/10/29 18:03:23 cliechti Exp $
 
 import sys
 
@@ -332,6 +332,7 @@ class JTAG:
             raise JTAGException("Cannot do erase check against data with not knowing the actual data")
 
     def progess_update(self, count, total):
+        """Textual progress output. Override in subclass to implement a different output"""
         sys.stderr.write("\r%d%%" % (100*count/total))
         sys.stderr.flush()
 
@@ -346,8 +347,6 @@ class JTAG:
             for seg in self.data:
                 _parjtag.memwrite(seg.startaddress, seg.data)
                 bytes += len(seg.data)
-            if self.showprogess:
-                sys.stderr.write("\r")
             sys.stderr.write("%i bytes programmed.\n" % bytes)
             sys.stderr.flush()
         else:

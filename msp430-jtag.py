@@ -7,7 +7,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.3 2004/03/07 02:56:53 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.4 2004/03/10 18:38:42 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -291,6 +291,10 @@ def main():
             elif outputformat == INTELHEX:
                 makeihex( (startaddr, data) )           #ouput a intel-hex file
             else:
+                if sys.platform == "win32":
+                    import os, msvcrt
+                    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+                
                 sys.stdout.write(data)                  #binary output w/o newline!
             wait = 0    #wait makes no sense as after upload, the device is still stopped
 

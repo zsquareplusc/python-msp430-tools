@@ -6,7 +6,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.2 2004/03/07 02:56:53 cliechti Exp $
+# $Id: jtag.py,v 1.3 2004/03/10 18:38:42 cliechti Exp $
 
 import sys
 
@@ -150,7 +150,7 @@ else:
             """Read 'size' bytes starting at the specified address.
             The return value is a string with the (binary) data.
             It is possible to read peripherals, RAM as well as Flash."""
-            buffer = (ctypes.c_char*(size+2))();    #just to be sure + 2 (shouldn't be needed though)
+            buffer = (ctypes.c_char*(size))();
             
             status = MSP430_Memory(address, buffer, size, READ)
             if status == STATUS_OK:

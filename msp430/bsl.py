@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.4 2004/11/06 00:15:48 cliechti Exp $
+# $Id: bsl.py,v 1.5 2004/11/06 23:21:11 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -516,7 +516,7 @@ class LowLevel:
             #Align to even start address
             if (addr % 2) != 0:
                 addr = addr - 1                     #Decrement address and
-                blkout = chr(0xFF) + blkOut         #fill first byte of blkout with 0xFF
+                blkout = chr(0xFF) + blkout         #fill first byte of blkout with 0xFF
                 length = length + 1
             #Make sure that len is even
             if (length % 2) != 0:

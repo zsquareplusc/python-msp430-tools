@@ -1,0 +1,11 @@
+msp430/__init__.py
+msp430/bsl.py
+msp430/elf.py
+msp430/jtag.py
+msp430/memory.py
+msp430/util.py
+msp430/serial/__init__.py
+msp430/serial/serialjava.py
+msp430/serial/serialposix.py
+msp430/serial/serialutil.py
+msp430/serial/serialwin32.py

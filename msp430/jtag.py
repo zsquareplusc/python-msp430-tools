@@ -6,7 +6,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.3 2004/03/10 18:38:42 cliechti Exp $
+# $Id: jtag.py,v 1.4 2004/07/09 23:18:07 cliechti Exp $
 
 import sys
 
@@ -88,9 +88,9 @@ else:
     MSP430_VerifyMem                = MSP430mspgcc.MSP430_VerifyMem
     MSP430_VerifyMem.argtypes       = [ctypes.c_long, ctypes.c_long, ctypes.c_char_p]
     MSP430_VerifyMem.restype        = ctypes.c_int
-    MSP430_EraseCheck               = ctypes.c_int
-    MSP430_EraseCheck.argtypes      = MSP430mspgcc.MSP430_EraseCheck
-    MSP430_EraseCheck.restype       = ctypes.c_long, ctypes.c_long
+    MSP430_EraseCheck               = MSP430mspgcc.MSP430_EraseCheck
+    MSP430_EraseCheck.argtypes      = ctypes.c_long, ctypes.c_long
+    MSP430_EraseCheck.restype       = ctypes.c_int
     MSP430_Funclet                  = MSP430mspgcc.MSP430_Funclet
     MSP430_Funclet.argtypes         = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_int]
     MSP430_Funclet.restype          = ctypes.c_int

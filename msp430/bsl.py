@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.5 2004/11/06 23:21:11 cliechti Exp $
+# $Id: bsl.py,v 1.6 2004/11/12 22:27:39 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -267,8 +267,8 @@ class LowLevel:
         self.invertTEST = 0
         
         self.protocolMode = self.MODE_BSL
-        self.BSLMemAccessWarning = 0                #Default: no warning.
-        self.slowmode = 1                       #give a little time when changing the control lines
+        self.BSLMemAccessWarning = 0            #Default: no warning.
+        self.slowmode = 0                       #give a little time when changing the control lines
 
     def comInit(self, port):
         """Tries to open the serial port given and
@@ -436,6 +436,8 @@ class LowLevel:
         else:
             self.serialport.setDTR(level)
         if self.slowmode:
+            time.sleep(0.200)
+        else:
             time.sleep(0.010)
 
     def SetTESTpin(self, level=1):
@@ -445,6 +447,8 @@ class LowLevel:
         else:
             self.serialport.setRTS(level)
         if self.slowmode:
+            time.sleep(0.200)
+        else:
             time.sleep(0.010)
 
     def bslReset(self, invokeBSL=0):
@@ -459,7 +463,10 @@ class LowLevel:
         if DEBUG > 1: sys.stderr.write("* bslReset(invokeBSL=%s)\n" % invokeBSL)
         self.SetRSTpin(1)       #power suply
         self.SetTESTpin(1)      #power suply
-        time.sleep(0.250)       #charge capacitor on boot loader hardware
+        if self.slowmode:
+            time.sleep(0.500)   #charge capacitor on boot loader hardware
+        else:
+            time.sleep(0.250)   #charge capacitor on boot loader hardware
 
         self.SetRSTpin(0)       #RST  pin: GND
         if invokeBSL:

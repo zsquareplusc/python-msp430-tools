@@ -6,7 +6,7 @@
 #
 # http://mspgcc.sf.net
 #
-# $Id: msp430-bsl.py,v 1.6 2004/11/06 00:15:48 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.7 2004/11/12 22:27:39 cliechti Exp $
 
 import sys
 from msp430.util import curry, hexdump, makeihex
@@ -154,7 +154,7 @@ def main():
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "notimeout", "bsl=", "speed=",
              "bslversion", "f1x", "f4x", "invert-reset", "invert-test",
-             "no-BSL-download", "force-BSL-download", "erase="]
+             "no-BSL-download", "force-BSL-download", "erase=", "slow"]
         )
     except getopt.GetoptError:
         # print help information and exit:
@@ -315,6 +315,8 @@ def main():
             mayuseBSL = 0
         elif o in ("--force-BSL-download", ):
             forceBSL = 1
+        elif o in ("--slow", ):
+            bsl.slowmode = 1
 
     if len(args) == 0:
         sys.stderr.write("Use -h for help\n")

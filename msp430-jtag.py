@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.7 2004/12/12 16:30:51 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.8 2004/12/13 23:25:37 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -226,7 +226,7 @@ def main():
                 sys.exit(2)
         elif o in ("-S", "--progress"):
             jtagobj.showprogess = 1
-        elif o in ("--no-close"):
+        elif o in ("--no-close", ):
             do_close = 0
 
     if len(args) == 0:

@@ -22,13 +22,13 @@ Features
 Requirements
 ------------
 - Linux, BSD, Un*x or Windows PC
-- Python 2.0 or newer, 2.2 recomeded
+- Python 2.0 or newer, 2.2+ recomeded
 - Parallel JTAG hardware with an MSP430 device connected
 
 Installation
 ------------
-Binaries for Windows and other Linux/Un*x like OS can be found in the
-downloads section of http://mspgcc.sf.net
+Binaries for Windows can be found in the download section of
+http://mspgcc.sf.net
 
 XXX
 
@@ -43,11 +43,13 @@ has to be installed. There are rpm and deb binary packages and a source
 tarball available through the Python homepage.
 
 _parjtag.so/dll from the jtag archive can be copied to the same directory as
-jtag.py or to a directory on the PATH.
+msp430-jtag.py or to a directory on the PATH.
 It's recomended to install jtag.py as "msp430-jtag" in a directory in the PATH
 and make it executable.
 
-XXX
+There is also a ctypes version, which means just libHIL.so/HIL.dll is needed
+and the ctypes python extension.
+
 
 Short introduction
 ------------------
@@ -116,6 +118,20 @@ Do before exit:
   -w, --wait            Wait for <ENTER> before closing parallel port.
 
 
+NOTE:   Some versions of the Texas Instruments MSP430 Development Tool
+        require that you give the '--no-close' option to pyJTAG.  This
+        is because the Texas Instruments tool is powered via the JTAG
+        adapter; the '--no-close' option prevents pyJTAG from powering the
+        adapter off.  You may also need to restart the program with 
+        pyJTAG (using the '--no-close' and '-r' options is sufficient) after
+        rebooting your machine.
+
+        Other development kits that rely on the parallel port for their power
+        source may also need the '--no-close' option.  It is preferable to
+        try programming the device *without* the '--no-close' option first,
+        and introduce this option only if the uploaded code fails to start.
+
+
 Examples
 --------
 msp430-jtag -e
@@ -175,6 +191,8 @@ History
 References
 ----------
 - Python: http://www.python.org
+
+- ctypes: starship.python.net/crew/theller/ctypes
 
 - Texas Instruments MSP430 Homepage, links to Datasheets and Application
   Notes: http://www.ti.com/sc/msp430

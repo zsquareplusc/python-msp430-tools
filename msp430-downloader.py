@@ -3,7 +3,7 @@ Simple tool to download stuff to a MSP430.
 
 This one uses some dialog boxes, which makes it suitable for linking
 file extensions to this program, so that a double click in the 
-winoze exploder downloads the file.
+windoze exploder downloads the file.
 
 (C) 2004 cliechti@gmx.net
 """
@@ -17,15 +17,22 @@ import traceback
 name = 'msp430-downloader' #os.path.basename(os.path.splitext(sys.argv[0])[0])
 
 if len(sys.argv) < 2:
-    EasyDialogs.Message("%s: Need a filename" % name)
-    sys.exit(1)
-filename = sys.argv[1]
+    #~ EasyDialogs.Message("%s: Need a filename" % name)
+    #~ sys.exit(1)
+    filename = EasyDialogs.AskFileForOpen(
+        windowTitle = "Select MSP430 binary for download",
+        typeList=['*', 'elf', 'a43']
+    )
+    if filename is None:
+        sys.exit(0)
+else:
+    filename = sys.argv[1]
 lpt = '1'
 
 
 
 if EasyDialogs.AskYesNoCancel(
-    "Download '%s' with JTAG?" % filename,
+    "Download '%s' using the JTAG interface?" % filename,
 ) != 1:
     sys.exit(1)
 
@@ -45,13 +52,19 @@ try:
     jtagobj.bar = EasyDialogs.ProgressBar('Programming %r...' % filename, 100)
     try:
         jtagobj.data = msp430.memory.Memory()   #prepare downloaded data
-        jtagobj.data.loadFile(filename)         #autodetect filetyoe
+        jtagobj.data.loadFile(filename)         #autodetect filetype
         jtagobj.bar.label('Connecting...')
         jtagobj.connect(lpt)                    #try to open port
         try:
             jtagobj.bar.label('Erasing...')
-            #~ jtagobj.actionMainErase()
-            jtagobj.actionMassErase()
+            answer = EasyDialogs.AskYesNoCancel("Choose erase mode",
+                default=1, yes="ALL", no="Main only")
+            if answer == 0: #NO
+                jtagobj.actionMainErase()
+            elif answer == 1: #YES
+                jtagobj.actionMassErase()
+            else:   #CANCEL
+                sys.exit(0)
             jtagobj.bar.label('Programming...')
             jtagobj.actionProgram()
         finally:
@@ -61,8 +74,12 @@ try:
         del jtagobj.bar
 except IOError:
     EasyDialogs.Message("%s: Can't Connect to target" % name)
-except:
-    s = StringIO()
-    traceback.print_exc(file=s)
-    print s.getvalue()
-    EasyDialogs.Message(s.getvalue())
+except (SystemExit, KeyboardInterrupt):
+    raise
+except Exception, e:
+    #~ s = StringIO()
+    #~ traceback.print_exc(file=s)
+    #~ print s.getvalue()
+    #~ EasyDialogs.Message(s.getvalue())
+    EasyDialogs.Message('An error occoured: %s' % (e))
+    

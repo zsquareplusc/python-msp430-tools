@@ -1,4 +1,12 @@
-# $Id: jtag.py,v 1.1 2004/02/29 23:06:36 cliechti Exp $
+# Parallel JTAG programmer for the MSP430 embedded proccessor.
+#
+# (C) 2002-2004 Chris Liechti <cliechti@gmx.net>
+# this is distributed under a free software license, see license.txt
+#
+# Requires Python 2+ and the binary extension _parjtag or ctypes
+# and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
+#
+# $Id: jtag.py,v 1.2 2004/03/07 02:56:53 cliechti Exp $
 
 import sys
 
@@ -37,16 +45,16 @@ except ImportError:
 else:
     backend = "ctypes"
     
-    STATUS_OK = 0
-    TRUE = 1
-    FALSE = 0
-    WRITE = 0
-    READ = 1
+    STATUS_OK   = 0
+    TRUE        = 1
+    FALSE       = 0
+    WRITE       = 0
+    READ        = 1
     if sys.platform == 'win32':
         MSP430mspgcc = ctypes.windll.MSP430mspgcc
     else:
         MSP430mspgcc = ctypes.cdll.MSP430mspgcc
-        
+    
     MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
     MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]
     MSP430_Initialize.restype       = ctypes.c_int
@@ -242,30 +250,54 @@ else:
 
 
 class JTAG:
-    """wrap the _parjtag extension"""
+    """wrap the _parjtag extension.
+    The action* methods all do output messages on stderr and they take their
+    settings and data from the object and not as parameters.
+    """
 
     def __init__(self):
         self.showprogess = 0
         self.data = None
-        
+    
+    # ---------- direct use API ---------------
+    
     def connect(self, lpt=None):
-        """connect to specified or default port"""
+        """Connect to devcice at specified port, default = LPT1."""
         if lpt is None:
             _parjtag.connect()
         else:
             _parjtag.connect(lpt)
 
     def close(self):
-        """release JTAG"""
+        """Release device from JTAG"""
         _parjtag.release()
 
+    def setDebugLevel(self, level):
+        """Set level of debuggig messages."""
+        global DEBUG
+        DEBUG = level
+        _parjtag.configure(DEBUG_OPTION, level)
+
+    def setRamsize(self, ramsize):
+        """Set download chunk size"""
+        if DEBUG > 1: sys.stderr.write("* setRamsize(%d)\n" % ramsize)
+        _parjtag.configure(RAMSIZE_OPTION, ramsize)
+
     def uploadData(self, startaddress, size):
-        """upload a datablock"""
+        """Upload a datablock."""
         if DEBUG > 1: sys.stderr.write("* uploadData()\n")
         return _parjtag.memread(startaddress, size)
 
+    def reset(self, execute=0, release=0):
+        """perform a reset and optionaly release device."""
+        sys.stderr.write("Reset %sdevice...\n" % (release and 'and release ' or ''))
+        sys.stderr.flush()
+        _parjtag.reset(execute, release)
+
+    # ---------- action based API ---------------
+
     def actionMassErase(self):
-        """Erase the flash memory completely (with mass erase command)"""
+        """Erase the flash memory completely (with mass erase command)."""
         sys.stderr.write("Mass Erase...\n")
         _parjtag.memerase(ERASE_ALL)
 
@@ -276,7 +308,8 @@ class JTAG:
         _parjtag.memerase(ERASE_MAIN, 0xfffe)
 
     def makeActionSegmentErase(self, address):
-        """Selective segment erase"""
+        """Selective segment erase, the returned object can be called
+        to execute the action."""
         class SegmentEraser:
             def __init__(self, segaddr):
                 self.address = segaddr
@@ -287,8 +320,8 @@ class JTAG:
         return SegmentEraser(address)
 
     def actionEraseCheck(self):
-        """check the erasure of required flash cells."""
-        sys.stderr.write("Erase Check by file ...\n")
+        """Check the erasure of required flash cells. Erase check by file."""
+        sys.stderr.write("Erase Check by file...\n")
         if self.data is not None:
             for seg in self.data:
                 data = _parjtag.memread(seg.startaddress, len(seg.data))
@@ -298,11 +331,11 @@ class JTAG:
 
     def progess_update(self, count, total):
         sys.stderr.write("\r%d%%" % (100*count/total))
-        
+
     def actionProgram(self):
-        """program data into flash memory."""
+        """Program data into flash memory."""
         if self.data is not None:
-            sys.stderr.write("Program ...\n")
+            sys.stderr.write("Program...\n")
             sys.stderr.flush()
             if self.showprogess:
                 _parjtag.set_flash_callback(self.progess_update)
@@ -315,12 +348,12 @@ class JTAG:
             sys.stderr.write("%i bytes programmed.\n" % bytes)
             sys.stderr.flush()
         else:
-            raise JTAGException("Programming without data not possible")
+            raise JTAGException("Programming without data is not possible")
 
     def actionVerify(self):
         """Verify programmed data"""
         if self.data is not None:
-            sys.stderr.write("Verify ...\n")
+            sys.stderr.write("Verify...\n")
             sys.stderr.flush()
             for seg in self.data:
                 data = _parjtag.memread(seg.startaddress, len(seg.data))
@@ -328,23 +361,20 @@ class JTAG:
         else:
             raise JTAGException("Verify without data not possible")
 
-    def actionReset(self):
-        """perform a reset"""
-        sys.stderr.write("Reset device ...\n")
-        sys.stderr.flush()
-        _parjtag.reset(0, 0)
-
     def actionRun(self, address):
-        """start program at specified address"""
+        """Start program at specified address"""
         raise NotImplementedError
         #sys.stderr.write("Load PC with 0x%04x ...\n" % address)
 
-    def funclet(self):
-        """download and start funclet"""
-        sys.stderr.write("Download and execute of funclet...\n")
-        sys.stderr.flush()
-        if len(self.data) > 1:
-            raise JTAGException("Don't know how to handle multiple segments in funclets")
-        _parjtag.funclet(self.data[0].data)
-        sys.stderr.write("Funclet OK.\n")
-        sys.stderr.flush()
+    def actionFunclet(self):
+        """Download and start funclet"""
+        if self.data is not None:
+            sys.stderr.write("Download and execute funclet...\n")
+            sys.stderr.flush()
+            if len(self.data) != 1:
+                raise JTAGException("Funclets must have exactly one segment")
+            _parjtag.funclet(self.data[0].data)
+            sys.stderr.write("Funclet OK.\n")
+            sys.stderr.flush()
+        else:
+            raise JTAGException("No funclet available, set data")

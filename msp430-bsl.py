@@ -4,7 +4,7 @@
 # (C) 2001-2004 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-bsl.py,v 1.2 2004/03/05 00:34:42 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.3 2004/03/07 02:56:53 cliechti Exp $
 
 import sys
 from msp430.util import curry, hexdump, makeihex
@@ -76,8 +76,6 @@ General options:
   --no-BSL-download     Do not download replacement BSL (disable automatic)
   --force-BSL-download  Download replacement BSL even if not needed (the one
                         in the device would have the required features)
-  --slow                Add delays when operating the conrol pins. Useful if
-                        the pins/circuit has high capacitance.
 
 Program Flow Specifiers:
   -e, --masserase       Mass Erase (clear all flash memory)

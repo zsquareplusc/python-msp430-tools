@@ -7,7 +7,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.2 2004/03/05 00:32:50 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.3 2004/03/07 02:56:53 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -158,7 +158,7 @@ def main():
                 sys.exit(2)
         elif o in ("-D", "--debug"):
             DEBUG = DEBUG + 1
-            jtag.DEBUG = jtag.DEBUG + 1
+            jtagobj.setDebugLevel(DEBUG)
             memory.DEBUG = memory.DEBUG + 1
         elif o in ("-u", "--upload"):
             try:
@@ -210,8 +210,7 @@ def main():
         sys.exit(2)
 
     if DEBUG:   #debug infos
-        sys.stderr.write("Debug level set to %d\n" % DEBUG)
-        jtag._parjtag.configure(jtag.DEBUG_OPTION, DEBUG)
+        sys.stderr.write("Debug is level set to %d\n" % DEBUG)
         sys.stderr.write("Python version: %s\n" % sys.version)
         sys.stderr.write("JTAG backend: %s\n" % jtag.backend)
 
@@ -250,13 +249,10 @@ def main():
 
     sys.stderr.flush()
 
+    jtagobj.connect(lpt)                                #try to open port
     try:
-        jtagobj.connect(lpt)                            #try to open port
-    except IOError:
-        raise                                           #do not handle here
-    else:                                               #continue if open was successful
         if ramsize is not None:
-            jta._parjtag.configure(RAMSIZE_OPTION, ramsize)
+            jtagobj.setRamsize(ramsize)
         #initialization list
         if toinit:  #erase and erase check
             if DEBUG: sys.stderr.write("Preparing device ...\n")
@@ -275,15 +271,15 @@ def main():
             for f in todo: f()                          #work through todo list
 
         if reset:                                       #reset device first if desired
-            jtagobj.actionReset()
+            jtagobj.reset()
 
         if funclet is not None:                         #download and start funclet
-            jtagobj.funclet()
+            jtagobj.actionFunclet()
 
         if goaddr is not None:                          #start user programm at specified address
             jtagobj.actionRun(goaddr)                   #load PC and execute
 
-        #upload  datablock and output
+        #upload datablock and output
         if startaddr is not None:
             if goaddr:                                  #if a program was started...
                 raise NotImplementedError
@@ -296,15 +292,15 @@ def main():
                 makeihex( (startaddr, data) )           #ouput a intel-hex file
             else:
                 sys.stdout.write(data)                  #binary output w/o newline!
-            wait = 0    #wait makes no sense as after the upload the device is still stopped
+            wait = 0    #wait makes no sense as after upload, the device is still stopped
 
         if wait:                                        #wait at the end if desired
             sys.stderr.write("Press <ENTER> ...\n")     #display a prompt
             sys.stderr.flush()
             raw_input()                                 #wait for newline
-        
-        jtag._parjtag.reset(1, 1)                       #reset and release target
-        #~ jtag.actionReset()
+    
+    finally:
+        jtagobj.reset(1, 1)                             #reset and release target
         jtagobj.close()                                 #Release communication port
 
 if __name__ == '__main__':

@@ -4,7 +4,9 @@
 # (C) 2001-2004 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-bsl.py,v 1.3 2004/03/07 02:56:53 cliechti Exp $
+# http://mspgcc.sf.net
+#
+# $Id: msp430-bsl.py,v 1.4 2004/08/01 16:04:17 cliechti Exp $
 
 import sys
 from msp430.util import curry, hexdump, makeihex

@@ -4,7 +4,7 @@ Python 2.2 or newer should be used. The python package "msp430" can be
 installed with "python setup.py install". These modules can be used
 in user programs too.
 The msp430-bsl and msp430-jtag tools are installed to the binary
-directory /usr/local/msp430/bin and not in the Python library lie
+directory /usr/local/msp430/bin and not in the Python library like
 the module above.
 
 Descriptions:
@@ -30,14 +30,23 @@ msp430
         Different unitlity functions such as writing ihex
         files or making hex dumps.
     
+    HIL.py
+        Access to the HIL.dll/libHIL.so
+
+	hilspi.py
+	    An SPI master over the JTAG lines.
+
     serial
         Copy of pyserial (http://pyserial.sf.net), used for bsl.py
 
 demo
     Demonstration tools. Currently there are BSL and JTAG wrappers
     for Win32 using the NSIS installer system. The resulting
-    executables contain everything thats needed to reprogram a
+    executables contain everything that's needed to reprogram a
     device. Useful for field updaters, etc.
+    
+    mmc.py: a Python demo that reads an MMC card connected
+    to the JTAG port. See source file for wiring.
 
 win32
     Windows related stuff, files to create executables and
@@ -54,4 +63,4 @@ makefile
 
 
 chris
-$Id: readme.txt,v 1.1 2004/02/29 23:06:36 cliechti Exp $
+$Id: readme.txt,v 1.2 2004/07/14 02:04:15 cliechti Exp $

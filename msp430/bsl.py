@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.2 2004/10/29 18:02:33 cliechti Exp $
+# $Id: bsl.py,v 1.3 2004/11/04 13:22:34 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -550,7 +550,7 @@ class LowLevel:
 
 
 class BootStrapLoader(LowLevel):
-    """higher level Bootstrap Loader functions."""
+    """Higher level Bootstrap Loader functions."""
 
     ERR_VERIFY_FAILED       = "Error: verification failed"
     ERR_ERASE_CHECK_FAILED  = "Error: erase check failed"
@@ -579,7 +579,7 @@ class BootStrapLoader(LowLevel):
 
 
     def preparePatch(self):
-        """prepare to download patch"""
+        """Prepare to download patch"""
         if DEBUG > 1: sys.stderr.write("* preparePatch()\n")
 
         if self.patchLoaded:
@@ -591,14 +591,14 @@ class BootStrapLoader(LowLevel):
         return
 
     def postPatch(self):
-        """setup after the patch is loaded"""
+        """Setup after the patch is loaded"""
         if DEBUG > 1: sys.stderr.write("* postPatch()\n")
         if self.patchLoaded:
             self.BSLMemAccessWarning = 1                #Turn warning back on.
 
 
     def verifyBlk(self, addr, blkout, action):
-        """verify memory against data or 0xff"""
+        """Verify memory against data or 0xff"""
         if DEBUG > 1: sys.stderr.write("* verifyBlk()\n")
 
         if action & self.ACTION_VERIFY or action & self.ACTION_ERASE_CHECK:
@@ -625,7 +625,7 @@ class BootStrapLoader(LowLevel):
                     continue
 
     def programBlk(self, addr, blkout, action):
-        """programm a memory block"""
+        """Programm a memory block"""
         if DEBUG > 1: sys.stderr.write("* programBlk()\n")
 
         #Check, if specified range is erased
@@ -650,7 +650,7 @@ class BootStrapLoader(LowLevel):
     #list of tuples or lists:
     #segements = [ (addr1, [d0,d1,d2,...]), (addr2, [e0,e1,e2,...])]
     def programData(self, segments, action):
-        """programm or verify data"""
+        """Programm or verify data"""
         if DEBUG > 1: sys.stderr.write("* programData()\n")
         #count length if progress updates have to be done
         if self.showprogess:
@@ -674,7 +674,7 @@ class BootStrapLoader(LowLevel):
                     self.progess_update(count, total)
 
     def uploadData(self, startaddress, size, wait=0):
-        """upload a datablock"""
+        """Upload a datablock"""
         if DEBUG > 1: sys.stderr.write("* uploadData()\n")
         data = ''
         pstart = 0
@@ -690,7 +690,7 @@ class BootStrapLoader(LowLevel):
         return data
 
     def txPasswd(self, passwd=None, wait=0):
-        """transmit password, default if None is given."""
+        """Transmit password, default if None is given."""
         if DEBUG > 1: sys.stderr.write("* txPassword(%r)\n" % passwd)
         if passwd is None:
             #Send "standard" password to get access to protected functions.
@@ -729,8 +729,16 @@ class BootStrapLoader(LowLevel):
         #Transmit password to get access to protected BSL functions.
         self.txPasswd()
 
+    def actionSegmentErase(self, address):
+        """Erase the memory segemnts. Address parameter is an address within the
+        segment to be erased"""
+        self.bslTxRx(self.BSL_ERASE,                #Command: Segment Erase
+                            address,                #Any address within flash memory.
+                            0xa502)                 #Required setting for segment erase!
+
     def actionStartBSL(self, usepatch=1, adjsp=1, replacementBSL=None, forceBSL=0, mayuseBSL=0, speed=None, bslreset=1):
-        """start BSL, download patch if desired and needed, adjust SP if desired"""
+        """Start BSL, download patch if desired and needed, adjust SP if desired, download
+        replacement BSL, change baudrate."""
         sys.stderr.write("Invoking BSL...\n")
         sys.stderr.flush()
         if bslreset:
@@ -825,6 +833,7 @@ class BootStrapLoader(LowLevel):
             self.actionChangeBaudrate(speed)            #change baudrate
 
     def actionDownloadBSL(self, bslsegments):
+        """Download and start a new BSL (Devices with 2kB RAM only)"""
         sys.stderr.write("Load new BSL into RAM...\n")
         sys.stderr.flush()
         self.programData(bslsegments, self.ACTION_PROGRAM)
@@ -852,12 +861,12 @@ class BootStrapLoader(LowLevel):
         self.txPasswd(self.passwd)
 
         #update version info
-        #verison only valid for the internal ones, but it also makes sure 
+        #verison only valid for the internal ones, but it also makes sure
         #that the patches are not applied if the user d/ls one
         self.bslVer = 0x0150
 
     def actionEraseCheck(self):
-        """check the erasure of required flash cells."""
+        """Check the erasure of required flash cells."""
         sys.stderr.write("Erase Check by file ...\n")
         sys.stderr.flush()
         if self.data is not None:
@@ -866,7 +875,7 @@ class BootStrapLoader(LowLevel):
             raise BSLException, "cannot do erase check against data with not knowing the actual data"
 
     def actionProgram(self):
-        """program data into flash memory."""
+        """Program data into flash memory."""
         if self.data is not None:
             sys.stderr.write("Program ...\n")
             sys.stderr.flush()
@@ -886,13 +895,13 @@ class BootStrapLoader(LowLevel):
             raise BSLException, "verify without data not possible"
 
     def actionReset(self):
-        """perform a reset, start user programm"""
+        """Perform a reset, start user programm"""
         sys.stderr.write("Reset device ...\n")
         sys.stderr.flush()
         self.bslReset(0) #only reset
 
     def actionRun(self, address=0x220):
-        """start program at specified address"""
+        """Start program at specified address"""
         sys.stderr.write("Load PC with 0x%04x ...\n" % address)
         sys.stderr.flush()
         self.bslTxRx(self.BSL_LOADPC, #Command: Load PC
@@ -912,9 +921,9 @@ class BootStrapLoader(LowLevel):
         },
     }
     def actionChangeBaudrate(self, baudrate=9600):
-        """change baudrate. first the command is sent, then the comm
-        port is reprogrammed. only possible with newer MSP430-BSL versions.
-        (ROM >=1.6, downloadable >=1.5)"""
+        """Change baudrate. The command is sent first, then the comm
+        port is reprogrammed. Only possible with newer MSP430-BSL versions.
+        (ROM >= 1.6, downloadable >= 1.5)"""
         try:
             baudconfigs = self.bauratetable[self.cpu]
         except KeyError:
@@ -932,7 +941,7 @@ class BootStrapLoader(LowLevel):
         self.serialport.setBaudrate(baudrate)
 
     def actionReadBSLVersion(self):
-        """informational output of BSL version number.
+        """Informational output of BSL version number.
         (newer MSP430-BSLs only)"""
         ans = self.bslTxRx(self.BSL_TXVERSION, 0) #Command: receive version info
         #the following values are in big endian style!!!

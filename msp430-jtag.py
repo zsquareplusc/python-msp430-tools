@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.6 2004/11/06 00:15:48 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.7 2004/12/12 16:30:51 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -109,6 +109,7 @@ def main():
     lpt         = None
     funclet     = None
     ramsize     = None
+    do_close    = 1
 
     sys.stderr.write("MSP430 parallel JTAG programmer Version: %s\n" % VERSION)
     try:
@@ -119,7 +120,8 @@ def main():
              "erase=", "eraseinfo",
              "verify", "reset", "go=", "debug",
              "upload=", "download=", "size=", "hex", "bin", "ihex",
-             "intelhex", "titext", "funclet", "ramsize=", "progress"]
+             "intelhex", "titext", "funclet", "ramsize=", "progress",
+             "no-close"]
         )
     except getopt.GetoptError:
         # print help information and exit:
@@ -224,6 +226,8 @@ def main():
                 sys.exit(2)
         elif o in ("-S", "--progress"):
             jtagobj.showprogess = 1
+        elif o in ("--no-close"):
+            do_close = 0
 
     if len(args) == 0:
         sys.stderr.write("Use -h for help\n")
@@ -345,7 +349,8 @@ def main():
     
     finally:
         jtagobj.reset(1, 1)                             #reset and release target
-        jtagobj.close()                                 #Release communication port
+        if do_close:
+            jtagobj.close()                             #Release communication port
 
 if __name__ == '__main__':
     try:

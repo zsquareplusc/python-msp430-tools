@@ -3,10 +3,12 @@
 # (C) 2002-2004 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
+# http://mspgcc.sf.net
+#
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.4 2004/07/09 23:18:07 cliechti Exp $
+# $Id: jtag.py,v 1.5 2004/07/14 01:59:29 cliechti Exp $
 
 import sys
 

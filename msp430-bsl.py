@@ -4,12 +4,11 @@
 # (C) 2001-2004 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-bsl.py,v 1.1 2004/02/29 23:06:36 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.2 2004/03/05 00:34:42 cliechti Exp $
 
 import sys
 from msp430.util import curry, hexdump, makeihex
-from msp430 import bsl
-from msp430.memory import Memory
+from msp430 import memory, bsl
 
 VERSION = "2.0"
 
@@ -165,7 +164,7 @@ def main():
                 comPort = a                         #take the string and let serial driver decide
         elif o in ("-P", "--password"):
             #extract password from file
-            bslobj.passwd = Memory(a).getMemrange(0xffe0, 0xffff)
+            bslobj.passwd = memory.Memory(a).getMemrange(0xffe0, 0xffff)
         elif o in ("-w", "--wait"):
             wait = 1
         elif o in ("-f", "--framesize"):
@@ -221,6 +220,7 @@ def main():
         elif o in ("-D", "--debug"):
             DEBUG = DEBUG + 1
             bsl.DEBUG = bsl.DEBUG + 1
+            memory.DEBUG = memory.DEBUG + 1
         elif o in ("-u", "--upload"):
             try:
                 startaddr = int(a)                  #try to convert decimal
@@ -255,7 +255,7 @@ def main():
         elif o in ("-N", "--notimeout"):
             notimeout = 1
         elif o in ("-B", "--bsl"):
-            bslrepl = Memory() #File to program
+            bslrepl = memory.Memory() #File to program
             bslrepl.loadFile(a)
         elif o in ("-V", "--bslversion"):
             todo.append(bslobj.actionReadBSLVersion) #load replacement BSL as first item
@@ -315,7 +315,7 @@ def main():
     sys.stderr.flush()
     
     #prepare data to download
-    bslobj.data = Memory()                          #prepare downloaded data
+    bslobj.data = memory.Memory()                          #prepare downloaded data
     if filetype is not None:                        #if the filetype is given...
         if filename is None:
             raise ValueError("No filename but filetype specified")

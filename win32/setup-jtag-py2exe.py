@@ -1,10 +1,11 @@
 # setup script for py2exe to create the msp430-jtag.exe
-# $Id: setup-jtag-py2exe.py,v 1.1 2004/03/01 00:11:55 cliechti Exp $
+# $Id: setup-jtag-py2exe.py,v 1.2 2004/03/05 00:32:51 cliechti Exp $
 
 from distutils.core import setup
 import glob, sys, py2exe, os
 
 os.chdir('..')
+sys.path.append('.')
 
 sys.argv.append("py2exe")
 

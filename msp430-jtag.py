@@ -7,12 +7,11 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.1 2004/02/29 23:06:36 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.2 2004/03/05 00:32:50 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
-from msp430.memory import Memory
-from msp430 import jtag
+from msp430 import memory, jtag
 
 
 VERSION = "2.0"
@@ -160,6 +159,7 @@ def main():
         elif o in ("-D", "--debug"):
             DEBUG = DEBUG + 1
             jtag.DEBUG = jtag.DEBUG + 1
+            memory.DEBUG = memory.DEBUG + 1
         elif o in ("-u", "--upload"):
             try:
                 startaddr = int(a, 0)                   #try to convert number of any base
@@ -226,7 +226,7 @@ def main():
         reset = 0
 
     #prepare data to download
-    jtagobj.data = Memory()                             #prepare downloaded data
+    jtagobj.data = memory.Memory()                      #prepare downloaded data
     if filetype is not None:                            #if the filetype is given...
         if filename is None:
             raise ValueError("No filename but filetype specified")

@@ -1,4 +1,7 @@
-# $Id: memory.py,v 1.1 2004/02/29 23:06:36 cliechti Exp $
+# $Id: memory.py,v 1.2 2004/03/05 00:32:50 cliechti Exp $
+import sys
+
+DEBUG = 0
 
 class Segment:
     """store a string with memory contents along with its startaddress"""

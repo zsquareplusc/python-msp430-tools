@@ -24,6 +24,11 @@ lpt = '1'
 
 
 
+if EasyDialogs.AskYesNoCancel(
+    "Download '%s' with JTAG?" % filename,
+) != 1:
+    sys.exit(1)
+
 #~ answer = EasyDialogs.AskYesNoCancel("Use JTAG or BSL?", 
     #~ default=1,yes="BSL", no="JTAG")
 #~ if answer == 0: #NO -> JTAG

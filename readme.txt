@@ -33,8 +33,8 @@ msp430
     HIL.py
         Access to the HIL.dll/libHIL.so
 
-	hilspi.py
-	    An SPI master over the JTAG lines.
+    hilspi.py
+        An SPI master over the JTAG lines.
 
     serial
         Copy of pyserial (http://pyserial.sf.net), used for bsl.py
@@ -55,6 +55,10 @@ win32
 msp430-bsl.py
     Command line appliaction for the MSP430 Boot Strap Loader
 
+msp430-downloader.py
+    Small program, suitable for file associations, so that double
+    clicking a elf or a43 file can directly download.
+
 msp430-jtag.py
     Command line appliaction for the MSP430 parallel JTAG adapter.
 
@@ -63,4 +67,4 @@ makefile
 
 
 chris
-$Id: readme.txt,v 1.2 2004/07/14 02:04:15 cliechti Exp $
+$Id: readme.txt,v 1.3 2004/10/24 22:26:06 cliechti Exp $

@@ -42,7 +42,7 @@ ReserveFile "bsl-updater.ini"
 
 ;Order of pages, other pages are not shown
 Page license                            ;used as readme page
-Page custom SetCustom ": Options"       ;Custom page. InstallOptions gets called in SetCustom.
+Page custom SetCustom                   ;Custom page. InstallOptions gets called in SetCustom.
 Page instfiles                          ;where the work is done
 
 Section "Download Firmware" mand_sec_exp

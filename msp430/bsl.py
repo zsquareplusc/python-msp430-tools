@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.3 2004/11/04 13:22:34 cliechti Exp $
+# $Id: bsl.py,v 1.4 2004/11/06 00:15:48 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -735,6 +735,20 @@ class BootStrapLoader(LowLevel):
         self.bslTxRx(self.BSL_ERASE,                #Command: Segment Erase
                             address,                #Any address within flash memory.
                             0xa502)                 #Required setting for segment erase!
+
+    def makeActionSegmentErase(self, address):
+        """Selective segment erase, the returned object can be called
+        to execute the action."""
+        class SegmentEraser:
+            def __init__(inner_self, segaddr):
+                inner_self.address = segaddr
+            def __call__(inner_self):
+                sys.stderr.write("Erase Segment @ 0x%04x...\n" % inner_self.address)
+                sys.stderr.flush()
+                self.actionSegmentErase(inner_self.address)
+            def __repr__(inner_self):
+                return "Erase Segment @ 0x%04x" % inner_self.address
+        return SegmentEraser(address)
 
     def actionStartBSL(self, usepatch=1, adjsp=1, replacementBSL=None, forceBSL=0, mayuseBSL=0, speed=None, bslreset=1):
         """Start BSL, download patch if desired and needed, adjust SP if desired, download

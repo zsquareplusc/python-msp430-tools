@@ -6,7 +6,7 @@
 #
 # http://mspgcc.sf.net
 #
-# $Id: msp430-bsl.py,v 1.5 2004/09/08 14:53:38 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.6 2004/11/06 00:15:48 cliechti Exp $
 
 import sys
 from msp430.util import curry, hexdump, makeihex
@@ -28,7 +28,7 @@ USAGE: %s [options] [file]
 Version: %s
 
 If "-" is specified as file the data is read from the stdinput.
-A file ending with ".txt" is considered to be in TIText format,
+A file ending with ".txt" is considered to be in TI-Text format,
 '.a43' and '.hex' as IntelHex and all other filenames are
 considered as ELF files.
 
@@ -56,7 +56,7 @@ General options:
   -D, --debug           Increase level of debug messages. This won't be
                         very useful for the average user...
   -I, --intelhex        Force fileformat to IntelHex
-  -T, --titext          Force fileformat to be TIText
+  -T, --titext          Force fileformat to be TI-Text
   -N, --notimeout       Don't use timeout on serial port (use with care)
   -B, --bsl=bsl.txt     Load and use new BSL from the TI Text file
   -S, --speed=baud      Reconfigure speed, only possible with newer
@@ -81,6 +81,10 @@ General options:
 
 Program Flow Specifiers:
   -e, --masserase       Mass Erase (clear all flash memory)
+  --erase=address       Selectively erase segment at the specified address
+                        (requires --password)
+  --erase=adr1-adr2     Selectively erase a range of segments
+                        (requires --password)
   -E, --erasecheck      Erase Check by file
   -p, --program         Program file
   -v, --verify          Verify by file
@@ -107,8 +111,12 @@ Do before exit:
                         vector. (see also -g)
   -w, --wait            Wait for <ENTER> before closing serial port.
 
+Address parameters for --erase, --upload, --size can be given in
+decimal, hexadecimal or octal.
+
 If it says "NAK received" it's probably because you specified no or a
-wrong password.
+wrong password. NAKs during programming indicate that the flash was not
+erased before programming.
 """ % (sys.argv[0], VERSION))
 
 
@@ -146,7 +154,7 @@ def main():
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "notimeout", "bsl=", "speed=",
              "bslversion", "f1x", "f4x", "invert-reset", "invert-test",
-             "no-BSL-download", "force-BSL-download"]
+             "no-BSL-download", "force-BSL-download", "erase="]
         )
     except getopt.GetoptError:
         # print help information and exit:
@@ -197,6 +205,36 @@ def main():
             bslobj.meraseCycles = meraseCycles
         elif o in ("-e", "--masserase"):
             toinit.append(bslobj.actionMassErase)  #Erase Flash
+        elif o == "--erase":
+            if '-' in a:
+                adr, adr2 = a.split('-', 1)
+                try:
+                    adr = int(adr, 0)
+                except ValueError:
+                    sys.stderr.write("Address range start address must be a valid number in dec, hex or octal\n")
+                    sys.exit(2)
+                try:
+                    adr2 = int(adr2, 0)
+                except ValueError:
+                    sys.stderr.write("Address range end address must be a valid number in dec, hex or octal\n")
+                    sys.exit(2)
+                while adr <= adr2:
+                    if adr < 0x1100:
+                        modulo = 128
+                    elif adr < 0x1200:
+                        modulo = 256
+                    else:
+                        modulo = 512
+                    adr = adr - (adr % modulo)
+                    toinit.append(bslobj.makeActionSegmentErase(adr))
+                    adr = adr + modulo
+            else:
+                try:
+                    seg = int(a, 0)
+                    toinit.append(bslobj.makeActionSegmentErase(seg))
+                except ValueError:
+                    sys.stderr.write("Segment address must be a valid number in dec, hex or octal or a range adr1-adr2\n")
+                    sys.exit(2)
         elif o in ("-E", "--erasecheck"):
             toinit.append(bslobj.actionEraseCheck) #Erase Check (by file)
         elif o in ("-p", "--programm"):
@@ -312,6 +350,25 @@ def main():
         sys.stderr.write("Warning: option --reset ignored as --upload is specified!\n")
         reset = 0
 
+    if toinit:
+        if DEBUG > 0:       #debug
+            #show a nice list of sheduled actions
+            sys.stderr.write("TOINIT list:\n")
+            for f in toinit:
+                try:
+                    sys.stderr.write("   %s\n" % f.func_name)
+                except AttributeError:
+                    sys.stderr.write("   %r\n" % f)
+    if todo:
+        if DEBUG > 0:       #debug
+            #show a nice list of sheduled actions
+            sys.stderr.write("TODO list:\n")
+            for f in todo:
+                try:
+                    sys.stderr.write("   %s\n" % f.func_name)
+                except AttributeError:
+                    sys.stderr.write("   %r\n" % f)
+    
     sys.stderr.flush()
     
     #prepare data to download
@@ -359,14 +416,6 @@ def main():
 
     #work list
     if todo:
-        if DEBUG > 0:       #debug
-            #show a nice list of sheduled actions
-            sys.stderr.write("TODO list:\n")
-            for f in todo:
-                try:
-                    sys.stderr.write("   %s\n" % f.func_name)
-                except AttributeError:
-                    sys.stderr.write("   %r\n" % f)
         for f in todo: f()                          #work through todo list
 
     if reset:                                       #reset device first if desired

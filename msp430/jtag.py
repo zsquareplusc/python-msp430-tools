@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.7 2004/10/29 18:03:23 cliechti Exp $
+# $Id: jtag.py,v 1.8 2004/11/06 00:15:48 cliechti Exp $
 
 import sys
 
@@ -319,6 +319,8 @@ class JTAG:
                 sys.stderr.write("Erase Segment @ 0x%04x...\n" % self.address)
                 sys.stderr.flush()
                 _parjtag.memerase(ERASE_SEGMENT, self.address)
+            def __repr__(self):
+                return "Erase Segment @ 0x%04x" % self.address
         return SegmentEraser(address)
 
     def actionEraseCheck(self):

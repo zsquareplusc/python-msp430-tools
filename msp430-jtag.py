@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.5 2004/08/01 16:04:17 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.6 2004/11/06 00:15:48 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -33,7 +33,7 @@ USAGE: %s [options] [file]
 Version: %s
 
 If "-" is specified as file the data is read from stdin.
-A file ending with ".txt" is considered to be in TIText format all
+A file ending with ".txt" is considered to be in TI-Text format all
 other filenames are considered to be in IntelHex format.
 
 General options:
@@ -43,7 +43,7 @@ General options:
   -D, --debug           Increase level of debug messages. This won't be
                         very useful for the average user...
   -I, --intelhex        Force fileformat to IntelHex
-  -T, --titext          Force fileformat to be TIText
+  -T, --titext          Force fileformat to be TI-Text
   -f, --funclet         The given file is a funclet (a small program to
                         be run in RAM)
   -R, --ramsize         Specify the amont of RAM to be used to program
@@ -55,6 +55,7 @@ Program Flow Specifiers:
   -m, --mainerase       Erase main flash memory only
   --eraseinfo           Erase info flash memory only (0x1000-0x10ff)
   --erase=address       Selectively erase segment at the specified address
+  --erase=adr1-adr2     Selectively erase a range of segments
   -E, --erasecheck      Erase Check by file
   -p, --program         Program file
   -v, --verify          Verify by file
@@ -86,6 +87,9 @@ Do before exit:
                         the programm that is specified in the reset
                         interrupt vector. (see also -g)
   -w, --wait            Wait for <ENTER> before closing parallel port.
+
+Address parameters for --erase, --upload, --size can be given in
+decimal, hexadecimal or octal.
 """ % (sys.argv[0], VERSION))
 
 def main():
@@ -137,12 +141,35 @@ def main():
         elif o in ("-m", "--mainerase"):
             toinit.append(jtagobj.actionMainErase)      #Erase main Flash
         elif o == "--erase":
-            try:
-                seg = int(a, 0)
-                toinit.append(jtagobj.makeActionSegmentErase(seg))
-            except ValueError:
-                sys.stderr.write("Segment address must be a valid number in dec, hex or octal\n")
-                sys.exit(2)
+            if '-' in a:
+                adr, adr2 = a.split('-', 1)
+                try:
+                    adr = int(adr, 0)
+                except ValueError:
+                    sys.stderr.write("Address range start address must be a valid number in dec, hex or octal\n")
+                    sys.exit(2)
+                try:
+                    adr2 = int(adr2, 0)
+                except ValueError:
+                    sys.stderr.write("Address range end address must be a valid number in dec, hex or octal\n")
+                    sys.exit(2)
+                while adr <= adr2:
+                    if adr < 0x1100:
+                        modulo = 128
+                    elif adr < 0x1200:
+                        modulo = 256
+                    else:
+                        modulo = 512
+                    adr = adr - (adr % modulo)
+                    toinit.append(jtagobj.makeActionSegmentErase(adr))
+                    adr = adr + modulo
+            else:
+                try:
+                    seg = int(a, 0)
+                    toinit.append(jtagobj.makeActionSegmentErase(seg))
+                except ValueError:
+                    sys.stderr.write("Segment address must be a valid number in dec, hex or octal or a range adr1-adr2\n")
+                    sys.exit(2)
         elif o == "--eraseinfo":
             toinit.append(jtagobj.makeActionSegmentErase(0x1000))
             toinit.append(jtagobj.makeActionSegmentErase(0x1080))
@@ -249,6 +276,25 @@ def main():
 
     if DEBUG > 5: sys.stderr.write("File: %r\n" % filename)
 
+    if toinit:
+        if DEBUG > 0:       #debug
+            #show a nice list of sheduled actions
+            sys.stderr.write("TOINIT list:\n")
+            for f in toinit:
+                try:
+                    sys.stderr.write("   %s\n" % f.func_name)
+                except AttributeError:
+                    sys.stderr.write("   %r\n" % f)
+    if todo:
+        if DEBUG > 0:       #debug
+            #show a nice list of sheduled actions
+            sys.stderr.write("TODO list:\n")
+            for f in todo:
+                try:
+                    sys.stderr.write("   %s\n" % f.func_name)
+                except AttributeError:
+                    sys.stderr.write("   %r\n" % f)
+
     sys.stderr.flush()
 
     jtagobj.connect(lpt)                                #try to open port
@@ -262,14 +308,6 @@ def main():
 
         #work list
         if todo:
-            if DEBUG > 0:       #debug
-                #show a nice list of sheduled actions
-                sys.stderr.write("TODO list:\n")
-                for f in todo:
-                    try:
-                        sys.stderr.write("   %s\n" % f.func_name)
-                    except AttributeError:
-                        sys.stderr.write("   %r\n" % f)
             for f in todo: f()                          #work through todo list
 
         if reset:                                       #reset device first if desired

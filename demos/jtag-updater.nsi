@@ -91,7 +91,8 @@ Function .onInit
     File "${MSPGCCBIN}\MSP430mspgcc.dll"
     SetOutPath "$INSTDIR\lib"
     File "${MSPGCCBIN}\lib\shared-jtag.zip"
-    File "${MSPGCCBIN}\lib\_parjtag.pyd"
+    ;~ File "${MSPGCCBIN}\lib\_parjtag.pyd"
+    File "${MSPGCCBIN}\lib\_ctypes.pyd"
     File "${MSPGCCBIN}\lib\_sre.pyd"
     SetOutPath "$INSTDIR"
 FunctionEnd

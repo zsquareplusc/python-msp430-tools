@@ -1,9 +1,16 @@
 # setup.py
 #
-# $Id: setup.py,v 1.1 2004/02/29 23:06:36 cliechti Exp $
+# $Id: setup.py,v 1.2 2004/06/27 00:18:15 cliechti Exp $
 
 from distutils.core import setup
 import sys
+
+# patch distutils if it can't cope with the "classifiers" or
+# "download_url" keywords
+if sys.version < '2.2.3':
+    from distutils.dist import DistributionMetadata
+    DistributionMetadata.classifiers = None
+    DistributionMetadata.download_url = None
 
 setup(
     name="msp430-python-tools",

@@ -1,4 +1,4 @@
-# $Id: util.py,v 1.1 2004/02/29 23:06:36 cliechti Exp $
+# $Id: util.py,v 1.2 2004/07/09 23:18:42 cliechti Exp $
 
 import sys
 
@@ -21,7 +21,7 @@ def hexdump( (adr, memstr) ):
             ascii = ''
     if count < 16: print "   "*(16-count), " ", ascii
 
-def makeihex( (address, data) ):
+def makeihex((address, data), eof=1):
     """work though the data and output lines in inzel hex format.
     and end tag is appended"""
     start = 0
@@ -31,16 +31,17 @@ def makeihex( (address, data) ):
         _ihexline(address, [ord(x) for x in data[start:end]])
         start += 16
         address += 16
-    _ihexline(address, [], type=1)   #append no data but an end line
+    if eof:
+        _ihexline(address, [], type=1)   #append no data but an end line
 
 def _ihexline(address, buffer, type=0):
     """encode one line, output with checksum"""
     sys.stdout.write( ':%02X%04X%02X' % (len(buffer), address & 0xffff, type) )
-    sum = len(buffer) + ((address >> 8) & 255) + (address & 255)
+    sum = len(buffer) + ((address >> 8) & 255) + (address & 255) + (type&255)
     for b in buffer:
         if b == None: b = 0         #substitute nonexistent values with zero
         sys.stdout.write('%02X' % (b & 255))
-        sum += b&255
+        sum += b & 255
     sys.stdout.write('%02X\n' %( (-sum) & 255))
 
 #add some arguments to a function, but don't call it yet, instead return

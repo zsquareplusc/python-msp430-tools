@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Simple tool to download stuff to a MSP430.
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 This is a little tool to parse msp430-readelf's output and format it nicely.
 It can be usefule to get an overview of the RAM usage and free stack memory.
@@ -15,12 +16,12 @@ from optparse import OptionParser
 
 parser = OptionParser()
 parser.add_option("-d", "--detailed", dest="detailed", default=False,
-                  help="print a detailed list of labels", action="store_true")
+    help="print a detailed list of labels", action="store_true")
 parser.add_option("-c", "--compact", dest="compact", default=False,
-                  help="print a compact list of used bytes", action="store_true")
+    help="print a compact list of used bytes", action="store_true")
 parser.add_option("-q", "--quiet",
-                  action="store_false", dest="verbose", default=True,
-                  help="don't print status messages to stdout")
+    action="store_false", dest="verbose", default=True,
+    help="don't print status messages to stdout")
 
 (options, args) = parser.parse_args()
 
@@ -80,7 +81,11 @@ for address in range(objs['__data_start'][0], objs['__stack'][0]):
 
 if options.compact:
     for address in range(objs['__data_start'][0], objs['__stack'][0], 16):
-        print '0x%04x: %s' % (address, ''.join([mmap.has_key(a) and '*' or '.' for a in range(address,address+16)]))
+        print '0x%04x: %s' % (
+            address,
+            ''.join([mmap.has_key(a) and '*' or '.' 
+                     for a in range(address,address+16)])
+        )
 
 #scan backwards for continous memory, starting from the stack init
 stackmem = 0
@@ -92,4 +97,6 @@ while address >= objs['__data_start'][0] and not mmap.has_key(address):
 size = objs['__stack'][0] - objs['__data_start'][0]
 print 'RAM usage summary:'
 print '%d of %d bytes used (%d free)' % (size-free, size, free)
-print 'the stack can grow up to %d bytes (continous memory at end of RAM)' % (stackmem&0xfffe)
+print 'the stack can grow up to %d bytes (continous memory at end of RAM)' % (
+    stackmem & 0xfffe   #round size, even number
+)

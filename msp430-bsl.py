@@ -6,7 +6,7 @@
 #
 # http://mspgcc.sf.net
 #
-# $Id: msp430-bsl.py,v 1.7 2004/11/12 22:27:39 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.8 2004/12/03 18:41:18 cliechti Exp $
 
 import sys
 from msp430.util import curry, hexdump, makeihex
@@ -304,9 +304,9 @@ def main():
                 sys.stderr.write("Speed must be decimal number\n")
                 sys.exit(2)
         elif o in ("-1", "--f1x"):
-            bslobj.cpu = F1x
+            bslobj.cpu = bsl.F1x
         elif o in ("-4", "--f4x"):
-            bslobj.cpu = F4x
+            bslobj.cpu = bsl.F4x
         elif o in ("--invert-reset", ):
             bslobj.invertRST = 1
         elif o in ("--invert-test", ):

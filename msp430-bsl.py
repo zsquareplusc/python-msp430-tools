@@ -6,7 +6,7 @@
 #
 # http://mspgcc.sf.net
 #
-# $Id: msp430-bsl.py,v 1.4 2004/08/01 16:04:17 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.5 2004/09/08 14:53:38 cliechti Exp $
 
 import sys
 from msp430.util import curry, hexdump, makeihex
@@ -228,7 +228,7 @@ def main():
                 try:
                     startaddr = int(a,16)           #try to convert hex
                 except ValueError:
-                    sys.stderr.write("Spload address must be a valid number\n")
+                    sys.stderr.write("Upload address must be a valid number\n")
                     sys.exit(2)
         elif o in ("-s", "--size"):
             try:

@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.5 2004/07/14 01:59:29 cliechti Exp $
+# $Id: jtag.py,v 1.6 2004/09/08 14:55:42 cliechti Exp $
 
 import sys
 
@@ -333,6 +333,7 @@ class JTAG:
 
     def progess_update(self, count, total):
         sys.stderr.write("\r%d%%" % (100*count/total))
+        sys.stderr.flush()
 
     def actionProgram(self):
         """Program data into flash memory."""

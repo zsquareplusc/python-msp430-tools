@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.1 2004/02/29 23:06:36 cliechti Exp $
+# $Id: bsl.py,v 1.2 2004/10/29 18:02:33 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -575,6 +575,7 @@ class BootStrapLoader(LowLevel):
         self.data           = None
         self.maxData        = self.MAXDATA
         self.cpu            = None
+        self.showprogess    = 0
 
 
     def preparePatch(self):
@@ -639,6 +640,11 @@ class BootStrapLoader(LowLevel):
 
         #Verify block
         self.verifyBlk(addr, blkout, action & self.ACTION_VERIFY)
+    
+    def progess_update(self, count, total):
+        """Textual progress output. Override in subclass to implement a different output"""
+        sys.stderr.write("\r%d%%" % (100*count/total))
+        sys.stderr.flush()
 
     #segments:
     #list of tuples or lists:
@@ -646,9 +652,15 @@ class BootStrapLoader(LowLevel):
     def programData(self, segments, action):
         """programm or verify data"""
         if DEBUG > 1: sys.stderr.write("* programData()\n")
+        #count length if progress updates have to be done
+        if self.showprogess:
+            total = 0
+            for seg in segments:
+                total = total + len(seg.data)
         for seg in segments:
             currentAddr = seg.startaddress
             pstart = 0
+            count = 0
             while pstart<len(seg.data):
                 length = self.MAXDATA
                 if pstart+length > len(seg.data):
@@ -657,6 +669,9 @@ class BootStrapLoader(LowLevel):
                 pstart = pstart + length
                 currentAddr = currentAddr + length
                 self.byteCtr = self.byteCtr + length #total sum
+                count = count + length
+                if self.showprogess:
+                    self.progess_update(count, total)
 
     def uploadData(self, startaddress, size, wait=0):
         """upload a datablock"""

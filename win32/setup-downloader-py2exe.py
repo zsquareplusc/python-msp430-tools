@@ -1,5 +1,5 @@
 # setup script for py2exe to create the msp430-jtag.exe
-# $Id: setup-downloader-py2exe.py,v 1.2 2004/11/15 12:43:50 cliechti Exp $
+# $Id: setup-downloader-py2exe.py,v 1.3 2005/04/22 18:19:05 cliechti Exp $
 
 from distutils.core import setup
 import glob, sys, py2exe, os
@@ -15,7 +15,7 @@ setup(
     options = {"py2exe":
         {
             'dist_dir': 'bin',
-            'excludes': ['javax.comm', 'macpath', 'TERMIOS', 'FCNTL', 'os2emxpath'],
+            'excludes': ['javax.comm', 'macpath', 'TERMIOS', 'FCNTL', 'os2emxpath', '_parjtag'],
             'dll_excludes': ['HIL.dll', 'MSP430mspgcc.dll'],
             'optimize': 2,
         }

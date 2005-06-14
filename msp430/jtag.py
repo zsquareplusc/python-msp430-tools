@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.8 2004/11/06 00:15:48 cliechti Exp $
+# $Id: jtag.py,v 1.9 2005/06/14 10:15:26 cliechti Exp $
 
 import sys
 
@@ -43,7 +43,7 @@ except ImportError:
     except ImportError:
         raise ImportError("Can't find neither _parjtag nor ctypes. No JTAG backend available.")
     else:
-            backend = "_parjtag so/dll"
+        backend = "_parjtag so/dll"
 else:
     backend = "ctypes"
     
@@ -60,9 +60,16 @@ else:
     MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
     MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]
     MSP430_Initialize.restype       = ctypes.c_int
-    MSP430_Open                     = MSP430mspgcc.MSP430_Open
-    MSP430_Open.argtypes            = []
-    MSP430_Open.restype             = ctypes.c_int
+    try:
+        MSP430_Open                     = MSP430mspgcc.MSP430_Open
+        MSP430_Open.argtypes            = []
+        MSP430_Open.restype             = ctypes.c_int
+    except AttributeError:
+        if DEBUG:
+            sys.stderr.write('MSP430_Open not found in library, using dummy.\n')
+        #TI's USB-FET lib does not have this function
+        def MSP430_Open():
+            return STATUS_OK
     MSP430_Close                    = MSP430mspgcc.MSP430_Close
     MSP430_Close.argtypes           = [ctypes.c_long]
     MSP430_Close.restype            = ctypes.c_int
@@ -81,24 +88,28 @@ else:
     MSP430_Memory                   = MSP430mspgcc.MSP430_Memory
     MSP430_Memory.argtypes          = [ctypes.c_long, ctypes.POINTER(ctypes.c_char), ctypes.c_long, ctypes.c_long]
     MSP430_Memory.restype           = ctypes.c_int
-    MSP430_ReadRegister             = MSP430mspgcc.MSP430_ReadRegister
-    MSP430_ReadRegister.argtypes    = [ctypes.c_long, ctypes.POINTER(ctypes.c_long)]
-    MSP430_ReadRegister.restype     = ctypes.c_int
-    MSP430_WriteRegister            = MSP430mspgcc.MSP430_WriteRegister
-    MSP430_WriteRegister.argtypes   = [ctypes.c_long, ctypes.c_long]
-    MSP430_WriteRegister.restype    = ctypes.c_int
     MSP430_VerifyMem                = MSP430mspgcc.MSP430_VerifyMem
     MSP430_VerifyMem.argtypes       = [ctypes.c_long, ctypes.c_long, ctypes.c_char_p]
     MSP430_VerifyMem.restype        = ctypes.c_int
     MSP430_EraseCheck               = MSP430mspgcc.MSP430_EraseCheck
     MSP430_EraseCheck.argtypes      = ctypes.c_long, ctypes.c_long
     MSP430_EraseCheck.restype       = ctypes.c_int
-    MSP430_Funclet                  = MSP430mspgcc.MSP430_Funclet
-    MSP430_Funclet.argtypes         = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_int]
-    MSP430_Funclet.restype          = ctypes.c_int
-    MSP430_isHalted                 = MSP430mspgcc.MSP430_isHalted
-    MSP430_isHalted.argtypes        = []
-    MSP430_isHalted.restype         = ctypes.c_int
+    try:
+        MSP430_ReadRegister             = MSP430mspgcc.MSP430_ReadRegister
+        MSP430_ReadRegister.argtypes    = [ctypes.c_long, ctypes.POINTER(ctypes.c_long)]
+        MSP430_ReadRegister.restype     = ctypes.c_int
+        MSP430_WriteRegister            = MSP430mspgcc.MSP430_WriteRegister
+        MSP430_WriteRegister.argtypes   = [ctypes.c_long, ctypes.c_long]
+        MSP430_WriteRegister.restype    = ctypes.c_int
+        MSP430_Funclet                  = MSP430mspgcc.MSP430_Funclet
+        MSP430_Funclet.argtypes         = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_int]
+        MSP430_Funclet.restype          = ctypes.c_int
+        MSP430_isHalted                 = MSP430mspgcc.MSP430_isHalted
+        MSP430_isHalted.argtypes        = []
+        MSP430_isHalted.restype         = ctypes.c_int
+    except AttributeError:
+        #TI's USB-FET lib does not have this function
+        pass
     
     messagecallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_short, ctypes.c_short) #void f(WORD count, WORD total)
 
@@ -260,6 +271,7 @@ class JTAG:
     def __init__(self):
         self.showprogess = 0
         self.data = None
+        self.verbose = 1
     
     # ---------- direct use API ---------------
     
@@ -292,21 +304,24 @@ class JTAG:
 
     def reset(self, execute=0, release=0):
         """perform a reset and optionaly release device."""
-        sys.stderr.write("Reset %sdevice...\n" % (release and 'and release ' or ''))
-        sys.stderr.flush()
+        if self.verbose:
+            sys.stderr.write("Reset %sdevice...\n" % (release and 'and release ' or ''))
+            sys.stderr.flush()
         _parjtag.reset(execute, release)
 
     # ---------- action based API ---------------
 
     def actionMassErase(self):
         """Erase the flash memory completely (with mass erase command)."""
-        sys.stderr.write("Mass Erase...\n")
+        if self.verbose:
+            sys.stderr.write("Mass Erase...\n")
         _parjtag.memerase(ERASE_ALL)
 
     def actionMainErase(self):
         """Erase the MAIN flash memory, leave the INFO mem"""
-        sys.stderr.write("Erase Main Flash...\n")
-        sys.stderr.flush()
+        if self.verbose:
+            sys.stderr.write("Erase Main Flash...\n")
+            sys.stderr.flush()
         _parjtag.memerase(ERASE_MAIN, 0xfffe)
 
     def makeActionSegmentErase(self, address):
@@ -316,8 +331,9 @@ class JTAG:
             def __init__(self, segaddr):
                 self.address = segaddr
             def __call__(self):
-                sys.stderr.write("Erase Segment @ 0x%04x...\n" % self.address)
-                sys.stderr.flush()
+                if self.verbose:
+                    sys.stderr.write("Erase Segment @ 0x%04x...\n" % self.address)
+                    sys.stderr.flush()
                 _parjtag.memerase(ERASE_SEGMENT, self.address)
             def __repr__(self):
                 return "Erase Segment @ 0x%04x" % self.address
@@ -341,16 +357,18 @@ class JTAG:
     def actionProgram(self):
         """Program data into flash memory."""
         if self.data is not None:
-            sys.stderr.write("Program...\n")
-            sys.stderr.flush()
+            if self.verbose:
+                sys.stderr.write("Program...\n")
+                sys.stderr.flush()
             if self.showprogess:
                 _parjtag.set_flash_callback(self.progess_update)
             bytes = 0
             for seg in self.data:
                 _parjtag.memwrite(seg.startaddress, seg.data)
                 bytes += len(seg.data)
-            sys.stderr.write("%i bytes programmed.\n" % bytes)
-            sys.stderr.flush()
+            if self.verbose:
+                sys.stderr.write("%i bytes programmed.\n" % bytes)
+                sys.stderr.flush()
         else:
             raise JTAGException("Programming without data is not possible")
 
@@ -373,12 +391,14 @@ class JTAG:
     def actionFunclet(self):
         """Download and start funclet"""
         if self.data is not None:
-            sys.stderr.write("Download and execute funclet...\n")
-            sys.stderr.flush()
+            if self.verbose:
+                sys.stderr.write("Download and execute funclet...\n")
+                sys.stderr.flush()
             if len(self.data) != 1:
                 raise JTAGException("Funclets must have exactly one segment")
             _parjtag.funclet(self.data[0].data)
-            sys.stderr.write("Funclet OK.\n")
-            sys.stderr.flush()
+            if self.verbose:
+                sys.stderr.write("Funclet OK.\n")
+                sys.stderr.flush()
         else:
             raise JTAGException("No funclet available, set data")

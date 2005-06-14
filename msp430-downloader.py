@@ -1,6 +1,7 @@
 #!/usr/bin/env python
+# $Id: msp430-downloader.py,v 1.6 2005/06/14 10:49:55 cliechti Exp $
 """
-Simple tool to download stuff to a MSP430.
+Simple tool to download to a MSP430.
 
 This one uses some dialog boxes, which makes it suitable for linking
 file extensions to this program, so that a double click in the 

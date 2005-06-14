@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 This is a little tool to parse msp430-readelf's output and format it nicely.
-It can be usefule to get an overview of the RAM usage and free stack memory.
+It can be useful to get an overview of the RAM usage and free stack memory.
 
 Requires:
     Python 2.3+

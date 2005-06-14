@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.6 2004/11/12 22:27:39 cliechti Exp $
+# $Id: bsl.py,v 1.7 2005/06/14 09:42:38 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -265,10 +265,13 @@ class LowLevel:
         #used for some hardware
         self.invertRST = 0
         self.invertTEST = 0
+        self.swapResetTest = 0
+        self.testOnTX = 0
+        self.ignoreAnswer = 0
         
         self.protocolMode = self.MODE_BSL
         self.BSLMemAccessWarning = 0            #Default: no warning.
-        self.slowmode = 0                       #give a little time when changing the control lines
+        self.slowmode = 0                       #give a little more time when changing the control lines
 
     def comInit(self, port):
         """Tries to open the serial port given and
@@ -405,36 +408,44 @@ class LowLevel:
             if DEBUG > 1: sys.stderr.write( "  comTxRx() transmit OK\n")
 
         #Receiving part -------------------------------------------
-        rxHeader, rxNum = self.comRxHeader()        #receive header
-        if DEBUG > 1: sys.stderr.write("  comTxRx() rxHeader=0x%02x, rxNum=%d, seqNo=%d, reqNo=%s\n" % (rxHeader, rxNum, self.seqNo, self.reqNo))
-        if rxHeader == self.DATA_ACK:               #acknowledge/OK
-            if DEBUG > 2: sys.stderr.write("  comTxRx() DATA_ACK\n")
-            if rxNum == self.reqNo:
-                self.seqNo = self.reqNo
-                if DEBUG > 2: sys.stderr.write("* comTxRx() DATA_ACK OK\n")
-                return          #Acknowledge received correctly => next frame
-            raise BSLException(self.ERR_FRAME_NUMBER)
-        elif rxHeader == self.DATA_NAK:             #not acknowledge/error
-            if DEBUG > 2: sys.stderr.write("* comTxRx() DATA_NAK\n")
-            raise BSLException(self.ERR_RX_NAK)
-        elif rxHeader == self.DATA_FRAME:           #receive data
-            if DEBUG > 2: sys.stderr.write("* comTxRx() DATA_FRAME\n")
-            if rxNum == self.reqNo:
-                rxFrame = self.comRxFrame(rxNum)
-                return rxFrame
-            raise BSLException(self.ERR_FRAME_NUMBER)
-        elif rxHeader == self.CMD_FAILED:           #Frame ok, but command failed.
-            if DEBUG > 2: sys.stderr.write("*  comTxRx() CMD_FAILED\n")
-            raise BSLException(self.ERR_CMD_FAILED)
+        if self.ignoreAnswer:
+            time.sleep(0.1)
+        else:
+            rxHeader, rxNum = self.comRxHeader()        #receive header
+            if DEBUG > 1: sys.stderr.write("  comTxRx() rxHeader=0x%02x, rxNum=%d, seqNo=%d, reqNo=%s\n" % (rxHeader, rxNum, self.seqNo, self.reqNo))
+            if rxHeader == self.DATA_ACK:               #acknowledge/OK
+                if DEBUG > 2: sys.stderr.write("  comTxRx() DATA_ACK\n")
+                if rxNum == self.reqNo:
+                    self.seqNo = self.reqNo
+                    if DEBUG > 2: sys.stderr.write("* comTxRx() DATA_ACK OK\n")
+                    return          #Acknowledge received correctly => next frame
+                raise BSLException(self.ERR_FRAME_NUMBER)
+            elif rxHeader == self.DATA_NAK:             #not acknowledge/error
+                if DEBUG > 2: sys.stderr.write("* comTxRx() DATA_NAK\n")
+                raise BSLException(self.ERR_RX_NAK)
+            elif rxHeader == self.DATA_FRAME:           #receive data
+                if DEBUG > 2: sys.stderr.write("* comTxRx() DATA_FRAME\n")
+                if rxNum == self.reqNo:
+                    rxFrame = self.comRxFrame(rxNum)
+                    return rxFrame
+                raise BSLException(self.ERR_FRAME_NUMBER)
+            elif rxHeader == self.CMD_FAILED:           #Frame ok, but command failed.
+                if DEBUG > 2: sys.stderr.write("*  comTxRx() CMD_FAILED\n")
+                raise BSLException(self.ERR_CMD_FAILED)
 
         raise BSLException("Unknown header 0x%02x\nAre you downloading to RAM into an old device that requires the patch? Try option -U" % rxHeader)
 
     def SetRSTpin(self, level=1):
         """Controls RST/NMI pin (0: GND; 1: VCC; unless inverted flag is set)"""
+        #invert signal if configured
         if self.invertRST:
-            self.serialport.setDTR(not level)
+            level = not level
+        #set pin level
+        if self.swapResetTest:
+            self.serialport.setRTS(level)
         else:
             self.serialport.setDTR(level)
+        #add some delay
         if self.slowmode:
             time.sleep(0.200)
         else:
@@ -442,10 +453,22 @@ class LowLevel:
 
     def SetTESTpin(self, level=1):
         """Controls TEST pin (inverted on board: 0: VCC; 1: GND; unless inverted flag is set)"""
+        #invert signal if configured
         if self.invertTEST:
-            self.serialport.setRTS(not level)
+            level = not level
+        #set pin level
+        if self.swapResetTest:
+            self.serialport.setDTR(level)
         else:
             self.serialport.setRTS(level)
+        #make TEST signal on TX pin, unsing break condition.
+        #currently only working on win32!
+        if self.testOnTX:
+            if level:
+                serial.win32file.ClearCommBreak(self.serialport.hComPort)
+            else:
+                serial.win32file.SetCommBreak(self.serialport.hComPort)
+        #add some delay
         if self.slowmode:
             time.sleep(0.200)
         else:
@@ -475,7 +498,10 @@ class LowLevel:
             self.SetTESTpin(1)  #TEST pin: GND
             self.SetTESTpin(0)  #TEST pin: Vcc
             self.SetRSTpin (1)  #RST  pin: Vcc
-            self.SetTESTpin(1)  #TEST pin: GND
+            if self.testOnTX:
+                serial.win32file.ClearCommBreak(self.serialport.hComPort)
+            else:
+                self.SetTESTpin(1)  #TEST pin: GND
         else:
             self.SetRSTpin(1)   #RST  pin: Vcc
         time.sleep(0.250)       #give MSP430's oscillator time to stabilize
@@ -490,24 +516,27 @@ class LowLevel:
         loopcnt = 3                                 #Max. tries to get synchronization
 
         if DEBUG > 1: sys.stderr.write("* bslSync(wait=%d)\n" % wait)
-        while wait or loopcnt:
-            loopcnt = loopcnt - 1                   #count down tries
-            self.serialport.flushInput()            #clear input, in case a prog is running
-
+        if self.ignoreAnswer:
             self.serialport.write(chr(self.BSL_SYNC))   #Send synchronization byte
-            c = self.serialport.read(1)             #read answer
-            if c == chr(self.DATA_ACK):             #ACk
-                if DEBUG > 1: sys.stderr.write("  bslSync() OK\n")
-                return                              #Sync. successful
-            elif not c:                             #timeout
-                if DEBUG > 1:
-                    if loopcnt:
-                        sys.stderr.write("  bslSync() timeout, retry ...\n")
-                    else:
-                        sys.stderr.write("  bslSync() timeout\n")
-            else:                                   #garbage
-                if DEBUG > 1: sys.stderr.write("  bslSync() failed (0x%02x), retry ...\n" % ord(c))
-        raise BSLException(self.ERR_BSL_SYNC)       #Sync. failed
+        else:
+            while wait or loopcnt:
+                loopcnt = loopcnt - 1                   #count down tries
+                self.serialport.flushInput()            #clear input, in case a prog is running
+    
+                self.serialport.write(chr(self.BSL_SYNC))   #Send synchronization byte
+                c = self.serialport.read(1)             #read answer
+                if c == chr(self.DATA_ACK):             #ACk
+                    if DEBUG > 1: sys.stderr.write("  bslSync() OK\n")
+                    return                              #Sync. successful
+                elif not c:                             #timeout
+                    if DEBUG > 1:
+                        if loopcnt:
+                            sys.stderr.write("  bslSync() timeout, retry ...\n")
+                        else:
+                            sys.stderr.write("  bslSync() timeout\n")
+                else:                                   #garbage
+                    if DEBUG > 1: sys.stderr.write("  bslSync() failed (0x%02x), retry ...\n" % ord(c))
+            raise BSLException(self.ERR_BSL_SYNC)       #Sync. failed
 
     def bslTxRx(self, cmd, addr, length = 0, blkout = None, wait=0):
         """Transmits a command (cmd) with its parameters:
@@ -583,6 +612,7 @@ class BootStrapLoader(LowLevel):
         self.maxData        = self.MAXDATA
         self.cpu            = None
         self.showprogess    = 0
+        self.retrasnmitPasswd = 1
 
 
     def preparePatch(self):
@@ -669,7 +699,7 @@ class BootStrapLoader(LowLevel):
             pstart = 0
             count = 0
             while pstart<len(seg.data):
-                length = self.MAXDATA
+                length = self.maxData
                 if pstart+length > len(seg.data):
                     length = len(seg.data) - pstart
                 self.programBlk(currentAddr, seg.data[pstart:pstart+length], action)
@@ -879,7 +909,8 @@ class BootStrapLoader(LowLevel):
         self.patchLoaded   = 0
 
         #Re-send password to re-gain access to protected functions.
-        self.txPasswd(self.passwd)
+        if self.retrasnmitPasswd:
+            self.txPasswd(self.passwd)
 
         #update version info
         #verison only valid for the internal ones, but it also makes sure

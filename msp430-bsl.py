@@ -6,7 +6,7 @@
 #
 # http://mspgcc.sf.net
 #
-# $Id: msp430-bsl.py,v 1.8 2004/12/03 18:41:18 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.9 2005/06/14 09:42:38 cliechti Exp $
 
 import sys
 from msp430.util import curry, hexdump, makeihex
@@ -75,6 +75,10 @@ General options:
   --invert-reset        Invert signal on RST pin (used for some BSL hardware)
   --invert-test         Invert signal on TEST/TCK pin (used for some BSL
                         hardware)
+  --swap-reset-test     Swap the TEST/TCK and RST control signals.
+  --test-on-tx          Also toggle TX line for the TEST/TCK signal.
+  --ignore-answer       Ignore answers and ACKs from the BSL (dont use unless
+                        you know what you do)
   --no-BSL-download     Do not download replacement BSL (disable automatic)
   --force-BSL-download  Download replacement BSL even if not needed (the one
                         in the device would have the required features)
@@ -154,7 +158,8 @@ def main():
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "notimeout", "bsl=", "speed=",
              "bslversion", "f1x", "f4x", "invert-reset", "invert-test",
-             "no-BSL-download", "force-BSL-download", "erase=", "slow"]
+             "no-BSL-download", "force-BSL-download", "erase=", "slow",
+             "swap-reset-test", "test-on-tx", "ignore-answer"]
         )
     except getopt.GetoptError:
         # print help information and exit:
@@ -316,7 +321,13 @@ def main():
         elif o in ("--force-BSL-download", ):
             forceBSL = 1
         elif o in ("--slow", ):
-            bsl.slowmode = 1
+            bslobj.slowmode = 1
+        elif o in ("--swap-reset-test", ):
+            bslobj.swapResetTest = 1
+        elif o in ("--test-on-tx", ):
+            bslobj.testOnTX = 1
+        elif o in ("--ignore-answer", ):
+            bslobj.ignoreAnswer = 1
 
     if len(args) == 0:
         sys.stderr.write("Use -h for help\n")

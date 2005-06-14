@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.8 2004/12/13 23:25:37 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.9 2005/06/14 10:16:58 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -189,7 +189,10 @@ def main():
                 sys.exit(2)
         elif o in ("-D", "--debug"):
             DEBUG = DEBUG + 1
-            jtagobj.setDebugLevel(DEBUG)
+            try:
+                jtagobj.setDebugLevel(DEBUG)
+            except IOError:
+                sys.stderr.write("Failed to set debug level in backend library\n")
             memory.DEBUG = memory.DEBUG + 1
         elif o in ("-u", "--upload"):
             try:

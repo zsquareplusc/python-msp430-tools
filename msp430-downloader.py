@@ -31,9 +31,11 @@ else:
 lpt = '1'
 
 
+#redirect console output
+sys.stdout = sys.stderr = StringIO()
 
 if EasyDialogs.AskYesNoCancel(
-    "Download '%s' using the JTAG interface?" % filename,
+    "Download '%s' using the JTAG interface?" % (filename,)
 ) != 1:
     sys.exit(1)
 
@@ -51,6 +53,7 @@ try:
     jtagobj = ProgressJTAG()
     jtagobj.showprogess = True
     jtagobj.bar = EasyDialogs.ProgressBar('Programming %r...' % filename, 100)
+    showError = 0
     try:
         jtagobj.data = msp430.memory.Memory()   #prepare downloaded data
         jtagobj.data.loadFile(filename)         #autodetect filetype
@@ -66,15 +69,21 @@ try:
                 jtagobj.actionMassErase()
             else:   #CANCEL
                 sys.exit(0)
+            showError = 1
             jtagobj.bar.label('Programming...')
             jtagobj.actionProgram()
         finally:
+            if sys.exc_info()[:1]:              #if there is an exception pending
+                jtagobj.verbose = 0             #do not write any more messages
             jtagobj.reset(1, 1)                 #reset and release target
             jtagobj.close()                     #Release communication port
     finally:
-        del jtagobj.bar
-except IOError:
-    EasyDialogs.Message("%s: Can't Connect to target" % name)
+        del jtagobj.bar                         #close progress bar
+except IOError, e:
+    if showError:
+        EasyDialogs.Message('An error occoured: "%s"\n\nMessages:\n%s' % (e, sys.stdout.getvalue()))
+    else:
+        EasyDialogs.Message("%s: Can't Connect to target" % name)
 except (SystemExit, KeyboardInterrupt):
     raise
 except Exception, e:
@@ -82,5 +91,8 @@ except Exception, e:
     #~ traceback.print_exc(file=s)
     #~ print s.getvalue()
     #~ EasyDialogs.Message(s.getvalue())
-    EasyDialogs.Message('An error occoured: %s' % (e))
-    
+    EasyDialogs.Message('An error occoured: %s\nMessages:\n%s' % (e, sys.stdout.getvalue()))
+else:
+    messages = sys.stdout.getvalue()
+    if messages:
+        EasyDialogs.Message('Messages:\n%s\nSuccess!' % (messages,))

@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.7 2005/06/14 09:42:38 cliechti Exp $
+# $Id: bsl.py,v 1.8 2005/08/12 21:10:44 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -759,18 +759,27 @@ class BootStrapLoader(LowLevel):
         for i in range(self.meraseCycles):
             if i == 1: sys.stderr.write("Additional Mass Erase Cycles...\n")
             self.bslTxRx(self.BSL_MERAS,            #Command: Mass Erase
-                                0xff00,             #Any address within flash memory.
+                                0xfffe,             #Any address within flash memory.
                                 0xa506)             #Required setting for mass erase!
         self.passwd = None                          #No password file required!
         #print "Mass Erase complete"
         #Transmit password to get access to protected BSL functions.
         self.txPasswd()
 
+    def actionMainErase(self):
+        """Erase the main flash memory only"""
+        sys.stderr.write("Main Erase...\n")
+        sys.stderr.flush()
+        self.bslTxRx(self.BSL_ERASE,                #Command: Segment Erase
+                            0xfffe,                 #Any address within flash memory.
+                            0xa504)                 #Required setting for main erase!
+        self.passwd = None                          #Password gets erased
+
     def actionSegmentErase(self, address):
         """Erase the memory segemnts. Address parameter is an address within the
         segment to be erased"""
         self.bslTxRx(self.BSL_ERASE,                #Command: Segment Erase
-                            address,                #Any address within flash memory.
+                            address,                #Any address within flash segment.
                             0xa502)                 #Required setting for segment erase!
 
     def makeActionSegmentErase(self, address):

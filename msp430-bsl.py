@@ -6,7 +6,7 @@
 #
 # http://mspgcc.sf.net
 #
-# $Id: msp430-bsl.py,v 1.9 2005/06/14 09:42:38 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.10 2005/08/12 21:10:44 cliechti Exp $
 
 import sys
 from msp430.util import curry, hexdump, makeihex
@@ -85,6 +85,7 @@ General options:
 
 Program Flow Specifiers:
   -e, --masserase       Mass Erase (clear all flash memory)
+  -m, --mainerase       Erase main flash memory only (requires --password)
   --erase=address       Selectively erase segment at the specified address
                         (requires --password)
   --erase=adr1-adr2     Selectively erase a range of segments
@@ -209,7 +210,9 @@ def main():
             sys.stderr.write( "Number of mass erase cycles set to %i.\n" % meraseCycles)
             bslobj.meraseCycles = meraseCycles
         elif o in ("-e", "--masserase"):
-            toinit.append(bslobj.actionMassErase)  #Erase Flash
+            toinit.append(bslobj.actionMassErase)  #Erase entire Flash
+        elif o in ("-m", "--mainerase"):
+            toinit.append(bslobj.actionMainErase)  #Erase main Flash
         elif o == "--erase":
             if '-' in a:
                 adr, adr2 = a.split('-', 1)

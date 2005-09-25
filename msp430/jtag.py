@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.9 2005/06/14 10:15:26 cliechti Exp $
+# $Id: jtag.py,v 1.10 2005/09/25 02:30:44 cliechti Exp $
 
 import sys
 
@@ -41,7 +41,7 @@ except ImportError:
     try:
         import _parjtag
     except ImportError:
-        raise ImportError("Can't find neither _parjtag nor ctypes. No JTAG backend available.")
+        raise ImportError("Can not find neither _parjtag nor ctypes. No JTAG backend available.")
     else:
         backend = "_parjtag so/dll"
 else:
@@ -55,15 +55,16 @@ else:
     if sys.platform == 'win32':
         MSP430mspgcc = ctypes.windll.MSP430mspgcc
     else:
-        MSP430mspgcc = ctypes.cdll.MSP430mspgcc
+        import os
+        MSP430mspgcc = ctypes.cdll.LoadLibrary(os.path.join(os.environ['LIBMSPGCC_PATH'], 'libMSP430mspgcc.so'))
     
     MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
     MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]
     MSP430_Initialize.restype       = ctypes.c_int
     try:
-        MSP430_Open                     = MSP430mspgcc.MSP430_Open
-        MSP430_Open.argtypes            = []
-        MSP430_Open.restype             = ctypes.c_int
+        MSP430_Open                 = MSP430mspgcc.MSP430_Open
+        MSP430_Open.argtypes        = []
+        MSP430_Open.restype         = ctypes.c_int
     except AttributeError:
         if DEBUG:
             sys.stderr.write('MSP430_Open not found in library, using dummy.\n')

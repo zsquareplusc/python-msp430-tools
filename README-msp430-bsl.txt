@@ -250,5 +250,5 @@ References
   Hardware and Software Proposal", TI
 
 - Texas Instruments MSP430 Homepage, links to Datasheets and Application
-  Notes: http://www.ti.com/sc/docs/products/micro/msp430/msp430.htm
+  Notes: http://www.ti.com/docs/products/micro/msp430/msp430.htm
 

@@ -195,5 +195,5 @@ References
 - ctypes: starship.python.net/crew/theller/ctypes
 
 - Texas Instruments MSP430 Homepage, links to Datasheets and Application
-  Notes: http://www.ti.com/sc/msp430
+  Notes: http://www.ti.com/msp430
 

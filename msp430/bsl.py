@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.8 2005/08/12 21:10:44 cliechti Exp $
+# $Id: bsl.py,v 1.9 2005/09/29 21:32:40 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -378,12 +378,13 @@ class LowLevel:
         #Transmitting part ----------------------------------------
         #Prepare data for transmit
         if (length % 2) != 0:
-            #/* Fill with one byte to have even number of bytes to send */
+            #Fill with one byte to have even number of bytes to send
             if self.protocolMode == self.MODE_BSL:
                 dataOut.append(0xFF)  #fill with 0xFF
             else:
                 dataOut.append(0)     #fill with zero
-
+            length += 1
+        
         txFrame = "%c%c%c%c" % (self.DATA_FRAME | self.seqNo, cmd, len(dataOut), len(dataOut))
 
         self.reqNo = (self.seqNo + 1) % self.MAX_FRAME_COUNT
@@ -818,7 +819,7 @@ class BootStrapLoader(LowLevel):
                 if DEBUG:
                     sys.stderr.write("Autodetect successful: %04x -> %s\n" % (dev_id, self.cpu))
             else:
-                sys.stderr.write("Autodetect failed! Unkown ID: %04x. Trying to continue anyway.\n" % dev_id)
+                sys.stderr.write("Autodetect failed! Unknown ID: %04x. Trying to continue anyway.\n" % dev_id)
                 self.cpu = F1x                      #assume something and try anyway..
 
         sys.stderr.write("Current bootstrap loader version: %x.%x (Device ID: %04x)\n" % (bslVerHi, bslVerLo, dev_id))
@@ -974,11 +975,15 @@ class BootStrapLoader(LowLevel):
              9600:[0x8580, 0x0000],
             19200:[0x86e0, 0x0001],
             38400:[0x87e0, 0x0002],
+            57600:[0x0000, 0x0003],     #nonstandard XXX BSL dummy BCSCTL settings!
+           115200:[0x0000, 0x0004],     #nonstandard XXX BSL dummy BCSCTL settings!
         },
         F4x: {
              9600:[0x9800, 0x0000],
             19200:[0xb000, 0x0001],
             38400:[0xc800, 0x0002],
+            57600:[0x0000, 0x0003],     #nonstandard XXX BSL dummy BCSCTL settings!
+           115200:[0x0000, 0x0004],     #nonstandard XXX BSL dummy BCSCTL settings!
         },
     }
     def actionChangeBaudrate(self, baudrate=9600):
@@ -995,6 +1000,8 @@ class BootStrapLoader(LowLevel):
             raise ValueError, "baudrate not valid. valid values are %r" % baudconfigs.keys()
         
         sys.stderr.write("Changing baudrate to %d ...\n" % baudrate)
+        if baudrate > 38400:
+            sys.stderr.write("Note: The selected baudrate is not TI standard! They will not work with TI's BSLs.\n")
         sys.stderr.flush()
         self.bslTxRx(self.BSL_CHANGEBAUD,   #Command: change baudrate
                     a, l)                   #args are coded in adr and len

@@ -1,6 +1,6 @@
 # setup.py
 #
-# $Id: setup.py,v 1.2 2004/06/27 00:18:15 cliechti Exp $
+# $Id: setup.py,v 1.3 2005/09/29 21:35:06 cliechti Exp $
 
 from distutils.core import setup
 import sys
@@ -15,7 +15,7 @@ if sys.version < '2.2.3':
 setup(
     name="msp430-python-tools",
     description="MSP430 Python Tools",
-    version="1.0",
+    version="1.1",
     author="Chris Liechti",
     author_email="cliechti@gmx.net",
     url="http://mspgcc.sourceforge.net/",

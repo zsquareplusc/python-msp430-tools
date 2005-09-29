@@ -11,7 +11,7 @@ import win32event # We use events and the WaitFor[Single|Multiple]Objects functi
 import win32con   # constants.
 from serialutil import *
 
-VERSION = "$Revision: 1.1 $".split()[1]     #extract CVS version
+VERSION = "$Revision: 1.2 $".split()[1]     #extract CVS version
 
 #from winbase.h. these should realy be in win32con
 MS_CTS_ON  = 16
@@ -59,6 +59,9 @@ class Serial(SerialBase):
         #Save original timeout values:
         self._orgTimeouts = win32file.GetCommTimeouts(self.hComPort)
 
+        self._rtsState = win32file.RTS_CONTROL_ENABLE
+        self._dtrState = win32file.RTS_CONTROL_ENABLE
+
         self._reconfigurePort()
         
         # Clear buffers:
@@ -90,6 +93,12 @@ class Serial(SerialBase):
             timeouts = (win32con.MAXDWORD, 0, 0, 0, 0)
         else:
             timeouts = (0, 0, int(self._timeout*1000), 0, 0)
+        if self._writeTimeout is None:
+            pass
+        elif self._writeTimeout == 0:
+            timeouts = timeouts[:-2] + (0, win32con.MAXDWORD)
+        else:
+            timeouts = timeouts[:-2] + (0, int(self._writeTimeout*1000))
         win32file.SetCommTimeouts(self.hComPort, timeouts)
 
         win32file.SetCommMask(self.hComPort, win32file.EV_ERR)
@@ -133,17 +142,21 @@ class Serial(SerialBase):
         # Char. w/ Parity-Err are replaced with 0xff (if fErrorChar is set to TRUE)
         if self._rtscts:
             comDCB.fRtsControl  = win32file.RTS_CONTROL_HANDSHAKE
+        else:
+            comDCB.fRtsControl  = self._rtsState
+        if self._dsrdtr:
             comDCB.fDtrControl  = win32file.DTR_CONTROL_HANDSHAKE
         else:
-            comDCB.fRtsControl  = win32file.RTS_CONTROL_ENABLE
-            comDCB.fDtrControl  = win32file.DTR_CONTROL_ENABLE
+            comDCB.fDtrControl  = self._dtrState
         comDCB.fOutxCtsFlow     = self._rtscts
-        comDCB.fOutxDsrFlow     = self._rtscts
+        comDCB.fOutxDsrFlow     = self._dsrdtr
         comDCB.fOutX            = self._xonxoff
         comDCB.fInX             = self._xonxoff
         comDCB.fNull            = 0
         comDCB.fErrorChar       = 0
         comDCB.fAbortOnError    = 0
+        comDCB.XonChar          = XON
+        comDCB.XoffChar         = XOFF
 
         try:
             win32file.SetCommState(self.hComPort, comDCB)
@@ -207,7 +220,11 @@ class Serial(SerialBase):
             err, n = win32file.WriteFile(self.hComPort, s, self._overlappedWrite)
             if err: #will be ERROR_IO_PENDING:
                 # Wait for the write to complete.
-                win32event.WaitForSingleObject(self._overlappedWrite.hEvent, win32event.INFINITE)
+                #~ win32event.WaitForSingleObject(self._overlappedWrite.hEvent, win32event.INFINITE)
+                n = win32file.GetOverlappedResult(self.hComPort, self._overlappedWrite, 1)
+                if n != len(s):
+                    raise writeTimeoutError
+                
 
     def flushInput(self):
         """Clear input buffer, discarding all that is in the buffer."""
@@ -233,16 +250,20 @@ class Serial(SerialBase):
         """Set terminal status line: Request To Send"""
         if not self.hComPort: raise portNotOpenError
         if level:
+            self._rtsState = win32file.RTS_CONTROL_ENABLE
             win32file.EscapeCommFunction(self.hComPort, win32file.SETRTS)
         else:
+            self._rtsState = win32file.RTS_CONTROL_DISABLE
             win32file.EscapeCommFunction(self.hComPort, win32file.CLRRTS)
 
     def setDTR(self,level=1):
         """Set terminal status line: Data Terminal Ready"""
         if not self.hComPort: raise portNotOpenError
         if level:
+            self._dtrState = win32file.DTR_CONTROL_ENABLE
             win32file.EscapeCommFunction(self.hComPort, win32file.SETDTR)
         else:
+            self._dtrState = win32file.DTR_CONTROL_DISABLE
             win32file.EscapeCommFunction(self.hComPort, win32file.CLRDTR)
 
     def getCTS(self):

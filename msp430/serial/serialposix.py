@@ -10,10 +10,10 @@
 #  ftp://ftp.visi.com/users/grante/python/PosixSerial.py
 # references: http://www.easysw.com/~mike/serial/serial.html
 
-import sys, os, fcntl, termios, struct, select
+import sys, os, fcntl, termios, struct, select, errno
 from serialutil import *
 
-VERSION = "$Revision: 1.1 $".split()[1]     #extract CVS version
+VERSION = "$Revision: 1.2 $".split()[1]     #extract CVS version
 
 #Do check the Python version as some constants have moved.
 if (sys.hexversion < 0x020100f0):
@@ -42,12 +42,15 @@ elif plat     == 'openbsd3': #BSD (confirmed)
         return '/dev/ttyp%d' % port
 
 elif plat[:3] == 'bsd' or  \
-     plat[:6] == 'netbsd' or \
      plat[:7] == 'freebsd' or \
      plat[:7] == 'openbsd' or \
      plat[:6] == 'darwin':   #BSD (confirmed for freebsd4: cuaa%d)
     def device(port):
         return '/dev/cuaa%d' % port
+
+elif plat[:6] == 'netbsd':   #NetBSD 1.6 testing by Erk
+    def device(port):
+        return '/dev/dty%02d' % port
 
 elif plat[:4] == 'irix':     #IRIX (not tested)
     def device(port):
@@ -60,19 +63,26 @@ elif plat[:2] == 'hp':       #HP-UX (not tested)
 elif plat[:5] == 'sunos':    #Solaris/SunOS (confirmed)
     def device(port):
         return '/dev/tty%c' % (ord('a')+port)
+        
+elif plat[:3] == 'aix':      #aix
+    def device(port):
+        return '/dev/tty%d' % (port)
 
 else:
     #platform detection has failed...
-    info = "sys.platform = %r\nos.name = %r\nserialposix.py version = %s" % (sys.platform, os.name, VERSION)
-    print """send this information to the author of the pyserial:
+    print """don't know how to number ttys on this system.
+! Use an explicit path (eg /dev/ttyS1) or send this information to
+! the author of this module:
 
-%s
+sys.platform = %r
+os.name = %r
+serialposix.py version = %s
 
 also add the device name of the serial port and where the
 counting starts for the first serial port.
 e.g. 'first serial port: /dev/ttyS0'
 and with a bit luck you can get this module running...
-"""
+""" % (sys.platform, os.name, VERSION)
     #no exception, just continue with a brave attempt to build a device name
     #even if the device name is not correct for the platform it has chances
     #to work using a string with the real device name as port paramter.
@@ -82,21 +92,6 @@ and with a bit luck you can get this module running...
 
 #whats up with "aix", "beos", ....
 #they should work, just need to know the device names.
-
-
-# construct dictionaries for baud rate lookups
-baudEnumToInt = {}
-baudIntToEnum = {}
-for rate in (0,50,75,110,134,150,200,300,600,1200,1800,2400,4800,9600,
-             19200,38400,57600,115200,230400,460800,500000,576000,921600,
-             1000000,1152000,1500000,2000000,2500000,3000000,3500000,4000000
-    ):
-    try:
-        i = eval('TERMIOS.B'+str(rate))
-        baudEnumToInt[i]=rate
-        baudIntToEnum[rate] = i
-    except:
-        pass
 
 
 #load some constants for later use.
@@ -144,15 +139,16 @@ class Serial(SerialBase):
         except Exception, msg:
             self.fd = None
             raise SerialException("Could not open port: %s" % msg)
-        fcntl.fcntl(self.fd, FCNTL.F_SETFL, 0)  #set blocking
+        #~ fcntl.fcntl(self.fd, FCNTL.F_SETFL, 0)  #set blocking
         
         self._reconfigurePort()
         self._isOpen = True
+        #~ self.flushInput()
         
         
     def _reconfigurePort(self):
         """Set commuication parameters on opened port."""
-        if not self.fd:
+        if self.fd is None:
             raise SerialException("Can only operate on a valid port handle")
             
         vmin = vtime = 0                #timeout is done via select
@@ -163,16 +159,22 @@ class Serial(SerialBase):
         #set up raw mode / no echo / binary
         cflag |=  (TERMIOS.CLOCAL|TERMIOS.CREAD)
         lflag &= ~(TERMIOS.ICANON|TERMIOS.ECHO|TERMIOS.ECHOE|TERMIOS.ECHOK|TERMIOS.ECHONL|
-                          TERMIOS.ECHOCTL|TERMIOS.ECHOKE|TERMIOS.ISIG|TERMIOS.IEXTEN) #|TERMIOS.ECHOPRT
+                     TERMIOS.ISIG|TERMIOS.IEXTEN) #|TERMIOS.ECHOPRT
+        for flag in ('ECHOCTL', 'ECHOKE'): #netbsd workaround for Erk
+            if hasattr(TERMIOS, flag):
+                lflag &= ~getattr(TERMIOS, flag)
+        
         oflag &= ~(TERMIOS.OPOST)
+        iflag &= ~(TERMIOS.INLCR|TERMIOS.IGNCR|TERMIOS.ICRNL|TERMIOS.IGNBRK)
         if hasattr(TERMIOS, 'IUCLC'):
-            iflag &= ~(TERMIOS.INLCR|TERMIOS.IGNCR|TERMIOS.ICRNL|TERMIOS.IUCLC|TERMIOS.IGNBRK)
-        else:
-            iflag &= ~(TERMIOS.INLCR|TERMIOS.IGNCR|TERMIOS.ICRNL|TERMIOS.IGNBRK)
+            iflag &= ~TERMIOS.IUCLC
+        if hasattr(TERMIOS, 'PARMRK'):
+            iflag &= ~TERMIOS.PARMRK
+        
         #setup baudrate
         try:
-            ispeed = ospeed = baudIntToEnum[self._baudrate]
-        except:
+            ispeed = ospeed = getattr(TERMIOS,'B%s' % (self._baudrate))
+        except AttributeError:
             raise ValueError('Invalid baud rate: %r' % self._baudrate)
         #setup char len
         cflag &= ~TERMIOS.CSIZE
@@ -208,7 +210,7 @@ class Serial(SerialBase):
         #xonxoff
         if hasattr(TERMIOS, 'IXANY'):
             if self._xonxoff:
-                iflag |=  (TERMIOS.IXON|TERMIOS.IXOFF|TERMIOS.IXANY)
+                iflag |=  (TERMIOS.IXON|TERMIOS.IXOFF) #|TERMIOS.IXANY)
             else:
                 iflag &= ~(TERMIOS.IXON|TERMIOS.IXOFF|TERMIOS.IXANY)
         else:
@@ -244,7 +246,7 @@ class Serial(SerialBase):
     def close(self):
         """Close port"""
         if self._isOpen:
-            if self.fd:
+            if self.fd is not None:
                 os.close(self.fd)
                 self.fd = None
             self._isOpen = False
@@ -264,30 +266,42 @@ class Serial(SerialBase):
         """Read size bytes from the serial port. If a timeout is set it may
            return less characters as requested. With no timeout it will block
            until the requested number of bytes is read."""
-        if not self.fd: raise portNotOpenError
+        if self.fd is None: raise portNotOpenError
         read = ''
         inp = None
         if size > 0:
             while len(read) < size:
                 #print "\tread(): size",size, "have", len(read)    #debug
-                ready,_,_ = select.select([self.fd],[],[], self.timeout)
+                ready,_,_ = select.select([self.fd],[],[], self._timeout)
                 if not ready:
                     break   #timeout
                 buf = os.read(self.fd, size-len(read))
                 read = read + buf
-                if self.timeout >= 0 and not buf:
+                if self._timeout >= 0 and not buf:
                     break  #early abort on timeout
         return read
 
     def write(self, data):
         """Output the given string over the serial port."""
-        if not self.fd: raise portNotOpenError
+        if self.fd is None: raise portNotOpenError
         t = len(data)
         d = data
-        while t>0:
-            n = os.write(self.fd, d)
-            d = d[n:]
-            t = t - n
+        while t > 0:
+            try:
+                if self._writeTimeout is not None and self._writeTimeout > 0:
+                    _,ready,_ = select.select([],[self.fd],[], self._writeTimeout)
+                    if not ready:
+                        raise writeTimeoutError
+                n = os.write(self.fd, d)
+                if self._writeTimeout is not None and self._writeTimeout > 0:
+                    _,ready,_ = select.select([],[self.fd],[], self._writeTimeout)
+                    if not ready:
+                        raise writeTimeoutError
+                d = d[n:]
+                t = t - n
+            except OSError,v:
+                if v.errno != errno.EAGAIN:
+                    raise
 
     def flush(self):
         """Flush of file like objects. In this case, wait until all data
@@ -296,26 +310,26 @@ class Serial(SerialBase):
 
     def flushInput(self):
         """Clear input buffer, discarding all that is in the buffer."""
-        if not self.fd:
+        if self.fd is None:
             raise portNotOpenError
         termios.tcflush(self.fd, TERMIOS.TCIFLUSH)
 
     def flushOutput(self):
         """Clear output buffer, aborting the current output and
         discarding all that is in the buffer."""
-        if not self.fd:
+        if self.fd is None:
             raise portNotOpenError
         termios.tcflush(self.fd, TERMIOS.TCOFLUSH)
 
     def sendBreak(self):
         """Send break condition."""
-        if not self.fd:
+        if self.fd is None:
             raise portNotOpenError
         termios.tcsendbreak(self.fd, 0)
 
     def setRTS(self,on=1):
         """Set terminal status line: Request To Send"""
-        if not self.fd: raise portNotOpenError
+        if self.fd is None: raise portNotOpenError
         if on:
             fcntl.ioctl(self.fd, TIOCMBIS, TIOCM_RTS_str)
         else:
@@ -323,7 +337,7 @@ class Serial(SerialBase):
 
     def setDTR(self,on=1):
         """Set terminal status line: Data Terminal Ready"""
-        if not self.fd: raise portNotOpenError
+        if self.fd is None: raise portNotOpenError
         if on:
             fcntl.ioctl(self.fd, TIOCMBIS, TIOCM_DTR_str)
         else:
@@ -331,25 +345,25 @@ class Serial(SerialBase):
 
     def getCTS(self):
         """Read terminal status line: Clear To Send"""
-        if not self.fd: raise portNotOpenError
+        if self.fd is None: raise portNotOpenError
         s = fcntl.ioctl(self.fd, TIOCMGET, TIOCM_zero_str)
         return struct.unpack('I',s)[0] & TIOCM_CTS != 0
 
     def getDSR(self):
         """Read terminal status line: Data Set Ready"""
-        if not self.fd: raise portNotOpenError
+        if self.fd is None: raise portNotOpenError
         s = fcntl.ioctl(self.fd, TIOCMGET, TIOCM_zero_str)
         return struct.unpack('I',s)[0] & TIOCM_DSR != 0
 
     def getRI(self):
         """Read terminal status line: Ring Indicator"""
-        if not self.fd: raise portNotOpenError
+        if self.fd is None: raise portNotOpenError
         s = fcntl.ioctl(self.fd, TIOCMGET, TIOCM_zero_str)
         return struct.unpack('I',s)[0] & TIOCM_RI != 0
 
     def getCD(self):
         """Read terminal status line: Carrier Detect"""
-        if not self.fd: raise portNotOpenError
+        if self.fd is None: raise portNotOpenError
         s = fcntl.ioctl(self.fd, TIOCMGET, TIOCM_zero_str)
         return struct.unpack('I',s)[0] & TIOCM_CD != 0
 
@@ -357,15 +371,20 @@ class Serial(SerialBase):
 
     def drainOutput(self):
         """internal - not portable!"""
-        if not self.fd: raise portNotOpenError
+        if self.fd is None: raise portNotOpenError
         termios.tcdrain(self.fd)
 
     def nonblocking(self):
         """internal - not portable!"""
-        if not self.fd:
+        if self.fd is None:
             raise portNotOpenError
         fcntl.fcntl(self.fd, FCNTL.F_SETFL, FCNTL.O_NONBLOCK)
 
+    def fileno(self):
+        """For easier of the serial port instance with select.
+           WARNING: this function is not portable to different platforms!"""
+        if self.fd is None: raise portNotOpenError
+        return self.fd
 
 if __name__ == '__main__':
     s = Serial(0,

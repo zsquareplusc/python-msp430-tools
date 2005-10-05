@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.10 2005/09/25 02:30:44 cliechti Exp $
+# $Id: jtag.py,v 1.11 2005/10/05 15:25:23 cliechti Exp $
 
 import sys
 
@@ -329,8 +329,9 @@ class JTAG:
         """Selective segment erase, the returned object can be called
         to execute the action."""
         class SegmentEraser:
-            def __init__(self, segaddr):
+            def __init__(self, segaddr, verbose=0):
                 self.address = segaddr
+                self.verbose = verbose
             def __call__(self):
                 if self.verbose:
                     sys.stderr.write("Erase Segment @ 0x%04x...\n" % self.address)
@@ -338,7 +339,7 @@ class JTAG:
                 _parjtag.memerase(ERASE_SEGMENT, self.address)
             def __repr__(self):
                 return "Erase Segment @ 0x%04x" % self.address
-        return SegmentEraser(address)
+        return SegmentEraser(address, self.verbose)
 
     def actionEraseCheck(self):
         """Check the erasure of required flash cells. Erase check by file."""

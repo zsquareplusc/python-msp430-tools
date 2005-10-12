@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.11 2005/10/05 15:25:23 cliechti Exp $
+# $Id: jtag.py,v 1.12 2005/10/13 01:02:37 cliechti Exp $
 
 import sys
 
@@ -41,10 +41,19 @@ except ImportError:
     try:
         import _parjtag
     except ImportError:
-        raise ImportError("Can not find neither _parjtag nor ctypes. No JTAG backend available.")
+        raise ImportError(
+            "Can not find neither _parjtag nor ctypes. No JTAG backend available.\n"
+            "\n"
+            "The ctypes backend is prefered. Make sure that the ctypes python\n"
+            "extension is available on this system.\n"
+            "\n"
+            "Alternatively, the older _parjtag backend is a python extension that\n"
+            "can be built from sources from http://mspgcc.sf.net\n"
+        )
     else:
         backend = "_parjtag so/dll"
 else:
+    #create a wrapper class with ctypes, that has the same API as _parjtag
     backend = "ctypes"
     
     STATUS_OK   = 0
@@ -53,10 +62,16 @@ else:
     WRITE       = 0
     READ        = 1
     if sys.platform == 'win32':
+        #the library uis found on the PATH, respectively in the executables directory
         MSP430mspgcc = ctypes.windll.MSP430mspgcc
     else:
+        #an absolute path to the library has to be given.
+        #LIBMSPGCC_PATH is used to pass its location
         import os
-        MSP430mspgcc = ctypes.cdll.LoadLibrary(os.path.join(os.environ['LIBMSPGCC_PATH'], 'libMSP430mspgcc.so'))
+        try:
+            MSP430mspgcc = ctypes.cdll.LoadLibrary(os.path.join(os.environ['LIBMSPGCC_PATH'], 'libMSP430mspgcc.so'))
+        except KeyError:
+            raise KeyError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so"')
     
     MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
     MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]

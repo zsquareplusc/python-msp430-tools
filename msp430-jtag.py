@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.9 2005/06/14 10:16:58 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.10 2005/12/22 01:57:37 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -52,6 +52,8 @@ General options:
 Program Flow Specifiers:
 
   -e, --masserase       Mass Erase (clear all flash memory)
+                        Note: SegmentA on F2xx is NOT erased, that must be
+                        done separately with --erase=0x1000
   -m, --mainerase       Erase main flash memory only
   --eraseinfo           Erase info flash memory only (0x1000-0x10ff)
   --erase=address       Selectively erase segment at the specified address
@@ -156,8 +158,11 @@ def main():
                     sys.stderr.write("Address range end address must be a valid number in dec, hex or octal\n")
                     sys.exit(2)
                 while adr <= adr2:
-                    if adr < 0x1100:
-                        modulo = 128
+                    if not (0x1000 <= adr <= 0xffff):
+                        sys.stderr.write("Start address is not within Flash memory\n")
+                        sys.exit(2)
+                    elif adr < 0x1100:
+                        modulo = 64     #F2xx XXX: on F1xx/F4xx are segments erased twice
                     elif adr < 0x1200:
                         modulo = 256
                     else:
@@ -173,8 +178,11 @@ def main():
                     sys.stderr.write("Segment address must be a valid number in dec, hex or octal or a range adr1-adr2\n")
                     sys.exit(2)
         elif o == "--eraseinfo":
+            #F2xx XXX: on F1xx/F4xx are segments erased twice
             toinit.append(jtagobj.makeActionSegmentErase(0x1000))
+            toinit.append(jtagobj.makeActionSegmentErase(0x1040))
             toinit.append(jtagobj.makeActionSegmentErase(0x1080))
+            toinit.append(jtagobj.makeActionSegmentErase(0x10c0))
         elif o in ("-p", "--program"):
             todo.append(jtagobj.actionProgram)          #Program file
         elif o in ("-v", "--verify"):

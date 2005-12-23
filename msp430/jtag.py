@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.12 2005/10/13 01:02:37 cliechti Exp $
+# $Id: jtag.py,v 1.13 2005/12/23 02:23:54 cliechti Exp $
 
 import sys
 
@@ -313,6 +313,9 @@ class JTAG:
         if DEBUG > 1: sys.stderr.write("* setRamsize(%d)\n" % ramsize)
         _parjtag.configure(RAMSIZE_OPTION, ramsize)
 
+    def downloadData(self, startaddress, data):
+        _parjtag.memwrite(startaddress, data)
+        
     def uploadData(self, startaddress, size):
         """Upload a datablock."""
         if DEBUG > 1: sys.stderr.write("* uploadData()\n")
@@ -324,6 +327,12 @@ class JTAG:
             sys.stderr.write("Reset %sdevice...\n" % (release and 'and release ' or ''))
             sys.stderr.flush()
         _parjtag.reset(execute, release)
+
+    def getCPURegister(self, regnum):
+        return _parjtag.regread(regnum)
+        
+    def setCPURegister(self, regnum, value):
+        _parjtag.regwrite(regnum, value)
 
     # ---------- action based API ---------------
 

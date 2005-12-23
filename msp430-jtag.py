@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.10 2005/12/22 01:57:37 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.11 2005/12/23 02:23:54 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -44,12 +44,25 @@ General options:
                         very useful for the average user...
   -I, --intelhex        Force fileformat to IntelHex
   -T, --titext          Force fileformat to be TI-Text
-  -f, --funclet         The given file is a funclet (a small program to
-                        be run in RAM)
-  -R, --ramsize         Specify the amont of RAM to be used to program
+  -R, --ramsize         Specify the amount of RAM to be used to program
                         flash (default 256).
 
-Program Flow Specifiers:
+Funclets:
+  -f, --funclet         The given file is a funclet (a small program to
+                        be run in RAM).
+  --parameter=<key>=<value>   Pass parameters to funclets.
+                        Registers can be written like "R15=123" or "R4=0x55"
+                        A string can be written to memory with "0x2e0=hello"
+                        --parameter can be given more than once
+  --result=value        Read results from funclets. "Rall" read all registers
+                        (case insensitive) "R15" reads R15 etc. Address ranges
+                        can be read with "0x2e0-0x2ff". see also --upload.
+                        --result can be given more than once
+
+Note: writing and/or reading RAM before and/or after running a funclet may not
+work as expected on devices with the JTAG bug like the F123.
+
+Program flow specifiers:
 
   -e, --masserase       Mass Erase (clear all flash memory)
                         Note: SegmentA on F2xx is NOT erased, that must be
@@ -65,11 +78,11 @@ Program Flow Specifiers:
 The order of the above options matters! The table is ordered by normal
 execution order. For the options "Epv" a file must be specified.
 Program flow specifiers default to "p" if a file is given.
-Don't forget to specify "e" or "eE" when programming flash!
+Don't forget to specify "e", "eE" or "m" when programming flash!
 "p" already verifies the programmed data, "v" adds an additional
-verification though uploading the written data for a 1:1 compare.
+verification through uploading the written data for a 1:1 compare.
 No default action is taken if "p" and/or "v" is given, say specifying
-only "v" does a check by file of a programmed device.
+only "v" does a "check by file" of a programmed device.
 
 Data retreiving:
   -u, --upload=addr     Upload a datablock (see also: -s).
@@ -94,6 +107,7 @@ Address parameters for --erase, --upload, --size can be given in
 decimal, hexadecimal or octal.
 """ % (sys.argv[0], VERSION))
 
+
 def main():
     global DEBUG
     import getopt
@@ -112,6 +126,8 @@ def main():
     funclet     = None
     ramsize     = None
     do_close    = 1
+    parameters  = []
+    results     = []
 
     sys.stderr.write("MSP430 parallel JTAG programmer Version: %s\n" % VERSION)
     try:
@@ -123,10 +139,11 @@ def main():
              "verify", "reset", "go=", "debug",
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "funclet", "ramsize=", "progress",
-             "no-close"]
+             "no-close", "parameter=", "result="]
         )
-    except getopt.GetoptError:
+    except getopt.GetoptError, e:
         # print help information and exit:
+        sys.stderr.write("\nError in argument list: %s!\n" % e)
         usage()
         sys.exit(2)
 
@@ -239,6 +256,36 @@ def main():
             jtagobj.showprogess = 1
         elif o in ("--no-close", ):
             do_close = 0
+        elif o in ("--parameter", ):
+            if '=' in a:
+                key, value = a.lower().split('=', 2)
+                if key[0] == 'r':
+                    regnum = int(key[1:])
+                    value = int(value, 0)
+                    parameters.append((jtagobj.setCPURegister, (regnum, value)))
+                else:
+                    address = int(key,0)
+                    parameters.append((jtagobj.downloadData, (address, value)))
+            else:
+                sys.stderr.write("Expected <key>=<value> pair in --parameter option, but no '=' found.\n")
+                sys.exit(2)
+        elif o in ("--result", ):
+            a = a.lower()
+            if a == 'rall':
+                for regnum in range(16):
+                    results.append(('R%-2d = 0x%%04x' % regnum, jtagobj.getCPURegister, (regnum,)))
+            elif a[0] == 'r':
+                regnum = int(a[1:])
+                results.append(('R%-2d = 0x%%04x' % regnum, jtagobj.getCPURegister, (regnum,)))
+            else:
+                if '-' in a:
+                    start, end = a.split('-', 2)
+                    start = int(start, 0)
+                    end = int(end, 0)
+                else:
+                    start = end = int(a,0)
+                results.append(('0x%04x: %%r' % start, jtagobj.uploadData, (start, end-start)))
+                
 
     if len(args) == 0:
         sys.stderr.write("Use -h for help\n")
@@ -250,6 +297,7 @@ def main():
                 ])
         filename = args[0]
     else:                                               #number of args is wrong
+        sys.stderr.write("\nUnsuitable number of arguments\n")
         usage()
         sys.exit(2)
 
@@ -328,11 +376,17 @@ def main():
         if reset:                                       #reset device first if desired
             jtagobj.reset()
 
+        for function, args in parameters:
+            function(*args)
+        
         if funclet is not None:                         #download and start funclet
             jtagobj.actionFunclet()
 
         if goaddr is not None:                          #start user programm at specified address
             jtagobj.actionRun(goaddr)                   #load PC and execute
+
+        for format, function, args in results:
+            print format % function(*args)
 
         #upload datablock and output
         if startaddr is not None:

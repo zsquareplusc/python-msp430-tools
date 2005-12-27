@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.13 2005/12/23 02:23:54 cliechti Exp $
+# $Id: jtag.py,v 1.14 2005/12/27 01:12:11 cliechti Exp $
 
 import sys
 
@@ -117,15 +117,24 @@ else:
         MSP430_WriteRegister            = MSP430mspgcc.MSP430_WriteRegister
         MSP430_WriteRegister.argtypes   = [ctypes.c_long, ctypes.c_long]
         MSP430_WriteRegister.restype    = ctypes.c_int
-        MSP430_Funclet                  = MSP430mspgcc.MSP430_Funclet
-        MSP430_Funclet.argtypes         = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_int]
-        MSP430_Funclet.restype          = ctypes.c_int
+    except AttributeError:
+        #TI's USB-FET lib does not have this function
+        if DEBUG:
+            sys.stderr.write('MSP430_*Register not found in library. not supported.\n')
+    try:
+        #~ MSP430_Funclet                  = MSP430mspgcc.MSP430_Funclet
+        #~ MSP430_Funclet.argtypes         = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_int]
+        #~ MSP430_Funclet.restype          = ctypes.c_int
+        MSP430_FuncletWait              = MSP430mspgcc.MSP430_FuncletWait
+        MSP430_FuncletWait.argtypes     = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_ulong, ctypes.POINTER(ctypes.c_ulong)]
+        MSP430_FuncletWait.restype      = ctypes.c_int
         MSP430_isHalted                 = MSP430mspgcc.MSP430_isHalted
         MSP430_isHalted.argtypes        = []
         MSP430_isHalted.restype         = ctypes.c_int
     except AttributeError:
         #TI's USB-FET lib does not have this function
-        pass
+        if DEBUG:
+            sys.stderr.write('MSP430_Funclet and isHalted not found in library. not supported.\n')
     
     messagecallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_short, ctypes.c_short) #void f(WORD count, WORD total)
 
@@ -224,19 +233,22 @@ else:
             if status != STATUS_OK:
                 raise IOError("Could not erase the Flash")
 
-        def funclet(self, code):
+        def funclet(self, code, timeout=1):
             """Download a 'funclet' contained in the string 'code' to the target
             and execute it. This function waits until the code stops on a "jmp $"
             or a timeout.
             Please refer to the 'funclet' documentation for the contents of the
-            code string."""
+            code string.
+            return the runtime in seconds"""
+            runtime = ctypes.c_ulong()
             size = len(code)
             if size & 1:
                 raise ValueError("data must be of even size")
             
-            status = MSP430_Funclet(code, size, 1, 1)
+            status = MSP430_FuncletWait(code, size, 1, int(timeout*1000), ctypes.byref(runtime))
             if status != STATUS_OK:
                 raise IOError("Could not execute code")
+            return runtime.value/1000.0
 
         def configure(self, mode, value = 0):
             """Configure the MSP430 driver."""
@@ -414,17 +426,20 @@ class JTAG:
         raise NotImplementedError
         #sys.stderr.write("Load PC with 0x%04x ...\n" % address)
 
-    def actionFunclet(self):
-        """Download and start funclet"""
+    def actionFunclet(self, timeout=1):
+        """Download and start funclet. timeout in seconds"""
         if self.data is not None:
             if self.verbose:
                 sys.stderr.write("Download and execute funclet...\n")
                 sys.stderr.flush()
             if len(self.data) != 1:
                 raise JTAGException("Funclets must have exactly one segment")
-            _parjtag.funclet(self.data[0].data)
+            runtime = _parjtag.funclet(self.data[0].data, timeout)
+            if runtime >= timeout:
+                sys.stderr.write("Funclet stopped on timeout\n")
+                sys.stderr.flush()
             if self.verbose:
-                sys.stderr.write("Funclet OK.\n")
+                sys.stderr.write("Funclet OK (%.2fs).\n" % (runtime,))
                 sys.stderr.flush()
         else:
             raise JTAGException("No funclet available, set data")

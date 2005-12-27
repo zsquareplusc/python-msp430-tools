@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.11 2005/12/23 02:23:54 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.12 2005/12/27 01:12:11 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -58,6 +58,8 @@ Funclets:
                         (case insensitive) "R15" reads R15 etc. Address ranges
                         can be read with "0x2e0-0x2ff". see also --upload.
                         --result can be given more than once
+  --timeout=value       Abort the funclet after the given time in seconds
+                        if it does not exit no itslef. (default 1)
 
 Note: writing and/or reading RAM before and/or after running a funclet may not
 work as expected on devices with the JTAG bug like the F123.
@@ -128,6 +130,7 @@ def main():
     do_close    = 1
     parameters  = []
     results     = []
+    timeout     = 1
 
     sys.stderr.write("MSP430 parallel JTAG programmer Version: %s\n" % VERSION)
     try:
@@ -139,7 +142,7 @@ def main():
              "verify", "reset", "go=", "debug",
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "funclet", "ramsize=", "progress",
-             "no-close", "parameter=", "result="]
+             "no-close", "parameter=", "result=", "timeout="]
         )
     except getopt.GetoptError, e:
         # print help information and exit:
@@ -285,7 +288,8 @@ def main():
                 else:
                     start = end = int(a,0)
                 results.append(('0x%04x: %%r' % start, jtagobj.uploadData, (start, end-start)))
-                
+        elif o in ("--timeout", ):
+            timeout = float(a)
 
     if len(args) == 0:
         sys.stderr.write("Use -h for help\n")
@@ -380,7 +384,7 @@ def main():
             function(*args)
         
         if funclet is not None:                         #download and start funclet
-            jtagobj.actionFunclet()
+            jtagobj.actionFunclet(timeout)
 
         if goaddr is not None:                          #start user programm at specified address
             jtagobj.actionRun(goaddr)                   #load PC and execute

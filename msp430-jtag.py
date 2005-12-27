@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.13 2005/12/27 14:58:27 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.14 2005/12/27 16:22:10 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -371,11 +371,14 @@ def main():
 
     sys.stderr.flush()
 
-    jtagobj.connect(lpt)                                #try to open port
     abort_due_to_error = 1
+    jtagobj.open(lpt)                                   #try to open port
     try:
         if ramsize is not None:
             jtagobj.setRamsize(ramsize)
+
+        jtagobj.connect()                               #connect to target
+
         #initialization list
         if toinit:  #erase and erase check
             if DEBUG: sys.stderr.write("Preparing device ...\n")

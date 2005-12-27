@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.15 2005/12/27 14:58:28 cliechti Exp $
+# $Id: jtag.py,v 1.16 2005/12/27 16:22:10 cliechti Exp $
 
 import sys
 
@@ -82,10 +82,18 @@ else:
         MSP430_Open.restype         = ctypes.c_int
     except AttributeError:
         if DEBUG:
-            sys.stderr.write('MSP430_Open not found in library, using dummy.\n')
-        #TI's USB-FET lib does not have this function
+            sys.stderr.write('MSP430_Open not found in library, using MSP430_Identify instead.\n')
+            MSP430_Identify             = MSP430mspgcc.MSP430_Identify
+            MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.char), ctypes.c_long, ctypes.c_long]
+            MSP430_Identify.restype     = ctypes.c_int
+        #TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
         def MSP430_Open():
-            return STATUS_OK
+            buffer = ctypes.char*56
+            status = MSP430_Identify(ctypes.byref(buffer), 56, 0)
+            if DEBUG:
+                sys.stderr.write('MSP430_Identify: Device type: %r\n' % buffer[4:36])
+            return status
+
     MSP430_Close                    = MSP430mspgcc.MSP430_Close
     MSP430_Close.argtypes           = [ctypes.c_long]
     MSP430_Close.restype            = ctypes.c_int
@@ -141,10 +149,8 @@ else:
     class ParJTAG:
         """implementation of the _parjtag module in python with the help of ctypes"""
         
-        def connect(self, port = None):
-            """Enable JTAG and connect to target. This stops it.
-            This function must be called before using any other JTAG function,
-            or the other functions will yield unpredictable data."""
+        def open(self, port = None):
+            """Initilize library"""
             version = ctypes.c_long()
             if port is None:
                 if sys.platform == 'win32':
@@ -156,8 +162,12 @@ else:
             if status != STATUS_OK:
                 raise IOError("Could not initialize the library (port: %s)" % port)
             if DEBUG:
-                sys.stderr.write('MSP430mspgcc.dll version: %d\n' % (version.value,))
-        
+                sys.stderr.write('MSP430mspgcc.dll/so version: %d\n' % (version.value,))
+            
+        def connect(self,):
+            """Enable JTAG and connect to target. This stops it.
+            This function must be called before using any other JTAG function,
+            or the other functions will yield unpredictable data."""
             MSP430_VCC(3)
             
             status = MSP430_Open()
@@ -305,12 +315,16 @@ class JTAG:
     
     # ---------- direct use API ---------------
     
-    def connect(self, lpt=None):
-        """Connect to devcice at specified port, default = LPT1."""
+    def open(self, lpt=None):
+        """Initialize and open port"""
         if lpt is None:
-            _parjtag.connect()
+            _parjtag.open()
         else:
-            _parjtag.connect(lpt)
+            _parjtag.open(lpt)
+
+    def connect(self):
+        """Connect to devcice"""
+        _parjtag.connect()
 
     def close(self):
         """Release device from JTAG"""

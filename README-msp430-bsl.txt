@@ -1,5 +1,5 @@
-pyBSL
-----
+msp430-bsl
+==========
 
 BootStrapLoader software for the flash devices MSP430F1xx 
 (maybe F4xx too, but its not tested).
@@ -9,6 +9,7 @@ It is released under a free software license,
 see license.txt for more details.
 
 (C) 2001-2003 Chris Liechti <cliechti@gmx.net>
+
 
 Features
 --------
@@ -30,12 +31,14 @@ Features
 - baudrate change for newer MSP430-BSLs
 - test and reset lines can be inverted for non standard BSL hardware
 
+
 Requirements
 ------------
 - Linux, BSD, Un*x or Windows PC
 - Python 2.0 or newer (1.5.2 untested), 2.2 recomeded
 - win32all extensions to Python on Windows
 - BSL hardware with an MSP430 device connected to a serial port 
+
 
 Installation
 ------------
@@ -44,6 +47,7 @@ use the installer. The win32all package has an installer too. These
 installations should run fine with the deafults.
 
 XXX
+
 
 Short introduction
 ------------------
@@ -64,17 +68,19 @@ considered as ELF files.
 General options:
   -h, --help            Show this help screen.
   -c, --comport=port    Specify the communication port to be used.
-                        (Default is 0)
+                        (Default is 0)::
+                        
                                 0->COM1 / ttyS0
                                 1->COM2 / ttyS1
                                 etc.
+                                
   -P, --password=file   Specify a file with the interrupt vectors that
                         are used as password. This can be any file that
                         has previously been used to program the device.
                         (e.g. -P INT_VECT.TXT).
   -f, --framesize=num   Max. number of data bytes within one transmitted
                         frame (16 to 240 in steps of 16) (e.g. -f 240).
-  -m, --erasecycles=num Number of mass erase cycles (default is 1). Some
+  -m, --erasecycles=num  Number of mass erase cycles (default is 1). Some
                         old F149 devices need additional erase cycles.
                         On newer devices it is no longer needed. (e.g. for
                         an old F149: -m20)
@@ -87,7 +93,7 @@ General options:
   -I, --intelhex        Force fileformat to IntelHex
   -T, --titext          Force fileformat to be TIText
   -N, --notimeout       Don't use timeout on serial port (use with care)
-  -B, --bsl=bsl.txt     Load and use new BSL from the TI Text file
+  -B, --bsl=filename    Load and use new BSL from the TI Text file
   -S, --speed=baud      Reconfigure speed, only possible with newer
                         MSP403-BSL versions (>1.5, read slaa089a.pdf for
                         details). If the --bsl option is not used, an
@@ -141,10 +147,10 @@ wrong password.
 
 Examples
 --------
-msp430-bsl -e
+``msp430-bsl -e``
         Only erase flash.
 
-msp430-bsl -eErw 6port.a43
+``msp430-bsl -eErw 6port.a43``
         Erase flash, erase check, download an executable, run it (reset)
         and wait.
         
@@ -152,16 +158,16 @@ msp430-bsl -eErw 6port.a43
         option in this case (-m20 will be OK is most cases):
         "msp430-bsl -eErwm20 6port.a43"
 
-msp430-bsl 6port.a43
+``msp430-bsl 6port.a43``
         Download of an executable to en empty (new or erased) device.
         (Note that in new devices some of the first bytes in the
         information memory are random data. If data should be
         downloaded there, specify -eE.)
 
-msp430-bsl --go=0x220 ramtest.a43
+``msp430-bsl --go=0x220 ramtest.a43``
         Download a program into RAM and run it (on an erased device)
 
-msp430-bsl --go=0x200 -P 6port.a43 ramtest.a43
+``msp430-bsl --go=0x200 -P 6port.a43 ramtest.a43``
         Download a program into RAM and run it (on a device that was
         previously programmed with 6port.a43 and therefore needs a
         specific password).
@@ -169,21 +175,24 @@ msp430-bsl --go=0x200 -P 6port.a43 ramtest.a43
         For old devices that use the patch the above command gives a
         conflict with the patch. But as the patch is only needed to
         programm flash, it can be left out when running a program solely
-        from RAM:
+        from RAM::
+        
           msp430-bsl --go=0x200 -u -P 6port.a43 ramtest.a43
 
-msp430-bsl -u 0x0c00 -s 1024 -P 6port.a43
+``msp430-bsl -u 0x0c00 -s 1024 -P 6port.a43``
         Get a memory dump in HEX, from the bootstrap loader (on a device
         that was previously programmed with 6port.a43 and therefore needs
         a specific password):
 
-        or on unix with the use of "hexdump":
+        or on unix with the use of "hexdump"::
+        
           msp430-bsl -u 0x0c00 -s 1024 -P 6port.a43 -b | hexdump
 
-        or save the binary in a file:
+        or save the binary in a file::
+        
           msp430-bsl -u 0x0c00 -s 1024 -P 6port.a43 -b >dump.bin
 
-msp430-bsl --go=0x220 --upload=0x200 --size=256 ramtest.a43
+``msp430-bsl --go=0x220 --upload=0x200 --size=256 ramtest.a43``
         Download the file ramtest.a43 to an empty device, execute its
         main function at 0x0220. The BSL then tries to reconnect to the
         device. This does only work when the program on the MSP430
@@ -200,37 +209,39 @@ msp430-bsl --go=0x220 --upload=0x200 --size=256 ramtest.a43
         program which possibly destroys a program that was downloaded
         to RAM.
 
-msp430-bsl -rw
+``msp430-bsl -rw``
         Just start the user program (with a reset) and wait.
 
-msp430-bsl -rwc1
+``msp430-bsl -rwc1``
         Reset the device on the second serial/COM port and wait.
 
-cat 6port.a43|msp430-bsl -eE -
+``cat 6port.a43|msp430-bsl -eE -``
         Pipe the data from "cat" to the BSL to erase and program the
         flash. (un*x example, don't forget the dash at the end of the
         line)
 
-msp430-bsl -e -S 38400 6port.a43
+``msp430-bsl -e -S 38400 6port.a43``
         First download the internal replacement BSL and then use it
         to program at 38400 baud. Only works with targets with more
         than 1kB of RAM.
 
-msp430-bsl -e -B BL_150S_14x.txt -S 38400 6port.a43
+``msp430-bsl -e -B BL_150S_14x.txt -S 38400 6port.a43``
         First download the given replacement BSL and then use it to
         program at 38400 baud. Only works with targets with more
         than 1kB of RAM.
 
+
 History
 -------
-  V1.4
-        uses improved serial library
-        support for BSL download to MSP
-        support for higher baudrates (up to 38400)
+V1.4
+    uses improved serial library,
+    support for BSL download to MSP,
+    support for higher baudrates (up to 38400)
 
-  V1.5
-        ELF file support
-        replacement BSLs are now internal
+V1.5
+    ELF file support,
+    replacement BSLs are now internal
+
 
 References
 ----------
@@ -244,11 +255,11 @@ References
   and http://www.activestate.com/Products/ActivePython/win32all.html
 
 - slaa89.pdf: "Features of the MSP430 Bootstrap Loader in the
-  MSP430F1121", TI
+  MSP430F1121", TI, http://www.ti.com/msp430
 
 - slaa96b.pdf: "Application of Bootstrap Loader in MSP430 With Flash
   Hardware and Software Proposal", TI
 
 - Texas Instruments MSP430 Homepage, links to Datasheets and Application
-  Notes: http://www.ti.com/docs/products/micro/msp430/msp430.htm
+  Notes: http://www.ti.com/msp430
 

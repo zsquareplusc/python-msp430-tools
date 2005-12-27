@@ -1,11 +1,12 @@
-pyJTAG
-------
+msp430-jtag
+===========
 
 Software to talk to the parallel port JTAG PCB as seen with the FET kits.
 It is released under a free software license,
 see license.txt for more details.
 
 (C) 2002-2004 Chris Liechti <cliechti@gmx.net>
+
 
 Features
 --------
@@ -19,11 +20,13 @@ Features
 - reset and wait for keypress (to run a device directly from the port
   power)
 
+
 Requirements
 ------------
 - Linux, BSD, Un*x or Windows PC
 - Python 2.0 or newer, 2.2+ recomeded
 - Parallel JTAG hardware with an MSP430 device connected
+
 
 Installation
 ------------
@@ -61,30 +64,49 @@ If its used from the source directory use "python jtag.py".
 
 
 
-USAGE: msp430-jtag [options] [file]
+USAGE: msp430-jtag.py [options] [file]
+
 If "-" is specified as file the data is read from stdin.
-A file ending with ".txt" is considered to be in TIText format all
+A file ending with ".txt" is considered to be in TI-Text format all
 other filenames are considered to be in IntelHex format.
 
 General options:
   -h, --help            Show this help screen.
   -l, --lpt=name        Specify an other parallel port.
-                        (defaults to LPT1 (/dev/parport0 on unix)
+                        (defaults to LPT1 (/dev/parport0 on unix))
   -D, --debug           Increase level of debug messages. This won't be
-                        very useful for the average user...
+                        very useful for the average user.
   -I, --intelhex        Force fileformat to IntelHex
-  -T, --titext          Force fileformat to be TIText
-  -f, --funclet         The given file is a funclet (a small program to
-                        be run in RAM)
-  -R, --ramsize         Specify the amont of RAM to be used to program
+  -T, --titext          Force fileformat to be TI-Text
+  -R, --ramsize         Specify the amount of RAM to be used to program
                         flash (default 256).
 
-Program Flow Specifiers:
+Funclets:
+  -f, --funclet         The given file is a funclet (a small program to
+                        be run in RAM).
+  --parameter=<key>=<value> Pass parameters to funclets.
+                        Registers can be written like "R15=123" or "R4=0x55"
+                        A string can be written to memory with "0x2e0=hello"
+                        --parameter can be given more than once
+  --result=value        Read results from funclets. "Rall" read all registers
+                        (case insensitive) "R15" reads R15 etc. Address ranges
+                        can be read with "0x2e0-0x2ff". see also --upload.
+                        --result can be given more than once
+  --timeout=value       Abort the funclet after the given time in seconds
+                        if it does not exit no itslef. (default 1)
+
+Note: writing and/or reading RAM before and/or after running a funclet may not
+work as expected on devices with the JTAG bug like the F123.
+
+Program flow specifiers:
 
   -e, --masserase       Mass Erase (clear all flash memory)
+                        Note: SegmentA on F2xx is NOT erased, that must be
+                        done separately with --erase=0x1000
   -m, --mainerase       Erase main flash memory only
   --eraseinfo           Erase info flash memory only (0x1000-0x10ff)
   --erase=address       Selectively erase segment at the specified address
+  --erase=adr1-adr2     Selectively erase a range of segments
   -E, --erasecheck      Erase Check by file
   -p, --program         Program file
   -v, --verify          Verify by file
@@ -92,11 +114,11 @@ Program Flow Specifiers:
 The order of the above options matters! The table is ordered by normal
 execution order. For the options "Epv" a file must be specified.
 Program flow specifiers default to "p" if a file is given.
-Don't forget to specify "e" or "eE" when programming flash!
+Don't forget to specify "e", "eE" or "m" when programming flash!
 "p" already verifies the programmed data, "v" adds an additional
-verification though uploading the written data for a 1:1 compare.
+verification through uploading the written data for a 1:1 compare.
 No default action is taken if "p" and/or "v" is given, say specifying
-only "v" does a check by file of a programmed device.
+only "v" does a "check by file" of a programmed device.
 
 Data retreiving:
   -u, --upload=addr     Upload a datablock (see also: -s).
@@ -117,14 +139,18 @@ Do before exit:
                         interrupt vector. (see also -g)
   -w, --wait            Wait for <ENTER> before closing parallel port.
 
+Address parameters for --erase, --upload, --size can be given in
+decimal, hexadecimal or octal.
+
+
 
 NOTE:   Some versions of the Texas Instruments MSP430 Development Tool
-        require that you give the '--no-close' option to pyJTAG.  This
+        require that you give the '--no-close' option to msp430-jtag. This
         is because the Texas Instruments tool is powered via the JTAG
-        adapter; the '--no-close' option prevents pyJTAG from powering the
-        adapter off.  You may also need to restart the program with 
-        pyJTAG (using the '--no-close' and '-r' options is sufficient) after
-        rebooting your machine.
+        adapter; the '--no-close' option prevents msp430-jtag from powering
+        the adapter off.  You may also need to restart the program with 
+        msp430-jtag (using the '--no-close' and '-r' options is sufficient)
+        after rebooting your machine.
 
         Other development kits that rely on the parallel port for their power
         source may also need the '--no-close' option.  It is preferable to
@@ -134,14 +160,14 @@ NOTE:   Some versions of the Texas Instruments MSP430 Development Tool
 
 Examples
 --------
-msp430-jtag -e
+``msp430-jtag -e``
         Only erase flash.
 
-msp430-jtag -eErw 6port.a43
+``msp430-jtag -eErw 6port.a43``
         Erase flash, erase check, download an executable, run it (reset)
         and wait.
 
-msp430-jtag -mS -R 2048 6port.a43
+``msp430-jtag -mS -R 2048 6port.a43``
         Use ramsize option on a device with 2k RAM to speed up
         download. Of course any value from 128B up to the maximum
         a device has is allowed.
@@ -149,50 +175,68 @@ msp430-jtag -mS -R 2048 6port.a43
         Only erasing the main memory is useful to keep calibration
         data in the information memory.
 
-msp430-jtag 6port.a43
+``msp430-jtag 6port.a43``
         Download of an executable to en empty (new or erased) device.
         (Note that in new devices some of the first bytes in the
         information memory are random data. If data should be
         downloaded there, specify -eE.)
 
-msp430-jtag --go=0x220 ramtest.a43
+``msp430-jtag --go=0x220 ramtest.a43``
         Download a program into RAM and run it, may not work
         with all devices.
 
-msp430-jtag -f blinking.a43
+``msp430-jtag -f blinking.a43``
         Download a program into RAM and run it. It must be
         a special format with "startadr", "entrypoint",
         "exitpoint" as the first three words in the data
         and it must end on "jmp $". See MSP430debug sources
         for more info.
 
-msp430-jtag -u 0x0c00 -s 1024
+``msp430-jtag -u 0x0c00 -s 1024``
         Get a memory dump in HEX, from the bootstrap loader.
-        or save the binary in a file:
+        or save the binary in a file::
+        
           msp430-jtag -u 0x0c00 -s 1024 -b >dump.bin
-        or as an intel-hex file:
+          
+        or as an intel-hex file::
+        
           msp430-jtag -u 0x0c00 -s 1024 -i >dump.a43
 
-msp430-jtag -r
+``msp430-jtag``
         Just start the user program (with a reset).
 
-cat 6port.a43|msp430-jtag -e -
-        Pipe the data from "cat" to jtag.py to erase and program the
+``cat 6port.a43|msp430-jtag -e -``
+        Pipe the data from "cat" to msp430-jtag to erase and program the
         flash. (un*x example, don't forget the dash at the end of the
         line)
 
+
 History
 -------
-1.0     public release
-1.1     fix of verify error
-1.2     use the verification during programming
-1.3     mainerase, progress options, ihex output
+V1.0
+    public release
+
+V1.1
+    fix of verify error
+
+V1.2
+    use the verification during programming
+
+V1.3
+    mainerase, progress options, ihex output
+
+V2.0
+    updateed imlementation, new ctypes backend
+
+V2.1
+    F2xx support, improved options for funclets
+
 
 References
 ----------
 - Python: http://www.python.org
 
-- ctypes: starship.python.net/crew/theller/ctypes
+- ctypes: http://starship.python.net/crew/theller/ctypes
 
 - Texas Instruments MSP430 Homepage, links to Datasheets and Application
   Notes: http://www.ti.com/msp430

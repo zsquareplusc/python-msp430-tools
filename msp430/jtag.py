@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.14 2005/12/27 01:12:11 cliechti Exp $
+# $Id: jtag.py,v 1.15 2005/12/27 14:58:28 cliechti Exp $
 
 import sys
 
@@ -155,6 +155,8 @@ else:
             status = MSP430_Initialize(port, ctypes.byref(version))
             if status != STATUS_OK:
                 raise IOError("Could not initialize the library (port: %s)" % port)
+            if DEBUG:
+                sys.stderr.write('MSP430mspgcc.dll version: %d\n' % (version.value,))
         
             MSP430_VCC(3)
             

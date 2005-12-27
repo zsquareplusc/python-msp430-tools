@@ -9,14 +9,14 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.12 2005/12/27 01:12:11 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.13 2005/12/27 14:58:27 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
 from msp430 import memory, jtag
 
 
-VERSION = "2.0"
+VERSION = "2.1"
 
 DEBUG = 0                           #disable debug messages by default
 
@@ -39,9 +39,9 @@ other filenames are considered to be in IntelHex format.
 General options:
   -h, --help            Show this help screen.
   -l, --lpt=name        Specify an other parallel port.
-                        (defaults to LPT1 (/dev/parport0 on unix)
+                        (defaults to LPT1 (/dev/parport0 on unix))
   -D, --debug           Increase level of debug messages. This won't be
-                        very useful for the average user...
+                        very useful for the average user.
   -I, --intelhex        Force fileformat to IntelHex
   -T, --titext          Force fileformat to be TI-Text
   -R, --ramsize         Specify the amount of RAM to be used to program
@@ -281,12 +281,15 @@ def main():
                 regnum = int(a[1:])
                 results.append(('R%-2d = 0x%%04x' % regnum, jtagobj.getCPURegister, (regnum,)))
             else:
-                if '-' in a:
-                    start, end = a.split('-', 2)
-                    start = int(start, 0)
-                    end = int(end, 0)
-                else:
-                    start = end = int(a,0)
+                try:
+                    if '-' in a:
+                        start, end = a.split('-', 2)
+                        start = int(start, 0)
+                        end = int(end, 0)
+                    else:
+                        start = end = int(a,0)
+                except ValueError:
+                    raise ValueError("--result: Addresses or address ranges must be dec, hex or octal")
                 results.append(('0x%04x: %%r' % start, jtagobj.uploadData, (start, end-start)))
         elif o in ("--timeout", ):
             timeout = float(a)
@@ -319,6 +322,10 @@ def main():
     if startaddr and reset:
         sys.stderr.write("Warning: option --reset ignored as --upload is specified!\n")
         reset = 0
+        
+    if startaddr and wait:
+        sys.stderr.write("Warning: option --wait ignored as --upload is specified!\n")
+        wait = 0
 
     #prepare data to download
     jtagobj.data = memory.Memory()                      #prepare downloaded data
@@ -365,6 +372,7 @@ def main():
     sys.stderr.flush()
 
     jtagobj.connect(lpt)                                #try to open port
+    abort_due_to_error = 1
     try:
         if ramsize is not None:
             jtagobj.setRamsize(ramsize)
@@ -405,6 +413,7 @@ def main():
                 makeihex( (startaddr, data) )           #ouput a intel-hex file
             else:
                 if sys.platform == "win32":
+                    #ensure that the console is in binary mode
                     import os, msvcrt
                     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
                 
@@ -416,10 +425,15 @@ def main():
             sys.stderr.flush()
             raw_input()                                 #wait for newline
     
+        abort_due_to_error = 0
     finally:
+        if abort_due_to_error:
+            sys.stderr.write("Cleaning up after error...\n")
         jtagobj.reset(1, 1)                             #reset and release target
         if do_close:
             jtagobj.close()                             #Release communication port
+            if DEBUG:
+                sys.stderr.write("WARNING: JTAG port is left open (--no-close)\n")
 
 if __name__ == '__main__':
     try:

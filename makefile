@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.2 2004/03/01 02:36:37 cliechti Exp $
+# $Id: makefile,v 1.3 2005/12/27 14:58:27 cliechti Exp $
 
 PREFIX := /usr/local/msp430/bin
 
@@ -10,6 +10,9 @@ install:
 	mkdir -p $(PREFIX)
 	install msp430-bsl.py $(PREFIX)/msp430-bsl
 	install msp430-jtag.py $(PREFIX)/msp430-jtag
+	install msp430-ram-usage.py $(PREFIX)/msp430-ram-usage
+	install titext2ihex.py $(PREFIX)/titext2ihex
+	install ihex2titext.py $(PREFIX)/ihex2titext
 
 
 #generate test files

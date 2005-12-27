@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.16 2005/12/27 16:22:10 cliechti Exp $
+# $Id: jtag.py,v 1.17 2005/12/27 16:28:54 cliechti Exp $
 
 import sys
 
@@ -245,7 +245,7 @@ else:
             if status != STATUS_OK:
                 raise IOError("Could not erase the Flash")
 
-        def funclet(self, code, timeout=1):
+        def funclet(self, code, timeout=1000):
             """Download a 'funclet' contained in the string 'code' to the target
             and execute it. This function waits until the code stops on a "jmp $"
             or a timeout.
@@ -260,7 +260,7 @@ else:
             status = MSP430_FuncletWait(code, size, 1, int(timeout*1000), ctypes.byref(runtime))
             if status != STATUS_OK:
                 raise IOError("Could not execute code")
-            return runtime.value/1000.0
+            return runtime.value
 
         def configure(self, mode, value = 0):
             """Configure the MSP430 driver."""
@@ -450,7 +450,7 @@ class JTAG:
                 sys.stderr.flush()
             if len(self.data) != 1:
                 raise JTAGException("Funclets must have exactly one segment")
-            runtime = _parjtag.funclet(self.data[0].data, timeout)
+            runtime = _parjtag.funclet(self.data[0].data, timeout*1000) / 1000.0
             if runtime >= timeout:
                 sys.stderr.write("Funclet stopped on timeout\n")
                 sys.stderr.flush()

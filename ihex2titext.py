@@ -6,14 +6,17 @@
 # (C) 2005 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: ihex2titext.py,v 1.1 2005/10/03 20:46:37 cliechti Exp $
+# $Id: ihex2titext.py,v 1.2 2005/12/28 20:37:57 cliechti Exp $
 
 #~ from msp430.util import hexdump
 from msp430 import memory
 import sys
 
 data = memory.Memory()
-data.loadIHex(sys.stdin)                    #intel-hex
+if len(sys.argv) > 1:
+    data.loadFile(sys.argv[1])
+else:
+    data.loadIHex(sys.stdin)                    #intel-hex
 for segment in data:
     #~ hexdump((segment.startaddress, segment.data))            #print a hex display
     sys.stdout.write("@%04x\n" % segment.startaddress)

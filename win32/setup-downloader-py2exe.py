@@ -1,5 +1,5 @@
 # setup script for py2exe to create the msp430-jtag.exe
-# $Id: setup-downloader-py2exe.py,v 1.3 2005/04/22 18:19:05 cliechti Exp $
+# $Id: setup-downloader-py2exe.py,v 1.4 2005/12/28 19:55:48 cliechti Exp $
 
 from distutils.core import setup
 import glob, sys, py2exe, os
@@ -22,7 +22,7 @@ setup(
     },
     windows = [
         { 'script': "msp430-downloader.py",
-            #~ 'icon_resources': [(0x0001, 'bigicon.ico')]
+          'icon_resources': [(0x0001, 'win32/downloader.ico')]
         },
     ],
     zipfile = "lib/shared-downloader.zip",

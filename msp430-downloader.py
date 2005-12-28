@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: msp430-downloader.py,v 1.6 2005/06/14 10:49:55 cliechti Exp $
+# $Id: msp430-downloader.py,v 1.7 2005/12/28 19:55:48 cliechti Exp $
 """
 Simple tool to download to a MSP430.
 
@@ -36,7 +36,8 @@ lpt = '1'
 sys.stdout = sys.stderr = StringIO()
 
 if EasyDialogs.AskYesNoCancel(
-    "Download '%s' using the JTAG interface?" % (filename,)
+    "MSP430 downloader\n\nDownload '%s' using the JTAG interface?" % (filename,),
+    cancel=""
 ) != 1:
     sys.exit(1)
 
@@ -59,7 +60,8 @@ try:
         jtagobj.data = msp430.memory.Memory()   #prepare downloaded data
         jtagobj.data.loadFile(filename)         #autodetect filetype
         jtagobj.bar.label('Connecting...')
-        jtagobj.connect(lpt)                    #try to open port
+        jtagobj.open(lpt)                       #try to open port
+        jtagobj.connect()                       #try to connect to target
         try:
             jtagobj.bar.label('Erasing...')
             answer = EasyDialogs.AskYesNoCancel("Choose erase mode",

@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.14 2005/12/27 16:22:10 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.15 2005/12/28 19:56:51 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -435,8 +435,8 @@ def main():
         jtagobj.reset(1, 1)                             #reset and release target
         if do_close:
             jtagobj.close()                             #Release communication port
-            if DEBUG:
-                sys.stderr.write("WARNING: JTAG port is left open (--no-close)\n")
+        else if DEBUG:
+            sys.stderr.write("WARNING: JTAG port is left open (--no-close)\n")
 
 if __name__ == '__main__':
     try:

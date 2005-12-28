@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.17 2005/12/27 16:28:54 cliechti Exp $
+# $Id: jtag.py,v 1.18 2005/12/28 19:56:51 cliechti Exp $
 
 import sys
 
@@ -257,7 +257,7 @@ else:
             if size & 1:
                 raise ValueError("data must be of even size")
             
-            status = MSP430_FuncletWait(code, size, 1, int(timeout*1000), ctypes.byref(runtime))
+            status = MSP430_FuncletWait(code, size, 1, timeout, ctypes.byref(runtime))
             if status != STATUS_OK:
                 raise IOError("Could not execute code")
             return runtime.value
@@ -450,7 +450,7 @@ class JTAG:
                 sys.stderr.flush()
             if len(self.data) != 1:
                 raise JTAGException("Funclets must have exactly one segment")
-            runtime = _parjtag.funclet(self.data[0].data, timeout*1000) / 1000.0
+            runtime = _parjtag.funclet(self.data[0].data, int(timeout*1000)) / 1000.0
             if runtime >= timeout:
                 sys.stderr.write("Funclet stopped on timeout\n")
                 sys.stderr.flush()

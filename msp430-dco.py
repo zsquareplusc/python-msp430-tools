@@ -9,7 +9,7 @@
 # (C) 2005 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-dco.py,v 1.2 2005/12/29 04:33:22 cliechti Exp $
+# $Id: msp430-dco.py,v 1.3 2005/12/29 14:01:48 cliechti Exp $
 
 from msp430 import jtag, clock
 import sys
@@ -43,7 +43,7 @@ def get_msp430_type():
     if debug: sys.stderr.write("MSP430 device: 0x%04x\n" % (device, ))
     return device
 
-def adjust_clock(out, frequency, tolerance=0.02):
+def adjust_clock(out, frequency, tolerance=0.02, dcor=False):
     """detect MSP430 type and try to set the clock to the given frequency.
     when successful, print the clock control register settings.
     
@@ -57,7 +57,8 @@ def adjust_clock(out, frequency, tolerance=0.02):
         frequency, dco, bcs1 = clock.setDCO(
             frequency*(1-tolerance),
             frequency*(1+tolerance),
-            maxrsel=7
+            maxrsel=7,
+            dcor=dcor
         )
         out.write('BCSCTL1 = 0x%02x; DCOCTL = 0x%02x; //%dHz\n' % (bcs1, dco, frequency))
     elif device == 0xf2:
@@ -138,9 +139,9 @@ Examples:
         %prog --tolerance=0.02 2.0e6""")
     parser.add_option("-o", "--output", dest="output",
                       help="write result to given file", metavar="FILE")
-    #~ parser.add_option("", "--dcor", dest="dcor",
-                      #~ help="use external resistor",
-                      #~ default=False, action='store_true')
+    parser.add_option("", "--dcor", dest="dcor",
+                      help="use external resistor",
+                      default=False, action='store_true')
     parser.add_option("-d", "--debug", dest="debug",
                       help="print debug messages",
                       default=False, action='store_true')
@@ -181,7 +182,7 @@ Examples:
         if options.measure:
             measure_clock(out)
         else:
-            adjust_clock(out, frequency, options.tolerance)
+            adjust_clock(out, frequency, options.tolerance, options.dcor)
         #~ print "%.2f kHz" % (getDCOFreq(0, 0)/1e3)
     finally:
         if sys.exc_info()[:1]:              #if there is an exception pending

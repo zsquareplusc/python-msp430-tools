@@ -3,7 +3,7 @@
 # Functions to measure the DCO clock and functions to do a software FLL to
 # callibrate the clock to a gived frequency.
 #
-# $Id: clock.py,v 1.1 2005/12/29 04:33:22 cliechti Exp $
+# $Id: clock.py,v 1.2 2005/12/29 14:01:48 cliechti Exp $
 
 import cStringIO
 import sys
@@ -15,26 +15,28 @@ debug = False
 #see mspgcc cvs/jtag/funclets/counter.S
 COUNTER_FUNCLET = """\
 @0200
-00 02 08 02 22 02 60 07 32 c2 d2 40 fb ff 57 00
-d2 40 f4 ff 56 00 0e 43 0f 43 1e 53 0f 63 fd 3f
-03 43 ff 3f
+00 02 0a 02 2a 02 60 07 00 00 32 c2 d2 40 f9 ff
+57 00 d2 40 f4 ff 58 00 d2 40 ec ff 56 00 0e 43
+0f 43 1e 53 0f 63 fd 3f 03 43 ff 3f
 q
 """
 
 
-def getDCOFreq(dcoctl, bcsctl1):
+def getDCOFreq(dcoctl, bcsctl1, bcsctl2=0):
     """measure DCO frequency on a F1xx or F2xx device.
     
        return: frequency in Hz"""
     funclet = memory.Memory()
     funclet.loadTIText(cStringIO.StringIO(COUNTER_FUNCLET))
     #XXX dcor
-    funclet[0].data = funclet[0].data[:6] + chr(dcoctl) + chr(bcsctl1) + funclet[0].data[8:]
+    funclet[0].data = funclet[0].data[:6] \
+                    + chr(dcoctl) + chr(bcsctl1) + chr(bcsctl2) \
+                    + funclet[0].data[9:]
     runtime = jtag._parjtag.funclet(funclet[0].data, 100)
     count = jtag._parjtag.regread(14) | (jtag._parjtag.regread(15) << 16)
     return 1000*count*4/runtime
 
-def setDCO(fmin, fmax, maxrsel=7):
+def setDCO(fmin, fmax, maxrsel=7, dcor=False):
     """Software FLL for F1xx and F2xx devices.
     
        return: (frequency, DCOCTL, BCSCTL1)"""
@@ -48,12 +50,12 @@ def setDCO(fmin, fmax, maxrsel=7):
     
     for tries in range(50):
         if upper and lower and resolution > 1:
-            if debug: sys.stderr.write("switching to higher resolution (%d)\n" % (resolution,))
             resolution /= 2
+            if resolution < 1: resolution = 1
+            if debug: sys.stderr.write("switching to higher resolution (-> %d)\n" % (resolution,))
             upper = False
             lower = False
-            if resolution < 1: resolution = 1
-        frequency = getDCOFreq(dco, bcs1)
+        frequency = getDCOFreq(dco, bcs1, dcor and 1 or 0)
         if frequency > fmax:
             if debug: sys.stderr.write("%luHz is too high, decreasing (was: BCSCTL1=0x%02x; DCOCTL=0x%02x\n" % (frequency, bcs1, dco))
             upper = True
@@ -61,8 +63,15 @@ def setDCO(fmin, fmax, maxrsel=7):
             if dco <= 0:
                 dco = 255
                 bcs1 -= 1
-                if bcs1 <= 0:
-                    raise IOError("Couldn't get DCO working with correct frequency.")
+                if bcs1 < 0:
+                    if resolution > 1:
+                        #try again with minimum settings but increased resolution
+                        resolution /= 2
+                        if resolution < 1: resolution = 1
+                        bcs1 = 0
+                        dco = 0
+                    else:
+                        raise IOError("Couldn't get DCO working with correct frequency. Device is not slower than %dHz." % (frequency,))
         elif frequency < fmin:
             if debug: sys.stderr.write("%luHz is too low, increasing (was: BCSCTL1=0x%02x; DCOCTL=0x%02x\n" % (frequency, bcs1, dco))
             lower = True
@@ -70,12 +79,19 @@ def setDCO(fmin, fmax, maxrsel=7):
             if dco > 255:
                 dco = 0
                 bcs1 += 1
-                if ++bcs1 > 7:
-                    raise IOError("Couldn't get DCO working with correct frequency.")
+                if bcs1 > maxrsel:
+                    if resolution > 1:
+                        #try again with maximum settings but increased resolution
+                        resolution /= 2
+                        if resolution < 1: resolution = 1
+                        bcs1 = maxrsel
+                        dco = 255
+                    else:
+                        raise IOError("Couldn't get DCO working with correct frequency. Device is not faster than %dHz." % (frequency,))
         else:
             if debug: sys.stderr.write("%luHz is OK (BCSCTL1=0x%02x; DCOCTL=0x%02x\n" % (frequency, bcs1, dco))
             return frequency, dco, bcs1
-    raise IOError("Couldn't get DCO working with correct frequency.")
+    raise IOError("Couldn't get DCO working with correct frequency. Tolerance too tight? Last frequency was %dHz" % (frequency,))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -95,10 +111,10 @@ def getDCOPlusFreq(scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1):
        return: frequency in Hz"""
     funclet = memory.Memory()
     funclet.loadTIText(cStringIO.StringIO(COUNTERPLUS_FUNCLET))
-    funclet[0].data = funclet[0].data[:6] + \
-                      chr(scfi0) + chr(scfi1) + \
-                      chr(scfqctl) + chr(fll_ctl0) + \
-                      chr(fll_ctl1) + funclet[0].data[11:]
+    funclet[0].data = funclet[0].data[:6] \
+                    + chr(scfi0) + chr(scfi1) \
+                    + chr(scfqctl) + chr(fll_ctl0) \
+                    + chr(fll_ctl1) + funclet[0].data[11:]
     #~ funclet..[0x205] = scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1
     runtime = jtag._parjtag.funclet(funclet[0].data, 100)
     count = jtag._parjtag.regread(14) | (jtag._parjtag.regread(15) << 16)

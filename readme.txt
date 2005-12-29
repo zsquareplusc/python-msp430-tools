@@ -53,18 +53,25 @@ win32
     installers.
 
 msp430-bsl.py
-    Command line appliaction for the MSP430 Boot Strap Loader
+    Command line application for the MSP430 Boot Strap Loader
+    Erasing, programming, uploading of flash and RAM. 
+
+msp430-dco.py
+    Command line appliaction for the MSP430 parallel JTAG adapter.
+    Measure or callibrate the DCO clock.
 
 msp430-downloader.py
     Small program, suitable for file associations, so that double
-    clicking a elf or a43 file can directly download.
+    clicking an elf or a43 file can be used to download via JTAG.
 
 msp430-jtag.py
     Command line appliaction for the MSP430 parallel JTAG adapter.
+    Erasing, programming, uploading of flash and RAM. Additionaly
+    it can run funclets.
 
 makefile
     Install the two command line tools and the Python library.
 
 
 chris
-$Id: readme.txt,v 1.3 2004/10/24 22:26:06 cliechti Exp $
+$Id: readme.txt,v 1.4 2005/12/29 04:04:48 cliechti Exp $

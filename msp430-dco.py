@@ -9,7 +9,7 @@
 # (C) 2005 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-dco.py,v 1.3 2005/12/29 14:01:48 cliechti Exp $
+# $Id: msp430-dco.py,v 1.4 2005/12/29 19:25:39 cliechti Exp $
 
 from msp430 import jtag, clock
 import sys
@@ -43,7 +43,7 @@ def get_msp430_type():
     if debug: sys.stderr.write("MSP430 device: 0x%04x\n" % (device, ))
     return device
 
-def adjust_clock(out, frequency, tolerance=0.02, dcor=False):
+def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
     """detect MSP430 type and try to set the clock to the given frequency.
     when successful, print the clock control register settings.
     
@@ -54,28 +54,71 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False):
         raise ValueError('tolerance out of range %f' % (tolerance,))
     device = get_msp430_type() >> 8
     if device == 0xf1:
-        frequency, dco, bcs1 = clock.setDCO(
+        measured_frequency, dco, bcs1 = clock.setDCO(
             frequency*(1-tolerance),
             frequency*(1+tolerance),
             maxrsel=7,
             dcor=dcor
         )
-        out.write('BCSCTL1 = 0x%02x; DCOCTL = 0x%02x; //%dHz\n' % (bcs1, dco, frequency))
+        out.write('// BCS settings for %s\n' % (nice_frequency(measured_frequency), ))
+        if define:
+            suffix = '_%s' % nice_frequency(frequency).replace('.','_')
+            out.write('#define DCOCTL%s 0x%02x\n' % (suffix, dco,))
+            out.write('#define BCSCTL1%s 0x%02x\n' % (suffix, bcs1,))
+            if dcor:
+                out.write('#define BCSCTL2%s 0x01 //select external RSOC\n' % (suffix,))
+            else:
+                out.write('#define BCSCTL2%s 0x00 //select internal RSOC\n' % (suffix,))
+        else:
+            out.write('DCOCTL = 0x%02x;\n' % (dco,))
+            out.write('BCSCTL1 = 0x%02x;\n' % (bcs1,))
+            if dcor:
+                out.write('BCSCTL2 = 0x01; //select external RSOC\n')
+            else:
+                out.write('BCSCTL2 = 0x00; //select internal RSOC\n')
     elif device == 0xf2:
-        frequency, dco, bcs1 = clock.setDCO(
+        measured_frequency, dco, bcs1 = clock.setDCO(
             frequency*(1-tolerance),
             frequency*(1+tolerance),
-            maxrsel=15
+            maxrsel=15,
+            dcor=dcor
         )
-        out.write('BCSCTL1 = 0x%02x; DCOCTL = 0x%02x; //%dHz\n' % (bcs1, dco, frequency))
+        out.write('// BCS+ settings for %s\n' % (nice_frequency(measured_frequency), ))
+        if define:
+            suffix = '_%s' % nice_frequency(frequency).replace('.','_')
+            out.write('#define DCOCTL%s 0x%02x\n' % (suffix, dco,))
+            out.write('#define BCSCTL1%s 0x%02x\n' % (suffix, bcs1,))
+            if dcor:
+                out.write('#define BCSCTL2%s 0x01 //select external RSOC\n' % (suffix,))
+            else:
+                out.write('#define BCSCTL2%s 0x00 //select internal RSOC\n' % (suffix,))
+            out.write('#define BCSCTL3%s 0x00\n' % (suffix,))
+        else:
+            out.write('DCOCTL = 0x%02x;\n' % (dco,))
+            out.write('BCSCTL1 = 0x%02x;\n' % (bcs1,))
+            if dcor:
+                out.write('BCSCTL2 = 0x01; //select external RSOC\n')
+            else:
+                out.write('BCSCTL2 = 0x00; //select internal RSOC\n')
+            out.write('BCSCTL3 = 0x00;\n')
     elif device == 0xf4:
-        frequency, scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1 = clock.setDCOPlus(
+        measured_frequency, scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1 = clock.setDCOPlus(
             frequency*(1-tolerance),
             frequency*(1+tolerance)
         )
-        out.write('SCFI0 = 0x%02x; SCFI1 = 0x%02x; SCFQCTL = 0x%02x; FLL_CTL0 = 0x%02x; FLL_CTL1 = 0x%02x; //%dHz\n' % (
-            scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1, frequency
-        ))
+        out.write('// FLL+ settings for %s\n' % (nice_frequency(measured_frequency), ))
+        if define:
+            suffix = '_%s' % nice_frequency(frequency).replace('.','_')
+            out.write('#define SCFI0%(suffix)s 0x%(scfi0)02x\n'
+                      '#define SCFI1%(suffix)s 0x%(scfi1)02x\n'
+                      '#define SCFQCTL%(suffix)s 0x%(scfqctl)02x\n'
+                      '#define FLL_CTL0%(suffix)s 0x%(fll_ctl0)02x\n'
+                      '#define FLL_CTL1%(suffix)s 0x%(fll_ctl1)02x\n' % vars()
+            )
+        else:
+            out.write('SCFI0 = 0x%02x;\nSCFI1 = 0x%02x;\nSCFQCTL = 0x%02x;\nFLL_CTL0 = 0x%02x;\nFLL_CTL1 = 0x%02x;\n' % (
+                scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1
+            ))
     else:
         IOError("unknown MSP430 type %02x" % device)
 
@@ -157,6 +200,10 @@ Examples:
                       help="set the clock tolerance as factor. e.g. 0.1 means 10%",
                       default=0.01, type="float")
 
+    parser.add_option("", "--define", dest="define",
+                      help="output #defines instead of assignments",
+                      default=False, action='store_true')
+
     (options, args) = parser.parse_args()
 
     global debug
@@ -182,7 +229,13 @@ Examples:
         if options.measure:
             measure_clock(out)
         else:
-            adjust_clock(out, frequency, options.tolerance, options.dcor)
+            adjust_clock(
+                out,
+                frequency,
+                options.tolerance,
+                options.dcor,
+                options.define
+            )
         #~ print "%.2f kHz" % (getDCOFreq(0, 0)/1e3)
     finally:
         if sys.exc_info()[:1]:              #if there is an exception pending

@@ -1,6 +1,6 @@
 # setup.py
 #
-# $Id: setup.py,v 1.3 2005/09/29 21:35:06 cliechti Exp $
+# $Id: setup.py,v 1.4 2005/12/30 03:47:49 cliechti Exp $
 
 from distutils.core import setup
 import sys
@@ -21,7 +21,7 @@ setup(
     url="http://mspgcc.sourceforge.net/",
     packages=['msp430', 'msp430.serial'],
     license="Python",
-    long_description="Python Tools for the MSP430 processor includeing BSL, JTAG",
+    long_description="Python tools for the MSP430 processor including BSL, JTAG",
     classifiers = [
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',

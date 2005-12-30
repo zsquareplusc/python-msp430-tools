@@ -1,7 +1,12 @@
-# $Id: memory.py,v 1.2 2004/03/05 00:32:50 cliechti Exp $
+# $Id: memory.py,v 1.3 2005/12/30 01:49:49 cliechti Exp $
 import sys
+import elf
 
 DEBUG = 0
+
+class FileFormatError(IOError):
+    """file is not in the expected format"""
+
 
 class Segment:
     """store a string with memory contents along with its startaddress"""
@@ -38,6 +43,8 @@ class Memory:
     def __len__(self):
         return len(self.segments)
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     def loadIHex(self, file):
         """load data from a (opened) file in Intel-HEX format"""
         segmentdata = []
@@ -46,7 +53,7 @@ class Memory:
         lines = file.readlines()
         for l in lines:
             if not l.strip(): continue  #skip empty lines
-            if l[0] != ':': raise Exception("File Format Error\n")
+            if l[0] != ':': raise FileFormatError("line not valid intel hex data: '%s...'" % l[0:10])
             l = l.strip()               #fix CR-LF issues...
             length  = int(l[1:3],16)
             address = int(l[3:7],16)
@@ -70,15 +77,12 @@ class Memory:
 
     def loadTIText(self, file):
         """load data from a (opened) file in TI-Text format"""
-        next        = 1
         startAddr   = 0
         segmentdata = []
         #Convert data for MSP430, TXT-File is parsed line by line
-        while next >= 1:
-            #Read one line
-            l = file.readline()
-            if not l: break #EOF
-            l = l.strip()
+        for line in file:       #Read one line
+            if not line: break #EOF
+            l = line.strip()
             if l[0] == 'q': break
             elif l[0] == '@':        #if @ => new address => send frame and set new addr.
                 #create a new segment
@@ -88,14 +92,16 @@ class Memory:
                 segmentdata = []
             else:
                 for i in l.split():
-                    segmentdata.append(chr(int(i,16)))
+                    try:
+                        segmentdata.append(chr(int(i,16)))
+                    except ValueError, e:
+                        raise FileFormatError('File is no valid TI-Text (%s)' % e)
         if segmentdata:
             self.segments.append( Segment(startAddr, ''.join(segmentdata)) )
 
     def loadELF(self, file):
         """load data from a (opened) file in ELF object format.
         File must be seekable"""
-        import elf
         obj = elf.ELFObject()
         obj.fromFile(file)
         if obj.e_type != elf.ELFObject.ET_EXEC:
@@ -108,31 +114,120 @@ class Memory:
         
     def loadFile(self, filename):
         """fill memory with the contents of a file. file type is determined from extension"""
-        #TODO: do a contents based detection
-        if filename[-4:].lower() == '.txt':
-            self.loadTIText(open(filename, "rb"))
-        elif filename[-4:].lower() in ('.a43', '.hex'):
-            self.loadIHex(open(filename, "rb"))
-        else:
+        #first check extension
+        try:
+            if filename[-4:].lower() == '.txt':
+                self.loadTIText(open(filename, "rb"))
+                return
+            elif filename[-4:].lower() in ('.a43', '.hex'):
+                self.loadIHex(open(filename, "rb"))
+                return
+        except FileFormatError:
+            pass #do contents based detection below
+        #then do a contents based detection
+        try:
             self.loadELF(open(filename, "rb"))
+        except elf.ELFException:
+            try:
+                self.loadIHex(open(filename, "rb"))
+            except FileFormatError:
+                try:
+                    self.loadTIText(open(filename, "rb"))
+                except FileFormatError:
+                    raise FileFormatError('file could not be loaded (not ELF, IHex, or Ti-Text)')
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def saveIHex(self, filelike):
+        """write a string containing intel hex to given file object"""
+        noeof=0
+        for seg in self.segments:
+            address = seg.startaddress
+            data    = seg.data
+            start = 0
+            while start<len(data):
+                end = start + 16
+                if end > len(data): end = len(data)
+                filelike.write(self._ihexline(address, data[start:end]))
+                start += 16
+                address += 16
+        filelike.write(self._ihexline(0, [], end=1))   #append no data but an end line
+    
+    def _ihexline(self, address, buffer, end=0):
+        """internal use: generate a line with intel hex encoded data"""
+        out = []
+        if end:
+            type = 1
+        else:
+            type = 0
+        out.append( ':%02X%04X%02X' % (len(buffer),address&0xffff,type) )
+        sum = len(buffer) + ((address>>8)&255) + (address&255) + (type&255)
+        for b in [ord(x) for x in buffer]:
+            out.append('%02X' % (b&255) )
+            sum += b&255
+        out.append('%02X\n' %( (-sum)&255))
+        return ''.join(out)
+    
+    def saveTIText(self, filelike):
+        """output TI-Text to given file object"""
+        for segment in self.segments:
+            filelike.write("@%04x\n" % segment.startaddress)
+            for i in range(0, len(segment.data), 16):
+                filelike.write("%s\n" % " ".join(["%02x" % ord(x) for x in segment.data[i:i+16]]))
+        filelike.write("q\n")
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    
     def getMemrange(self, fromadr, toadr):
         """get a range of bytes from the memory. unavailable values are filled with 0xff."""
         res = ''
-        toadr = toadr + 1   #python indxes are excluding end, so include it
+        toadr = toadr + 1   #python indexes are excluding end, so include it
         while fromadr < toadr:
             for seg in self.segments:
                 segend = seg.startaddress + len(seg.data)
                 if seg.startaddress <= fromadr and fromadr < segend:
                     if toadr > segend:   #not all data in segment
-                        catchlength = segend-fromadr
+                        catchlength = segend - fromadr
                     else:
-                        catchlength = toadr-fromadr
+                        catchlength = toadr - fromadr
                     res = res + seg.data[fromadr-seg.startaddress : fromadr-seg.startaddress+catchlength]
                     fromadr = fromadr + catchlength    #adjust start
                     if len(res) >= toadr-fromadr:
                         break   #return res
             else:   #undefined memory is filled with 0xff
-                    res = res + chr(255)
-                    fromadr = fromadr + 1 #adjust start
+                res = res + chr(255)
+                fromadr = fromadr + 1 #adjust start
         return res
+
+    def getMem(self, address, size):
+        """get a range of bytes from the memory. a ValueError is raised if
+           unavailable addresses are tried to read"""
+        data = []
+        for seg in self.segments:
+            #~ print "0x%04x  " * 2 % (seg.startaddress, seg.startaddress + len(seg.data))
+            if seg.startaddress <= address and seg.startaddress + len(seg.data) >= address:
+                #segment contains data in the address range
+                offset = address - seg.startaddress
+                length = min(len(seg.data)-offset, size)
+                data.append(seg.data[offset:offset+length])
+                address += length
+        value = ''.join(data)
+        if len(value) != size:
+            raise ValueError("could not collect the requested data")
+        return value
+    
+    def setMem(self, address, contents):
+        """write a range of bytes to the memory. a segment covering the address
+           range to be written has to be existent. a ValueError is raised if not
+           all data could be written (attention: a part of the data may have been
+           written!)"""
+        data = []
+        for seg in self.segments:
+            #~ print "0x%04x  " * 2 % (seg.startaddress, seg.startaddress + len(seg.data))
+            if seg.startaddress <= address and seg.startaddress + len(seg.data) >= address:
+                #segment contains data in the address range
+                offset = address - seg.startaddress
+                length = min(len(seg.data)-offset, len(contents))
+                seg.data = seg.data[:offset] + contents[:length] + seg.data[offset+length:]
+                contents = contents[length:]    #cut away what is used
+                if not contents: break          #stop if done
+                address += length
+        raise ValueError("could not write all data")

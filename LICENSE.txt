@@ -1,4 +1,4 @@
-Copyright (c) 2001-2004 Chris Liechti <cliechti@gmx.net>
+Copyright (c) 2001-2005 Chris Liechti <cliechti@gmx.net>
 
 All Rights Reserved.
 
@@ -7,7 +7,7 @@ commercial and non-commercial applications, modify it, redistribute it.
 A notification to the author when you use and/or modify it is welcome.
 
 TERMS AND CONDITIONS FOR ACCESSING OR OTHERWISE USING THIS SOFTWARE
-============================================
+
 
 LICENSE AGREEMENT
 -----------------

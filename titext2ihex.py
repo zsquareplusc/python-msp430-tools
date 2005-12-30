@@ -8,7 +8,7 @@
 # (C) 2004 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: titext2ihex.py,v 1.3 2005/12/28 22:02:27 cliechti Exp $
+# $Id: titext2ihex.py,v 1.4 2005/12/30 01:50:28 cliechti Exp $
 
 from msp430.util import makeihex, _ihexline
 from msp430 import memory
@@ -40,6 +40,5 @@ for filename in args:
         data.loadFile(filename)
 
 #write ihex file
-for segment in data:
-    makeihex((segment.startaddress, segment.data), eof=0, output=out)
-_ihexline(0, [], type=1, output=out)
+data.saveIHex(out)
+

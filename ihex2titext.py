@@ -8,7 +8,7 @@
 # (C) 2005 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: ihex2titext.py,v 1.3 2005/12/28 22:02:27 cliechti Exp $
+# $Id: ihex2titext.py,v 1.4 2005/12/30 01:50:28 cliechti Exp $
 
 from msp430 import memory
 import sys
@@ -39,8 +39,4 @@ for filename in args:
         data.loadFile(filename)
 
 #output TI-Text
-for segment in data:
-    out.write("@%04x\n" % segment.startaddress)
-    for i in range(0, len(segment.data), 16):
-        out.write("%s\n" % " ".join(["%02x" % ord(x) for x in segment.data[i:i+16]]))
-out.write("q\n")
+data.saveTIText(out)

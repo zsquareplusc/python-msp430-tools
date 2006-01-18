@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.9 2005/09/29 21:32:40 cliechti Exp $
+# $Id: bsl.py,v 1.10 2006/01/18 11:07:37 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -183,12 +183,17 @@ F4x                     = "F4x family"
 
 #known device list
 deviceids = {
-    0xf149: F1x,
-    0xf112: F1x,
-    0xf413: F4x,
-    0xf123: F1x,
-    0xf449: F4x,
+    0x1132: F1x,
     0x1232: F1x,
+    0xf112: F1x,
+    0xf123: F1x,
+    0xf149: F1x,
+    0xf169: F1x,
+    0xf16c: F1x,
+    0xf413: F4x,
+    0xf427: F4x,
+    0xf439: F4x,
+    0xf449: F4x,
 }
 
 class BSLException(Exception):

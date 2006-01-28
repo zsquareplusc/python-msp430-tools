@@ -1,4 +1,4 @@
-# $Id: memory.py,v 1.3 2005/12/30 01:49:49 cliechti Exp $
+# $Id: memory.py,v 1.4 2006/01/28 15:35:42 cliechti Exp $
 import sys
 import elf
 
@@ -164,7 +164,7 @@ class Memory:
         for b in [ord(x) for x in buffer]:
             out.append('%02X' % (b&255) )
             sum += b&255
-        out.append('%02X\n' %( (-sum)&255))
+        out.append('%02X\r\n' %( (-sum)&255))
         return ''.join(out)
     
     def saveTIText(self, filelike):

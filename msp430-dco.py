@@ -9,9 +9,9 @@
 # (C) 2005 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-dco.py,v 1.4 2005/12/29 19:25:39 cliechti Exp $
+# $Id: msp430-dco.py,v 1.5 2006/02/02 00:01:19 cliechti Exp $
 
-from msp430 import jtag, clock
+from msp430 import jtag, clock, memory
 import sys
 import struct
 
@@ -158,6 +158,43 @@ def measure_clock(out):
     out.write('fmin = %8dHz (%s)\n' % (fmin, nice_frequency(fmin)))
     out.write('fmax = %8dHz (%s)\n' % (fmax, nice_frequency(fmax)))
 
+
+calibvalues_memory_map = {
+    16e6: {'DCO': 0x10F8, 'BCS1': 0x10F9},
+    12e6: {'DCO': 0x10FA, 'BCS1': 0x10FB},
+    8e6:  {'DCO': 0x10FC, 'BCS1': 0x10FD},
+    1e6:  {'DCO': 0x10FE, 'BCS1': 0x10FF},
+}
+
+def calibrate_clock(out, tolerance=0.002, dcor=False):
+    """curently for F2xx only:
+       recalculate the clock calibration values and write them to the flash."""
+    device = get_msp430_type() >> 8
+    if device == 0xf2:
+        #first read the segment form the device, so that only the calibration values
+        #are updated. any other data in SegmentA is not changed.
+        segment_a = memory.Memory()
+        segment_a.append(memory.Segment(0x10c0, jtag._parjtag.memread(0x10c0, 64)))
+        #get the settings for all the frequencies
+        for frequency in calibvalues_memory_map:
+            measured_frequency, dco, bcs1 = clock.setDCO(
+                frequency*(1-tolerance),
+                frequency*(1+tolerance),
+                maxrsel=15,
+                dcor=dcor
+            )
+            out.write('BCS settings for %s: DCOCTL=0x%02x BCSCTL1=0x%02x\n' % (
+                nice_frequency(measured_frequency), dco, bcs1)
+            )
+            segment_a.setMem(calibvalues_memory_map[frequency]['DCO'], chr(dco))
+            segment_a.setMem(calibvalues_memory_map[frequency]['BCS1'], chr(bcs1))
+        #erase segment and write new values
+        jtag._parjtag.memerase(jtag.ERASE_SEGMENT, segment_a[0].startaddress)
+        jtag._parjtag.memwrite(segment_a[0].startaddress, segment_a[0].data)
+    else:
+        raise NotImplementedError("--calibrate is not supported on %Xxx" % device)
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def main():
@@ -179,7 +216,9 @@ Examples:
         %prog --measure
 
     Get clock settings for 2.0MHz +/-2%:
-        %prog --tolerance=0.02 2.0e6""")
+        %prog --tolerance=0.02 2.0e6
+    
+Use it at your own risk. No guarantee that the values are correct.""")
     parser.add_option("-o", "--output", dest="output",
                       help="write result to given file", metavar="FILE")
     parser.add_option("", "--dcor", dest="dcor",
@@ -196,9 +235,14 @@ Examples:
                       help="measure min and max clock settings and exit",
                       default=False, action="store_true")
 
+
+    parser.add_option("", "--calibrate", dest="calibrate",
+                      help="Restore calibration values on F2xx devices",
+                      default=False, action="store_true")
+                      
     parser.add_option("-t", "--tolerance", dest="tolerance",
-                      help="set the clock tolerance as factor. e.g. 0.1 means 10%",
-                      default=0.01, type="float")
+                      help="set the clock tolerance as factor. e.g. 0.01 means 1%",
+                      default=0.005, type="float")
 
     parser.add_option("", "--define", dest="define",
                       help="output #defines instead of assignments",
@@ -210,7 +254,7 @@ Examples:
     debug = options.debug
     clock.debug = options.debug
 
-    if not options.measure:
+    if not (options.measure or options.calibrate):
         if len(args) != 1:
             parser.error('exacly one argument expected: the target frequency')
         frequency = float(args[0])
@@ -228,6 +272,12 @@ Examples:
     try:
         if options.measure:
             measure_clock(out)
+        elif options.calibrate:
+            calibrate_clock(
+                out,
+                options.tolerance,
+                options.dcor,
+            )
         else:
             adjust_clock(
                 out,

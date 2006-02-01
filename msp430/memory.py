@@ -1,4 +1,4 @@
-# $Id: memory.py,v 1.4 2006/01/28 15:35:42 cliechti Exp $
+# $Id: memory.py,v 1.5 2006/02/02 00:01:19 cliechti Exp $
 import sys
 import elf
 
@@ -219,15 +219,15 @@ class Memory:
            range to be written has to be existent. a ValueError is raised if not
            all data could be written (attention: a part of the data may have been
            written!)"""
-        data = []
+        #~ print "%04x: %r" % (address, contents)
         for seg in self.segments:
-            #~ print "0x%04x  " * 2 % (seg.startaddress, seg.startaddress + len(seg.data))
+            #~ print "0x%04x  " * 3 % (address, seg.startaddress, seg.startaddress + len(seg.data))
             if seg.startaddress <= address and seg.startaddress + len(seg.data) >= address:
                 #segment contains data in the address range
                 offset = address - seg.startaddress
                 length = min(len(seg.data)-offset, len(contents))
                 seg.data = seg.data[:offset] + contents[:length] + seg.data[offset+length:]
                 contents = contents[length:]    #cut away what is used
-                if not contents: break          #stop if done
+                if not contents: return         #stop if done
                 address += length
         raise ValueError("could not write all data")

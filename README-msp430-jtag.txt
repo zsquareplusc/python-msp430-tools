@@ -5,7 +5,7 @@ Software to talk to the parallel port JTAG PCB as seen with the FET kits.
 It is released under a free software license,
 see license.txt for more details.
 
-(C) 2002-2004 Chris Liechti <cliechti@gmx.net>
+(C) 2002-2006 Chris Liechti <cliechti@gmx.net>
 
 
 Features
@@ -19,13 +19,15 @@ Features
 - use on command line, or in a Python script
 - reset and wait for keypress (to run a device directly from the port
   power)
+- TI/3rd party library support for USB JTAG adaptors (Windows only)
 
 
 Requirements
 ------------
 - Linux, BSD, Un*x or Windows PC
-- Python 2.0 or newer, 2.2+ recomeded
+- Python 2.0 or newer, 2.3+ recomeded
 - Parallel JTAG hardware with an MSP430 device connected
+  (optionaly a USB adapter and a coresponding MSP430.dll on Windows)
 
 
 Installation
@@ -33,25 +35,27 @@ Installation
 Binaries for Windows can be found in the download section of
 http://mspgcc.sf.net
 
-XXX
+Linux users should refer to the next secion.
 
-Bilding from source
--------------------
+
+Building from source
+--------------------
 The libraries from the CVS module jtag/* have to be built.
 
-On Linux/Un*x just Python 2.2+ is needed. On some distributions is Python 1.5.2
+On Linux/Un*x Python 2.2+ is needed. On some distributions is Python 1.5.2
 installed per default. You may meed to change the first line in the script
 from "python" to "python2". Maybe Python 2.x is in a separate package that
 has to be installed. There are rpm and deb binary packages and a source
 tarball available through the Python homepage.
 
-_parjtag.so/dll from the jtag archive can be copied to the same directory as
-msp430-jtag.py or to a directory on the PATH.
+There prefered backend is the a ctypes version, which means just
+libMSP430mspgcc.so/dll libHIL.so/HIL.dll is needed and of course the ctypes
+python extension.
+
+Alternatively _parjtag.so/dll from the jtag archive can be copied to the same
+directory as msp430-jtag.py or to a directory on the PATH.
 It's recomended to install jtag.py as "msp430-jtag" in a directory in the PATH
 and make it executable.
-
-There is also a ctypes version, which means just libHIL.so/HIL.dll is needed
-and the ctypes python extension.
 
 
 Short introduction
@@ -63,8 +67,8 @@ The program can be started by typing "msp430-jtag" when installed correctly
 If its used from the source directory use "python jtag.py".
 
 
-
 USAGE: msp430-jtag.py [options] [file]
+Version: 2.2
 
 If "-" is specified as file the data is read from stdin.
 A file ending with ".txt" is considered to be in TI-Text format all
@@ -84,7 +88,7 @@ General options:
 Funclets:
   -f, --funclet         The given file is a funclet (a small program to
                         be run in RAM).
-  --parameter=<key>=<value> Pass parameters to funclets.
+  --parameter=<key>=<value>   Pass parameters to funclets.
                         Registers can be written like "R15=123" or "R4=0x55"
                         A string can be written to memory with "0x2e0=hello"
                         --parameter can be given more than once
@@ -110,6 +114,10 @@ Program flow specifiers:
   -E, --erasecheck      Erase Check by file
   -p, --program         Program file
   -v, --verify          Verify by file
+  --secure              Blow JTAG security fuse.
+                        Note: This is not reversible, use with care!
+                        Note: Not supported with the simple parallel port
+                              adapter (7V source required).
 
 The order of the above options matters! The table is ordered by normal
 execution order. For the options "Epv" a file must be specified.
@@ -156,6 +164,9 @@ NOTE:   Some versions of the Texas Instruments MSP430 Development Tool
         source may also need the '--no-close' option.  It is preferable to
         try programming the device *without* the '--no-close' option first,
         and introduce this option only if the uploaded code fails to start.
+
+        Aleternatively, it is possible run ``msp430-jtag -w`` t power the
+        eval board from the JTAG interface.
 
 
 Examples
@@ -211,6 +222,31 @@ Examples
         line)
 
 
+USB JTAG adapters
+-----------------
+This section only applies to Windows (currently).
+
+USB JTAG adapters are supported trough the MSP430.dlls from the adaptor
+vendor. To enable its use, copy MSP430.dll (and maybe HIL.dll) to the
+``bin`` folder, where msp430-jtag.exe is located.
+
+For example for MSP-FET430UIF from TI:
+- download and install CCE (Code Composer, the free version)
+- install the USB driver that comes with CCE, you'll also need to install
+  CCE itself, as that unpacks the MSP430.dll.
+- copy MSP430.dll and HIL.dll (or simply all the files you find in the folder)
+  from ``C:\Program Files\CCEssentials\FTSuite\emulation\msp430`` to
+  ``c:\mspgcc\bin`` (substitute the source and destination folders according
+  to you own setup)
+- reboot
+
+The MSP-FET430UIF is registered as serial port. Find out which COM port it is
+(Device Manager). The for example run::
+
+    msp430-jtag -l COM5 --upload=0x0ff0
+
+
+
 History
 -------
 V1.0
@@ -226,10 +262,14 @@ V1.3
     mainerase, progress options, ihex output
 
 V2.0
-    updateed imlementation, new ctypes backend
+    updated implementation, new ctypes backend
 
 V2.1
     F2xx support, improved options for funclets
+
+V2.2
+    added --quiet and --secure. Try to use 3rd party MSP430 libraries so that
+    USB adapters can be used.
 
 
 References

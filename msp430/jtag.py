@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.19 2006/03/09 02:22:26 cliechti Exp $
+# $Id: jtag.py,v 1.20 2006/03/09 21:00:52 cliechti Exp $
 
 import sys
 
@@ -29,10 +29,14 @@ RST_RESET = 1 << 1      #RST/NMI (i.e., "hard") reset.
 VCC_RESET = 1 << 2      #Cycle Vcc (i.e., a "power on") reset.
 ALL_RESETS = PUC_RESET + RST_RESET + VCC_RESET
 
-#~ DEBUG = 0
-DEBUG = 1
 
-#ctypes backend varitions:
+DEBUG = 0
+
+#for module tests, enable debug outputs from the beginning on
+if __name__ == '__main__':
+    DEBUG = 1
+
+#ctypes backend variations:
 CTYPES_MSPGCC = "ctypes/mspgcc lib"
 CTYPES_TI = "ctypes/TI lib"
 
@@ -68,11 +72,16 @@ else:
     WRITE        = 0
     READ         = 1
     if sys.platform == 'win32':
-        #the library uis found on the PATH, respectively in the executables directory
-        MSP430mspgcc = ctypes.windll.MSP430mspgcc
-        backend = CTYPES_MSPGCC
-        #~ MSP430mspgcc = ctypes.windll.MSP430
-        #~ backend = CTYPES_TI
+        #the library is found on the PATH, respectively in the executables directory
+        
+        try:
+            #try to use the TI library
+            MSP430mspgcc = ctypes.windll.MSP430
+            backend = CTYPES_TI
+        except WindowsError:
+            #when that fails, use the mspgcc implementation
+            MSP430mspgcc = ctypes.windll.MSP430mspgcc
+            backend = CTYPES_MSPGCC
     else:
         #an absolute path to the library has to be given.
         #LIBMSPGCC_PATH is used to pass its location
@@ -81,6 +90,7 @@ else:
             MSP430mspgcc = ctypes.cdll.LoadLibrary(os.path.join(os.environ['LIBMSPGCC_PATH'], 'libMSP430mspgcc.so'))
         except KeyError:
             raise KeyError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so"')
+        backend = CTYPES_MSPGCC
     
     MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
     MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]
@@ -101,7 +111,7 @@ else:
                 return STATUS_ERROR
             if DEBUG:
                 sys.stderr.write('MSP430_Identify: Device type: %r\n' % str(buffer[4:36]).replace('\0',''))
-            status = MSP430_Reset(ALL_RESETS, FALSE, FALSE)
+            #~ status = MSP430_Reset(ALL_RESETS, FALSE, FALSE)
             return status
 
     MSP430_Close                    = MSP430mspgcc.MSP430_Close
@@ -177,24 +187,25 @@ else:
         
         def open(self, port = None):
             """Initilize library"""
-            version = ctypes.c_long()
+            version = ctypes.c_long(0)
             if port is None:
                 if sys.platform == 'win32':
                     port = "1"
                 else:
                     port = "/dev/parport0"
-        
+            if backend == CTYPES_TI:
+                port = port.upper()
             status = MSP430_Initialize(port, ctypes.byref(version))
             if status != STATUS_OK:
                 raise IOError("Could not initialize the library (port: %s)" % port)
             if DEBUG:
-                sys.stderr.write('MSP430mspgcc.dll/so version: %d\n' % (version.value,))
+                sys.stderr.write('backend library version: %d\n' % (version.value,))
             
         def connect(self,):
             """Enable JTAG and connect to target. This stops it.
             This function must be called before using any other JTAG function,
             or the other functions will yield unpredictable data."""
-            MSP430_VCC(3)
+            MSP430_VCC(3000)
             
             status = MSP430_Open()
             if status != STATUS_OK:
@@ -247,7 +258,7 @@ else:
 
         def memverify(self, address, buffer):
             """'mem' has to be a string of even length.
-            Verify device memory aginst the supplied data using PSA analysis."""
+            Verify device memory against the supplied data using PSA analysis."""
             size = len(buffer)
             if size & 1:
                 raise ValueError("Buffer must have an even length")
@@ -324,6 +335,15 @@ else:
             """Check if cpu is stuck on an address."""
             value = MSP430_isHalted()
             return value
+            
+        def secure(self):
+            """burn JTAG security fuse.
+               Note: not reversibly. use with care.
+               Note: not supported by all JTAG adapters.
+            """
+            status = MSP430_Secure()
+            if status != STATUS_OK:
+                raise IOError("Could not secure device: %s" % MSP430_Error_String(MSP430_Error_Number()))
     
     _parjtag = ParJTAG()
 
@@ -366,7 +386,10 @@ class JTAG:
     def setRamsize(self, ramsize):
         """Set download chunk size"""
         if DEBUG > 1: sys.stderr.write("* setRamsize(%d)\n" % ramsize)
-        _parjtag.configure(RAMSIZE_OPTION, ramsize)
+        if backend == CTYPES_MSPGCC:
+            _parjtag.configure(RAMSIZE_OPTION, ramsize)
+        else:
+            if DEBUG > 1: sys.stderr.write("* setRamsize ignored for %s backend\n" % backend)
 
     def downloadData(self, startaddress, data):
         _parjtag.memwrite(startaddress, data)
@@ -454,7 +477,7 @@ class JTAG:
             raise JTAGException("Programming without data is not possible")
 
     def actionVerify(self):
-        """Verify programmed data"""
+        """Verify programmed data."""
         if self.data is not None:
             sys.stderr.write("Verify...\n")
             sys.stderr.flush()
@@ -465,12 +488,12 @@ class JTAG:
             raise JTAGException("Verify without data not possible")
 
     def actionRun(self, address):
-        """Start program at specified address"""
+        """Start program at specified address."""
         raise NotImplementedError
         #sys.stderr.write("Load PC with 0x%04x ...\n" % address)
 
     def actionFunclet(self, timeout=1):
-        """Download and start funclet. timeout in seconds"""
+        """Download and start funclet. Timeout in seconds"""
         if self.data is not None:
             if self.verbose:
                 sys.stderr.write("Download and execute funclet...\n")
@@ -486,3 +509,21 @@ class JTAG:
                 sys.stderr.flush()
         else:
             raise JTAGException("No funclet available, set data")
+
+    def actionSecure(self):
+        """Secure device by burning the JTAG security fuse."""
+        if self.verbose:
+            sys.stderr.write("Blowing JTAG fuse...\n")
+            sys.stderr.flush()
+        _parjtag.secure()
+        
+
+# simple, stupid module test
+if __name__ == '__main__':
+    jtagobj = JTAG()
+    jtagobj.open()
+    try:
+        jtagobj.connect()
+        jtagobj.reset()
+    finally:
+        jtagobj.close()

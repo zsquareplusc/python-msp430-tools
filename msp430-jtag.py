@@ -9,14 +9,14 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.16 2005/12/30 03:47:49 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.17 2006/03/09 21:00:52 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
 from msp430 import memory, jtag
 
 
-VERSION = "2.1"
+VERSION = "2.2"
 
 DEBUG = 0                           #disable debug messages by default
 
@@ -76,6 +76,10 @@ Program flow specifiers:
   -E, --erasecheck      Erase Check by file
   -p, --program         Program file
   -v, --verify          Verify by file
+  --secure              Blow JTAG security fuse.
+                        Note: This is not reversible, use with care!
+                        Note: Not supported with the simple parallel port
+                              adapter (7V source required).
 
 The order of the above options matters! The table is ordered by normal
 execution order. For the options "Epv" a file must be specified.
@@ -131,18 +135,19 @@ def main():
     parameters  = []
     results     = []
     timeout     = 1
+    quiet       = 0
 
-    sys.stderr.write("MSP430 parallel JTAG programmer Version: %s\n" % VERSION)
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-            "hl:weEmpvrg:Du:d:s:xbiITfR:S",
+            "hl:weEmpvrg:Du:d:s:xbiITfR:Sq",
             ["help", "lpt=", "wait"
              "masserase", "erasecheck", "mainerase", "program",
              "erase=", "eraseinfo",
              "verify", "reset", "go=", "debug",
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "funclet", "ramsize=", "progress",
-             "no-close", "parameter=", "result=", "timeout="]
+             "no-close", "parameter=", "result=", "timeout=", "secure",
+             "quiet"]
         )
     except getopt.GetoptError, e:
         # print help information and exit:
@@ -293,15 +298,29 @@ def main():
                 results.append(('0x%04x: %%r' % start, jtagobj.uploadData, (start, end-start)))
         elif o in ("--timeout", ):
             timeout = float(a)
+        elif o in ("--secure", ):
+            todo.append(jtagobj.actionSecure)
+        elif o in ("-q", "--quiet", ):
+            quiet = 1
+            jtagobj.verbose = 0
+
+    if DEBUG:
+        if quiet:
+            quiet = 0
+            sys.stderr.write("Disabling --quiet as --debug is active\n")
+
+    if not quiet:
+        sys.stderr.write("MSP430 parallel JTAG programmer Version: %s\n" % VERSION)
 
     if len(args) == 0:
-        sys.stderr.write("Use -h for help\n")
+        if not quiet:
+            sys.stderr.write("Use -h for help\n")
     elif len(args) == 1:                                #a filename is given
         if not funclet:
             if not todo:                                #if there are no actions yet
-                todo.extend([                           #add some useful actions...
+                todo.insert(0,                          #add some useful actions...
                     jtagobj.actionProgram,
-                ])
+                )
         filename = args[0]
     else:                                               #number of args is wrong
         sys.stderr.write("\nUnsuitable number of arguments\n")
@@ -316,15 +335,18 @@ def main():
 
     #sanity check of options
     if goaddr and reset:
-        sys.stderr.write("Warning: option --reset ignored as --go is specified!\n")
+        if not quiet:
+            sys.stderr.write("Warning: option --reset ignored as --go is specified!\n")
         reset = 0
 
     if startaddr and reset:
-        sys.stderr.write("Warning: option --reset ignored as --upload is specified!\n")
+        if not quiet:
+            sys.stderr.write("Warning: option --reset ignored as --upload is specified!\n")
         reset = 0
         
     if startaddr and wait:
-        sys.stderr.write("Warning: option --wait ignored as --upload is specified!\n")
+        if not quiet:
+            sys.stderr.write("Warning: option --wait ignored as --upload is specified!\n")
         wait = 0
 
     #prepare data to download
@@ -350,6 +372,7 @@ def main():
 
     if DEBUG > 5: sys.stderr.write("File: %r\n" % filename)
 
+    # debug messages
     if toinit:
         if DEBUG > 0:       #debug
             #show a nice list of sheduled actions

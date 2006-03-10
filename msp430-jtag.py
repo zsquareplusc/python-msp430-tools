@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.17 2006/03/09 21:00:52 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.18 2006/03/10 23:04:47 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -395,6 +395,7 @@ def main():
     sys.stderr.flush()
 
     abort_due_to_error = 1
+    release_done = 0
     jtagobj.open(lpt)                                   #try to open port
     try:
         if ramsize is not None:
@@ -447,6 +448,8 @@ def main():
             wait = 0    #wait makes no sense as after upload, the device is still stopped
 
         if wait:                                        #wait at the end if desired
+            jtagobj.reset(1, 1)                         #reset and release target
+            release_done = 1
             sys.stderr.write("Press <ENTER> ...\n")     #display a prompt
             sys.stderr.flush()
             raw_input()                                 #wait for newline
@@ -455,7 +458,8 @@ def main():
     finally:
         if abort_due_to_error:
             sys.stderr.write("Cleaning up after error...\n")
-        jtagobj.reset(1, 1)                             #reset and release target
+        if not release_done:
+            jtagobj.reset(1, 1)                         #reset and release target
         if do_close:
             jtagobj.close()                             #Release communication port
         elif DEBUG:

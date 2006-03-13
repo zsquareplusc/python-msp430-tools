@@ -1,9 +1,8 @@
 msp430-jtag
 ===========
 
-Software to talk to the parallel port JTAG PCB as seen with the FET kits.
-It is released under a free software license,
-see license.txt for more details.
+Software to talk to the parallel port JTAG adapter as seen with the FET kits.
+It is released under a free software license, see license.txt for more details.
 
 (C) 2002-2006 Chris Liechti <cliechti@gmx.net>
 
@@ -137,6 +136,8 @@ only "v" does a "check by file" of a programmed device.
 
 Data retrieving:
   -u, --upload=addr     Upload a datablock (see also: --size).
+                        It is also possible to use address ranges. In that
+                        case, multiple --upload parameters are allowed.
   -s, --size=num        Size of the data block to upload (Default is 2).
   -x, --hex             Show a hexadecimal display of the uploaded data.
                         This is the default format, see also --bin, --ihex.
@@ -153,6 +154,8 @@ Do before exit:
                         the programm that is specified in the reset
                         interrupt vector. (see also -g)
   -w, --wait            Wait for <ENTER> before closing parallel port.
+  --no-close            Do not close port on exit. Allows to power devices
+                        from the parallel port interface.
 
 Address parameters for --erase, --upload, --size can be given in
 decimal, hexadecimal or octal.
@@ -176,61 +179,54 @@ NOTE:   Some versions of the Texas Instruments MSP430 Development Tool
         try programming the device *without* the '--no-close' option first,
         and introduce this option only if the uploaded code fails to start.
 
-        Aleternatively, it is possible run ``msp430-jtag -w`` t power the
+        Aleternatively, it is possible run ``msp430-jtag -w`` to power the
         eval board from the JTAG interface.
 
 
 Examples
 --------
 ``msp430-jtag -e``
-        Only erase flash.
+    Only erase flash.
 
 ``msp430-jtag -eErw 6port.a43``
-        Erase flash, erase check, download an executable, run it (reset)
-        and wait.
+    Erase flash, erase check, download an executable, run it (reset) and wait,
+    the keep it powered (from the parallel port).
 
 ``msp430-jtag -mS -R 2048 6port.a43``
-        Use ramsize option on a device with 2k RAM to speed up
-        download. Of course any value from 128B up to the maximum
-        a device has is allowed.
-        The progress and mainerase options are also activated.
-        Only erasing the main memory is useful to keep calibration
-        data in the information memory.
+    Use ramsize option on a device with 2k RAM to speed up download. Of
+    course any value from 128B up to the maximum a device has is allowed.
+    The progress and mainerase options are also activated. Only erasing the
+    main memory is useful to keep calibration data in the information memory.
 
 ``msp430-jtag 6port.a43``
-        Download of an executable to en empty (new or erased) device.
-        (Note that in new devices some of the first bytes in the
-        information memory are random data. If data should be
-        downloaded there, specify -eE.)
+    Download of an executable to en empty (new or erased) device. (Note that
+    in new devices some of the first bytes in the information memory are
+    random data. If data should be downloaded there, specify -eE.)
 
 ``msp430-jtag --go=0x220 ramtest.a43``
-        Download a program into RAM and run it, may not work
-        with all devices.
+    Download a program into RAM and run it, may not work with all devices.
 
 ``msp430-jtag -f blinking.a43``
-        Download a program into RAM and run it. It must be
-        a special format with "startadr", "entrypoint",
-        "exitpoint" as the first three words in the data
-        and it must end on "jmp $". See MSP430debug sources
-        for more info.
+    Download a program into RAM and run it. It must be a special format with
+    "startadr", "entrypoint", "exitpoint" as the first three words in the
+    data and it must end on "jmp $". See MSP430mspgcc sources for more info.
 
 ``msp430-jtag -u 0x0c00 -s 1024``
-        Get a memory dump in HEX, from the bootstrap loader.
-        or save the binary in a file::
-        
-          msp430-jtag -u 0x0c00 -s 1024 -b >dump.bin
-          
-        or as an intel-hex file::
-        
-          msp430-jtag -u 0x0c00 -s 1024 -i >dump.a43
+    Get a memory dump in HEX, from the bootstrap loader.
+    Or save the binary in a file::
+    
+      msp430-jtag -u 0x0c00 -s 1024 -b >dump.bin
+      
+    or as an intel-hex file::
+    
+      msp430-jtag -u 0x0c00 -s 1024 -i >dump.a43
 
 ``msp430-jtag``
-        Just start the user program (with a reset).
+    Just start the user program (with a reset).
 
 ``cat 6port.a43|msp430-jtag -e -``
-        Pipe the data from "cat" to msp430-jtag to erase and program the
-        flash. (un*x example, don't forget the dash at the end of the
-        line)
+    Pipe the data from "cat" to msp430-jtag to erase and program the flash.
+    (un*x example, don't forget the dash at the end of the line)
 
 
 USB JTAG adapters
@@ -251,8 +247,13 @@ For example for MSP-FET430UIF from TI:
   to you own setup)
 - reboot
 
-The MSP-FET430UIF is registered as serial port. Find out which COM port it is
-(Device Manager). The for example run::
+To use the first available MSP-FET430UIF use::
+
+    msp430-jtag -l TIUSB --upload=0x0ff0
+
+The MSP-FET430UIF is registered as serial port. If more than one MSP-FET430UIF
+is connected, find out which COM port the desired adapter us is using with the
+Device Manager. Then for example run::
 
     msp430-jtag -l COM5 --upload=0x0ff0
 
@@ -261,26 +262,26 @@ The MSP-FET430UIF is registered as serial port. Find out which COM port it is
 History
 -------
 V1.0
-    public release
+    Public release.
 
 V1.1
-    fix of verify error
+    Fix of verify error.
 
 V1.2
-    use the verification during programming
+    Use the verification during programming.
 
 V1.3
-    mainerase, progress options, ihex output
+    Mainerase, progress options, ihex output.
 
 V2.0
-    updated implementation, new ctypes backend
+    Updated implementation, new ctypes backend.
 
 V2.1
-    F2xx support, improved options for funclets
+    F2xx support, improved options for funclets.
 
 V2.2
-    added --quiet and --secure. Try to use 3rd party MSP430 libraries so that
-    USB adapters can be used.
+    Added --quiet and --secure. Try to use 3rd party MSP430 libraries so that
+    USB adapters can be used. Allow multiple --upload with address ranges.
 
 
 References

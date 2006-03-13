@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.19 2006/03/13 23:24:43 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.20 2006/03/14 00:11:47 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -99,6 +99,8 @@ only "v" does a "check by file" of a programmed device.
 
 Data retrieving:
   -u, --upload=addr     Upload a datablock (see also: --size).
+                        It is also possible to use address ranges. In that
+                        case, multiple --upload parameters are allowed.
   -s, --size=num        Size of the data block to upload (Default is 2).
   -x, --hex             Show a hexadecimal display of the uploaded data.
                         This is the default format, see also --bin, --ihex.
@@ -115,6 +117,8 @@ Do before exit:
                         the programm that is specified in the reset
                         interrupt vector. (see also -g)
   -w, --wait            Wait for <ENTER> before closing parallel port.
+  --no-close            Do not close port on exit. Allows to power devices
+                        from the parallel port interface.
 
 Address parameters for --erase, --upload, --size can be given in
 decimal, hexadecimal or octal.

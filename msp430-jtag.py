@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.18 2006/03/10 23:04:47 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.19 2006/03/13 23:24:43 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -29,23 +29,30 @@ BINARY          = 2
 def usage():
     """print some help message"""
     sys.stderr.write("""
-USAGE: %s [options] [file]
-Version: %s
+USAGE: %(prog)s [options] [file]
+Version: %(version)s
 
 If "-" is specified as file the data is read from stdin.
 A file ending with ".txt" is considered to be in TI-Text format all
-other filenames are considered to be in IntelHex format.
+other filenames are considered to be in Intel HEX format.
 
 General options:
   -h, --help            Show this help screen.
-  -l, --lpt=name        Specify an other parallel port.
-                        (defaults to LPT1 (/dev/parport0 on unix))
   -D, --debug           Increase level of debug messages. This won't be
                         very useful for the average user.
-  -I, --intelhex        Force fileformat to IntelHex
-  -T, --titext          Force fileformat to be TI-Text
+  -I, --intelhex        Force input file format to Intel HEX.
+  -T, --titext          Force input file format to be TI-Text.
   -R, --ramsize         Specify the amount of RAM to be used to program
-                        flash (default 256).
+                        flash (default, if --ramsize is not given is
+                        autodetect).
+
+Connection:
+  -l, --lpt=name        Specify an other (parallel) port.
+                        (defaults to "LPT1" ("/dev/parport0" on Linux))
+
+Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
+      If a MSP430.dll is found it is prefered, otherwise MSP430mspgcc.dll
+      is used.
 
 Funclets:
   -f, --funclet         The given file is a funclet (a small program to
@@ -54,35 +61,35 @@ Funclets:
                         Registers can be written like "R15=123" or "R4=0x55"
                         A string can be written to memory with "0x2e0=hello"
                         --parameter can be given more than once
-  --result=value        Read results from funclets. "Rall" read all registers
+  --result=value        Read results from funclets. "Rall" reads all registers
                         (case insensitive) "R15" reads R15 etc. Address ranges
-                        can be read with "0x2e0-0x2ff". see also --upload.
-                        --result can be given more than once
+                        can be read with "0x2e0-0x2ff". See also --upload.
+                        --result can be given more than once.
   --timeout=value       Abort the funclet after the given time in seconds
-                        if it does not exit no itslef. (default 1)
+                        if it does not exit no itself. (default 1)
 
 Note: writing and/or reading RAM before and/or after running a funclet may not
-work as expected on devices with the JTAG bug like the F123.
+      work as expected on devices with the JTAG bug like the F123.
+Note: Only possible with MSP430mspgcc.dll, not other backends.
 
 Program flow specifiers:
-
-  -e, --masserase       Mass Erase (clear all flash memory)
+  -e, --masserase       Mass Erase (clear all flash memory).
                         Note: SegmentA on F2xx is NOT erased, that must be
                         done separately with --erase=0x1000
-  -m, --mainerase       Erase main flash memory only
-  --eraseinfo           Erase info flash memory only (0x1000-0x10ff)
-  --erase=address       Selectively erase segment at the specified address
-  --erase=adr1-adr2     Selectively erase a range of segments
-  -E, --erasecheck      Erase Check by file
-  -p, --program         Program file
-  -v, --verify          Verify by file
+  -m, --mainerase       Erase main flash memory only.
+  --eraseinfo           Erase info flash memory only (0x1000-0x10ff).
+  --erase=address       Selectively erase segment at the specified address.
+  --erase=adr1-adr2     Selectively erase a range of segments.
+  -E, --erasecheck      Erase Check by file.
+  -p, --program         Program file.
+  -v, --verify          Verify by file.
   --secure              Blow JTAG security fuse.
                         Note: This is not reversible, use with care!
                         Note: Not supported with the simple parallel port
                               adapter (7V source required).
 
 The order of the above options matters! The table is ordered by normal
-execution order. For the options "Epv" a file must be specified.
+execution order. For the options "E", "p" and "v" a file must be specified.
 Program flow specifiers default to "p" if a file is given.
 Don't forget to specify "e", "eE" or "m" when programming flash!
 "p" already verifies the programmed data, "v" adds an additional
@@ -90,11 +97,11 @@ verification through uploading the written data for a 1:1 compare.
 No default action is taken if "p" and/or "v" is given, say specifying
 only "v" does a "check by file" of a programmed device.
 
-Data retreiving:
-  -u, --upload=addr     Upload a datablock (see also: -s).
-  -s, --size=num        Size of the data block do upload. (Default is 2)
+Data retrieving:
+  -u, --upload=addr     Upload a datablock (see also: --size).
+  -s, --size=num        Size of the data block to upload (Default is 2).
   -x, --hex             Show a hexadecimal display of the uploaded data.
-                        (Default)
+                        This is the default format, see also --bin, --ihex.
   -b, --bin             Get binary uploaded data. This can be used
                         to redirect the output into a file.
   -i, --ihex            Uploaded data is output in Intel HEX format.
@@ -111,7 +118,31 @@ Do before exit:
 
 Address parameters for --erase, --upload, --size can be given in
 decimal, hexadecimal or octal.
-""" % (sys.argv[0], VERSION))
+
+Examples:
+    Mass erase and write file: "%(prog)s -e firmware.elf"
+    Dump Information memory: "%(prog)s --upload=0x1000-0x10ff"
+""" % {'prog': sys.argv[0], 'version': VERSION})
+
+def parseAddressRange(text):
+    """parse a single address or a address range and return a tuple."""
+    if '-' in text:
+        adr1, adr2 = text.split('-', 1)
+        try:
+            adr1 = int(adr1, 0)
+        except ValueError:
+            raise ValueError("Address range start address must be a valid number in dec, hex or octal")
+        try:
+            adr2 = int(adr2, 0)
+        except ValueError:
+            raise ValueError("Address range end address must be a valid number in dec, hex or octal")
+        return (adr1, adr2)
+    else:
+        try:
+            adr = int(text, 0)
+            return (adr, None)
+        except ValueError:
+            raise ValueError("Address must be a valid number in dec, hex or octal or a range adr1-adr2")
 
 
 def main():
@@ -127,6 +158,7 @@ def main():
     todo        = []
     startaddr   = None
     size        = 2
+    uploadlist  = []
     outputformat= HEX
     lpt         = None
     funclet     = None
@@ -170,38 +202,27 @@ def main():
         elif o in ("-m", "--mainerase"):
             toinit.append(jtagobj.actionMainErase)      #Erase main Flash
         elif o == "--erase":
-            if '-' in a:
-                adr, adr2 = a.split('-', 1)
-                try:
-                    adr = int(adr, 0)
-                except ValueError:
-                    sys.stderr.write("Address range start address must be a valid number in dec, hex or octal\n")
-                    sys.exit(2)
-                try:
-                    adr2 = int(adr2, 0)
-                except ValueError:
-                    sys.stderr.write("Address range end address must be a valid number in dec, hex or octal\n")
-                    sys.exit(2)
-                while adr <= adr2:
-                    if not (0x1000 <= adr <= 0xffff):
-                        sys.stderr.write("Start address is not within Flash memory\n")
-                        sys.exit(2)
-                    elif adr < 0x1100:
-                        modulo = 64     #F2xx XXX: on F1xx/F4xx are segments erased twice
-                    elif adr < 0x1200:
-                        modulo = 256
-                    else:
-                        modulo = 512
-                    adr = adr - (adr % modulo)
+            try:
+                adr, adr2 = parseAddressRange(a)
+                if adr2 is not None:
+                    while adr <= adr2:
+                        if not (0x1000 <= adr <= 0xffff):
+                            sys.stderr.write("Start address is not within Flash memory\n")
+                            sys.exit(2)
+                        elif adr < 0x1100:
+                            modulo = 64     #F2xx XXX: on F1xx/F4xx are segments erased twice
+                        elif adr < 0x1200:
+                            modulo = 256
+                        else:
+                            modulo = 512
+                        adr = adr - (adr % modulo)
+                        toinit.append(jtagobj.makeActionSegmentErase(adr))
+                        adr = adr + modulo
+                else:
                     toinit.append(jtagobj.makeActionSegmentErase(adr))
-                    adr = adr + modulo
-            else:
-                try:
-                    seg = int(a, 0)
-                    toinit.append(jtagobj.makeActionSegmentErase(seg))
-                except ValueError:
-                    sys.stderr.write("Segment address must be a valid number in dec, hex or octal or a range adr1-adr2\n")
-                    sys.exit(2)
+            except ValueError, e:
+                sys.stderr.write("--erase: %s\n" % e)
+                sys.exit(2)
         elif o == "--eraseinfo":
             #F2xx XXX: on F1xx/F4xx are segments erased twice
             toinit.append(jtagobj.makeActionSegmentErase(0x1000))
@@ -229,9 +250,13 @@ def main():
             memory.DEBUG = memory.DEBUG + 1
         elif o in ("-u", "--upload"):
             try:
-                startaddr = int(a, 0)                   #try to convert number of any base
-            except ValueError:
-                sys.stderr.write("Upload address must be a valid number in dec, hex or octal\n")
+                start, end = parseAddressRange(a)
+                if end is not None:
+                    uploadlist.append((start,end))
+                else:
+                    startaddr = start
+            except ValueError, e:
+                sys.stderr.write("--upload: %s\n" % e)
                 sys.exit(2)
         elif o in ("-s", "--size"):
             try:
@@ -287,14 +312,12 @@ def main():
                 results.append(('R%-2d = 0x%%04x' % regnum, jtagobj.getCPURegister, (regnum,)))
             else:
                 try:
-                    if '-' in a:
-                        start, end = a.split('-', 2)
-                        start = int(start, 0)
-                        end = int(end, 0)
-                    else:
-                        start = end = int(a,0)
-                except ValueError:
-                    raise ValueError("--result: Addresses or address ranges must be dec, hex or octal")
+                    start, end = parseAddressRange(a)
+                    if end is None:
+                        end = start
+                except ValueError, e:
+                    sys.stderr.write("--result: %s\n" % e)
+                    sys.exit(2)
                 results.append(('0x%04x: %%r' % start, jtagobj.uploadData, (start, end-start)))
         elif o in ("--timeout", ):
             timeout = float(a)
@@ -349,6 +372,14 @@ def main():
             sys.stderr.write("Warning: option --wait ignored as --upload is specified!\n")
         wait = 0
 
+    #upload ranges and address+size can not be mixed
+    if uploadlist and startaddr:
+        sys.stderr.write("--upload: Either specify ranges (multiple --upload allowed) or one --upload and one --size\n")
+        sys.exit(2)
+    #backwards compatibility for old parameter format
+    if not uploadlist and startaddr:
+        uploadlist.append((startaddr, size))
+        
     #prepare data to download
     jtagobj.data = memory.Memory()                      #prepare downloaded data
     if filetype is not None:                            #if the filetype is given...
@@ -428,23 +459,27 @@ def main():
             print format % function(*args)
 
         #upload datablock and output
-        if startaddr is not None:
+        if uploadlist:
             if goaddr:                                  #if a program was started...
                 raise NotImplementedError
                 #TODO:
                 #sys.stderr.write("Waiting to device for reconnect for upload: ")
-            data = jtagobj.uploadData(startaddr, size)  #upload data
-            if outputformat == HEX:                     #depending on output format
-                hexdump( (startaddr, data) )            #print a hex display
-            elif outputformat == INTELHEX:
-                makeihex( (startaddr, data) )           #ouput a intel-hex file
-            else:
-                if sys.platform == "win32":
-                    #ensure that the console is in binary mode
-                    import os, msvcrt
-                    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+            for start, end in uploadlist:
+                size = end - start + 1
+                data = jtagobj.uploadData(start, size)  #upload data
+                if outputformat == HEX:                 #depending on output format
+                    hexdump((start, data))              #print a hex display
+                elif outputformat == INTELHEX:
+                    makeihex((start, data), eof=0)      #ouput a intel-hex file
+                else:
+                    if sys.platform == "win32":
+                        #ensure that the console is in binary mode
+                        import os, msvcrt
+                        msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
                 
-                sys.stdout.write(data)                  #binary output w/o newline!
+                    sys.stdout.write(data)              #binary output w/o newline!
+            if outputformat == INTELHEX:
+                makeihex((0, ''), eof=1)                #finish a intel-hex file
             wait = 0    #wait makes no sense as after upload, the device is still stopped
 
         if wait:                                        #wait at the end if desired

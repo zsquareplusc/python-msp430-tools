@@ -72,18 +72,25 @@ Version: 2.2
 
 If "-" is specified as file the data is read from stdin.
 A file ending with ".txt" is considered to be in TI-Text format all
-other filenames are considered to be in IntelHex format.
+other filenames are considered to be in Intel HEX format.
 
 General options:
   -h, --help            Show this help screen.
-  -l, --lpt=name        Specify an other parallel port.
-                        (defaults to LPT1 (/dev/parport0 on unix))
   -D, --debug           Increase level of debug messages. This won't be
                         very useful for the average user.
-  -I, --intelhex        Force fileformat to IntelHex
-  -T, --titext          Force fileformat to be TI-Text
+  -I, --intelhex        Force input file format to Intel HEX.
+  -T, --titext          Force input file format to be TI-Text.
   -R, --ramsize         Specify the amount of RAM to be used to program
-                        flash (default 256).
+                        flash (default, if --ramsize is not given is
+                        autodetect).
+
+Connection:
+  -l, --lpt=name        Specify an other (parallel) port.
+                        (defaults to "LPT1" ("/dev/parport0" on Linux))
+
+Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
+      If a MSP430.dll is found it is prefered, otherwise MSP430mspgcc.dll
+      is used.
 
 Funclets:
   -f, --funclet         The given file is a funclet (a small program to
@@ -92,35 +99,35 @@ Funclets:
                         Registers can be written like "R15=123" or "R4=0x55"
                         A string can be written to memory with "0x2e0=hello"
                         --parameter can be given more than once
-  --result=value        Read results from funclets. "Rall" read all registers
+  --result=value        Read results from funclets. "Rall" reads all registers
                         (case insensitive) "R15" reads R15 etc. Address ranges
-                        can be read with "0x2e0-0x2ff". see also --upload.
-                        --result can be given more than once
+                        can be read with "0x2e0-0x2ff". See also --upload.
+                        --result can be given more than once.
   --timeout=value       Abort the funclet after the given time in seconds
-                        if it does not exit no itslef. (default 1)
+                        if it does not exit no itself. (default 1)
 
 Note: writing and/or reading RAM before and/or after running a funclet may not
-work as expected on devices with the JTAG bug like the F123.
+      work as expected on devices with the JTAG bug like the F123.
+Note: Only possible with MSP430mspgcc.dll, not other backends.
 
 Program flow specifiers:
-
-  -e, --masserase       Mass Erase (clear all flash memory)
+  -e, --masserase       Mass Erase (clear all flash memory).
                         Note: SegmentA on F2xx is NOT erased, that must be
                         done separately with --erase=0x1000
-  -m, --mainerase       Erase main flash memory only
-  --eraseinfo           Erase info flash memory only (0x1000-0x10ff)
-  --erase=address       Selectively erase segment at the specified address
-  --erase=adr1-adr2     Selectively erase a range of segments
-  -E, --erasecheck      Erase Check by file
-  -p, --program         Program file
-  -v, --verify          Verify by file
+  -m, --mainerase       Erase main flash memory only.
+  --eraseinfo           Erase info flash memory only (0x1000-0x10ff).
+  --erase=address       Selectively erase segment at the specified address.
+  --erase=adr1-adr2     Selectively erase a range of segments.
+  -E, --erasecheck      Erase Check by file.
+  -p, --program         Program file.
+  -v, --verify          Verify by file.
   --secure              Blow JTAG security fuse.
                         Note: This is not reversible, use with care!
                         Note: Not supported with the simple parallel port
                               adapter (7V source required).
 
 The order of the above options matters! The table is ordered by normal
-execution order. For the options "Epv" a file must be specified.
+execution order. For the options "E", "p" and "v" a file must be specified.
 Program flow specifiers default to "p" if a file is given.
 Don't forget to specify "e", "eE" or "m" when programming flash!
 "p" already verifies the programmed data, "v" adds an additional
@@ -128,11 +135,11 @@ verification through uploading the written data for a 1:1 compare.
 No default action is taken if "p" and/or "v" is given, say specifying
 only "v" does a "check by file" of a programmed device.
 
-Data retreiving:
-  -u, --upload=addr     Upload a datablock (see also: -s).
-  -s, --size=num        Size of the data block do upload. (Default is 2)
+Data retrieving:
+  -u, --upload=addr     Upload a datablock (see also: --size).
+  -s, --size=num        Size of the data block to upload (Default is 2).
   -x, --hex             Show a hexadecimal display of the uploaded data.
-                        (Default)
+                        This is the default format, see also --bin, --ihex.
   -b, --bin             Get binary uploaded data. This can be used
                         to redirect the output into a file.
   -i, --ihex            Uploaded data is output in Intel HEX format.
@@ -149,6 +156,10 @@ Do before exit:
 
 Address parameters for --erase, --upload, --size can be given in
 decimal, hexadecimal or octal.
+
+Examples:
+    Mass erase and write file: "msp430-jtag.py -e firmware.elf"
+    Dump Information memory: "msp430-jtag.py --upload=0x1000-0x10ff"
 
 
 

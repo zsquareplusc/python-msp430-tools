@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.20 2006/03/09 21:00:52 cliechti Exp $
+# $Id: jtag.py,v 1.21 2006/03/13 23:21:29 cliechti Exp $
 
 import sys
 
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
 #ctypes backend variations:
 CTYPES_MSPGCC = "ctypes/mspgcc lib"
-CTYPES_TI = "ctypes/TI lib"
+CTYPES_TI = "ctypes/TI or 3rd party lib"
 
 #exceptions
 class JTAGException(Exception): pass
@@ -362,36 +362,39 @@ class JTAG:
     # ---------- direct use API ---------------
     
     def open(self, lpt=None):
-        """Initialize and open port"""
+        """Initialize and open port."""
         if lpt is None:
             _parjtag.open()
         else:
             _parjtag.open(lpt)
 
     def connect(self):
-        """Connect to devcice"""
+        """Connect to devcice."""
         _parjtag.connect()
 
     def close(self):
-        """Release device from JTAG"""
+        """Release device from JTAG."""
         _parjtag.release()
 
     def setDebugLevel(self, level):
-        """Set level of debuggig messages."""
+        """Set level of debugging messages."""
         global DEBUG
         DEBUG = level
+        #this option is only available in the mspgcc library
         if backend == CTYPES_MSPGCC:
             _parjtag.configure(DEBUG_OPTION, level)
 
     def setRamsize(self, ramsize):
-        """Set download chunk size"""
+        """Set download chunk size."""
         if DEBUG > 1: sys.stderr.write("* setRamsize(%d)\n" % ramsize)
+        #this option is only available in the mspgcc library
         if backend == CTYPES_MSPGCC:
             _parjtag.configure(RAMSIZE_OPTION, ramsize)
         else:
             if DEBUG > 1: sys.stderr.write("* setRamsize ignored for %s backend\n" % backend)
 
     def downloadData(self, startaddress, data):
+        """Write data to given address."""
         _parjtag.memwrite(startaddress, data)
         
     def uploadData(self, startaddress, size):
@@ -400,16 +403,18 @@ class JTAG:
         return _parjtag.memread(startaddress, size)
 
     def reset(self, execute=0, release=0):
-        """perform a reset and optionaly release device."""
+        """Perform a reset and optionally release device."""
         if self.verbose:
             sys.stderr.write("Reset %sdevice...\n" % (release and 'and release ' or ''))
             sys.stderr.flush()
         _parjtag.reset(execute, release)
 
     def getCPURegister(self, regnum):
+        """Read CPU register."""
         return _parjtag.regread(regnum)
         
     def setCPURegister(self, regnum, value):
+        """Write CPU register."""
         _parjtag.regwrite(regnum, value)
 
     # ---------- action based API ---------------
@@ -454,7 +459,8 @@ class JTAG:
             raise JTAGException("Cannot do erase check against data with not knowing the actual data")
 
     def progess_update(self, count, total):
-        """Textual progress output. Override in subclass to implement a different output"""
+        """Textual progress output. Override in subclass to implement a
+        different output."""
         sys.stderr.write("\r%d%%" % (100*count/total))
         sys.stderr.flush()
 
@@ -493,7 +499,7 @@ class JTAG:
         #sys.stderr.write("Load PC with 0x%04x ...\n" % address)
 
     def actionFunclet(self, timeout=1):
-        """Download and start funclet. Timeout in seconds"""
+        """Download and start funclet. Timeout in seconds."""
         if self.data is not None:
             if self.verbose:
                 sys.stderr.write("Download and execute funclet...\n")
@@ -516,10 +522,11 @@ class JTAG:
             sys.stderr.write("Blowing JTAG fuse...\n")
             sys.stderr.flush()
         _parjtag.secure()
-        
+
 
 # simple, stupid module test
 if __name__ == '__main__':
+    print "Backend: %s" % (backend, )
     jtagobj = JTAG()
     jtagobj.open()
     try:

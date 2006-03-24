@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Parallel JTAG programmer for the MSP430 embedded proccessor.
+# JTAG programmer for the MSP430 embedded proccessor.
 #
 # (C) 2002-2004 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.20 2006/03/14 00:11:47 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.21 2006/03/24 21:16:44 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -33,8 +33,9 @@ USAGE: %(prog)s [options] [file]
 Version: %(version)s
 
 If "-" is specified as file the data is read from stdin.
-A file ending with ".txt" is considered to be in TI-Text format all
-other filenames are considered to be in Intel HEX format.
+File format is autodetected, unless one of the options below is used.
+Prefered file extensions are ".txt" for TI-Text format, ".a43" or ".hex" for
+Intel HEX. ELF files can also be loaded.
 
 General options:
   -h, --help            Show this help screen.
@@ -42,12 +43,13 @@ General options:
                         very useful for the average user.
   -I, --intelhex        Force input file format to Intel HEX.
   -T, --titext          Force input file format to be TI-Text.
+  --elf                 Force input file format to be ELF.
   -R, --ramsize         Specify the amount of RAM to be used to program
                         flash (default, if --ramsize is not given is
                         autodetect).
 
 Connection:
-  -l, --lpt=name        Specify an other (parallel) port.
+  -l, --lpt=name        Specify an other parallel port.
                         (defaults to "LPT1" ("/dev/parport0" on Linux))
 
 Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
@@ -68,7 +70,7 @@ Funclets:
   --timeout=value       Abort the funclet after the given time in seconds
                         if it does not exit no itself. (default 1)
 
-Note: writing and/or reading RAM before and/or after running a funclet may not
+Note: Writing and/or reading RAM before and/or after running a funclet may not
       work as expected on devices with the JTAG bug like the F123.
 Note: Only possible with MSP430mspgcc.dll, not other backends.
 
@@ -181,7 +183,7 @@ def main():
              "erase=", "eraseinfo",
              "verify", "reset", "go=", "debug",
              "upload=", "download=", "size=", "hex", "bin", "ihex",
-             "intelhex", "titext", "funclet", "ramsize=", "progress",
+             "intelhex", "titext", "elf", "funclet", "ramsize=", "progress",
              "no-close", "parameter=", "result=", "timeout=", "secure",
              "quiet"]
         )
@@ -280,6 +282,8 @@ def main():
             filetype = 0
         elif o in ("-T", "--titext"):
             filetype = 1
+        elif o in ("", "--elf"):
+            filetype = 2
         #others
         elif o in ("-f", "--funclet"):
             funclet = 1
@@ -337,7 +341,7 @@ def main():
             sys.stderr.write("Disabling --quiet as --debug is active\n")
 
     if not quiet:
-        sys.stderr.write("MSP430 parallel JTAG programmer Version: %s\n" % VERSION)
+        sys.stderr.write("MSP430 JTAG programmer Version: %s\n" % VERSION)
 
     if len(args) == 0:
         if not quiet:
@@ -388,7 +392,7 @@ def main():
     jtagobj.data = memory.Memory()                      #prepare downloaded data
     if filetype is not None:                            #if the filetype is given...
         if filename is None:
-            raise ValueError("No filename but filetype specified")
+            raise ValueError("Filetype but no filename specified")
         if filename == '-':                             #get data from stdin
             file = sys.stdin
         else:
@@ -397,6 +401,8 @@ def main():
             jtagobj.data.loadIHex(file)                 #intel hex
         elif filetype == 1:
             jtagobj.data.loadTIText(file)               #TI's format
+        elif filetype == 2:
+            jtagobj.data.loadELF(file)                  #ELF format
         else:
             raise ValueError("Illegal filetype specified")
     else:                                               #no filetype given...

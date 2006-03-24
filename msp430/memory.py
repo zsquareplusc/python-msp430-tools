@@ -1,4 +1,4 @@
-# $Id: memory.py,v 1.5 2006/02/02 00:01:19 cliechti Exp $
+# $Id: memory.py,v 1.6 2006/03/24 21:16:44 cliechti Exp $
 import sys
 import elf
 
@@ -134,7 +134,7 @@ class Memory:
                 try:
                     self.loadTIText(open(filename, "rb"))
                 except FileFormatError:
-                    raise FileFormatError('file could not be loaded (not ELF, IHex, or Ti-Text)')
+                    raise FileFormatError('file could not be loaded (not ELF, Intel-Hex, or TI-Text)')
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def saveIHex(self, filelike):

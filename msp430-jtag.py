@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.21 2006/03/24 21:16:44 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.22 2006/04/04 21:58:10 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -361,6 +361,7 @@ def main():
     if DEBUG:   #debug infos
         sys.stderr.write("Debug is level set to %d\n" % DEBUG)
         sys.stderr.write("Python version: %s\n" % sys.version)
+        if DEBUG > 4: sys.stderr.write("Python module path: %s\n" % sys.path)
         sys.stderr.write("JTAG backend: %s\n" % jtag.backend)
 
 
@@ -386,8 +387,8 @@ def main():
         sys.exit(2)
     #backwards compatibility for old parameter format
     if not uploadlist and startaddr:
-        uploadlist.append((startaddr, size))
-        
+        uploadlist.append((startaddr, startaddr+size-1))
+
     #prepare data to download
     jtagobj.data = memory.Memory()                      #prepare downloaded data
     if filetype is not None:                            #if the filetype is given...
@@ -476,6 +477,8 @@ def main():
                 #sys.stderr.write("Waiting to device for reconnect for upload: ")
             for start, end in uploadlist:
                 size = end - start + 1
+                if DEBUG > 2:
+                    sys.stderr.write("upload 0x%04x %d Bytes\n" % (start, size))
                 data = jtagobj.uploadData(start, size)  #upload data
                 if outputformat == HEX:                 #depending on output format
                     hexdump((start, data))              #print a hex display
@@ -522,4 +525,4 @@ if __name__ == '__main__':
     except Exception, msg:                              #every Exception is caught and displayed
         if DEBUG: raise                                 #show full trace in debug mode
         sys.stderr.write("\nAn error occoured:\n%s\n" % msg) #short messy in user mode
-        sys.exit(1)                                     #set errorlevel for script usage    
+        sys.exit(1)                                     #set errorlevel for script usage

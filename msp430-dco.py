@@ -9,7 +9,7 @@
 # (C) 2005 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-dco.py,v 1.5 2006/02/02 00:01:19 cliechti Exp $
+# $Id: msp430-dco.py,v 1.6 2006/04/04 21:58:10 cliechti Exp $
 
 from msp430 import jtag, clock, memory
 import sys
@@ -53,6 +53,7 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
     if tolerance < 0.005 or tolerance > 50:
         raise ValueError('tolerance out of range %f' % (tolerance,))
     device = get_msp430_type() >> 8
+    
     if device == 0xf1:
         measured_frequency, dco, bcs1 = clock.setDCO(
             frequency*(1-tolerance),
@@ -66,16 +67,16 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
             out.write('#define DCOCTL%s 0x%02x\n' % (suffix, dco,))
             out.write('#define BCSCTL1%s 0x%02x\n' % (suffix, bcs1,))
             if dcor:
-                out.write('#define BCSCTL2%s 0x01 //select external RSOC\n' % (suffix,))
+                out.write('#define BCSCTL2%s 0x01 // select external ROSC\n' % (suffix,))
             else:
-                out.write('#define BCSCTL2%s 0x00 //select internal RSOC\n' % (suffix,))
+                out.write('#define BCSCTL2%s 0x00 // select internal ROSC\n' % (suffix,))
         else:
             out.write('DCOCTL = 0x%02x;\n' % (dco,))
             out.write('BCSCTL1 = 0x%02x;\n' % (bcs1,))
             if dcor:
-                out.write('BCSCTL2 = 0x01; //select external RSOC\n')
+                out.write('BCSCTL2 = 0x01; // select external ROSC\n')
             else:
-                out.write('BCSCTL2 = 0x00; //select internal RSOC\n')
+                out.write('BCSCTL2 = 0x00; // select internal ROSC\n')
     elif device == 0xf2:
         measured_frequency, dco, bcs1 = clock.setDCO(
             frequency*(1-tolerance),
@@ -89,17 +90,17 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
             out.write('#define DCOCTL%s 0x%02x\n' % (suffix, dco,))
             out.write('#define BCSCTL1%s 0x%02x\n' % (suffix, bcs1,))
             if dcor:
-                out.write('#define BCSCTL2%s 0x01 //select external RSOC\n' % (suffix,))
+                out.write('#define BCSCTL2%s 0x01 // select external ROSC\n' % (suffix,))
             else:
-                out.write('#define BCSCTL2%s 0x00 //select internal RSOC\n' % (suffix,))
+                out.write('#define BCSCTL2%s 0x00 // select internal ROSC\n' % (suffix,))
             out.write('#define BCSCTL3%s 0x00\n' % (suffix,))
         else:
             out.write('DCOCTL = 0x%02x;\n' % (dco,))
             out.write('BCSCTL1 = 0x%02x;\n' % (bcs1,))
             if dcor:
-                out.write('BCSCTL2 = 0x01; //select external RSOC\n')
+                out.write('BCSCTL2 = 0x01; // select external ROSC\n')
             else:
-                out.write('BCSCTL2 = 0x00; //select internal RSOC\n')
+                out.write('BCSCTL2 = 0x00; // select internal ROSC\n')
             out.write('BCSCTL3 = 0x00;\n')
     elif device == 0xf4:
         measured_frequency, scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1 = clock.setDCOPlus(
@@ -120,43 +121,45 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
                 scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1
             ))
     else:
-        IOError("unknown MSP430 type %02x" % device)
+        raise IOError("unknown MSP430 type %02x" % device)
 
 def measure_clock(out):
     """measure fmin and fmax"""
     device = get_msp430_type() >> 8
+    f_all_max = 0
+    f_all_min = 1e99
     if device == 0xf1:
         for rsel in range(8):
             fmin = clock.getDCOFreq(0x00, rsel)
             fmax = clock.getDCOFreq(0xff, rsel)
-            out.write('%s < f(rsel_%d) < %s\n' % (
+            out.write('%s <= f(rsel_%d) <= %s\n' % (
                 nice_frequency(fmin),
                 rsel,
                 nice_frequency(fmax)
             ))
-        fmin = clock.getDCOFreq(0, 0)
-        fmax = clock.getDCOFreq(0xff, 0x07)
+            f_all_max = max(fmax, f_all_max)
+            f_all_min = min(fmin, f_all_min)
     elif device == 0xf2:
         for rsel in range(16):
             fmin = clock.getDCOFreq(0x00, rsel)
             fmax = clock.getDCOFreq(0xff, rsel)
-            out.write('%s < f(rsel_%d) < %s\n' % (
+            out.write('%s <= f(rsel_%d) <= %s\n' % (
                 nice_frequency(fmin),
                 rsel,
                 nice_frequency(fmax)
             ))
-        fmin = clock.getDCOFreq(0, 0)
-        fmax = clock.getDCOFreq(0xff, 0x0f)
+            f_all_max = max(fmax, f_all_max)
+            f_all_min = min(fmin, f_all_min)
     elif device == 0xf4:
-        fmin = clock.getDCOPlusFreq(0, 0, 0x80, 0x80, 0)
+        f_all_min = clock.getDCOPlusFreq(0, 0, 0x80, 0x80, 0)
         #XXX the F4xx has clock settings that go higher, but not all are valid
         #for the CPU
         #~ fmax = getDCOPlusFreq(0x03, 0xff, 0x80, 0x80, 0) # should be around 6MHz
-        fmax = clock.getDCOPlusFreq(0x13, 0xbf, 0x80, 0x80, 0) # should be around 16MHz
+        f_all_max = clock.getDCOPlusFreq(0x13, 0xbf, 0x80, 0x80, 0) # should be around 16MHz
     else:
-        IOError("unknown MSP430 type %02x" % device)
-    out.write('fmin = %8dHz (%s)\n' % (fmin, nice_frequency(fmin)))
-    out.write('fmax = %8dHz (%s)\n' % (fmax, nice_frequency(fmax)))
+        raise IOError("unknown MSP430 type %02x" % device)
+    out.write('fmin = %8dHz (%s)\n' % (fmin, nice_frequency(f_all_min)))
+    out.write('fmax = %8dHz (%s)\n' % (fmax, nice_frequency(f_all_max)))
 
 
 calibvalues_memory_map = {
@@ -215,12 +218,13 @@ Examples:
     See min and max clock speeds:
         %prog --measure
 
-    Get clock settings for 2.0MHz +/-2%:
-        %prog --tolerance=0.02 2.0e6
+    Get clock settings for 2.0MHz +/-1%:
+        %prog --tolerance=0.01 2.0e6
     
 Use it at your own risk. No guarantee that the values are correct.""")
     parser.add_option("-o", "--output", dest="output",
-                      help="write result to given file", metavar="FILE")
+                      help="write result to given file", metavar="FILE",
+                      default=None)
     parser.add_option("", "--dcor", dest="dcor",
                       help="use external resistor",
                       default=False, action='store_true')
@@ -231,17 +235,17 @@ Use it at your own risk. No guarantee that the values are correct.""")
                       help="set the parallel port",
                       default=None)
 
-    parser.add_option("", "--measure", dest="measure",
+    parser.add_option("-m", "--measure", dest="measure",
                       help="measure min and max clock settings and exit",
                       default=False, action="store_true")
 
 
-    parser.add_option("", "--calibrate", dest="calibrate",
+    parser.add_option("-c", "--calibrate", dest="calibrate",
                       help="Restore calibration values on F2xx devices",
                       default=False, action="store_true")
                       
     parser.add_option("-t", "--tolerance", dest="tolerance",
-                      help="set the clock tolerance as factor. e.g. 0.01 means 1%",
+                      help="set the clock tolerance as factor. e.g. 0.01 means 1% (default=0.005)",
                       default=0.005, type="float")
 
     parser.add_option("", "--define", dest="define",
@@ -256,7 +260,7 @@ Use it at your own risk. No guarantee that the values are correct.""")
 
     if not (options.measure or options.calibrate):
         if len(args) != 1:
-            parser.error('exacly one argument expected: the target frequency')
+            parser.error('exactly one argument expected: the target frequency')
         frequency = float(args[0])
     
     #prepare output
@@ -266,6 +270,7 @@ Use it at your own risk. No guarantee that the values are correct.""")
         out = file(options.output, 'w')
     
     #
+    jtag.init_backend(jtag.CTYPES_MSPGCC)   #doesn't currently work with 3'rd party libs
     jtagobj = jtag.JTAG()
     jtagobj.open(options.lpt)               #try to open port
     jtagobj.connect()                       #try to connect to target

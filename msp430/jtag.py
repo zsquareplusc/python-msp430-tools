@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.21 2006/03/13 23:21:29 cliechti Exp $
+# $Id: jtag.py,v 1.22 2006/04/04 21:58:10 cliechti Exp $
 
 import sys
 
@@ -37,315 +37,355 @@ if __name__ == '__main__':
     DEBUG = 1
 
 #ctypes backend variations:
-CTYPES_MSPGCC = "ctypes/mspgcc lib"
-CTYPES_TI = "ctypes/TI or 3rd party lib"
+CTYPES_PARJTAG = "parjtag/mspgcc"
+CTYPES_MSPGCC = "ctypes/mspgcc"
+CTYPES_TI = "ctypes/TI or 3rd party"
 
 #exceptions
 class JTAGException(Exception): pass
 
-#1st try the ctypes implementation, if thats not available try to use the C extension
-try:
-    import ctypes
-except ImportError:
+backend = None
+def init_backend(force=None):
+    global backend
+    global _parjtag
+    
+    #1st try the ctypes implementation, if that's not available try to use the C extension
     try:
-        import _parjtag
+        import ctypes
     except ImportError:
-        raise ImportError(
-            "Can not find neither _parjtag nor ctypes. No JTAG backend available.\n"
-            "\n"
-            "The ctypes backend is prefered. Make sure that the ctypes python\n"
-            "extension is available on this system.\n"
-            "\n"
-            "Alternatively, the older _parjtag backend is a python extension that\n"
-            "can be built from sources from http://mspgcc.sf.net\n"
-        )
-    else:
-        backend = "_parjtag so/dll"
-else:
-    #create a wrapper class with ctypes, that has the same API as _parjtag
-    backend = "ctypes"
-    
-    STATUS_OK    = 0
-    STATUS_ERROR = -1
-    TRUE         = 1
-    FALSE        = 0
-    WRITE        = 0
-    READ         = 1
-    if sys.platform == 'win32':
-        #the library is found on the PATH, respectively in the executables directory
-        
+        if force is not None and force != CTYPES_MSPGCC:
+            raise JTAGException("Desired backend is not available: %s" % force)
         try:
-            #try to use the TI library
-            MSP430mspgcc = ctypes.windll.MSP430
-            backend = CTYPES_TI
-        except WindowsError:
-            #when that fails, use the mspgcc implementation
-            MSP430mspgcc = ctypes.windll.MSP430mspgcc
-            backend = CTYPES_MSPGCC
+            import _parjtag
+        except ImportError:
+            raise ImportError(
+                "Can not find neither _parjtag nor ctypes. No JTAG backend available.\n"
+                "\n"
+                "The ctypes backend is prefered. Make sure that the ctypes python\n"
+                "extension is available on this system.\n"
+                "\n"
+                "Alternatively, the older _parjtag backend is a python extension that\n"
+                "can be built from sources from http://mspgcc.sf.net\n"
+            )
+        else:
+            backend = CTYPES_PARJTAG
     else:
-        #an absolute path to the library has to be given.
-        #LIBMSPGCC_PATH is used to pass its location
         import os
-        try:
-            MSP430mspgcc = ctypes.cdll.LoadLibrary(os.path.join(os.environ['LIBMSPGCC_PATH'], 'libMSP430mspgcc.so'))
-        except KeyError:
-            raise KeyError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so"')
-        backend = CTYPES_MSPGCC
-    
-    MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
-    MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]
-    MSP430_Initialize.restype       = ctypes.c_int
-    if backend == CTYPES_MSPGCC:
-        MSP430_Open                 = MSP430mspgcc.MSP430_Open
-        MSP430_Open.argtypes        = []
-        MSP430_Open.restype         = ctypes.c_int
-    else:
-        MSP430_Identify             = MSP430mspgcc.MSP430_Identify
-        MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.c_char*56), ctypes.c_long, ctypes.c_long]
-        MSP430_Identify.restype     = ctypes.c_int
-        #TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
-        def MSP430_Open():
-            buffer = (ctypes.c_char*56)()
-            status = MSP430_Identify(ctypes.byref(buffer), 56, 0)
-            if status != STATUS_OK:
-                return STATUS_ERROR
-            if DEBUG:
-                sys.stderr.write('MSP430_Identify: Device type: %r\n' % str(buffer[4:36]).replace('\0',''))
-            #~ status = MSP430_Reset(ALL_RESETS, FALSE, FALSE)
-            return status
-
-    MSP430_Close                    = MSP430mspgcc.MSP430_Close
-    MSP430_Close.argtypes           = [ctypes.c_long]
-    MSP430_Close.restype            = ctypes.c_int
-    MSP430_Configure                = MSP430mspgcc.MSP430_Configure
-    MSP430_Configure.argtypes       = [ctypes.c_long, ctypes.c_long]
-    MSP430_Configure.restype        = ctypes.c_int
-    MSP430_VCC                      = MSP430mspgcc.MSP430_VCC
-    MSP430_VCC.argtypes             = [ctypes.c_long]
-    MSP430_VCC.restype              = ctypes.c_int
-    MSP430_Reset                    = MSP430mspgcc.MSP430_Reset
-    MSP430_Reset.argtypes           = [ctypes.c_long, ctypes.c_long, ctypes.c_long]
-    MSP430_Reset.restype            = ctypes.c_int
-    MSP430_Erase                    = MSP430mspgcc.MSP430_Erase
-    MSP430_Erase.argtypes           = [ctypes.c_long, ctypes.c_long, ctypes.c_long]
-    MSP430_Erase.restype            = ctypes.c_int
-    MSP430_Memory                   = MSP430mspgcc.MSP430_Memory
-    MSP430_Memory.argtypes          = [ctypes.c_long, ctypes.POINTER(ctypes.c_char), ctypes.c_long, ctypes.c_long]
-    MSP430_Memory.restype           = ctypes.c_int
-    MSP430_VerifyMem                = MSP430mspgcc.MSP430_VerifyMem
-    MSP430_VerifyMem.argtypes       = [ctypes.c_long, ctypes.c_long, ctypes.c_char_p]
-    MSP430_VerifyMem.restype        = ctypes.c_int
-    MSP430_EraseCheck               = MSP430mspgcc.MSP430_EraseCheck
-    MSP430_EraseCheck.argtypes      = ctypes.c_long, ctypes.c_long
-    MSP430_EraseCheck.restype       = ctypes.c_int
-    if backend == CTYPES_MSPGCC:
-        MSP430_ReadRegister             = MSP430mspgcc.MSP430_ReadRegister
-        MSP430_ReadRegister.argtypes    = [ctypes.c_long, ctypes.POINTER(ctypes.c_long)]
-        MSP430_ReadRegister.restype     = ctypes.c_int
-        MSP430_WriteRegister            = MSP430mspgcc.MSP430_WriteRegister
-        MSP430_WriteRegister.argtypes   = [ctypes.c_long, ctypes.c_long]
-        MSP430_WriteRegister.restype    = ctypes.c_int
-    else:
-        #TI's USB-FET lib does not have this function
-        if DEBUG:
-            sys.stderr.write('MSP430_*Register not found in library. Not supported.\n')
-    if backend == CTYPES_MSPGCC:
-        #~ MSP430_Funclet                  = MSP430mspgcc.MSP430_Funclet
-        #~ MSP430_Funclet.argtypes         = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_int]
-        #~ MSP430_Funclet.restype          = ctypes.c_int
-        MSP430_FuncletWait              = MSP430mspgcc.MSP430_FuncletWait
-        MSP430_FuncletWait.argtypes     = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_ulong, ctypes.POINTER(ctypes.c_ulong)]
-        MSP430_FuncletWait.restype      = ctypes.c_int
-        MSP430_isHalted                 = MSP430mspgcc.MSP430_isHalted
-        MSP430_isHalted.argtypes        = []
-        MSP430_isHalted.restype         = ctypes.c_int
-    else:
-        #TI's USB-FET lib does not have this function
-        if DEBUG:
-            sys.stderr.write('MSP430_Funclet and isHalted not found in library. Not supported.\n')
-    MSP430_Error_Number             = MSP430mspgcc.MSP430_Error_Number
-    MSP430_Error_Number.argtypes    = []
-    MSP430_Error_Number.restype     = ctypes.c_long
-    MSP430_Error_String             = MSP430mspgcc.MSP430_Error_String
-    MSP430_Error_String.argtypes    = [ctypes.c_long]
-    MSP430_Error_String.restype     = ctypes.c_char_p
-    try:
-        MSP430_Secure                   = MSP430mspgcc.MSP430_Secure
-        MSP430_Secure.argtypes          = []
-        MSP430_Secure.restype           = ctypes.c_int
-    except AttributeError:
-        #mspgcc lib does not have this function
-        if DEBUG:
-            sys.stderr.write('MSP430_Secure not found in library. Not supported.\n')
-        def MSP430_Secure():
-            raise NotImplementedError("this function is not supported with this MSP430 library")
-    
-    messagecallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_short, ctypes.c_short) #void f(WORD count, WORD total)
-
-    class ParJTAG:
-        """implementation of the _parjtag module in python with the help of ctypes"""
-        
-        def open(self, port = None):
-            """Initilize library"""
-            version = ctypes.c_long(0)
-            if port is None:
-                if sys.platform == 'win32':
-                    port = "1"
-                else:
-                    port = "/dev/parport0"
-            if backend == CTYPES_TI:
-                port = port.upper()
-            status = MSP430_Initialize(port, ctypes.byref(version))
-            if status != STATUS_OK:
-                raise IOError("Could not initialize the library (port: %s)" % port)
-            if DEBUG:
-                sys.stderr.write('backend library version: %d\n' % (version.value,))
-            
-        def connect(self,):
-            """Enable JTAG and connect to target. This stops it.
-            This function must be called before using any other JTAG function,
-            or the other functions will yield unpredictable data."""
-            MSP430_VCC(3000)
-            
-            status = MSP430_Open()
-            if status != STATUS_OK:
-                raise IOError("Can't open interface: %s" % MSP430_Error_String(MSP430_Error_Number()))
-        
-            status = MSP430_Configure(VERIFICATION_MODE, TRUE)
-            if status != STATUS_OK:
-                raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
-
-        def release(self):
-            """Release the target, disable JTAG lines.
-            Subsequent access to the JTAG yields wrong data, until
-            connect() is called again.
-            The execution is started wherever the PC stays. Don't use this
-            function after Flash operations or memverify. The PC was modified
-            and points to an unpredicatble location. Use reset() before calling
-            this function."""
-            status = MSP430_Close(TRUE)
-            if status != STATUS_OK:
-                raise IOError("Could not close the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
-        
-        def reset(self, execute = 0, release = 0, resets = ALL_RESETS):
-            """Reset the device, optionaly start execution and/or release JTAG."""
-            status = MSP430_Reset(resets, execute, release)
-            if status != STATUS_OK:
-                raise IOError("Could not reset target (no connection?): %s" % MSP430_Error_String(MSP430_Error_Number()))
-
-        def memread(self, address, size):
-            """Read 'size' bytes starting at the specified address.
-            The return value is a string with the (binary) data.
-            It is possible to read peripherals, RAM as well as Flash."""
-            buffer = (ctypes.c_char*size)();
-            
-            status = MSP430_Memory(address, buffer, size, READ)
-            if status == STATUS_OK:
-                return ''.join([str(x) for x in buffer])
+        #create a wrapper class with ctypes, that has the same API as _parjtag
+        def locate_library(libname, paths=sys.path, loader=ctypes.windll):
+            for path in paths:
+                library = os.path.join(path, libname)
+                if DEBUG: sys.stderr.write('trying %r...\n' % library)
+                if os.path.exists(library):
+                    if DEBUG: sys.stderr.write('using %r\n' % library)
+                    return loader.LoadLibrary(library)
             else:
-                raise IOError("Could not read target memory: %s" % MSP430_Error_String(MSP430_Error_Number()))
-
-        def memwrite(self, address, buffer):
-            """'mem' has to be a string, containing the data to write.
-            It is possible to write peripherals, RAM as well as Flash.
-            Flash must be erased before writing it with memerase()."""
-            size = len(buffer)
-            c_buffer = (ctypes.c_char*(size+2))();    #just to be sure + 2 (shouldn't be needed though)
-            for i in range(size): c_buffer[i] = buffer[i]
-            status = MSP430_Memory(address, c_buffer, size, WRITE)
-            if status != STATUS_OK:
-                raise IOError("Could not write target memory: %s" % MSP430_Error_String(MSP430_Error_Number()))
-
-        def memverify(self, address, buffer):
-            """'mem' has to be a string of even length.
-            Verify device memory against the supplied data using PSA analysis."""
-            size = len(buffer)
-            if size & 1:
-                raise ValueError("Buffer must have an even length")
-            status = MSP430_VerifyMem(address, size, buffer)
-            return (status == STATUS_OK)
-
-        def memerase(self, type=ERASE_ALL, address=0xfffe, length=2):
-            """Erase the Flash.
+                raise IOError('%s not found' % libname)
+        
+        #an absolute path to the library can be given.
+        #LIBMSPGCC_PATH is used to pass its location
+        search_path = sys.path[:]   #copy sys.path list
+        #if environment variable is set, insert this path first
+        try:
+            search_path.insert(0, os.environ['LIBMSPGCC_PATH'])
+        except KeyError:
+            if DEBUG: sys.stderr.write('LIBMSPGCC_PATH is not set\n')
+        #as fallback, append PATH
+        try:
+            search_path.extend(os.environ['PATH'].split(os.pathsep))
+        except KeyError:
+            pass
+        
+        #~ print search_path
+        STATUS_OK    = 0
+        STATUS_ERROR = -1
+        TRUE         = 1
+        FALSE        = 0
+        WRITE        = 0
+        READ         = 1
+        if sys.platform == 'win32':
+            #the library is found on the PATH, respectively in the executables directory
             
-            Valid modes are:
-                ERASE_SEGMENT = 0
-                ERASE_MAIN    = 1
-                ERASE_ALL     = 2
+            if force == CTYPES_MSPGCC:
+                MSP430mspgcc = locate_library('MSP430mspgcc.dll', search_path)
+                backend = CTYPES_MSPGCC
+            elif force == CTYPES_TI:
+                #~ MSP430mspgcc = ctypes.windll.MSP430
+                MSP430mspgcc = locate_library('MSP430.dll', search_path)
+                backend = CTYPES_TI
+            else:
+                #autodetect
+                try:
+                    #try to use the TI or third party library
+                    MSP430mspgcc = locate_library('MSP430.dll', search_path)
+                    backend = CTYPES_TI
+                except IOError:
+                    #when that fails, use the mspgcc implementation
+                    MSP430mspgcc = locate_library('MSP430mspgcc.dll', search_path)
+                    backend = CTYPES_MSPGCC
+        else:
+            #now try to locate library
+            try:
+                MSP430mspgcc = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
+            except IOError, e:
+                raise IOError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so": %s' % e)
+            backend = CTYPES_MSPGCC
+        
+        MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
+        MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]
+        MSP430_Initialize.restype       = ctypes.c_int
+        if backend == CTYPES_MSPGCC:
+            MSP430_Open                 = MSP430mspgcc.MSP430_Open
+            MSP430_Open.argtypes        = []
+            MSP430_Open.restype         = ctypes.c_int
+        else:
+            MSP430_Identify             = MSP430mspgcc.MSP430_Identify
+            MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.c_char*56), ctypes.c_long, ctypes.c_long]
+            MSP430_Identify.restype     = ctypes.c_int
+            #TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
+            def MSP430_Open():
+                buffer = (ctypes.c_char*56)()
+                status = MSP430_Identify(ctypes.byref(buffer), 56, 0)
+                if status != STATUS_OK:
+                    return STATUS_ERROR
+                if DEBUG:
+                    sys.stderr.write('MSP430_Identify: Device type: %r\n' % str(buffer[4:36]).replace('\0',''))
+                #~ status = MSP430_Reset(ALL_RESETS, FALSE, FALSE)
+                return status
+
+        MSP430_Close                    = MSP430mspgcc.MSP430_Close
+        MSP430_Close.argtypes           = [ctypes.c_long]
+        MSP430_Close.restype            = ctypes.c_int
+        MSP430_Configure                = MSP430mspgcc.MSP430_Configure
+        MSP430_Configure.argtypes       = [ctypes.c_long, ctypes.c_long]
+        MSP430_Configure.restype        = ctypes.c_int
+        MSP430_VCC                      = MSP430mspgcc.MSP430_VCC
+        MSP430_VCC.argtypes             = [ctypes.c_long]
+        MSP430_VCC.restype              = ctypes.c_int
+        MSP430_Reset                    = MSP430mspgcc.MSP430_Reset
+        MSP430_Reset.argtypes           = [ctypes.c_long, ctypes.c_long, ctypes.c_long]
+        MSP430_Reset.restype            = ctypes.c_int
+        MSP430_Erase                    = MSP430mspgcc.MSP430_Erase
+        MSP430_Erase.argtypes           = [ctypes.c_long, ctypes.c_long, ctypes.c_long]
+        MSP430_Erase.restype            = ctypes.c_int
+        MSP430_Memory                   = MSP430mspgcc.MSP430_Memory
+        MSP430_Memory.argtypes          = [ctypes.c_long, ctypes.POINTER(ctypes.c_char), ctypes.c_long, ctypes.c_long]
+        MSP430_Memory.restype           = ctypes.c_int
+        MSP430_VerifyMem                = MSP430mspgcc.MSP430_VerifyMem
+        MSP430_VerifyMem.argtypes       = [ctypes.c_long, ctypes.c_long, ctypes.c_char_p]
+        MSP430_VerifyMem.restype        = ctypes.c_int
+        MSP430_EraseCheck               = MSP430mspgcc.MSP430_EraseCheck
+        MSP430_EraseCheck.argtypes      = ctypes.c_long, ctypes.c_long
+        MSP430_EraseCheck.restype       = ctypes.c_int
+        if backend == CTYPES_MSPGCC:
+            MSP430_ReadRegister             = MSP430mspgcc.MSP430_ReadRegister
+            MSP430_ReadRegister.argtypes    = [ctypes.c_long, ctypes.POINTER(ctypes.c_long)]
+            MSP430_ReadRegister.restype     = ctypes.c_int
+            MSP430_WriteRegister            = MSP430mspgcc.MSP430_WriteRegister
+            MSP430_WriteRegister.argtypes   = [ctypes.c_long, ctypes.c_long]
+            MSP430_WriteRegister.restype    = ctypes.c_int
+        else:
+            #TI's USB-FET lib does not have this function
+            if DEBUG:
+                sys.stderr.write('MSP430_*Register not found in library. Not supported.\n')
+        if backend == CTYPES_MSPGCC:
+            #~ MSP430_Funclet                  = MSP430mspgcc.MSP430_Funclet
+            #~ MSP430_Funclet.argtypes         = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_int]
+            #~ MSP430_Funclet.restype          = ctypes.c_int
+            MSP430_FuncletWait              = MSP430mspgcc.MSP430_FuncletWait
+            MSP430_FuncletWait.argtypes     = [ctypes.c_char_p, ctypes.c_long, ctypes.c_int, ctypes.c_ulong, ctypes.POINTER(ctypes.c_ulong)]
+            MSP430_FuncletWait.restype      = ctypes.c_int
+            MSP430_isHalted                 = MSP430mspgcc.MSP430_isHalted
+            MSP430_isHalted.argtypes        = []
+            MSP430_isHalted.restype         = ctypes.c_int
+        else:
+            #TI's USB-FET lib does not have this function
+            if DEBUG:
+                sys.stderr.write('MSP430_Funclet and isHalted not found in library. Not supported.\n')
+        MSP430_Error_Number             = MSP430mspgcc.MSP430_Error_Number
+        MSP430_Error_Number.argtypes    = []
+        MSP430_Error_Number.restype     = ctypes.c_long
+        MSP430_Error_String             = MSP430mspgcc.MSP430_Error_String
+        MSP430_Error_String.argtypes    = [ctypes.c_long]
+        MSP430_Error_String.restype     = ctypes.c_char_p
+        try:
+            MSP430_Secure                   = MSP430mspgcc.MSP430_Secure
+            MSP430_Secure.argtypes          = []
+            MSP430_Secure.restype           = ctypes.c_int
+        except AttributeError:
+            #mspgcc lib does not have this function
+            if DEBUG:
+                sys.stderr.write('MSP430_Secure not found in library. Not supported.\n')
+            def MSP430_Secure():
+                raise NotImplementedError("this function is not supported with this MSP430 library")
+        
+        messagecallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_short, ctypes.c_short) #void f(WORD count, WORD total)
+
+        class ParJTAG:
+            """implementation of the _parjtag module in python with the help of ctypes"""
+            
+            def open(self, port = None):
+                """Initilize library"""
+                version = ctypes.c_long(0)
+                if port is None:
+                    if sys.platform == 'win32':
+                        port = "1"
+                    else:
+                        port = "/dev/parport0"
+                if backend == CTYPES_TI:
+                    port = port.upper()
+                status = MSP430_Initialize(port, ctypes.byref(version))
+                if status != STATUS_OK:
+                    raise IOError("Could not initialize the library (port: %s)" % port)
+                if DEBUG:
+                    sys.stderr.write('backend library version: %d\n' % (version.value,))
                 
-            The default address and length is fine for mass and main erase.
-            To erase a single segment ERASE_SEGMENT and an address within that
-            segement must be specified. The length can be choosen larger than
-            one segment to erase a consecutive block of segments.
-            The erased segments are checked for erasure using PSA analysis."""
-            status = MSP430_Erase(type, address, length)
-            if status != STATUS_OK:
-                raise IOError("Could not erase the Flash: %s" % MSP430_Error_String(MSP430_Error_Number()))
-
-        def funclet(self, code, timeout=1000):
-            """Download a 'funclet' contained in the string 'code' to the target
-            and execute it. This function waits until the code stops on a "jmp $"
-            or a timeout.
-            Please refer to the 'funclet' documentation for the contents of the
-            code string.
-            return the runtime in seconds"""
-            runtime = ctypes.c_ulong()
-            size = len(code)
-            if size & 1:
-                raise ValueError("data must be of even size")
+            def connect(self,):
+                """Enable JTAG and connect to target. This stops it.
+                This function must be called before using any other JTAG function,
+                or the other functions will yield unpredictable data."""
+                MSP430_VCC(3000)
+                
+                status = MSP430_Open()
+                if status != STATUS_OK:
+                    raise IOError("Can't open interface: %s" % MSP430_Error_String(MSP430_Error_Number()))
             
-            status = MSP430_FuncletWait(code, size, 1, timeout, ctypes.byref(runtime))
-            if status != STATUS_OK:
-                raise IOError("Could not execute code: %s" % MSP430_Error_String(MSP430_Error_Number()))
-            return runtime.value
+                status = MSP430_Configure(VERIFICATION_MODE, TRUE)
+                if status != STATUS_OK:
+                    raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
 
-        def configure(self, mode, value = 0):
-            """Configure the MSP430 driver."""
-            status = MSP430_Configure(mode, value)
-            if status != STATUS_OK:
-                raise IOError("Could not change mode: %s" % MSP430_Error_String(MSP430_Error_Number()))
-
-        def regread(self, regnum):
-            """returns register value"""
-            value = ctypes.c_long()
-            status = MSP430_ReadRegister(regnum, ctypes.byref(value))
-            if status != STATUS_OK:
-                raise IOError("Could not read register: %s" % MSP430_Error_String(MSP430_Error_Number()))
-            return value.value
-
-        def regwrite(self, regnum, value):
-            """write value to register"""
-            status = MSP430_WriteRegister(regnum, value);
-            if status != STATUS_OK:
-                raise IOError("Could not write register: %s" % MSP430_Error_String(MSP430_Error_Number()))
-
-        def set_flash_callback(self, function):
-            """The 'function' is called with (count, total) as arguments
-            while the flash is written."""
-
-            self._callback = messagecallback(function)
-            #~ MSP430_Configure(FLASH_CALLBACK, ctypes.addressof(self._callback))
-            #hack following, close your eyes ;-)...
-            argtypes = MSP430_Configure.argtypes
-            MSP430_Configure.argtypes = [ctypes.c_long, messagecallback]
-            MSP430_Configure(FLASH_CALLBACK, self._callback)
-            MSP430_Configure.argtypes = argtypes
-
-        def isHalted(self):
-            """Check if cpu is stuck on an address."""
-            value = MSP430_isHalted()
-            return value
+            def release(self):
+                """Release the target, disable JTAG lines.
+                Subsequent access to the JTAG yields wrong data, until
+                connect() is called again.
+                The execution is started wherever the PC stays. Don't use this
+                function after Flash operations or memverify. The PC was modified
+                and points to an unpredicatble location. Use reset() before calling
+                this function."""
+                status = MSP430_Close(TRUE)
+                if status != STATUS_OK:
+                    raise IOError("Could not close the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
             
-        def secure(self):
-            """burn JTAG security fuse.
-               Note: not reversibly. use with care.
-               Note: not supported by all JTAG adapters.
-            """
-            status = MSP430_Secure()
-            if status != STATUS_OK:
-                raise IOError("Could not secure device: %s" % MSP430_Error_String(MSP430_Error_Number()))
-    
-    _parjtag = ParJTAG()
+            def reset(self, execute = 0, release = 0, resets = ALL_RESETS):
+                """Reset the device, optionaly start execution and/or release JTAG."""
+                status = MSP430_Reset(resets, execute, release)
+                if status != STATUS_OK:
+                    raise IOError("Could not reset target (no connection?): %s" % MSP430_Error_String(MSP430_Error_Number()))
+
+            def memread(self, address, size):
+                """Read 'size' bytes starting at the specified address.
+                The return value is a string with the (binary) data.
+                It is possible to read peripherals, RAM as well as Flash."""
+                if size < 0: raise ValueError("Size must not be negative")
+                buffer = (ctypes.c_char*size)();
+                
+                status = MSP430_Memory(address, buffer, size, READ)
+                if status == STATUS_OK:
+                    return ''.join([str(x) for x in buffer])
+                else:
+                    raise IOError("Could not read target memory: %s" % MSP430_Error_String(MSP430_Error_Number()))
+
+            def memwrite(self, address, buffer):
+                """'mem' has to be a string, containing the data to write.
+                It is possible to write peripherals, RAM as well as Flash.
+                Flash must be erased before writing it with memerase()."""
+                size = len(buffer)
+                c_buffer = (ctypes.c_char*(size+2))();    #just to be sure + 2 (shouldn't be needed though)
+                for i in range(size): c_buffer[i] = buffer[i]
+                status = MSP430_Memory(address, c_buffer, size, WRITE)
+                if status != STATUS_OK:
+                    raise IOError("Could not write target memory: %s" % MSP430_Error_String(MSP430_Error_Number()))
+
+            def memverify(self, address, buffer):
+                """'mem' has to be a string of even length.
+                Verify device memory against the supplied data using PSA analysis."""
+                size = len(buffer)
+                if size & 1:
+                    raise ValueError("Buffer must have an even length")
+                status = MSP430_VerifyMem(address, size, buffer)
+                return (status == STATUS_OK)
+
+            def memerase(self, type=ERASE_ALL, address=0xfffe, length=2):
+                """Erase the Flash.
+                
+                Valid modes are:
+                    ERASE_SEGMENT = 0
+                    ERASE_MAIN    = 1
+                    ERASE_ALL     = 2
+                    
+                The default address and length is fine for mass and main erase.
+                To erase a single segment ERASE_SEGMENT and an address within that
+                segement must be specified. The length can be choosen larger than
+                one segment to erase a consecutive block of segments.
+                The erased segments are checked for erasure using PSA analysis."""
+                status = MSP430_Erase(type, address, length)
+                if status != STATUS_OK:
+                    raise IOError("Could not erase the Flash: %s" % MSP430_Error_String(MSP430_Error_Number()))
+
+            def funclet(self, code, timeout=1000):
+                """Download a 'funclet' contained in the string 'code' to the target
+                and execute it. This function waits until the code stops on a "jmp $"
+                or a timeout.
+                Please refer to the 'funclet' documentation for the contents of the
+                code string.
+                return the runtime in seconds"""
+                runtime = ctypes.c_ulong()
+                size = len(code)
+                if size & 1:
+                    raise ValueError("data must be of even size")
+                
+                status = MSP430_FuncletWait(code, size, 1, timeout, ctypes.byref(runtime))
+                if status != STATUS_OK:
+                    raise IOError("Could not execute code: %s" % MSP430_Error_String(MSP430_Error_Number()))
+                return runtime.value
+
+            def configure(self, mode, value = 0):
+                """Configure the MSP430 driver."""
+                status = MSP430_Configure(mode, value)
+                if status != STATUS_OK:
+                    raise IOError("Could not change mode: %s" % MSP430_Error_String(MSP430_Error_Number()))
+
+            def regread(self, regnum):
+                """returns register value"""
+                value = ctypes.c_long()
+                status = MSP430_ReadRegister(regnum, ctypes.byref(value))
+                if status != STATUS_OK:
+                    raise IOError("Could not read register: %s" % MSP430_Error_String(MSP430_Error_Number()))
+                return value.value
+
+            def regwrite(self, regnum, value):
+                """write value to register"""
+                status = MSP430_WriteRegister(regnum, value);
+                if status != STATUS_OK:
+                    raise IOError("Could not write register: %s" % MSP430_Error_String(MSP430_Error_Number()))
+
+            def set_flash_callback(self, function):
+                """The 'function' is called with (count, total) as arguments
+                while the flash is written."""
+
+                self._callback = messagecallback(function)
+                #~ MSP430_Configure(FLASH_CALLBACK, ctypes.addressof(self._callback))
+                #hack following, close your eyes ;-)...
+                argtypes = MSP430_Configure.argtypes
+                MSP430_Configure.argtypes = [ctypes.c_long, messagecallback]
+                MSP430_Configure(FLASH_CALLBACK, self._callback)
+                MSP430_Configure.argtypes = argtypes
+
+            def isHalted(self):
+                """Check if cpu is stuck on an address."""
+                value = MSP430_isHalted()
+                return value
+                
+            def secure(self):
+                """burn JTAG security fuse.
+                   Note: not reversibly. use with care.
+                   Note: not supported by all JTAG adapters.
+                """
+                status = MSP430_Secure()
+                if status != STATUS_OK:
+                    raise IOError("Could not secure device: %s" % MSP430_Error_String(MSP430_Error_Number()))
+        
+        _parjtag = ParJTAG()
 
 
 class JTAG:
@@ -355,6 +395,7 @@ class JTAG:
     """
 
     def __init__(self):
+        if backend is None: init_backend()
         self.showprogess = 0
         self.data = None
         self.verbose = 1
@@ -524,10 +565,12 @@ class JTAG:
         _parjtag.secure()
 
 
-# simple, stupid module test
+# simple, stupid module test, debug is set above
 if __name__ == '__main__':
-    print "Backend: %s" % (backend, )
+    #~ init_backend(CTYPES_MSPGCC)
+    #~ init_backend(CTYPES_TI)
     jtagobj = JTAG()
+    print "Backend: %s" % (backend, )
     jtagobj.open()
     try:
         jtagobj.connect()

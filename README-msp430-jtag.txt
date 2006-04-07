@@ -234,8 +234,9 @@ USB JTAG adapters
 This section only applies to Windows (currently).
 
 USB JTAG adapters are supported trough the MSP430.dlls from the adaptor
-vendor. To enable its use, copy MSP430.dll (and maybe HIL.dll) to the
-``bin`` folder, where msp430-jtag.exe is located.
+vendor. To enable its use, copy MSP430.dll to the
+``bin\lib`` folder, where ``shared.zip`` is located.
+Optionally copy ``HIL.dll`` to the ``bin`` folder.
 
 For example for MSP-FET430UIF from TI:
 - download and install CCE (Code Composer, the free version)
@@ -243,16 +244,16 @@ For example for MSP-FET430UIF from TI:
   CCE itself, as that unpacks the MSP430.dll.
 - copy MSP430.dll and HIL.dll (or simply all the files you find in the folder)
   from ``C:\Program Files\CCEssentials\FTSuite\emulation\msp430`` to
-  ``c:\mspgcc\bin`` (substitute the source and destination folders according
-  to you own setup)
+  ``c:\mspgcc\bin\lib`` (substitute the source and destination folders
+  according to you own setup)
 - reboot
 
-To use the first available MSP-FET430UIF use::
+To use the first available MSP-FET430UIF::
 
     msp430-jtag -l TIUSB --upload=0x0ff0
 
 The MSP-FET430UIF is registered as serial port. If more than one MSP-FET430UIF
-is connected, find out which COM port the desired adapter us is using with the
+is connected, find out which COM port the desired adapter is using with the
 Device Manager. Then for example run::
 
     msp430-jtag -l COM5 --upload=0x0ff0

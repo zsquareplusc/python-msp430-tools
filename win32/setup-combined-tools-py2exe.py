@@ -1,7 +1,7 @@
 # setup script for py2exe to create the executeable of all the python tools
 # this setup uses one shared zip file for the library to save space
 #
-# $Id: setup-combined-tools-py2exe.py,v 1.2 2006/04/04 21:58:10 cliechti Exp $
+# $Id: setup-combined-tools-py2exe.py,v 1.3 2006/04/07 22:52:09 cliechti Exp $
 
 from distutils.core import setup
 import glob, sys, py2exe, os
@@ -32,6 +32,7 @@ setup(
         "msp430-dco.py",
         "ihex2titext.py", "titext2ihex.py",
         "msp430-ram-usage.py",
+        "miniterm.py",
     ],
     windows = [
         {

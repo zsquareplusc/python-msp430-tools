@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.22 2006/04/04 21:58:10 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.23 2006/04/07 20:01:05 cliechti Exp $
 
 import sys
 from msp430.util import hexdump, makeihex
@@ -254,6 +254,7 @@ def main():
             except IOError:
                 sys.stderr.write("Failed to set debug level in backend library\n")
             memory.DEBUG = memory.DEBUG + 1
+            jtag.DEBUG = jtag.DEBUG + 1
         elif o in ("-u", "--upload"):
             try:
                 start, end = parseAddressRange(a)
@@ -361,8 +362,7 @@ def main():
     if DEBUG:   #debug infos
         sys.stderr.write("Debug is level set to %d\n" % DEBUG)
         sys.stderr.write("Python version: %s\n" % sys.version)
-        if DEBUG > 4: sys.stderr.write("Python module path: %s\n" % sys.path)
-        sys.stderr.write("JTAG backend: %s\n" % jtag.backend)
+        #~ sys.stderr.write("JTAG backend: %s\n" % jtag.backend)
 
 
     #sanity check of options

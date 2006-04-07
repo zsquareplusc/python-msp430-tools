@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.22 2006/04/04 21:58:10 cliechti Exp $
+# $Id: jtag.py,v 1.23 2006/04/07 20:01:06 cliechti Exp $
 
 import sys
 
@@ -45,8 +45,10 @@ CTYPES_TI = "ctypes/TI or 3rd party"
 class JTAGException(Exception): pass
 
 backend = None
+backend_info = None
 def init_backend(force=None):
     global backend
+    global backend_info
     global _parjtag
     
     #1st try the ctypes implementation, if that's not available try to use the C extension
@@ -74,11 +76,13 @@ def init_backend(force=None):
         #create a wrapper class with ctypes, that has the same API as _parjtag
         def locate_library(libname, paths=sys.path, loader=ctypes.windll):
             for path in paths:
+                if path.lower().endswith('.zip'):
+                    path = os.path.dirname(path)
                 library = os.path.join(path, libname)
-                if DEBUG: sys.stderr.write('trying %r...\n' % library)
+                if DEBUG > 4: sys.stderr.write('trying %r...\n' % library)
                 if os.path.exists(library):
-                    if DEBUG: sys.stderr.write('using %r\n' % library)
-                    return loader.LoadLibrary(library)
+                    if DEBUG > 4: sys.stderr.write('using %r\n' % library)
+                    return loader.LoadLibrary(library), library
             else:
                 raise IOError('%s not found' % libname)
         
@@ -89,7 +93,7 @@ def init_backend(force=None):
         try:
             search_path.insert(0, os.environ['LIBMSPGCC_PATH'])
         except KeyError:
-            if DEBUG: sys.stderr.write('LIBMSPGCC_PATH is not set\n')
+            if DEBUG > 4: sys.stderr.write('LIBMSPGCC_PATH is not set\n')
         #as fallback, append PATH
         try:
             search_path.extend(os.environ['PATH'].split(os.pathsep))
@@ -107,26 +111,26 @@ def init_backend(force=None):
             #the library is found on the PATH, respectively in the executables directory
             
             if force == CTYPES_MSPGCC:
-                MSP430mspgcc = locate_library('MSP430mspgcc.dll', search_path)
+                MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path)
                 backend = CTYPES_MSPGCC
             elif force == CTYPES_TI:
                 #~ MSP430mspgcc = ctypes.windll.MSP430
-                MSP430mspgcc = locate_library('MSP430.dll', search_path)
+                MSP430mspgcc, backend_info = locate_library('MSP430.dll', search_path)
                 backend = CTYPES_TI
             else:
                 #autodetect
                 try:
                     #try to use the TI or third party library
-                    MSP430mspgcc = locate_library('MSP430.dll', search_path)
+                    MSP430mspgcc, backend_info = locate_library('MSP430.dll', search_path)
                     backend = CTYPES_TI
                 except IOError:
                     #when that fails, use the mspgcc implementation
-                    MSP430mspgcc = locate_library('MSP430mspgcc.dll', search_path)
+                    MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path)
                     backend = CTYPES_MSPGCC
         else:
             #now try to locate library
             try:
-                MSP430mspgcc = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
+                MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
             except IOError, e:
                 raise IOError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so": %s' % e)
             backend = CTYPES_MSPGCC
@@ -386,6 +390,10 @@ def init_backend(force=None):
                     raise IOError("Could not secure device: %s" % MSP430_Error_String(MSP430_Error_Number()))
         
         _parjtag = ParJTAG()
+    
+    # print the used backend
+    if DEBUG:
+        sys.stderr.write("JTAG backend: %s (%s)\n" % (backend, backend_info))
 
 
 class JTAG:
@@ -395,7 +403,6 @@ class JTAG:
     """
 
     def __init__(self):
-        if backend is None: init_backend()
         self.showprogess = 0
         self.data = None
         self.verbose = 1
@@ -404,6 +411,7 @@ class JTAG:
     
     def open(self, lpt=None):
         """Initialize and open port."""
+        if backend is None: init_backend()
         if lpt is None:
             _parjtag.open()
         else:

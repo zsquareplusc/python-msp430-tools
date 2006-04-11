@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: msp430-downloader.py,v 1.7 2005/12/28 19:55:48 cliechti Exp $
+# $Id: msp430-downloader.py,v 1.8 2006/04/11 18:35:23 cliechti Exp $
 """
 Simple tool to download to a MSP430.
 
@@ -12,7 +12,7 @@ windoze exploder downloads the file.
 
 import os, sys
 import EasyDialogs
-import msp430.jtag, msp430.memory
+import mspgcc.jtag, mspgcc.memory
 from StringIO import StringIO
 import traceback
 
@@ -57,7 +57,7 @@ try:
     jtagobj.bar = EasyDialogs.ProgressBar('Programming %r...' % filename, 100)
     showError = 0
     try:
-        jtagobj.data = msp430.memory.Memory()   #prepare downloaded data
+        jtagobj.data = mspgcc.memory.Memory()   #prepare downloaded data
         jtagobj.data.loadFile(filename)         #autodetect filetype
         jtagobj.bar.label('Connecting...')
         jtagobj.open(lpt)                       #try to open port

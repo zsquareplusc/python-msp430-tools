@@ -1,6 +1,6 @@
 # setup.py
 #
-# $Id: setup.py,v 1.4 2005/12/30 03:47:49 cliechti Exp $
+# $Id: setup.py,v 1.5 2006/04/11 18:35:23 cliechti Exp $
 
 from distutils.core import setup
 import sys
@@ -13,13 +13,13 @@ if sys.version < '2.2.3':
     DistributionMetadata.download_url = None
 
 setup(
-    name="msp430-python-tools",
-    description="MSP430 Python Tools",
+    name="python-mspgcc",
+    description="MSP430 Python tools from the mspgcc toolchain",
     version="1.1",
     author="Chris Liechti",
     author_email="cliechti@gmx.net",
     url="http://mspgcc.sourceforge.net/",
-    packages=['msp430', 'msp430.serial'],
+    packages=['mspgcc', 'mspgcc.serial'],
     license="Python",
     long_description="Python tools for the MSP430 processor including BSL, JTAG",
     classifiers = [

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: elf.py,v 1.1 2004/02/29 23:06:36 cliechti Exp $
+# $Id: elf.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
 
 import struct
 

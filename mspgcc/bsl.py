@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.10 2006/01/18 11:07:37 cliechti Exp $
+# $Id: bsl.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial

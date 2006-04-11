@@ -1,4 +1,4 @@
-# $Id: util.py,v 1.3 2005/06/14 09:42:56 cliechti Exp $
+# $Id: util.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
 
 import sys
 

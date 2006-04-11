@@ -1,1 +1,0 @@
-# $Id: __init__.py,v 1.1 2004/02/29 23:06:36 cliechti Exp $

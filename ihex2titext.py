@@ -8,9 +8,9 @@
 # (C) 2005 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: ihex2titext.py,v 1.4 2005/12/30 01:50:28 cliechti Exp $
+# $Id: ihex2titext.py,v 1.5 2006/04/11 18:35:23 cliechti Exp $
 
-from msp430 import memory
+from mspgcc import memory
 import sys
 
 from optparse import OptionParser

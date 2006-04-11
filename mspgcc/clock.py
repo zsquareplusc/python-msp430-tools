@@ -3,7 +3,7 @@
 # Functions to measure the DCO clock and functions to do a software FLL to
 # callibrate the clock to a gived frequency.
 #
-# $Id: clock.py,v 1.3 2006/01/18 11:07:24 cliechti Exp $
+# $Id: clock.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
 
 import cStringIO
 import sys

@@ -8,10 +8,10 @@
 # (C) 2004 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: titext2ihex.py,v 1.4 2005/12/30 01:50:28 cliechti Exp $
+# $Id: titext2ihex.py,v 1.5 2006/04/11 18:35:23 cliechti Exp $
 
-from msp430.util import makeihex, _ihexline
-from msp430 import memory
+from mspgcc.util import makeihex, _ihexline
+from mspgcc import memory
 import sys
 
 from optparse import OptionParser

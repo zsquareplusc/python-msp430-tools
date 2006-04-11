@@ -7,7 +7,7 @@
 # 
 # Requires Python 2+, ctypes and HIL.dll/libHIL.so
 # 
-# $Id: hilspi.py,v 1.1 2004/07/14 01:59:29 cliechti Exp $
+# $Id: hilspi.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
 
 import HIL
 #~ import psyco

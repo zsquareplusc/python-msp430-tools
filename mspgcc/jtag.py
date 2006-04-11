@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.23 2006/04/07 20:01:06 cliechti Exp $
+# $Id: jtag.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
 
 import sys
 

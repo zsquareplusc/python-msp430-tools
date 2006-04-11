@@ -9,7 +9,7 @@
 import javax.comm
 from serialutil import *
 
-VERSION = "$Revision: 1.2 $".split()[1]     #extract CVS version
+VERSION = "$Revision: 1.1 $".split()[1]     #extract CVS version
 
 
 def device(portnumber):

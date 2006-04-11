@@ -6,11 +6,11 @@
 #
 # http://mspgcc.sf.net
 #
-# $Id: msp430-bsl.py,v 1.10 2005/08/12 21:10:44 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.11 2006/04/11 18:35:23 cliechti Exp $
 
 import sys
-from msp430.util import curry, hexdump, makeihex
-from msp430 import memory, bsl
+from mspgcc.util import curry, hexdump, makeihex
+from mspgcc import memory, bsl
 
 VERSION = "2.0"
 

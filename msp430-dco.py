@@ -9,9 +9,9 @@
 # (C) 2005 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-dco.py,v 1.6 2006/04/04 21:58:10 cliechti Exp $
+# $Id: msp430-dco.py,v 1.7 2006/04/11 18:35:23 cliechti Exp $
 
-from msp430 import jtag, clock, memory
+from mspgcc import memory, jtag, clock
 import sys
 import struct
 

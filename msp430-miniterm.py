@@ -7,10 +7,9 @@
 # done), received characters are displayed as is (or escaped trough pythons
 # repr, useful for debug purposes)
 
-# this is an adapted copy of the miniterm example from http://pyserial.sf.net
 
 import sys, os, threading, getopt
-from mspgcc import serial
+from mspgcc.msp430 import serial
 
 EXITCHARCTER = '\x1d'   #GS/ctrl+]
 

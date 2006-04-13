@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
+# $Id: jtag.py,v 1.2 2006/04/13 20:22:50 cliechti Exp $
 
 import sys
 
@@ -394,6 +394,8 @@ def init_backend(force=None):
     # print the used backend
     if DEBUG:
         sys.stderr.write("JTAG backend: %s (%s)\n" % (backend, backend_info))
+        if backend == CTYPES_MSPGCC:
+            _parjtag.configure(DEBUG_OPTION, DEBUG)
 
 
 class JTAG:

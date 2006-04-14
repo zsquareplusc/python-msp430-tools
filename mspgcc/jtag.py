@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.2 2006/04/13 20:22:50 cliechti Exp $
+# $Id: jtag.py,v 1.3 2006/04/14 15:59:20 cliechti Exp $
 
 import sys
 
@@ -74,7 +74,8 @@ def init_backend(force=None):
     else:
         import os
         #create a wrapper class with ctypes, that has the same API as _parjtag
-        def locate_library(libname, paths=sys.path, loader=ctypes.windll):
+        def locate_library(libname, paths=sys.path, loader=None):
+            if loader is None: loader=ctypes.windll
             for path in paths:
                 if path.lower().endswith('.zip'):
                     path = os.path.dirname(path)

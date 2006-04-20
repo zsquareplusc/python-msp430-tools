@@ -6,10 +6,10 @@
 # that are connected to the JTAG. It can  display the supported frequencies,
 # or run a software FLL to find the settings for a specified frequency.
 #
-# (C) 2005 Chris Liechti <cliechti@gmx.net>
+# (C) 2005-2006 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-dco.py,v 1.7 2006/04/11 18:35:23 cliechti Exp $
+# $Id: msp430-dco.py,v 1.8 2006/04/20 23:06:47 cliechti Exp $
 
 from mspgcc import memory, jtag, clock
 import sys
@@ -36,6 +36,11 @@ def nice_frequency(frequency):
     return "%.2fGHz" % (frequency/1e9)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# variable types (with type code for the struct module)
+TYPE_8BIT = '<B'
+TYPE_16BIT = '<H'
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def get_msp430_type():
     """return the MSP430 type id that is stored in the ROM"""
@@ -53,6 +58,7 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
     if tolerance < 0.005 or tolerance > 50:
         raise ValueError('tolerance out of range %f' % (tolerance,))
     device = get_msp430_type() >> 8
+    variables = {}
     
     if device == 0xf1:
         measured_frequency, dco, bcs1 = clock.setDCO(
@@ -61,6 +67,10 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
             maxrsel=7,
             dcor=dcor
         )
+        variables['freq'] = TYPE_16BIT, measured_frequency/1e3
+        variables['dcoctl'] = TYPE_8BIT, dco
+        variables['bcsctl1'] = TYPE_8BIT, bcs1
+        variables['bcsctl2'] = TYPE_8BIT, dcor and 1 or 0
         out.write('// BCS settings for %s\n' % (nice_frequency(measured_frequency), ))
         if define:
             suffix = '_%s' % nice_frequency(frequency).replace('.','_')
@@ -84,6 +94,10 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
             maxrsel=15,
             dcor=dcor
         )
+        variables['freq'] = TYPE_16BIT, measured_frequency/1e3
+        variables['dcoctl'] = TYPE_8BIT, dco
+        variables['bcsctl1'] = TYPE_8BIT, bcs1
+        variables['bcsctl2'] = TYPE_8BIT, dcor and 1 or 0
         out.write('// BCS+ settings for %s\n' % (nice_frequency(measured_frequency), ))
         if define:
             suffix = '_%s' % nice_frequency(frequency).replace('.','_')
@@ -107,6 +121,12 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
             frequency*(1-tolerance),
             frequency*(1+tolerance)
         )
+        variables['freq'] = TYPE_16BIT, measured_frequency/1e3
+        variables['scfi0'] = TYPE_8BIT, scfi0
+        variables['scfi1'] = TYPE_8BIT, scfi1
+        variables['scfqctl'] = TYPE_8BIT, scfqctl
+        variables['fll_ctl0'] = TYPE_8BIT, fll_ctl0
+        variables['fll_ctl1'] = TYPE_8BIT, fll_ctl1
         out.write('// FLL+ settings for %s\n' % (nice_frequency(measured_frequency), ))
         if define:
             suffix = '_%s' % nice_frequency(frequency).replace('.','_')
@@ -122,16 +142,20 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
             ))
     else:
         raise IOError("unknown MSP430 type %02x" % device)
+    return variables
 
 def measure_clock(out):
     """measure fmin and fmax"""
     device = get_msp430_type() >> 8
+    variables = {}
     f_all_max = 0
     f_all_min = 1e99
     if device == 0xf1:
         for rsel in range(8):
             fmin = clock.getDCOFreq(0x00, rsel)
             fmax = clock.getDCOFreq(0xff, rsel)
+            variables['rsel%d_fmin' % rsel] = TYPE_16BIT, fmin/1e3
+            variables['rsel%d_fmax' % rsel] = TYPE_16BIT, fmax/1e3
             out.write('%s <= f(rsel_%d) <= %s\n' % (
                 nice_frequency(fmin),
                 rsel,
@@ -143,6 +167,8 @@ def measure_clock(out):
         for rsel in range(16):
             fmin = clock.getDCOFreq(0x00, rsel)
             fmax = clock.getDCOFreq(0xff, rsel)
+            variables['rsel%d_fmin' % rsel] = TYPE_16BIT, fmin/1e3
+            variables['rsel%d_fmax' % rsel] = TYPE_16BIT, fmax/1e3
             out.write('%s <= f(rsel_%d) <= %s\n' % (
                 nice_frequency(fmin),
                 rsel,
@@ -160,6 +186,9 @@ def measure_clock(out):
         raise IOError("unknown MSP430 type %02x" % device)
     out.write('fmin = %8dHz (%s)\n' % (fmin, nice_frequency(f_all_min)))
     out.write('fmax = %8dHz (%s)\n' % (fmax, nice_frequency(f_all_max)))
+    variables['fmin'] = TYPE_16BIT, f_all_min/1e3
+    variables['fmax'] = TYPE_16BIT, f_all_max/1e3
+    return variables
 
 
 calibvalues_memory_map = {
@@ -173,6 +202,7 @@ def calibrate_clock(out, tolerance=0.002, dcor=False):
     """curently for F2xx only:
        recalculate the clock calibration values and write them to the flash."""
     device = get_msp430_type() >> 8
+    variables = {}
     if device == 0xf2:
         #first read the segment form the device, so that only the calibration values
         #are updated. any other data in SegmentA is not changed.
@@ -186,6 +216,8 @@ def calibrate_clock(out, tolerance=0.002, dcor=False):
                 maxrsel=15,
                 dcor=dcor
             )
+            variables['f%dMHz_dcoctl' % (frequency/1e6)] = TYPE_8BIT, dco
+            variables['f%dMHz_bcsctl1' % (frequency/1e6)] = TYPE_8BIT, bcs1
             out.write('BCS settings for %s: DCOCTL=0x%02x BCSCTL1=0x%02x\n' % (
                 nice_frequency(measured_frequency), dco, bcs1)
             )
@@ -196,7 +228,7 @@ def calibrate_clock(out, tolerance=0.002, dcor=False):
         jtag._parjtag.memwrite(segment_a[0].startaddress, segment_a[0].data)
     else:
         raise NotImplementedError("--calibrate is not supported on %Xxx" % device)
-
+    return variables
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -204,9 +236,9 @@ def main():
     from optparse import OptionParser
 
     parser = OptionParser(usage="""\
-    usage: %prog [options] frequency
+%prog [options] frequency
 
-MSP430 clock callibration utility.
+MSP430 clock calibration utility V1.1
 
 This tool can measure the internal oscillator of F1xx, F2xx and F4xx devices,
 display the supported frequencies, or run a software FLL to find the settings
@@ -220,7 +252,10 @@ Examples:
 
     Get clock settings for 2.0MHz +/-1%:
         %prog --tolerance=0.01 2.0e6
-    
+
+    Write clock calibration for 1.5MHz to the information memory at 0x1000:
+        %prog 1.5e6 BCSCTL1@0x1000 DCOCTL@0x1000
+
 Use it at your own risk. No guarantee that the values are correct.""")
     parser.add_option("-o", "--output", dest="output",
                       help="write result to given file", metavar="FILE",
@@ -252,39 +287,59 @@ Use it at your own risk. No guarantee that the values are correct.""")
                       help="output #defines instead of assignments",
                       default=False, action='store_true')
 
+    parser.add_option("", "--erase", dest="erase",
+                      help="erase flash page at given address. Use with care!",
+                      default=None)
+
     (options, args) = parser.parse_args()
 
     global debug
     debug = options.debug
     clock.debug = options.debug
 
-    if not (options.measure or options.calibrate):
+    # check arguments, filter out variables
+    frequency = None
+    variable_addresses = {}
+    for arg in args:
+        if '@' in arg:
+            try:
+                name, address_text = arg.split('@')
+                address = int(address_text, 0)
+            except ValueError:
+                parser.error('illegal variable expression: %r' % arg)
+            variable_addresses[name.lower()] = address
+        else:
+            try:
+                frequency = float(args[0])
+            except ValueError, e:
+                parser.error('bad frequency: %r (%s)' % (arg, e))
+    if frequency is None and not (options.measure or options.calibrate):
         if len(args) != 1:
-            parser.error('exactly one argument expected: the target frequency')
-        frequency = float(args[0])
+            parser.error('the target frequency expected')
+        
     
-    #prepare output
+    # prepare output
     if options.output is None or options.output == '-':
         out = sys.stdout
     else:
         out = file(options.output, 'w')
     
-    #
+    # connect to th etarget and do the work
     jtag.init_backend(jtag.CTYPES_MSPGCC)   #doesn't currently work with 3'rd party libs
     jtagobj = jtag.JTAG()
     jtagobj.open(options.lpt)               #try to open port
     jtagobj.connect()                       #try to connect to target
     try:
         if options.measure:
-            measure_clock(out)
+            variables = measure_clock(out)
         elif options.calibrate:
-            calibrate_clock(
+            variables = calibrate_clock(
                 out,
                 options.tolerance,
                 options.dcor,
             )
         else:
-            adjust_clock(
+            variables = adjust_clock(
                 out,
                 frequency,
                 options.tolerance,
@@ -292,6 +347,35 @@ Use it at your own risk. No guarantee that the values are correct.""")
                 options.define
             )
         #~ print "%.2f kHz" % (getDCOFreq(0, 0)/1e3)
+        # log valiable names and values
+        if options.debug:
+            sys.stderr.write('Variables:\n')
+            sorted_items = variables.items()
+            sorted_items.sort()
+            for key, (vartype, value) in sorted_items:
+                sys.stderr.write('  %s = %d (0x%02x)\n' % (key, value, value))
+        # now write the variables to the targets memory, optionally erase segemnt before write
+        if options.erase is not None:
+            try:
+                address = int(options.erase, 0)
+            except ValueError, e:
+                parser.error('bad --erase address: %r' % (options.erase))
+            else:
+                jtagobj.makeActionSegmentErase(address)()
+        for variable, address in variable_addresses.items():
+            if variable in variables:
+                vartype, value = variables[variable]
+                sys.stderr.write('writing 0x%02x(%s) to address 0x%04x \n' % (
+                    value, variable.upper(), address
+                ))
+                jtag._parjtag.memwrite(address, struct.pack(vartype, value))
+                written_value = ord(jtag._parjtag.memread(address, 1))
+                if written_value != value:
+                    raise IOError('Value was not written correctly (%s@0x%04x) 0x%02x (expected 0x%02x)' % (
+                        variable.upper(), address, written_value, value
+                    ))
+            else:
+                raise NameError('No such variable: %r' % variable)
     finally:
         if sys.exc_info()[:1]:              #if there is an exception pending
             jtagobj.verbose = 0             #do not write any more messages

@@ -62,8 +62,8 @@ Short introduction
 This software uses the JTAG hardware that comes with the FET kits. It is
 connected to the parallel port.
 
-The program can be started by typing "msp430-jtag" when installed correctly
-If its used from the source directory use "python jtag.py".
+The program can be started by typing ``msp430-jtag`` when installed correctly
+If it's used from the source directory use "python msp430-jtag.py".
 
 
 USAGE: msp430-jtag.py [options] [file]

@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.4 2006/04/23 21:33:39 cliechti Exp $
+# $Id: jtag.py,v 1.5 2006/04/23 23:38:18 cliechti Exp $
 
 import sys
 
@@ -118,7 +118,7 @@ def init_backend(force=None):
                 #~ MSP430mspgcc = ctypes.windll.MSP430
                 MSP430mspgcc, backend_info = locate_library('MSP430.dll', search_path)
                 backend = CTYPES_TI
-            else:
+            elif force is None:
                 #autodetect
                 try:
                     #try to use the TI or third party library
@@ -128,6 +128,8 @@ def init_backend(force=None):
                     #when that fails, use the mspgcc implementation
                     MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path)
                     backend = CTYPES_MSPGCC
+            else:
+                raise ValueError("no such backend: %r" % force)
         else:
             #now try to locate library
             try:

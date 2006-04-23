@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.24 2006/04/11 18:35:23 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.25 2006/04/23 23:38:18 cliechti Exp $
 
 import sys
 from mspgcc import memory, jtag
@@ -185,7 +185,7 @@ def main():
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "elf", "funclet", "ramsize=", "progress",
              "no-close", "parameter=", "result=", "timeout=", "secure",
-             "quiet"]
+             "quiet", "backend="]
         )
     except getopt.GetoptError, e:
         # print help information and exit:
@@ -197,6 +197,16 @@ def main():
         if o in ("-h", "--help"):
             usage()
             sys.exit()
+        elif o in ("", "--backend"):
+            if a == 'mspgcc':
+                backend = jtag.CTYPES_MSPGCC
+            elif a == 'parjtag':
+                backend = jtag.PARJTAG
+            elif a == 'ti':
+                backend = jtag.CTYPES_TI
+            else:
+                raise ValueError("no such backend: %r" % a)
+            jtag.init_backend(backend)
         elif o in ("-l", "--lpt"):
             lpt = a
         elif o in ("-w", "--wait"):

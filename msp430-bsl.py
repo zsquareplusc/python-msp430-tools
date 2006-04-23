@@ -6,7 +6,7 @@
 #
 # http://mspgcc.sf.net
 #
-# $Id: msp430-bsl.py,v 1.11 2006/04/11 18:35:23 cliechti Exp $
+# $Id: msp430-bsl.py,v 1.12 2006/04/23 21:28:24 cliechti Exp $
 
 import sys
 from mspgcc.util import curry, hexdump, makeihex
@@ -228,7 +228,7 @@ def main():
                     sys.exit(2)
                 while adr <= adr2:
                     if adr < 0x1100:
-                        modulo = 128
+                        modulo = 64                # F2xx:64: F1xx, F4xx: 128 (segments get erased twice)
                     elif adr < 0x1200:
                         modulo = 256
                     else:

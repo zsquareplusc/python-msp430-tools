@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
+# $Id: bsl.py,v 1.2 2006/04/23 21:37:35 cliechti Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -689,6 +689,23 @@ class BootStrapLoader(LowLevel):
         sys.stderr.write("\r%d%%" % (100*count/total))
         sys.stderr.flush()
 
+    def programBlock(self, address, data):
+        """Memory write. The block is segmented and downloaded to the target."""
+        currentAddr = address
+        pstart = 0
+        count = 0
+        total_length = len(data)
+        while pstart < total_length:
+            length = self.maxData
+            if pstart + length > total_length:
+                length = total_length - pstart
+            self.programBlk(currentAddr, data[pstart:pstart+length], self.ACTION_PROGRAM | self.ACTION_VERIFY)
+            pstart = pstart + length
+            currentAddr = currentAddr + length
+            #~ self.byteCtr = self.byteCtr + length #total sum
+            #~ count = count + length
+            #~ if self.showprogess:
+                #~ self.progess_update(count, total)
     #segments:
     #list of tuples or lists:
     #segements = [ (addr1, [d0,d1,d2,...]), (addr2, [e0,e1,e2,...])]

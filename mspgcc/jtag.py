@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.3 2006/04/14 15:59:20 cliechti Exp $
+# $Id: jtag.py,v 1.4 2006/04/23 21:33:39 cliechti Exp $
 
 import sys
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     DEBUG = 1
 
 #ctypes backend variations:
-CTYPES_PARJTAG = "parjtag/mspgcc"
+PARJTAG = "parjtag/mspgcc"
 CTYPES_MSPGCC = "ctypes/mspgcc"
 CTYPES_TI = "ctypes/TI or 3rd party"
 
@@ -70,7 +70,7 @@ def init_backend(force=None):
                 "can be built from sources from http://mspgcc.sf.net\n"
             )
         else:
-            backend = CTYPES_PARJTAG
+            backend = PARJTAG
     else:
         import os
         #create a wrapper class with ctypes, that has the same API as _parjtag

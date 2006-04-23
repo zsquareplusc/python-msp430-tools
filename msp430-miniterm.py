@@ -9,7 +9,7 @@
 
 
 import sys, os, threading, getopt
-from mspgcc.msp430 import serial
+from mspgcc import serial
 
 EXITCHARCTER = '\x1d'   #GS/ctrl+]
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# MSP430 clock callibration utility.
+# MSP430 clock calibration utility.
 #
 # This tool can measure the internal oscillator of F1xx, F2xx and F4xx devices
 # that are connected to the JTAG. It can  display the supported frequencies,
@@ -9,7 +9,7 @@
 # (C) 2005-2006 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-dco.py,v 1.8 2006/04/20 23:06:47 cliechti Exp $
+# $Id: msp430-dco.py,v 1.9 2006/04/23 21:38:02 cliechti Exp $
 
 from mspgcc import memory, jtag, clock
 import sys
@@ -324,7 +324,7 @@ Use it at your own risk. No guarantee that the values are correct.""")
     else:
         out = file(options.output, 'w')
     
-    # connect to th etarget and do the work
+    # connect to the target and do the work
     jtag.init_backend(jtag.CTYPES_MSPGCC)   #doesn't currently work with 3'rd party libs
     jtagobj = jtag.JTAG()
     jtagobj.open(options.lpt)               #try to open port

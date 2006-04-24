@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: msp430-downloader.py,v 1.8 2006/04/11 18:35:23 cliechti Exp $
+# $Id: msp430-downloader.py,v 1.9 2006/04/24 19:49:08 cliechti Exp $
 """
 Simple tool to download to a MSP430.
 
@@ -39,7 +39,8 @@ if EasyDialogs.AskYesNoCancel(
     "MSP430 downloader\n\nDownload '%s' using the JTAG interface?" % (filename,),
     cancel=""
 ) != 1:
-    sys.exit(1)
+    print "User aborted"
+    sys.exit(2)
 
 #~ answer = EasyDialogs.AskYesNoCancel("Use JTAG or BSL?", 
     #~ default=1,yes="BSL", no="JTAG")
@@ -47,7 +48,7 @@ if EasyDialogs.AskYesNoCancel(
 #~ elif answer == 1: #YES -> BSL
 #~ else:   #CANCEL
 
-class ProgressJTAG(msp430.jtag.JTAG):
+class ProgressJTAG(mspgcc.jtag.JTAG):
     def progess_update(self, count, total):
         self.bar.set(100*count/total)
 

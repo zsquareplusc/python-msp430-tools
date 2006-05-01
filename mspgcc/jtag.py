@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.5 2006/04/23 23:38:18 cliechti Exp $
+# $Id: jtag.py,v 1.6 2006/05/01 22:05:33 cliechti Exp $
 
 import sys
 
@@ -100,8 +100,8 @@ def init_backend(force=None):
             search_path.extend(os.environ['PATH'].split(os.pathsep))
         except KeyError:
             pass
-        
         #~ print search_path
+        
         STATUS_OK    = 0
         STATUS_ERROR = -1
         TRUE         = 1
@@ -137,6 +137,13 @@ def init_backend(force=None):
             except IOError, e:
                 raise IOError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so": %s' % e)
             backend = CTYPES_MSPGCC
+        
+        global MSP430_Initialize, MSP430_Open, MSP430_Identify, MSP430_Close
+        global MSP430_Configure, MSP430_VCC, MSP430_Reset, MSP430_Erase
+        global MSP430_Memory, MSP430_VerifyMem, MSP430_EraseCheck
+        global MSP430_ReadRegister, MSP430_WriteRegister, MSP430_FuncletWait
+        global MSP430_isHalted, MSP430_Error_Number, MSP430_Error_String
+        global MSP430_Secure
         
         MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
         MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]

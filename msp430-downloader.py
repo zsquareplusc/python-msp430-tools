@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: msp430-downloader.py,v 1.9 2006/04/24 19:49:08 cliechti Exp $
+# $Id: msp430-downloader.py,v 1.10 2006/05/18 22:54:13 cliechti Exp $
 """
 Simple tool to download to a MSP430.
 
@@ -23,7 +23,13 @@ if len(sys.argv) < 2:
     #~ sys.exit(1)
     filename = EasyDialogs.AskFileForOpen(
         windowTitle = "Select MSP430 binary for download",
-        typeList=['*', 'elf', 'a43']
+        typeList=[
+            ('Binraries (*.hex, *.elf, *.a43)', '*.hex;*.elf;*.a43'),
+            ('ELF executable (*.elf)', '*.elf'),
+            ('Intel-hex (*.a43, *.hex)', '*.a43;*.hex'),
+            ('TI-Text (*.txt)', '*.txt'),
+            ('All files (*.*)', '*.*'),
+        ]
     )
     if filename is None:
         sys.exit(0)
@@ -35,12 +41,18 @@ lpt = '1'
 #redirect console output
 sys.stdout = sys.stderr = StringIO()
 
-if EasyDialogs.AskYesNoCancel(
-    "MSP430 downloader\n\nDownload '%s' using the JTAG interface?" % (filename,),
-    cancel=""
-) != 1:
+#swap the buttons, so that cancel is the sparate button at left
+answer = EasyDialogs.AskYesNoCancel(
+    "MSP430 downloader\n\nDownload '%s'?\n\n" % (filename,),
+    default=0, cancel="USB", yes="Parallel port", no="Cancel"
+)
+if answer == 0: #NO -> abort
     print "User aborted"
     sys.exit(2)
+elif answer == 1: #YES -> parallel
+    lpt = "1"
+else:   #CANCEL -> USB
+    lpt = "TIUSB"
 
 #~ answer = EasyDialogs.AskYesNoCancel("Use JTAG or BSL?", 
     #~ default=1,yes="BSL", no="JTAG")

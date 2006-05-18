@@ -1,4 +1,4 @@
-# $Id: memory.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
+# $Id: memory.py,v 1.2 2006/05/18 22:54:46 cliechti Exp $
 import sys
 import elf
 
@@ -24,7 +24,7 @@ class Segment:
         return len(self.data)
 
     def __repr__(self):
-        return "Segment(startaddress = 0x%04x, data=%r)" % (self.startaddress, self.data)
+        return "Segment(startaddress=0x%04x, data=%r)" % (self.startaddress, self.data)
 
 class Memory:
     """represent memory contents. with functions to load files"""
@@ -43,6 +43,9 @@ class Memory:
     def __len__(self):
         return len(self.segments)
 
+    def __repr__(self):
+        return "Memory:\n%s" % ('\n'.join([repr(seg) for seg in self.segments]),)
+    
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def loadIHex(self, file):

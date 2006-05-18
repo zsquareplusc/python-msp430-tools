@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.6 2006/05/01 22:05:33 cliechti Exp $
+# $Id: jtag.py,v 1.7 2006/05/18 21:34:17 cliechti Exp $
 
 import sys
 
@@ -154,12 +154,12 @@ def init_backend(force=None):
             MSP430_Open.restype         = ctypes.c_int
         else:
             MSP430_Identify             = MSP430mspgcc.MSP430_Identify
-            MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.c_char*56), ctypes.c_long, ctypes.c_long]
+            MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.c_char*80), ctypes.c_long, ctypes.c_long]
             MSP430_Identify.restype     = ctypes.c_int
             #TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
             def MSP430_Open():
-                buffer = (ctypes.c_char*56)()
-                status = MSP430_Identify(ctypes.byref(buffer), 56, 0)
+                buffer = (ctypes.c_char*80)()
+                status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
                 if status != STATUS_OK:
                     return STATUS_ERROR
                 if DEBUG:

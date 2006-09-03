@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.25 2006/04/23 23:38:18 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.26 2006/09/03 15:36:21 cliechti Exp $
 
 import sys
 from mspgcc import memory, jtag
@@ -49,12 +49,22 @@ General options:
                         autodetect).
 
 Connection:
-  -l, --lpt=name        Specify an other parallel port.
+  -l, --lpt=name        Specify an other parallel port or serial port for the
+                        USBFET (the later requires MSP430.dll instead of
+                        MSP430mspgcc.dll).
                         (defaults to "LPT1" ("/dev/parport0" on Linux))
+  --slowdown=microsecs  Artificially slow down the communication. Can help
+                        with long lines, try values between 1 and 50 (parallel
+                        port interface with mspgcc's HIL library only).
+                        (experts only)
 
 Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
       If a MSP430.dll is found it is prefered, otherwise MSP430mspgcc.dll
       is used.
+Note: --slowdown > 50 can result in failrures for the ramsize autodetection
+      (use --ramsize option to fix this). Use the --debug option and watch
+      the outputs. The DCO clock adjustment and thus the Flash timing may be
+      inacurate for large values.
 
 Funclets:
   -f, --funclet         The given file is a funclet (a small program to
@@ -185,7 +195,7 @@ def main():
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "elf", "funclet", "ramsize=", "progress",
              "no-close", "parameter=", "result=", "timeout=", "secure",
-             "quiet", "backend="]
+             "quiet", "backend=", "slowdown="]
         )
     except getopt.GetoptError, e:
         # print help information and exit:
@@ -345,6 +355,19 @@ def main():
         elif o in ("-q", "--quiet", ):
             quiet = 1
             jtagobj.verbose = 0
+        elif o == "--slowdown":
+            slowdown = long(a)
+            import ctypes
+            if sys.platform == 'win32':
+                HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
+            else:
+                # XXX and posix platforms?!
+                HIL_SetSlowdown = ctypes.cdll.HIL.HIL_SetSlowdown
+            HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
+            HIL_SetSlowdown.argtypes  = [ctypes.c_ulong]
+            HIL_SetSlowdown.restype   = ctypes.c_int #actually void
+            # set slowdown
+            HIL_SetSlowdown(slowdown)
 
     if DEBUG:
         if quiet:

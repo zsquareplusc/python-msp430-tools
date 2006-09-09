@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.26 2006/09/03 15:36:21 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.27 2006/09/09 23:49:09 cliechti Exp $
 
 import sys
 from mspgcc import memory, jtag
@@ -39,8 +39,8 @@ Intel HEX. ELF files can also be loaded.
 
 General options:
   -h, --help            Show this help screen.
-  -D, --debug           Increase level of debug messages. This won't be
-                        very useful for the average user.
+  -D, --debug           Increase level of debug messages. This won't be very
+                        useful for the average user.
   -I, --intelhex        Force input file format to Intel HEX.
   -T, --titext          Force input file format to be TI-Text.
   --elf                 Force input file format to be ELF.
@@ -61,7 +61,7 @@ Connection:
 Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
       If a MSP430.dll is found it is prefered, otherwise MSP430mspgcc.dll
       is used.
-Note: --slowdown > 50 can result in failrures for the ramsize autodetection
+Note: --slowdown > 50 can result in failures for the ramsize autodetection
       (use --ramsize option to fix this). Use the --debug option and watch
       the outputs. The DCO clock adjustment and thus the Flash timing may be
       inacurate for large values.
@@ -87,7 +87,7 @@ Note: Only possible with MSP430mspgcc.dll, not other backends.
 Program flow specifiers:
   -e, --masserase       Mass Erase (clear all flash memory).
                         Note: SegmentA on F2xx is NOT erased, that must be
-                        done separately with --erase=0x1000
+                        done separately with --erase=0x10c0
   -m, --mainerase       Erase main flash memory only.
   --eraseinfo           Erase info flash memory only (0x1000-0x10ff).
   --erase=address       Selectively erase segment at the specified address.
@@ -96,7 +96,7 @@ Program flow specifiers:
   -p, --program         Program file.
   -v, --verify          Verify by file.
   --secure              Blow JTAG security fuse.
-                        Note: This is not reversible, use with care!
+                        WARNING: This is not reversible, use with care!
                         Note: Not supported with the simple parallel port
                               adapter (7V source required).
 
@@ -450,7 +450,7 @@ def main():
     # debug messages
     if toinit:
         if DEBUG > 0:       #debug
-            #show a nice list of sheduled actions
+            #show a nice list of scheduled actions
             sys.stderr.write("TOINIT list:\n")
             for f in toinit:
                 try:
@@ -459,7 +459,7 @@ def main():
                     sys.stderr.write("   %r\n" % f)
     if todo:
         if DEBUG > 0:       #debug
-            #show a nice list of sheduled actions
+            #show a nice list of scheduled actions
             sys.stderr.write("TODO list:\n")
             for f in todo:
                 try:
@@ -542,7 +542,7 @@ def main():
         if not release_done:
             jtagobj.reset(1, 1)                         #reset and release target
         if do_close:
-            jtagobj.close()                             #Release communication port
+            jtagobj.close()                             #release communication port
         elif DEBUG:
             sys.stderr.write("WARNING: JTAG port is left open (--no-close)\n")
 

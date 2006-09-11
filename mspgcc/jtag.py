@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.7 2006/05/18 21:34:17 cliechti Exp $
+# $Id: jtag.py,v 1.8 2006/09/11 17:31:22 cliechti Exp $
 
 import sys
 
@@ -143,7 +143,7 @@ def init_backend(force=None):
         global MSP430_Memory, MSP430_VerifyMem, MSP430_EraseCheck
         global MSP430_ReadRegister, MSP430_WriteRegister, MSP430_FuncletWait
         global MSP430_isHalted, MSP430_Error_Number, MSP430_Error_String
-        global MSP430_Secure
+        global MSP430_Secure, MSP430_readMAB
         
         MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
         MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]
@@ -232,6 +232,12 @@ def init_backend(force=None):
                 sys.stderr.write('MSP430_Secure not found in library. Not supported.\n')
             def MSP430_Secure():
                 raise NotImplementedError("this function is not supported with this MSP430 library")
+        try:
+            MSP430_readMAB                  = MSP430mspgcc.MSP430_readMAB
+            MSP430_readMAB.argtypes         = []
+            MSP430_readMAB.restype          = ctypes.c_int
+        except AttributeError:
+            pass
         
         messagecallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_short, ctypes.c_short) #void f(WORD count, WORD total)
 

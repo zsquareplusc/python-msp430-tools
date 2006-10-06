@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.8 2006/09/11 17:31:22 cliechti Exp $
+# $Id: jtag.py,v 1.9 2006/10/06 11:39:41 cliechti Exp $
 
 import sys
 
@@ -18,10 +18,27 @@ ERASE_MAIN    = 1       #Erase all MAIN memory.
 ERASE_ALL     = 2       #Erase all MAIN and INFORMATION memory.
 
 #Configurations of the MSP430 driver
+# TI and MSPGCC's library
 VERIFICATION_MODE = 0   #Verify data downloaded to FLASH memories.
+# MSPGCC's library
 RAMSIZE_OPTION    = 1   #Change RAM used to download and program flash blocks
 DEBUG_OPTION      = 2   #Set debug level. Enables debug outputs.
 FLASH_CALLBACK    = 3   #Set a callback for progress report during flash write void f(WORD count, WORD total)
+# TI's library
+EMULATION_MODE  = 1
+CLK_CNTRL_MODE  = 2
+MCLK_CNTRL_MODE = 3
+FLASH_TEST_MODE = 4
+LOCKED_FLASH_ACCESS = 5 #Allows Locked Info Mem Segment A access (if set to '1')
+FLASH_SWOP = 6
+EDT_TRACE_MODE = 7
+INTERFACE_MODE = 8
+SET_MDB_BEFORE_RUN = 9
+RAM_PRESERVE_MODE = 10  #Configure whether RAM content should be preserved/restored
+
+#INTERFACE_TYPE
+JTAG_IF = 0
+SPYBIWIRE_IF = 1
 
 #reset methods
 PUC_RESET = 1 << 0      #Power up clear (i.e., a "soft") reset.
@@ -273,6 +290,12 @@ def init_backend(force=None):
                 status = MSP430_Configure(VERIFICATION_MODE, TRUE)
                 if status != STATUS_OK:
                     raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
+                if backend == CTYPES_TI:
+                    # switch off the RAM preserve mode, to speed up operations
+                    # it also makes the behaviour closer to mspgcc the library
+                    status = MSP430_Configure(RAM_PRESERVE_MODE, FALSE)
+                    if status != STATUS_OK:
+                        raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
 
             def release(self):
                 """Release the target, disable JTAG lines.
@@ -309,6 +332,11 @@ def init_backend(force=None):
                 """'mem' has to be a string, containing the data to write.
                 It is possible to write peripherals, RAM as well as Flash.
                 Flash must be erased before writing it with memerase()."""
+                if backend == CTYPES_TI:
+                    # we want to be able to write the locked segments
+                    status = MSP430_Configure(LOCKED_FLASH_ACCESS, 1)
+                    if status != STATUS_OK:
+                        raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
                 size = len(buffer)
                 c_buffer = (ctypes.c_char*(size+2))();    #just to be sure + 2 (shouldn't be needed though)
                 for i in range(size): c_buffer[i] = buffer[i]
@@ -338,6 +366,11 @@ def init_backend(force=None):
                 segement must be specified. The length can be choosen larger than
                 one segment to erase a consecutive block of segments.
                 The erased segments are checked for erasure using PSA analysis."""
+                if backend == CTYPES_TI:
+                    # we want to be able to write the locked segments
+                    status = MSP430_Configure(LOCKED_FLASH_ACCESS, type != ERASE_ALL)
+                    if status != STATUS_OK:
+                        raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
                 status = MSP430_Erase(type, address, length)
                 if status != STATUS_OK:
                     raise IOError("Could not erase the Flash: %s" % MSP430_Error_String(MSP430_Error_Number()))
@@ -382,14 +415,16 @@ def init_backend(force=None):
             def set_flash_callback(self, function):
                 """The 'function' is called with (count, total) as arguments
                 while the flash is written."""
-
-                self._callback = messagecallback(function)
-                #~ MSP430_Configure(FLASH_CALLBACK, ctypes.addressof(self._callback))
-                #hack following, close your eyes ;-)...
-                argtypes = MSP430_Configure.argtypes
-                MSP430_Configure.argtypes = [ctypes.c_long, messagecallback]
-                MSP430_Configure(FLASH_CALLBACK, self._callback)
-                MSP430_Configure.argtypes = argtypes
+                if backend == CTYPES_MSPGCC:
+                    self._callback = messagecallback(function)
+                    #~ MSP430_Configure(FLASH_CALLBACK, ctypes.addressof(self._callback))
+                    #hack following, close your eyes ;-)...
+                    argtypes = MSP430_Configure.argtypes
+                    MSP430_Configure.argtypes = [ctypes.c_long, messagecallback]
+                    MSP430_Configure(FLASH_CALLBACK, self._callback)
+                    MSP430_Configure.argtypes = argtypes
+                else:
+                    raise JTAGException("callbacks are not supprted with other libraries than mspgcc's")
 
             def isHalted(self):
                 """Check if cpu is stuck on an address."""

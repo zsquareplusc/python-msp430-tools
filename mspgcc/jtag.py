@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.9 2006/10/06 11:39:41 cliechti Exp $
+# $Id: jtag.py,v 1.10 2006/10/06 13:31:37 cliechti Exp $
 
 import sys
 
@@ -32,7 +32,7 @@ FLASH_TEST_MODE = 4
 LOCKED_FLASH_ACCESS = 5 #Allows Locked Info Mem Segment A access (if set to '1')
 FLASH_SWOP = 6
 EDT_TRACE_MODE = 7
-INTERFACE_MODE = 8
+INTERFACE_MODE = 8      # see INTERFACE_TYPE below
 SET_MDB_BEFORE_RUN = 9
 RAM_PRESERVE_MODE = 10  #Configure whether RAM content should be preserved/restored
 
@@ -46,6 +46,8 @@ RST_RESET = 1 << 1      #RST/NMI (i.e., "hard") reset.
 VCC_RESET = 1 << 2      #Cycle Vcc (i.e., a "power on") reset.
 ALL_RESETS = PUC_RESET + RST_RESET + VCC_RESET
 
+# interface type 'spy-bi-wire' or 'JTAG'
+interface = 'JTAG'
 
 DEBUG = 0
 
@@ -276,6 +278,18 @@ def init_backend(force=None):
                     raise IOError("Could not initialize the library (port: %s)" % port)
                 if DEBUG:
                     sys.stderr.write('backend library version: %d\n' % (version.value,))
+                if backend == CTYPES_TI:
+                    if interface == 'spy-bi-wire':
+                        status = MSP430_Configure(INTERFACE_MODE, SPYBIWIRE_IF)
+                        if status != STATUS_OK:
+                            raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
+                    else:
+                        status = MSP430_Configure(INTERFACE_MODE, JTAG_IF)
+                        if status != STATUS_OK:
+                            raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
+                else:
+                    if interface != 'JTAG':
+                        raise ValueError("interface != 'JTAG' is not supported with this backend")
                 
             def connect(self,):
                 """Enable JTAG and connect to target. This stops it.

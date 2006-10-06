@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.27 2006/09/09 23:49:09 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.28 2006/10/06 13:31:37 cliechti Exp $
 
 import sys
 from mspgcc import memory, jtag
@@ -195,7 +195,7 @@ def main():
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "elf", "funclet", "ramsize=", "progress",
              "no-close", "parameter=", "result=", "timeout=", "secure",
-             "quiet", "backend=", "slowdown="]
+             "quiet", "backend=", "slowdown=", "spy-bi-wire"]
         )
     except getopt.GetoptError, e:
         # print help information and exit:
@@ -368,6 +368,8 @@ def main():
             HIL_SetSlowdown.restype   = ctypes.c_int #actually void
             # set slowdown
             HIL_SetSlowdown(slowdown)
+        elif o == "--spy-bi-wire":
+            jtag.interface = 'spy-bi-wire'
 
     if DEBUG:
         if quiet:

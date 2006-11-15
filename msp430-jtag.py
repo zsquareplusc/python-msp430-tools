@@ -9,14 +9,14 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.28 2006/10/06 13:31:37 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.29 2006/11/15 23:44:14 cliechti Exp $
 
 import sys
 from mspgcc import memory, jtag
 from mspgcc.util import hexdump, makeihex
 
 
-VERSION = "2.2"
+VERSION = "2.3"
 
 DEBUG = 0                           #disable debug messages by default
 

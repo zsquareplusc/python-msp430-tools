@@ -9,7 +9,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.29 2006/11/15 23:44:14 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.30 2006/11/29 00:14:12 cliechti Exp $
 
 import sys
 from mspgcc import memory, jtag
@@ -50,8 +50,8 @@ General options:
 
 Connection:
   -l, --lpt=name        Specify an other parallel port or serial port for the
-                        USBFET (the later requires MSP430.dll instead of
-                        MSP430mspgcc.dll).
+                        USBFET (the later requires %(libprefix)sMSP430%(libsuffix)s instead of
+                        %(libprefix)sMSP430mspgcc%(libsuffix)s).
                         (defaults to "LPT1" ("/dev/parport0" on Linux))
   --slowdown=microsecs  Artificially slow down the communication. Can help
                         with long lines, try values between 1 and 50 (parallel
@@ -59,12 +59,14 @@ Connection:
                         (experts only)
 
 Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
-      If a MSP430.dll is found it is prefered, otherwise MSP430mspgcc.dll
-      is used.
+      On other platforms, e.g. Linux, use "/dev/ttyUSB0" etc. if using
+      libMSP430.so.
+      If a %(libprefix)sMSP430%(libsuffix)s is found, it is prefered, otherwise
+      %(libprefix)sMSP430mspgcc%(libsuffix)s is used.
 Note: --slowdown > 50 can result in failures for the ramsize autodetection
       (use --ramsize option to fix this). Use the --debug option and watch
       the outputs. The DCO clock adjustment and thus the Flash timing may be
-      inacurate for large values.
+      inaccurate for large values.
 
 Funclets:
   -f, --funclet         The given file is a funclet (a small program to
@@ -82,7 +84,7 @@ Funclets:
 
 Note: Writing and/or reading RAM before and/or after running a funclet may not
       work as expected on devices with the JTAG bug like the F123.
-Note: Only possible with MSP430mspgcc.dll, not other backends.
+Note: Only possible with %(libprefix)sMSP430mspgcc%(libsuffix)s, not other backends.
 
 Program flow specifiers:
   -e, --masserase       Mass Erase (clear all flash memory).
@@ -136,9 +138,14 @@ Address parameters for --erase, --upload, --size can be given in
 decimal, hexadecimal or octal.
 
 Examples:
-    Mass erase and write file: "%(prog)s -e firmware.elf"
+    Mass erase and program from file: "%(prog)s -e firmware.elf"
     Dump Information memory: "%(prog)s --upload=0x1000-0x10ff"
-""" % {'prog': sys.argv[0], 'version': VERSION})
+""" % {
+        'prog': sys.argv[0],
+        'version': VERSION,
+        'libprefix': (sys.platform != 'win32') and 'lib' or '',
+        'libsuffix': (sys.platform != 'win32') and '.so' or '.dll',
+    })
 
 def parseAddressRange(text):
     """parse a single address or a address range and return a tuple."""

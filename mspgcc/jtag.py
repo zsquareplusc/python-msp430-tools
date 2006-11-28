@@ -8,7 +8,7 @@
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.10 2006/10/06 13:31:37 cliechti Exp $
+# $Id: jtag.py,v 1.11 2006/11/28 03:12:14 cliechti Exp $
 
 import sys
 
@@ -129,7 +129,6 @@ def init_backend(force=None):
         READ         = 1
         if sys.platform == 'win32':
             #the library is found on the PATH, respectively in the executables directory
-            
             if force == CTYPES_MSPGCC:
                 MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path)
                 backend = CTYPES_MSPGCC
@@ -150,12 +149,29 @@ def init_backend(force=None):
             else:
                 raise ValueError("no such backend: %r" % force)
         else:
-            #now try to locate library
+            #the library is found on the PATH, respectively in the executables directory
             try:
-                MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
+                if force == CTYPES_MSPGCC:
+                    MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
+                    backend = CTYPES_MSPGCC
+                elif force == CTYPES_TI:
+                    #~ MSP430mspgcc = ctypes.windll.MSP430
+                    MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll)
+                    backend = CTYPES_TI
+                elif force is None:
+                    #autodetect
+                    try:
+                        #try to use the TI or third party library
+                        MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll)
+                        backend = CTYPES_TI
+                    except IOError:
+                        #when that fails, use the mspgcc implementation
+                        MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
+                        backend = CTYPES_MSPGCC
+                else:
+                    raise ValueError("no such backend: %r" % force)
             except IOError, e:
-                raise IOError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so": %s' % e)
-            backend = CTYPES_MSPGCC
+                raise IOError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so" or "libMSP430.so": %s' % e)
         
         global MSP430_Initialize, MSP430_Open, MSP430_Identify, MSP430_Close
         global MSP430_Configure, MSP430_VCC, MSP430_Reset, MSP430_Erase
@@ -271,7 +287,7 @@ def init_backend(force=None):
                         port = "1"
                     else:
                         port = "/dev/parport0"
-                if backend == CTYPES_TI:
+                if backend == CTYPES_TI and sys.platform == 'win32':
                     port = port.upper()
                 status = MSP430_Initialize(port, ctypes.byref(version))
                 if status != STATUS_OK:

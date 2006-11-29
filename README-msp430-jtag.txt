@@ -39,7 +39,9 @@ Linux users should refer to the next secion.
 
 Building from source
 --------------------
-The libraries from the CVS module jtag/* have to be built.
+The libraries from the CVS module jtag/* have to be built. This includes
+MSP430mspgcc.dll and HIL.dll (respectively libMSP430mspgcc.so and
+libHIL.so ony Un*x platforms)
 
 On Linux/Un*x Python 2.2+ is needed. On some distributions is Python 1.5.2
 installed per default. You may meed to change the first line in the script
@@ -49,24 +51,26 @@ tarball available through the Python homepage.
 
 There prefered backend is the a ctypes version, which means just
 libMSP430mspgcc.so/dll libHIL.so/HIL.dll is needed and of course the ctypes
-python extension.
+python extension. The ctypes backend is also capable of using the closed
+source MSP430.dll/libMSP430.so library from TI or 3rd party supliers.
 
-Alternatively _parjtag.so/dll from the jtag archive can be copied to the same
-directory as msp430-jtag.py or to a directory on the PATH.
-It's recomended to install jtag.py as "msp430-jtag" in a directory in the PATH
-and make it executable.
+Alternatively there is the older python extension module implemented in c
+called _parjtag.so/dll. Its sources can be found in the "python" folder of
+the CVS repository mentioned above. However, not all of the newest features
+may work with this backend.
 
 
 Short introduction
 ------------------
 This software uses the JTAG hardware that comes with the FET kits. It is
-connected to the parallel port.
+connected to the parallel port. Using 3rd party backends it is also possible
+to use USB programmers.
 
 The program can be started by typing ``msp430-jtag`` when installed correctly
 If it's used from the source directory use "python msp430-jtag.py".
 
 
-USAGE: msp430-jtag.py [options] [file]
+USAGE: msp430-jtag [options] [file]
 Version: 2.2
 
 If "-" is specified as file the data is read from stdin.
@@ -161,8 +165,8 @@ Address parameters for --erase, --upload, --size can be given in
 decimal, hexadecimal or octal.
 
 Examples:
-    Mass erase and write file: "msp430-jtag.py -e firmware.elf"
-    Dump Information memory: "msp430-jtag.py --upload=0x1000-0x10ff"
+    Mass erase and program from file: "msp430-jtag -e firmware.elf"
+    Dump Information memory: "msp430-jtag --upload=0x1000-0x10ff"
 
 
 
@@ -231,22 +235,21 @@ Examples
 
 USB JTAG adapters
 -----------------
-This section only applies to Windows (currently).
+This section only applies to Windows. On linux replace MSP430.dll with
+libMSP430.so etc.
 
-USB JTAG adapters are supported trough the MSP430.dlls from the adaptor
+USB JTAG adapters are supported through the MSP430.dlls from the adaptor
 vendor. To enable its use, copy MSP430.dll to the
 ``bin\lib`` folder, where ``shared.zip`` is located.
 Optionally copy ``HIL.dll`` to the ``bin`` folder.
 
 For example for MSP-FET430UIF from TI:
-- download and install CCE (Code Composer, the free version)
-- install the USB driver that comes with CCE, you'll also need to install
-  CCE itself, as that unpacks the MSP430.dll.
-- copy MSP430.dll and HIL.dll (or simply all the files you find in the folder)
-  from ``C:\Program Files\CCEssentials\FTSuite\emulation\msp430`` to
-  ``c:\mspgcc\bin\lib`` (substitute the source and destination folders
-  according to you own setup)
-- reboot
+- download a the MSP430.dll binary from the downloads section in
+  http://mspgcc.sf.net
+- copy MSP430.dll to ``c:\mspgcc\bin\lib`` (substitute the source and
+  destination folders according to you own setup)
+
+The windows installer already includes this library.
 
 To use the first available MSP-FET430UIF::
 
@@ -258,6 +261,9 @@ Device Manager. Then for example run::
 
     msp430-jtag -l COM5 --upload=0x0ff0
 
+Linux users have to specify the serial port differently:
+
+    msp430-jtag -l /dev/ttyUSB0 --upload=0x0ff0
 
 
 History
@@ -284,12 +290,18 @@ V2.2
     Added --quiet and --secure. Try to use 3rd party MSP430 libraries so that
     USB adapters can be used. Allow multiple --upload with address ranges.
 
+V2.3
+    Added Support for F2xx and MSP430X architectures. Improved 3rd party
+    Library support for Linux and Windows.
+
 
 References
 ----------
 - Python: http://www.python.org
 
 - ctypes: http://starship.python.net/crew/theller/ctypes
+  This module is included in the standard distribution since Python 2.5:
+  http://docs.python.org/lib/module-ctypes.html
 
 - Texas Instruments MSP430 Homepage, links to Datasheets and Application
   Notes: http://www.ti.com/msp430

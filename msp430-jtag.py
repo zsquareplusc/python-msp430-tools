@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 # JTAG programmer for the MSP430 embedded proccessor.
 #
-# (C) 2002-2004 Chris Liechti <cliechti@gmx.net>
+# (C) 2002-2006 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
 # http://mspgcc.sf.net
 #
 # Requires Python 2+ and the binary extension _parjtag or ctypes
-# and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
+# and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
+# and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.30 2006/11/29 00:14:12 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.31 2006/12/08 18:14:07 cliechti Exp $
 
 import sys
 from mspgcc import memory, jtag
@@ -38,15 +39,15 @@ Prefered file extensions are ".txt" for TI-Text format, ".a43" or ".hex" for
 Intel HEX. ELF files can also be loaded.
 
 General options:
-  -h, --help            Show this help screen.
+  -h, --help            Show this help text.
+  --help-backend        Show help about the different backends.
   -D, --debug           Increase level of debug messages. This won't be very
                         useful for the average user.
   -I, --intelhex        Force input file format to Intel HEX.
   -T, --titext          Force input file format to be TI-Text.
   --elf                 Force input file format to be ELF.
   -R, --ramsize         Specify the amount of RAM to be used to program
-                        flash (default, if --ramsize is not given is
-                        autodetect).
+                        flash (autodetected, if --ramsize is not given).
 
 Connection:
   -l, --lpt=name        Specify an other parallel port or serial port for the
@@ -57,6 +58,8 @@ Connection:
                         with long lines, try values between 1 and 50 (parallel
                         port interface with mspgcc's HIL library only).
                         (experts only)
+  --backend=backend     Select an alternate backend. See --help-backend for
+                        more information.
 
 Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
       On other platforms, e.g. Linux, use "/dev/ttyUSB0" etc. if using
@@ -134,15 +137,57 @@ Do before exit:
   --no-close            Do not close port on exit. Allows to power devices
                         from the parallel port interface.
 
+
 Address parameters for --erase, --upload, --size can be given in
 decimal, hexadecimal or octal.
 
 Examples:
     Mass erase and program from file: "%(prog)s -e firmware.elf"
-    Dump Information memory: "%(prog)s --upload=0x1000-0x10ff"
+    Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
 """ % {
         'prog': sys.argv[0],
         'version': VERSION,
+        'libprefix': (sys.platform != 'win32') and 'lib' or '',
+        'libsuffix': (sys.platform != 'win32') and '.so' or '.dll',
+    })
+
+
+def help_on_backends():
+    sys.stderr.write("""\
+%(prog)s can use different libraries to connect to the target.
+The backend can be chosen with the --backend command line option.
+
+"mspgcc"
+    Using %(libprefix)sMSP430mspgcc%(libsuffix)s, the open source implementation
+    from the mspgcc project.
+
+"ti" (default)
+    Using %(libprefix)sMSP430%(libsuffix)s, the proprietary library from TI or a
+    compatible one from a 3rd pary supplier.
+
+"parjtag"
+    Old way of using %(libprefix)sMSP430mspgcc%(libsuffix)s. Use "mspgcc" instead.
+
+Compatibility of backends:
+    +===========================================+========+========+
+    | Feature                                   | mspgcc | ti     |
+    +===========================================+========+========+
+    | 4 Wire JTAG                               | yes    | yes    |
+    +-------------------------------------------+--------+--------+
+    | 4 Wire JTAG on devices with spy-bi-wire   | yes(1) | no     |
+    +-------------------------------------------+--------+--------+
+    | using --spy-bi-wire option                | no     | yes    |
+    +-------------------------------------------+--------+--------+
+    | support for USB JTAG adapters             | no     | yes    |
+    +-------------------------------------------+--------+--------+
+    | unsing --funclet option                   | yes    | no     |
+    +===========================================+========+========+
+
+Notes:
+    (1) Timing critical, may not work on all machines or at every try.
+
+""" % { 
+        'prog': sys.argv[0],
         'libprefix': (sys.platform != 'win32') and 'lib' or '',
         'libsuffix': (sys.platform != 'win32') and '.so' or '.dll',
     })
@@ -202,7 +247,7 @@ def main():
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "elf", "funclet", "ramsize=", "progress",
              "no-close", "parameter=", "result=", "timeout=", "secure",
-             "quiet", "backend=", "slowdown=", "spy-bi-wire"]
+             "quiet", "backend=", "help-backend", "slowdown=", "spy-bi-wire"]
         )
     except getopt.GetoptError, e:
         # print help information and exit:
@@ -214,7 +259,10 @@ def main():
         if o in ("-h", "--help"):
             usage()
             sys.exit()
-        elif o in ("", "--backend"):
+        elif o == "--help-backend":
+            help_on_backends()
+            sys.exit()
+        elif o == "--backend":
             if a == 'mspgcc':
                 backend = jtag.CTYPES_MSPGCC
             elif a == 'parjtag':

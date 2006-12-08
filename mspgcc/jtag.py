@@ -1,14 +1,15 @@
 # Parallel JTAG programmer for the MSP430 embedded proccessor.
 #
-# (C) 2002-2004 Chris Liechti <cliechti@gmx.net>
+# (C) 2002-2006 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
 # http://mspgcc.sf.net
 #
 # Requires Python 2+ and the binary extension _parjtag or ctypes
-# and MSP430mspgcc.dll/libMSP430mspgcc.so and HIL.dll/libHIL.so
+# and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
+# and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.11 2006/11/28 03:12:14 cliechti Exp $
+# $Id: jtag.py,v 1.12 2006/12/08 18:14:07 cliechti Exp $
 
 import sys
 

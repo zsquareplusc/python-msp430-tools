@@ -78,7 +78,8 @@ A file ending with ".txt" is considered to be in TI-Text format all
 other filenames are considered to be in Intel HEX format.
 
 General options:
-  -h, --help            Show this help screen.
+  -h, --help            Show this help text.
+  --help-backend        Show help about the different backends.
   -D, --debug           Increase level of debug messages. This won't be
                         very useful for the average user.
   -I, --intelhex        Force input file format to Intel HEX.
@@ -88,20 +89,32 @@ General options:
                         autodetect).
 
 Connection:
-  -l, --lpt=name        Specify an other (parallel) port.
+  -l, --lpt=name        Specify an other parallel port or serial port for the
+                        USBFET (the later requires MSP430.dll instead of
+                        MSP430mspgcc.dll).
                         (defaults to "LPT1" ("/dev/parport0" on Linux))
+  --slowdown=microsecs  Artificially slow down the communication. Can help
+                        with long lines, try values between 1 and 50 (parallel
+                        port interface with mspgcc's HIL library only).
+                        (experts only)
+  --backend=backend     Select an alternate backend. See --help-backend for
+                        more information.
 
-Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
-      If a MSP430.dll is found it is prefered, otherwise MSP430mspgcc.dll
-      is used.
+.. note:: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
+          If a MSP430.dll is found it is prefered, otherwise MSP430mspgcc.dll
+          is used.
+.. note:: --slowdown > 50 can result in failures for the ramsize autodetection
+          (use --ramsize option to fix this). Use the --debug option and watch
+          the outputs. The DCO clock adjustment and thus the Flash timing may
+          be inaccurate for large values.
 
 Funclets:
   -f, --funclet         The given file is a funclet (a small program to
                         be run in RAM).
-  --parameter=<key>=<value>   Pass parameters to funclets.
+  --parameter=option    Pass parameters to funclets.
                         Registers can be written like "R15=123" or "R4=0x55"
                         A string can be written to memory with "0x2e0=hello"
-                        --parameter can be given more than once
+                        --parameter can be given more than once.
   --result=value        Read results from funclets. "Rall" reads all registers
                         (case insensitive) "R15" reads R15 etc. Address ranges
                         can be read with "0x2e0-0x2ff". See also --upload.
@@ -109,9 +122,9 @@ Funclets:
   --timeout=value       Abort the funclet after the given time in seconds
                         if it does not exit no itself. (default 1)
 
-Note: writing and/or reading RAM before and/or after running a funclet may not
-      work as expected on devices with the JTAG bug like the F123.
-Note: Only possible with MSP430mspgcc.dll, not other backends.
+.. note:: Writing and/or reading RAM before and/or after running a funclet may
+          not work as expected on devices with the JTAG bug like the F123.
+.. note:: Only possible with MSP430mspgcc.dll, not other backends.
 
 Program flow specifiers:
   -e, --masserase       Mass Erase (clear all flash memory).
@@ -125,9 +138,11 @@ Program flow specifiers:
   -p, --program         Program file.
   -v, --verify          Verify by file.
   --secure              Blow JTAG security fuse.
-                        Note: This is not reversible, use with care!
-                        Note: Not supported with the simple parallel port
-                              adapter (7V source required).
+  
+                        .. warning:: This is not reversible, use with care!
+                                
+                        .. note:: Not supported with the simple parallel port
+                                  adapter (7V source required).
 
 The order of the above options matters! The table is ordered by normal
 execution order. For the options "E", "p" and "v" a file must be specified.
@@ -169,22 +184,58 @@ Examples:
     Dump Information memory: "msp430-jtag --upload=0x1000-0x10ff"
 
 
+.. note::
+    Some versions of the Texas Instruments MSP430 Development Tool
+    require that you give the '--no-close' option to msp430-jtag. This
+    is because the Texas Instruments tool is powered via the JTAG
+    adapter; the '--no-close' option prevents msp430-jtag from powering
+    the adapter off.  You may also need to restart the program with 
+    msp430-jtag (using the '--no-close' and '-r' options is sufficient)
+    after rebooting your machine.
 
-NOTE:   Some versions of the Texas Instruments MSP430 Development Tool
-        require that you give the '--no-close' option to msp430-jtag. This
-        is because the Texas Instruments tool is powered via the JTAG
-        adapter; the '--no-close' option prevents msp430-jtag from powering
-        the adapter off.  You may also need to restart the program with 
-        msp430-jtag (using the '--no-close' and '-r' options is sufficient)
-        after rebooting your machine.
+    Other development kits that rely on the parallel port for their power
+    source may also need the '--no-close' option.  It is preferable to
+    try programming the device *without* the '--no-close' option first,
+    and introduce this option only if the uploaded code fails to start.
 
-        Other development kits that rely on the parallel port for their power
-        source may also need the '--no-close' option.  It is preferable to
-        try programming the device *without* the '--no-close' option first,
-        and introduce this option only if the uploaded code fails to start.
+    Aleternatively, it is possible run ``msp430-jtag -w`` to power the
+    eval board from the JTAG interface.
 
-        Aleternatively, it is possible run ``msp430-jtag -w`` to power the
-        eval board from the JTAG interface.
+
+Backends
+--------
+msp430-jtag can use different libraries to connect to the target.
+The backend can be chosen with the --backend command line option.
+
+"mspgcc"
+    Using MSP430mspgcc.dll, the open source implementation from the mspgcc
+    project.
+
+"ti" (default)
+    Using MSP430.dll, the proprietary library from TI or a compatible one
+    from a 3rd pary supplier.
+
+"parjtag"
+    Old way of using MSP430mspgcc.dll. Use "mspgcc" instead.
+
+Compatibility of backends:
+
+    +-------------------------------------------+--------+--------+
+    | Feature                                   | mspgcc | ti     |
+    +===========================================+========+========+
+    | 4 Wire JTAG                               | yes    | yes    |
+    +-------------------------------------------+--------+--------+
+    | 4 Wire JTAG on devices with spy-bi-wire   | yes(1) | no     |
+    +-------------------------------------------+--------+--------+
+    | using --spy-bi-wire option                | no     | yes    |
+    +-------------------------------------------+--------+--------+
+    | support for USB JTAG adapters             | no     | yes    |
+    +-------------------------------------------+--------+--------+
+    | unsing --funclet option                   | yes    | no     |
+    +-------------------------------------------+--------+--------+
+
+Notes:
+    (1) Timing critical, may not work on all machines or at every try.
 
 
 Examples
@@ -220,7 +271,7 @@ Examples
     Or save the binary in a file::
     
       msp430-jtag -u 0x0c00 -s 1024 -b >dump.bin
-      
+    
     or as an intel-hex file::
     
       msp430-jtag -u 0x0c00 -s 1024 -i >dump.a43
@@ -239,14 +290,14 @@ This section only applies to Windows. On linux replace MSP430.dll with
 libMSP430.so etc.
 
 USB JTAG adapters are supported through the MSP430.dlls from the adaptor
-vendor. To enable its use, copy MSP430.dll to the
-``bin\lib`` folder, where ``shared.zip`` is located.
-Optionally copy ``HIL.dll`` to the ``bin`` folder.
+vendor. To enable its use, copy MSP430.dll to the ``bin\lib`` folder, where
+``shared.zip`` is located. Optionally copy ``HIL.dll`` to the ``bin`` folder.
 
 For example for MSP-FET430UIF from TI:
+
 - download a the MSP430.dll binary from the downloads section in
   http://mspgcc.sf.net
-- copy MSP430.dll to ``c:\mspgcc\bin\lib`` (substitute the source and
+- copy MSP430.dll to ``c:\mspgcc\bin`` (substitute the source and
   destination folders according to you own setup)
 
 The windows installer already includes this library.
@@ -261,7 +312,7 @@ Device Manager. Then for example run::
 
     msp430-jtag -l COM5 --upload=0x0ff0
 
-Linux users have to specify the serial port differently:
+Linux users have to specify the serial port differently::
 
     msp430-jtag -l /dev/ttyUSB0 --upload=0x0ff0
 
@@ -291,8 +342,8 @@ V2.2
     USB adapters can be used. Allow multiple --upload with address ranges.
 
 V2.3
-    Added Support for F2xx and MSP430X architectures. Improved 3rd party
-    Library support for Linux and Windows.
+    Added support for F2xx and MSP430X architectures. Improved 3rd party
+    library support for Linux and Windows.
 
 
 References

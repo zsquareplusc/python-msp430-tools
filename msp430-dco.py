@@ -9,7 +9,7 @@
 # (C) 2005-2006 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# $Id: msp430-dco.py,v 1.9 2006/04/23 21:38:02 cliechti Exp $
+# $Id: msp430-dco.py,v 1.10 2007/03/08 15:39:08 cliechti Exp $
 
 from mspgcc import memory, jtag, clock
 import sys
@@ -184,8 +184,8 @@ def measure_clock(out):
         f_all_max = clock.getDCOPlusFreq(0x13, 0xbf, 0x80, 0x80, 0) # should be around 16MHz
     else:
         raise IOError("unknown MSP430 type %02x" % device)
-    out.write('fmin = %8dHz (%s)\n' % (fmin, nice_frequency(f_all_min)))
-    out.write('fmax = %8dHz (%s)\n' % (fmax, nice_frequency(f_all_max)))
+    out.write('fmin = %8dHz (%s)\n' % (f_all_min, nice_frequency(f_all_min)))
+    out.write('fmax = %8dHz (%s)\n' % (f_all_max, nice_frequency(f_all_max)))
     variables['fmin'] = TYPE_16BIT, f_all_min/1e3
     variables['fmax'] = TYPE_16BIT, f_all_max/1e3
     return variables

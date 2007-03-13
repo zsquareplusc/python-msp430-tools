@@ -9,7 +9,7 @@
 # and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
 # and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.12 2006/12/08 18:14:07 cliechti Exp $
+# $Id: jtag.py,v 1.13 2007/03/13 11:34:00 cliechti Exp $
 
 import sys
 
@@ -275,7 +275,7 @@ def init_backend(force=None):
         except AttributeError:
             pass
         
-        messagecallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_short, ctypes.c_short) #void f(WORD count, WORD total)
+        messagecallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_ushort, ctypes.c_ushort) #void f(WORD count, WORD total)
 
         class ParJTAG:
             """implementation of the _parjtag module in python with the help of ctypes"""
@@ -299,11 +299,11 @@ def init_backend(force=None):
                     if interface == 'spy-bi-wire':
                         status = MSP430_Configure(INTERFACE_MODE, SPYBIWIRE_IF)
                         if status != STATUS_OK:
-                            raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
+                            raise IOError("Could not configure the library: %s (device not spi-bi-wire capable?)" % MSP430_Error_String(MSP430_Error_Number()))
                     else:
                         status = MSP430_Configure(INTERFACE_MODE, JTAG_IF)
                         if status != STATUS_OK:
-                            raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
+                            raise IOError("Could not configure the library: %s (spy-bi-wire device/connection?)" % MSP430_Error_String(MSP430_Error_Number()))
                 else:
                     if interface != 'JTAG':
                         raise ValueError("interface != 'JTAG' is not supported with this backend")
@@ -596,6 +596,7 @@ class JTAG:
         different output."""
         sys.stderr.write("\r%d%%" % (100*count/total))
         sys.stderr.flush()
+        return 0
 
     def actionProgram(self):
         """Program data into flash memory."""

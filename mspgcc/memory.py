@@ -1,4 +1,4 @@
-# $Id: memory.py,v 1.2 2006/05/18 22:54:46 cliechti Exp $
+# $Id: memory.py,v 1.3 2007/03/13 11:34:00 cliechti Exp $
 import sys
 import elf
 
@@ -115,29 +115,37 @@ class Memory:
             if len(section.data):
                 self.segments.append( Segment(section.lma, section.data) )
         
-    def loadFile(self, filename):
+    def loadFile(self, filename, fileobj=None):
         """fill memory with the contents of a file. file type is determined from extension"""
-        #first check extension
+        close = 0
+        if fileobj is None:
+            fileobj = open(filename, "rb")
+            close = 1
         try:
-            if filename[-4:].lower() == '.txt':
-                self.loadTIText(open(filename, "rb"))
-                return
-            elif filename[-4:].lower() in ('.a43', '.hex'):
-                self.loadIHex(open(filename, "rb"))
-                return
-        except FileFormatError:
-            pass #do contents based detection below
-        #then do a contents based detection
-        try:
-            self.loadELF(open(filename, "rb"))
-        except elf.ELFException:
+            #first check extension
             try:
-                self.loadIHex(open(filename, "rb"))
+                if filename[-4:].lower() == '.txt':
+                    self.loadTIText(fileobj)
+                    return
+                elif filename[-4:].lower() in ('.a43', '.hex'):
+                    self.loadIHex(fileobj)
+                    return
             except FileFormatError:
+                pass #do contents based detection below
+            #then do a contents based detection
+            try:
+                self.loadELF(fileobj)
+            except elf.ELFException:
                 try:
-                    self.loadTIText(open(filename, "rb"))
+                    self.loadIHex(fileobj)
                 except FileFormatError:
-                    raise FileFormatError('file could not be loaded (not ELF, Intel-Hex, or TI-Text)')
+                    try:
+                        self.loadTIText(fileobj)
+                    except FileFormatError:
+                        raise FileFormatError('file could not be loaded (not ELF, Intel-Hex, or TI-Text)')
+        finally:
+            if close:
+                fileobj.close()
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     def saveIHex(self, filelike):

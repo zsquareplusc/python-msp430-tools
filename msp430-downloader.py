@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: msp430-downloader.py,v 1.11 2006/05/25 22:14:47 cliechti Exp $
+# $Id: msp430-downloader.py,v 1.12 2007/03/13 11:34:00 cliechti Exp $
 """
 Simple tool to download to a MSP430.
 
@@ -10,7 +10,7 @@ windoze exploder downloads the file.
 Now also with the ability to load the configuration from an ini file (.m43)
 which itself can be bundled with a binary in a zip file (.z43).
 
-(C) 2004-2006 cliechti@gmx.net
+(C) 2004-2007 Chris Liechti <cliechti@gmx.net>
               with inputs from David Brown
 """
 
@@ -144,7 +144,8 @@ elif options.filename.endswith('.z43'):
             interpret_config(config, abspath=False)
     #get binary from zip file
     if options.filename:
-        binary = StringIO(archive.read(options.filename))
+        binary = mspgcc.memory.Memory()   #prepare downloaded data
+        binary.loadFile(options.filename, fileobj = StringIO(archive.read(options.filename)))
     #get readme from zip file and display it
     if options.readme:
         readme_text = archive.read(options.readme)
@@ -251,11 +252,9 @@ while True:
             pass
     
     try:
-        if options.fake_progress:
-            jtagobj = mspgcc.jtag.JTAG()
-        else:
-            jtagobj = ProgressJTAG()
-        jtagobj.showprogess = True
+        jtagobj = ProgressJTAG()
+        if not options.fake_progress:
+            jtagobj.showprogess = True
         jtagobj.bar = EasyDialogs.ProgressBar('Programming %r' % options.filename[-50:], 100)
         showError = False
         try:

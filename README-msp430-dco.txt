@@ -69,7 +69,7 @@ Examples:
 
     Write clock calibration for 1.5MHz to the information memory at 0x1000::
     
-        msp430-dco 1.5e6 BCSCTL1@0x1000 DCOCTL@0x1000
+        msp430-dco 1.5e6 BCSCTL1@0x1000 DCOCTL@0x1001
 
 Use it at your own risk. No guarantee that the values are correct.
 
@@ -90,7 +90,7 @@ options:
 
 Notes:
 
-- the --output option can be used to redirect the output. Once could also use
+- the --output option can be used to redirect the output. One could also use
   the usual stdout redirection from the shell (``>filename``)
 - --tolerance specifies a window in which the clock has to be to complete the
   calibration.
@@ -187,6 +187,11 @@ Examples
     This is only possible for F2xx devices.
 
 
+Known Issues
+------------
+The algorithm does not search for the best match, it stops when the frequency
+iswithin the window. Therefor it's not unlikely that the frequency is at the
+border of the tolerance window and not in the center.
 
 
 History

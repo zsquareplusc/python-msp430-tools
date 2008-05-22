@@ -1,4 +1,4 @@
-# $Id: memory.py,v 1.3 2007/03/13 11:34:00 cliechti Exp $
+# $Id: memory.py,v 1.4 2008/05/22 16:20:02 cliechti Exp $
 import sys
 import elf
 
@@ -136,9 +136,11 @@ class Memory:
             try:
                 self.loadELF(fileobj)
             except elf.ELFException:
+                fileobj.seek(0)
                 try:
                     self.loadIHex(fileobj)
                 except FileFormatError:
+                    fileobj.seek(0)
                     try:
                         self.loadTIText(fileobj)
                     except FileFormatError:

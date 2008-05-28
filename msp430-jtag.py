@@ -10,7 +10,7 @@
 # and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
 # and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.31 2006/12/08 18:14:07 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.32 2008/05/28 12:49:55 cliechti Exp $
 
 import sys
 from mspgcc import memory, jtag
@@ -60,6 +60,8 @@ Connection:
                         (experts only)
   --backend=backend     Select an alternate backend. See --help-backend for
                         more information.
+  --spy-bi-wire         Interface is two-wire spy-bi-wire instead of standard
+                        JTAG.
 
 Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
       On other platforms, e.g. Linux, use "/dev/ttyUSB0" etc. if using
@@ -461,22 +463,22 @@ def main():
             sys.stderr.write("Warning: option --reset ignored as --go is specified!\n")
         reset = 0
 
-    if startaddr and reset:
+    if startaddr is not None and reset:
         if not quiet:
             sys.stderr.write("Warning: option --reset ignored as --upload is specified!\n")
         reset = 0
         
-    if startaddr and wait:
+    if startaddr is not None and wait:
         if not quiet:
             sys.stderr.write("Warning: option --wait ignored as --upload is specified!\n")
         wait = 0
 
     #upload ranges and address+size can not be mixed
-    if uploadlist and startaddr:
+    if uploadlist and startaddr is not None:
         sys.stderr.write("--upload: Either specify ranges (multiple --upload allowed) or one --upload and one --size\n")
         sys.exit(2)
     #backwards compatibility for old parameter format
-    if not uploadlist and startaddr:
+    if not uploadlist and startaddr is not None:
         uploadlist.append((startaddr, startaddr+size-1))
 
     #prepare data to download

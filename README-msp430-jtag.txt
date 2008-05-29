@@ -1,10 +1,11 @@
 msp430-jtag
 ===========
 
-Software to talk to the parallel port JTAG adapter as seen with the FET kits.
+Software to talk to the parallel port and USB JTAG adapters as seen with the
+FET kits.
 It is released under a free software license, see license.txt for more details.
 
-(C) 2002-2006 Chris Liechti <cliechti@gmx.net>
+(C) 2002-2008 Chris Liechti <cliechti@gmx.net>
 
 
 Features
@@ -34,7 +35,7 @@ Installation
 Binaries for Windows can be found in the download section of
 http://mspgcc.sf.net
 
-Linux users should refer to the next secion.
+Linux users should refer to the next section.
 
 
 Building from source

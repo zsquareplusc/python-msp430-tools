@@ -30,19 +30,22 @@ if len(args) != 1:
 
 
 
-#regexp to parse lines like the following one
+# regexp to parse lines like the following one
 #   959: 000002aa     0 OBJECT  GLOBAL DEFAULT    6 rxdata
 re_obj = re.compile(r':[ \t]+([0-9a-f]+)[ \t]+([0-9a-f]+)[ \t]+(\w+)[ \t]+.* (.*)$')
 
-#read labeled object from readelf dump
+# read labeled object from readelf dump
 objs = {}
-for line in os.popen('msp430-readelf -a -W "%s"' % args[0]):
-    #~ print line,
+syms = os.popen('msp430-readelf -a -W "%s"' % args[0])
+for line in syms:
+    #~ print ">", line,
     m = re_obj.search(line)
     if m:
         objs[m.group(4)] = ((int(m.group(1),16), int(m.group(2)), m.group(3)))
+if syms.close() != 0:
+    raise IOError("msp430-readelf failed")
 
-#store labels by address
+# store labels by address
 mmap = {}
 #~ print 'adr    size name'
 for name, (address, size, type) in objs.items():
@@ -68,7 +71,7 @@ for name, (address, size, type) in objs.items():
                 desc = '%s | %s' % (mmap[address+x], desc)
             mmap[address+x] = desc
 
-#print labels sorted by address, only RAM
+# print labels sorted by address, only RAM
 free = 0
 for address in range(objs['__data_start'][0], objs['__stack'][0]):
     if mmap.has_key(address):
@@ -87,13 +90,13 @@ if options.compact:
                      for a in range(address,address+16)])
         )
 
-#scan backwards for continous memory, starting from the stack init
+# scan backwards for continous memory, starting from the stack init
 stackmem = 0
 address = objs['__stack'][0]
 while address >= objs['__data_start'][0] and not mmap.has_key(address):
     address -= 1
     stackmem += 1
-#calc total and print summary
+# calc total and print summary
 size = objs['__stack'][0] - objs['__data_start'][0]
 print 'RAM usage summary:'
 print '%d of %d bytes used (%d free)' % (size-free, size, free)

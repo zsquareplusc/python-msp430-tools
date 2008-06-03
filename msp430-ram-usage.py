@@ -26,7 +26,7 @@ parser.add_option("-q", "--quiet",
 (options, args) = parser.parse_args()
 
 if len(args) != 1:
-    parser.error("incorrect number of arguments")
+    parser.error("missing object file name")
 
 
 
@@ -42,7 +42,7 @@ for line in syms:
     m = re_obj.search(line)
     if m:
         objs[m.group(4)] = ((int(m.group(1),16), int(m.group(2)), m.group(3)))
-if syms.close() != 0:
+if syms.close():
     raise IOError("msp430-readelf failed")
 
 # store labels by address

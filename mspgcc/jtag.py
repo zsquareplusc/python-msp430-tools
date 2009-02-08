@@ -1,6 +1,6 @@
 # Parallel JTAG programmer for the MSP430 embedded proccessor.
 #
-# (C) 2002-2006 Chris Liechti <cliechti@gmx.net>
+# (C) 2002-2009 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
 # http://mspgcc.sf.net
@@ -9,42 +9,43 @@
 # and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
 # and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.13 2007/03/13 11:34:00 cliechti Exp $
+# $Id: jtag.py,v 1.14 2009/02/08 19:39:03 cliechti Exp $
 
 import sys
 
-#erase modes
-ERASE_SEGMENT = 0       #Erase a segment.
-ERASE_MAIN    = 1       #Erase all MAIN memory.
-ERASE_ALL     = 2       #Erase all MAIN and INFORMATION memory.
+# erase modes
+ERASE_SEGMENT = 0       # Erase a segment.
+ERASE_MAIN    = 1       # Erase all MAIN memory.
+ERASE_ALL     = 2       # Erase all MAIN and INFORMATION memory.
 
-#Configurations of the MSP430 driver
+# Configurations of the MSP430 driver
 # TI and MSPGCC's library
-VERIFICATION_MODE = 0   #Verify data downloaded to FLASH memories.
+VERIFICATION_MODE = 0   # Verify data downloaded to FLASH memories.
 # MSPGCC's library
-RAMSIZE_OPTION    = 1   #Change RAM used to download and program flash blocks
-DEBUG_OPTION      = 2   #Set debug level. Enables debug outputs.
-FLASH_CALLBACK    = 3   #Set a callback for progress report during flash write void f(WORD count, WORD total)
+RAMSIZE_OPTION    = 1   # Change RAM used to download and program flash blocks
+DEBUG_OPTION      = 2   # Set debug level. Enables debug outputs.
+FLASH_CALLBACK    = 3   # Set a callback for progress report during flash write void f(WORD count, WORD total)
 # TI's library
 EMULATION_MODE  = 1
 CLK_CNTRL_MODE  = 2
 MCLK_CNTRL_MODE = 3
 FLASH_TEST_MODE = 4
-LOCKED_FLASH_ACCESS = 5 #Allows Locked Info Mem Segment A access (if set to '1')
+LOCKED_FLASH_ACCESS = 5 # Allows Locked Info Mem Segment A access (if set to '1')
 FLASH_SWOP = 6
 EDT_TRACE_MODE = 7
 INTERFACE_MODE = 8      # see INTERFACE_TYPE below
 SET_MDB_BEFORE_RUN = 9
-RAM_PRESERVE_MODE = 10  #Configure whether RAM content should be preserved/restored
+RAM_PRESERVE_MODE = 10  # Configure whether RAM content should be preserved/restored
 
-#INTERFACE_TYPE
+# INTERFACE_TYPE
 JTAG_IF = 0
 SPYBIWIRE_IF = 1
+SPYBIWIREJTAG_IF = 2
 
-#reset methods
-PUC_RESET = 1 << 0      #Power up clear (i.e., a "soft") reset.
-RST_RESET = 1 << 1      #RST/NMI (i.e., "hard") reset.
-VCC_RESET = 1 << 2      #Cycle Vcc (i.e., a "power on") reset.
+# reset methods
+PUC_RESET = 1 << 0      # Power up clear (i.e., a "soft") reset.
+RST_RESET = 1 << 1      # RST/NMI (i.e., "hard") reset.
+VCC_RESET = 1 << 2      # Cycle Vcc (i.e., a "power on") reset.
 ALL_RESETS = PUC_RESET + RST_RESET + VCC_RESET
 
 # interface type 'spy-bi-wire' or 'JTAG'
@@ -52,16 +53,16 @@ interface = 'JTAG'
 
 DEBUG = 0
 
-#for module tests, enable debug outputs from the beginning on
+# for module tests, enable debug outputs from the beginning on
 if __name__ == '__main__':
     DEBUG = 1
 
-#ctypes backend variations:
+# ctypes backend variations:
 PARJTAG = "parjtag/mspgcc"
 CTYPES_MSPGCC = "ctypes/mspgcc"
 CTYPES_TI = "ctypes/TI or 3rd party"
 
-#exceptions
+# exceptions
 class JTAGException(Exception): pass
 
 backend = None
@@ -70,8 +71,8 @@ def init_backend(force=None):
     global backend
     global backend_info
     global _parjtag
-    
-    #1st try the ctypes implementation, if that's not available try to use the C extension
+
+    # 1st try the ctypes implementation, if that's not available try to use the C extension
     try:
         import ctypes
     except ImportError:
@@ -93,7 +94,7 @@ def init_backend(force=None):
             backend = PARJTAG
     else:
         import os
-        #create a wrapper class with ctypes, that has the same API as _parjtag
+        # create a wrapper class with ctypes, that has the same API as _parjtag
         def locate_library(libname, paths=sys.path, loader=None):
             if loader is None: loader=ctypes.windll
             for path in paths:
@@ -106,22 +107,22 @@ def init_backend(force=None):
                     return loader.LoadLibrary(library), library
             else:
                 raise IOError('%s not found' % libname)
-        
-        #an absolute path to the library can be given.
-        #LIBMSPGCC_PATH is used to pass its location
+
+        # an absolute path to the library can be given.
+        # LIBMSPGCC_PATH is used to pass its location
         search_path = sys.path[:]   #copy sys.path list
-        #if environment variable is set, insert this path first
+        # if environment variable is set, insert this path first
         try:
             search_path.insert(0, os.environ['LIBMSPGCC_PATH'])
         except KeyError:
             if DEBUG > 4: sys.stderr.write('LIBMSPGCC_PATH is not set\n')
-        #as fallback, append PATH
+        # as fallback, append PATH
         try:
             search_path.extend(os.environ['PATH'].split(os.pathsep))
         except KeyError:
             pass
         #~ print search_path
-        
+
         STATUS_OK    = 0
         STATUS_ERROR = -1
         TRUE         = 1
@@ -129,7 +130,7 @@ def init_backend(force=None):
         WRITE        = 0
         READ         = 1
         if sys.platform == 'win32':
-            #the library is found on the PATH, respectively in the executables directory
+            # the library is found on the PATH, respectively in the executables directory
             if force == CTYPES_MSPGCC:
                 MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path)
                 backend = CTYPES_MSPGCC
@@ -138,19 +139,19 @@ def init_backend(force=None):
                 MSP430mspgcc, backend_info = locate_library('MSP430.dll', search_path)
                 backend = CTYPES_TI
             elif force is None:
-                #autodetect
+                # autodetect
                 try:
-                    #try to use the TI or third party library
+                    # try to use the TI or third party library
                     MSP430mspgcc, backend_info = locate_library('MSP430.dll', search_path)
                     backend = CTYPES_TI
                 except IOError:
-                    #when that fails, use the mspgcc implementation
+                    # when that fails, use the mspgcc implementation
                     MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path)
                     backend = CTYPES_MSPGCC
             else:
                 raise ValueError("no such backend: %r" % force)
         else:
-            #the library is found on the PATH, respectively in the executables directory
+            # the library is found on the PATH, respectively in the executables directory
             try:
                 if force == CTYPES_MSPGCC:
                     MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
@@ -160,27 +161,27 @@ def init_backend(force=None):
                     MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll)
                     backend = CTYPES_TI
                 elif force is None:
-                    #autodetect
+                    # autodetect
                     try:
-                        #try to use the TI or third party library
+                        # try to use the TI or third party library
                         MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll)
                         backend = CTYPES_TI
                     except IOError:
-                        #when that fails, use the mspgcc implementation
+                        # when that fails, use the mspgcc implementation
                         MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
                         backend = CTYPES_MSPGCC
                 else:
                     raise ValueError("no such backend: %r" % force)
             except IOError, e:
                 raise IOError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so" or "libMSP430.so": %s' % e)
-        
+
         global MSP430_Initialize, MSP430_Open, MSP430_Identify, MSP430_Close
         global MSP430_Configure, MSP430_VCC, MSP430_Reset, MSP430_Erase
         global MSP430_Memory, MSP430_VerifyMem, MSP430_EraseCheck
         global MSP430_ReadRegister, MSP430_WriteRegister, MSP430_FuncletWait
         global MSP430_isHalted, MSP430_Error_Number, MSP430_Error_String
         global MSP430_Secure, MSP430_readMAB
-        
+
         MSP430_Initialize               = MSP430mspgcc.MSP430_Initialize
         MSP430_Initialize.argtypes      = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_long)]
         MSP430_Initialize.restype       = ctypes.c_int
@@ -192,7 +193,7 @@ def init_backend(force=None):
             MSP430_Identify             = MSP430mspgcc.MSP430_Identify
             MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.c_char*80), ctypes.c_long, ctypes.c_long]
             MSP430_Identify.restype     = ctypes.c_int
-            #TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
+            # TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
             def MSP430_Open():
                 buffer = (ctypes.c_char*80)()
                 status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
@@ -235,7 +236,7 @@ def init_backend(force=None):
             MSP430_WriteRegister.argtypes   = [ctypes.c_long, ctypes.c_long]
             MSP430_WriteRegister.restype    = ctypes.c_int
         else:
-            #TI's USB-FET lib does not have this function
+            # TI's USB-FET lib does not have this function
             if DEBUG:
                 sys.stderr.write('MSP430_*Register not found in library. Not supported.\n')
         if backend == CTYPES_MSPGCC:
@@ -249,7 +250,7 @@ def init_backend(force=None):
             MSP430_isHalted.argtypes        = []
             MSP430_isHalted.restype         = ctypes.c_int
         else:
-            #TI's USB-FET lib does not have this function
+            # TI's USB-FET lib does not have this function
             if DEBUG:
                 sys.stderr.write('MSP430_Funclet and isHalted not found in library. Not supported.\n')
         MSP430_Error_Number             = MSP430mspgcc.MSP430_Error_Number
@@ -263,7 +264,7 @@ def init_backend(force=None):
             MSP430_Secure.argtypes          = []
             MSP430_Secure.restype           = ctypes.c_int
         except AttributeError:
-            #mspgcc lib does not have this function
+            # mspgcc lib does not have this function
             if DEBUG:
                 sys.stderr.write('MSP430_Secure not found in library. Not supported.\n')
             def MSP430_Secure():
@@ -274,12 +275,12 @@ def init_backend(force=None):
             MSP430_readMAB.restype          = ctypes.c_int
         except AttributeError:
             pass
-        
-        messagecallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_ushort, ctypes.c_ushort) #void f(WORD count, WORD total)
+
+        messagecallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_ushort, ctypes.c_ushort) # void f(WORD count, WORD total)
 
         class ParJTAG:
             """implementation of the _parjtag module in python with the help of ctypes"""
-            
+
             def open(self, port = None):
                 """Initilize library"""
                 version = ctypes.c_long(0)
@@ -300,6 +301,10 @@ def init_backend(force=None):
                         status = MSP430_Configure(INTERFACE_MODE, SPYBIWIRE_IF)
                         if status != STATUS_OK:
                             raise IOError("Could not configure the library: %s (device not spi-bi-wire capable?)" % MSP430_Error_String(MSP430_Error_Number()))
+                    elif interface == 'spy-bi-wire-jtag':
+                        status = MSP430_Configure(INTERFACE_MODE, SPYBIWIREJTAG_IF)
+                        if status != STATUS_OK:
+                            raise IOError("Could not configure the library: %s (device not spi-bi-wire capable?)" % MSP430_Error_String(MSP430_Error_Number()))
                     else:
                         status = MSP430_Configure(INTERFACE_MODE, JTAG_IF)
                         if status != STATUS_OK:
@@ -307,17 +312,17 @@ def init_backend(force=None):
                 else:
                     if interface != 'JTAG':
                         raise ValueError("interface != 'JTAG' is not supported with this backend")
-                
+
             def connect(self,):
                 """Enable JTAG and connect to target. This stops it.
                 This function must be called before using any other JTAG function,
                 or the other functions will yield unpredictable data."""
                 MSP430_VCC(3000)
-                
+
                 status = MSP430_Open()
                 if status != STATUS_OK:
                     raise IOError("Can't open interface: %s" % MSP430_Error_String(MSP430_Error_Number()))
-            
+
                 status = MSP430_Configure(VERIFICATION_MODE, TRUE)
                 if status != STATUS_OK:
                     raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
@@ -339,7 +344,7 @@ def init_backend(force=None):
                 status = MSP430_Close(TRUE)
                 if status != STATUS_OK:
                     raise IOError("Could not close the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
-            
+
             def reset(self, execute = 0, release = 0, resets = ALL_RESETS):
                 """Reset the device, optionaly start execution and/or release JTAG."""
                 status = MSP430_Reset(resets, execute, release)
@@ -352,7 +357,7 @@ def init_backend(force=None):
                 It is possible to read peripherals, RAM as well as Flash."""
                 if size < 0: raise ValueError("Size must not be negative")
                 buffer = (ctypes.c_char*size)();
-                
+
                 status = MSP430_Memory(address, buffer, size, READ)
                 if status == STATUS_OK:
                     return ''.join([str(x) for x in buffer])
@@ -369,7 +374,7 @@ def init_backend(force=None):
                     if status != STATUS_OK:
                         raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
                 size = len(buffer)
-                c_buffer = (ctypes.c_char*(size+2))();    #just to be sure + 2 (shouldn't be needed though)
+                c_buffer = (ctypes.c_char*(size+2))();    # just to be sure + 2 (shouldn't be needed though)
                 for i in range(size): c_buffer[i] = buffer[i]
                 status = MSP430_Memory(address, c_buffer, size, WRITE)
                 if status != STATUS_OK:
@@ -386,12 +391,12 @@ def init_backend(force=None):
 
             def memerase(self, type=ERASE_ALL, address=0xfffe, length=2):
                 """Erase the Flash.
-                
+
                 Valid modes are:
                     ERASE_SEGMENT = 0
                     ERASE_MAIN    = 1
                     ERASE_ALL     = 2
-                    
+
                 The default address and length is fine for mass and main erase.
                 To erase a single segment ERASE_SEGMENT and an address within that
                 segement must be specified. The length can be choosen larger than
@@ -417,7 +422,7 @@ def init_backend(force=None):
                 size = len(code)
                 if size & 1:
                     raise ValueError("data must be of even size")
-                
+
                 status = MSP430_FuncletWait(code, size, 1, timeout, ctypes.byref(runtime))
                 if status != STATUS_OK:
                     raise IOError("Could not execute code: %s" % MSP430_Error_String(MSP430_Error_Number()))
@@ -449,7 +454,7 @@ def init_backend(force=None):
                 if backend == CTYPES_MSPGCC:
                     self._callback = messagecallback(function)
                     #~ MSP430_Configure(FLASH_CALLBACK, ctypes.addressof(self._callback))
-                    #hack following, close your eyes ;-)...
+                    # hack following, close your eyes ;-)...
                     argtypes = MSP430_Configure.argtypes
                     MSP430_Configure.argtypes = [ctypes.c_long, messagecallback]
                     MSP430_Configure(FLASH_CALLBACK, self._callback)
@@ -461,7 +466,7 @@ def init_backend(force=None):
                 """Check if cpu is stuck on an address."""
                 value = MSP430_isHalted()
                 return value
-                
+
             def secure(self):
                 """burn JTAG security fuse.
                    Note: not reversibly. use with care.
@@ -470,9 +475,9 @@ def init_backend(force=None):
                 status = MSP430_Secure()
                 if status != STATUS_OK:
                     raise IOError("Could not secure device: %s" % MSP430_Error_String(MSP430_Error_Number()))
-        
+
         _parjtag = ParJTAG()
-    
+
     # print the used backend
     if DEBUG:
         sys.stderr.write("JTAG backend: %s (%s)\n" % (backend, backend_info))
@@ -490,9 +495,9 @@ class JTAG:
         self.showprogess = 0
         self.data = None
         self.verbose = 1
-    
+
     # ---------- direct use API ---------------
-    
+
     def open(self, lpt=None):
         """Initialize and open port."""
         if backend is None: init_backend()
@@ -513,14 +518,14 @@ class JTAG:
         """Set level of debugging messages."""
         global DEBUG
         DEBUG = level
-        #this option is only available in the mspgcc library
+        # this option is only available in the mspgcc library
         if backend == CTYPES_MSPGCC:
             _parjtag.configure(DEBUG_OPTION, level)
 
     def setRamsize(self, ramsize):
         """Set download chunk size."""
         if DEBUG > 1: sys.stderr.write("* setRamsize(%d)\n" % ramsize)
-        #this option is only available in the mspgcc library
+        # this option is only available in the mspgcc library
         if backend == CTYPES_MSPGCC:
             _parjtag.configure(RAMSIZE_OPTION, ramsize)
         else:
@@ -529,7 +534,7 @@ class JTAG:
     def downloadData(self, startaddress, data):
         """Write data to given address."""
         _parjtag.memwrite(startaddress, data)
-        
+
     def uploadData(self, startaddress, size):
         """Upload a datablock."""
         if DEBUG > 1: sys.stderr.write("* uploadData()\n")
@@ -545,7 +550,7 @@ class JTAG:
     def getCPURegister(self, regnum):
         """Read CPU register."""
         return _parjtag.regread(regnum)
-        
+
     def setCPURegister(self, regnum, value):
         """Write CPU register."""
         _parjtag.regwrite(regnum, value)
@@ -608,6 +613,8 @@ class JTAG:
                 _parjtag.set_flash_callback(self.progess_update)
             bytes = 0
             for seg in self.data:
+                # pad length if it is not even
+                if len(seg.data) & 1: seg.data += '\xff'
                 _parjtag.memwrite(seg.startaddress, seg.data)
                 bytes += len(seg.data)
             if self.verbose:

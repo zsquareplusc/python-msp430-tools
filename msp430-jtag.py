@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-# JTAG programmer for the MSP430 embedded proccessor.
 #
-# (C) 2002-2006 Chris Liechti <cliechti@gmx.net>
+# JTAG programmer for the MSP430 embedded processor.
+#
+# (C) 2002-2009 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
 # http://mspgcc.sf.net
@@ -10,18 +11,18 @@
 # and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
 # and HIL.dll/libHIL.so
 #
-# $Id: msp430-jtag.py,v 1.32 2008/05/28 12:49:55 cliechti Exp $
+# $Id: msp430-jtag.py,v 1.33 2009/02/08 19:39:03 cliechti Exp $
 
 import sys
 from mspgcc import memory, jtag
 from mspgcc.util import hexdump, makeihex
 
 
-VERSION = "2.3"
+VERSION = "2.4"
 
-DEBUG = 0                           #disable debug messages by default
+DEBUG = 0                           # disable debug messages by default
 
-#enumeration of output formats for uploads
+# enumeration of output formats for uploads
 HEX             = 0
 INTELHEX        = 1
 BINARY          = 2
@@ -33,10 +34,12 @@ def usage():
 USAGE: %(prog)s [options] [file]
 Version: %(version)s
 
-If "-" is specified as file the data is read from stdin.
-File format is autodetected, unless one of the options below is used.
-Prefered file extensions are ".txt" for TI-Text format, ".a43" or ".hex" for
+File format is auto detected, unless one of the options below is used.
+Preferred file extensions are ".txt" for TI-Text format, ".a43" or ".hex" for
 Intel HEX. ELF files can also be loaded.
+
+If "-" is specified as file the data is read from stdin and intel-hex format
+is expected by default.
 
 General options:
   -h, --help            Show this help text.
@@ -51,8 +54,8 @@ General options:
 
 Connection:
   -l, --lpt=name        Specify an other parallel port or serial port for the
-                        USBFET (the later requires %(libprefix)sMSP430%(libsuffix)s instead of
-                        %(libprefix)sMSP430mspgcc%(libsuffix)s).
+                        USBFET (the later requires %(msp430)s instead of
+                        %(msp430mspgcc)s).
                         (defaults to "LPT1" ("/dev/parport0" on Linux))
   --slowdown=microsecs  Artificially slow down the communication. Can help
                         with long lines, try values between 1 and 50 (parallel
@@ -60,14 +63,15 @@ Connection:
                         (experts only)
   --backend=backend     Select an alternate backend. See --help-backend for
                         more information.
-  --spy-bi-wire         Interface is two-wire spy-bi-wire instead of standard
-                        JTAG.
+  --spy-bi-wire-jtag    Interface is 4 wire on a spy-bi-wire capable device.
+  --spy-bi-wire         Interface is 2 wire on a spy-bi-wire capable device.
 
-Note: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
+Note: On Windows, use "USB", "TIUSB" or "COM5" etc if using MSP430.dll from TI.
       On other platforms, e.g. Linux, use "/dev/ttyUSB0" etc. if using
       libMSP430.so.
-      If a %(libprefix)sMSP430%(libsuffix)s is found, it is prefered, otherwise
-      %(libprefix)sMSP430mspgcc%(libsuffix)s is used.
+      If a %(msp430)s is found, it is prefered, otherwise
+      %(msp430mspgcc)s is used.
+
 Note: --slowdown > 50 can result in failures for the ramsize autodetection
       (use --ramsize option to fix this). Use the --debug option and watch
       the outputs. The DCO clock adjustment and thus the Flash timing may be
@@ -89,7 +93,7 @@ Funclets:
 
 Note: Writing and/or reading RAM before and/or after running a funclet may not
       work as expected on devices with the JTAG bug like the F123.
-Note: Only possible with %(libprefix)sMSP430mspgcc%(libsuffix)s, not other backends.
+Note: Only possible with %(msp430mspgcc)s, not other backends.
 
 Program flow specifiers:
   -e, --masserase       Mass Erase (clear all flash memory).
@@ -117,7 +121,7 @@ No default action is taken if "p" and/or "v" is given, say specifying
 only "v" does a "check by file" of a programmed device.
 
 Data retrieving:
-  -u, --upload=addr     Upload a datablock (see also: --size).
+  -u, --upload=addr     Upload a data block (see also: --size).
                         It is also possible to use address ranges. In that
                         case, multiple --upload parameters are allowed.
   -s, --size=num        Size of the data block to upload (Default is 2).
@@ -129,18 +133,17 @@ Data retrieving:
                         This can be used to clone a device.
 
 Do before exit:
-  -g, --go=address      Start programm execution at specified address.
+  -g, --go=address      Start program execution at specified address.
                         This implies option "w" (wait)
   -r, --reset           Reset connected MSP430. Starts application.
                         This is a normal device reset and will start
-                        the programm that is specified in the reset
+                        the program that is specified in the reset
                         interrupt vector. (see also -g)
   -w, --wait            Wait for <ENTER> before closing parallel port.
   --no-close            Do not close port on exit. Allows to power devices
                         from the parallel port interface.
 
-
-Address parameters for --erase, --upload, --size can be given in
+Address parameters for --erase, --upload, --size, --execute can be given in
 decimal, hexadecimal or octal.
 
 Examples:
@@ -149,8 +152,8 @@ Examples:
 """ % {
         'prog': sys.argv[0],
         'version': VERSION,
-        'libprefix': (sys.platform != 'win32') and 'lib' or '',
-        'libsuffix': (sys.platform != 'win32') and '.so' or '.dll',
+        'msp430': (sys.platform != 'win32') and 'libMSP430.so' or 'MSP430.dll',
+        'msp430mspgcc': (sys.platform != 'win32') and 'libMSP430mspgcc.so' or 'MSP430mspgcc.dll',
     })
 
 
@@ -160,42 +163,52 @@ def help_on_backends():
 The backend can be chosen with the --backend command line option.
 
 "mspgcc"
-    Using %(libprefix)sMSP430mspgcc%(libsuffix)s, the open source implementation
+    Using %(msp430mspgcc)s, the open source implementation
     from the mspgcc project.
 
 "ti" (default)
-    Using %(libprefix)sMSP430%(libsuffix)s, the proprietary library from TI or a
-    compatible one from a 3rd pary supplier.
+    Using %(msp430)s, the proprietary library from TI or a
+    compatible one from a 3rd party supplier.
 
 "parjtag"
-    Old way of using %(libprefix)sMSP430mspgcc%(libsuffix)s. Use "mspgcc" instead.
+    Old way of using %(msp430mspgcc)s. Use "mspgcc" instead.
 
-Compatibility of backends:
-    +===========================================+========+========+
-    | Feature                                   | mspgcc | ti     |
-    +===========================================+========+========+
-    | 4 Wire JTAG                               | yes    | yes    |
-    +-------------------------------------------+--------+--------+
-    | 4 Wire JTAG on devices with spy-bi-wire   | yes(1) | no     |
-    +-------------------------------------------+--------+--------+
-    | using --spy-bi-wire option                | no     | yes    |
-    +-------------------------------------------+--------+--------+
-    | support for USB JTAG adapters             | no     | yes    |
-    +-------------------------------------------+--------+--------+
-    | unsing --funclet option                   | yes    | no     |
-    +===========================================+========+========+
+Software support for interfaces:
+    +============================+==========+==========+==========+
+    | device JTAG                |  mspgcc  |         ti          |
+    | capabilities               |   FET    |   FET    | USB-FET  |
+    +============================+==========+==========+==========+
+    | standard    / 4 wire       |   yes    |   yes    |   yes    |
+    +----------------------------+----------+----------+----------+
+    | spy-bi-wire / 4 wire (1)   |  yes(2)  |   no     |  yes(3)  |
+    +----------------------------+----------+----------+----------+
+    | spy-bi-wire / 2 wire       |   no     |   no     |  yes(4)  |
+    +============================+==========+==========+==========+
 
 Notes:
-    (1) Timing critical, may not work on all machines or at every try.
+    (1) 4 wire JTAG on devices with spy-bi-wire capability needs special
+        timings.
+    (2) Timing critical, may not work on all machines or at every try.
+    (3) Using --spy-bi-wire-jtag option.
+    (4) Using --spy-bi-wire option.
+
+Features of backends:
+    +=======================================+==========+==========+
+    | Feature                               |  mspgcc  |   ti     |
+    +=======================================+==========+==========+
+    | Support for USB JTAG adapters         |   no     |   yes    |
+    +---------------------------------------+----------+----------+
+    | Using --funclet option                |   yes    |   no     |
+    +=======================================+==========+==========+
 
 """ % { 
         'prog': sys.argv[0],
-        'libprefix': (sys.platform != 'win32') and 'lib' or '',
-        'libsuffix': (sys.platform != 'win32') and '.so' or '.dll',
+        'msp430': (sys.platform != 'win32') and 'libMSP430.so' or 'MSP430.dll',
+        'msp430mspgcc': (sys.platform != 'win32') and 'libMSP430mspgcc.so' or 'MSP430mspgcc.dll',
     })
 
 def parseAddressRange(text):
-    """parse a single address or a address range and return a tuple."""
+    """parse a single address or an address range and return a tuple."""
     if '-' in text:
         adr1, adr2 = text.split('-', 1)
         try:
@@ -249,7 +262,9 @@ def main():
              "upload=", "download=", "size=", "hex", "bin", "ihex",
              "intelhex", "titext", "elf", "funclet", "ramsize=", "progress",
              "no-close", "parameter=", "result=", "timeout=", "secure",
-             "quiet", "backend=", "help-backend", "slowdown=", "spy-bi-wire"]
+             "quiet", "backend=", "help-backend", "slowdown=",
+             "spy-bi-wire-jtag", "spy-bi-wire"
+             ]
         )
     except getopt.GetoptError, e:
         # print help information and exit:
@@ -279,11 +294,11 @@ def main():
         elif o in ("-w", "--wait"):
             wait = 1
         elif o in ("-e", "--masserase"):
-            toinit.append(jtagobj.actionMassErase)      #Erase Flash
+            toinit.append(jtagobj.actionMassErase)      # Erase Flash
         elif o in ("-E", "--erasecheck"):
-            toinit.append(jtagobj.actionEraseCheck)     #Erase Check (by file)
+            toinit.append(jtagobj.actionEraseCheck)     # Erase Check (by file)
         elif o in ("-m", "--mainerase"):
-            toinit.append(jtagobj.actionMainErase)      #Erase main Flash
+            toinit.append(jtagobj.actionMainErase)      # Erase main Flash
         elif o == "--erase":
             try:
                 adr, adr2 = parseAddressRange(a)
@@ -293,7 +308,7 @@ def main():
                             sys.stderr.write("Start address is not within Flash memory\n")
                             sys.exit(2)
                         elif adr < 0x1100:
-                            modulo = 64     #F2xx XXX: on F1xx/F4xx are segments erased twice
+                            modulo = 64     # F2xx XXX: on F1xx/F4xx are segments erased twice
                         elif adr < 0x1200:
                             modulo = 256
                         else:
@@ -307,20 +322,20 @@ def main():
                 sys.stderr.write("--erase: %s\n" % e)
                 sys.exit(2)
         elif o == "--eraseinfo":
-            #F2xx XXX: on F1xx/F4xx are segments erased twice
+            # F2xx XXX: on F1xx/F4xx are segments erased twice
             toinit.append(jtagobj.makeActionSegmentErase(0x1000))
             toinit.append(jtagobj.makeActionSegmentErase(0x1040))
             toinit.append(jtagobj.makeActionSegmentErase(0x1080))
             toinit.append(jtagobj.makeActionSegmentErase(0x10c0))
         elif o in ("-p", "--program"):
-            todo.append(jtagobj.actionProgram)          #Program file
+            todo.append(jtagobj.actionProgram)          # Program file
         elif o in ("-v", "--verify"):
-            todo.append(jtagobj.actionVerify)           #Verify file
+            todo.append(jtagobj.actionVerify)           # Verify file
         elif o in ("-r", "--reset"):
             reset = 1
         elif o in ("-g", "--go"):
             try:
-                goaddr = int(a, 0)                      #try to convert decimal
+                goaddr = int(a, 0)                      # try to convert decimal
             except ValueError:
                 sys.stderr.write("Start address must be a valid number in dec, hex or octal\n")
                 sys.exit(2)
@@ -348,21 +363,21 @@ def main():
             except ValueError:
                 sys.stderr.write("Size must be a valid number in dec, hex or octal\n")
                 sys.exit(2)
-        #outut formats
+        # outut formats
         elif o in ("-x", "--hex"):
             outputformat = HEX
         elif o in ("-b", "--bin"):
             outputformat = BINARY
         elif o in ("-i", "--ihex"):
             outputformat = INTELHEX
-        #input formats
+        # input formats
         elif o in ("-I", "--intelhex"):
             filetype = 0
         elif o in ("-T", "--titext"):
             filetype = 1
         elif o in ("", "--elf"):
             filetype = 2
-        #others
+        # others
         elif o in ("-f", "--funclet"):
             funclet = 1
         elif o in ("-R", "--ramsize"):
@@ -422,11 +437,13 @@ def main():
                 HIL_SetSlowdown = ctypes.cdll.HIL.HIL_SetSlowdown
             HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
             HIL_SetSlowdown.argtypes  = [ctypes.c_ulong]
-            HIL_SetSlowdown.restype   = ctypes.c_int #actually void
+            HIL_SetSlowdown.restype   = ctypes.c_int # actually void
             # set slowdown
             HIL_SetSlowdown(slowdown)
         elif o == "--spy-bi-wire":
             jtag.interface = 'spy-bi-wire'
+        elif o == "--spy-bi-wire-jtag":
+            jtag.interface = 'spy-bi-wire-jtag'
 
     if DEBUG:
         if quiet:
@@ -439,25 +456,25 @@ def main():
     if len(args) == 0:
         if not quiet:
             sys.stderr.write("Use -h for help\n")
-    elif len(args) == 1:                                #a filename is given
+    elif len(args) == 1:                                # a filename is given
         if not funclet:
-            if not todo:                                #if there are no actions yet
-                todo.insert(0,                          #add some useful actions...
+            if not todo:                                # if there are no actions yet
+                todo.insert(0,                          # add some useful actions...
                     jtagobj.actionProgram,
                 )
         filename = args[0]
-    else:                                               #number of args is wrong
+    else:                                               # number of args is wrong
         sys.stderr.write("\nUnsuitable number of arguments\n")
         usage()
         sys.exit(2)
 
-    if DEBUG:   #debug infos
+    if DEBUG:   # debug infos
         sys.stderr.write("Debug is level set to %d\n" % DEBUG)
         sys.stderr.write("Python version: %s\n" % sys.version)
         #~ sys.stderr.write("JTAG backend: %s\n" % jtag.backend)
 
 
-    #sanity check of options
+    # sanity check of options
     if goaddr and reset:
         if not quiet:
             sys.stderr.write("Warning: option --reset ignored as --go is specified!\n")
@@ -467,49 +484,49 @@ def main():
         if not quiet:
             sys.stderr.write("Warning: option --reset ignored as --upload is specified!\n")
         reset = 0
-        
+
     if startaddr is not None and wait:
         if not quiet:
             sys.stderr.write("Warning: option --wait ignored as --upload is specified!\n")
         wait = 0
 
-    #upload ranges and address+size can not be mixed
+    # upload ranges and address+size can not be mixed
     if uploadlist and startaddr is not None:
         sys.stderr.write("--upload: Either specify ranges (multiple --upload allowed) or one --upload and one --size\n")
         sys.exit(2)
-    #backwards compatibility for old parameter format
+    # backwards compatibility for old parameter format
     if not uploadlist and startaddr is not None:
         uploadlist.append((startaddr, startaddr+size-1))
 
-    #prepare data to download
-    jtagobj.data = memory.Memory()                      #prepare downloaded data
-    if filetype is not None:                            #if the filetype is given...
+    # prepare data to download
+    jtagobj.data = memory.Memory()                      # prepare downloaded data
+    if filetype is not None:                            # if the file type is given...
         if filename is None:
             raise ValueError("Filetype but no filename specified")
-        if filename == '-':                             #get data from stdin
+        if filename == '-':                             # get data from stdin
             file = sys.stdin
         else:
-            file = open(filename,"rb")                  #or from a file
-        if filetype == 0:                               #select load function
-            jtagobj.data.loadIHex(file)                 #intel hex
+            file = open(filename,"rb")                  # or from a file
+        if filetype == 0:                               # select load function
+            jtagobj.data.loadIHex(file)                 # intel hex
         elif filetype == 1:
-            jtagobj.data.loadTIText(file)               #TI's format
+            jtagobj.data.loadTIText(file)               # TI's format
         elif filetype == 2:
-            jtagobj.data.loadELF(file)                  #ELF format
+            jtagobj.data.loadELF(file)                  # ELF format
         else:
             raise ValueError("Illegal filetype specified")
-    else:                                               #no filetype given...
-        if filename == '-':                             #for stdin:
-            jtagobj.data.loadIHex(sys.stdin)            #assume intel hex
+    else:                                               # no filetype given...
+        if filename == '-':                             # for stdin:
+            jtagobj.data.loadIHex(sys.stdin)            # assume intel hex
         elif filename:
-            jtagobj.data.loadFile(filename)             #autodetect otherwise
+            jtagobj.data.loadFile(filename)             # auto detect otherwise
 
     if DEBUG > 5: sys.stderr.write("File: %r\n" % filename)
 
     # debug messages
     if toinit:
-        if DEBUG > 0:       #debug
-            #show a nice list of scheduled actions
+        if DEBUG > 0:       # debug
+            # show a nice list of scheduled actions
             sys.stderr.write("TOINIT list:\n")
             for f in toinit:
                 try:
@@ -517,8 +534,8 @@ def main():
                 except AttributeError:
                     sys.stderr.write("   %r\n" % f)
     if todo:
-        if DEBUG > 0:       #debug
-            #show a nice list of scheduled actions
+        if DEBUG > 0:       # debug
+            # show a nice list of scheduled actions
             sys.stderr.write("TODO list:\n")
             for f in todo:
                 try:
@@ -530,12 +547,12 @@ def main():
 
     abort_due_to_error = 1
     release_done = 0
-    jtagobj.open(lpt)                                   #try to open port
+    jtagobj.open(lpt)                                   # try to open port
     try:
         if ramsize is not None:
             jtagobj.setRamsize(ramsize)
 
-        jtagobj.connect()                               #connect to target
+        jtagobj.connect()                               # connect to target
 
         #initialization list
         if toinit:  #erase and erase check
@@ -544,64 +561,64 @@ def main():
 
         #work list
         if todo:
-            for f in todo: f()                          #work through todo list
+            for f in todo: f()                          # work through TODO list
 
-        if reset:                                       #reset device first if desired
+        if reset:                                       # reset device first if desired
             jtagobj.reset()
 
         for function, args in parameters:
             function(*args)
-        
-        if funclet is not None:                         #download and start funclet
+
+        if funclet is not None:                         # download and start funclet
             jtagobj.actionFunclet(timeout)
 
-        if goaddr is not None:                          #start user programm at specified address
-            jtagobj.actionRun(goaddr)                   #load PC and execute
+        if goaddr is not None:                          # start user program at specified address
+            jtagobj.actionRun(goaddr)                   # load PC and execute
 
         for format, function, args in results:
             print format % function(*args)
 
-        #upload datablock and output
+        # upload data block and output
         if uploadlist:
-            if goaddr:                                  #if a program was started...
+            if goaddr:                                  # if a program was started...
                 raise NotImplementedError
-                #TODO:
-                #sys.stderr.write("Waiting to device for reconnect for upload: ")
+                # TODO:
+                # sys.stderr.write("Waiting to device for reconnect for upload: ")
             for start, end in uploadlist:
                 size = end - start + 1
                 if DEBUG > 2:
                     sys.stderr.write("upload 0x%04x %d Bytes\n" % (start, size))
-                data = jtagobj.uploadData(start, size)  #upload data
-                if outputformat == HEX:                 #depending on output format
-                    hexdump((start, data))              #print a hex display
+                data = jtagobj.uploadData(start, size)  # upload data
+                if outputformat == HEX:                 # depending on output format
+                    hexdump((start, data))              # print a hex display
                 elif outputformat == INTELHEX:
-                    makeihex((start, data), eof=0)      #ouput a intel-hex file
+                    makeihex((start, data), eof=0)      # output a intel-hex file
                 else:
                     if sys.platform == "win32":
-                        #ensure that the console is in binary mode
+                        # ensure that the console is in binary mode
                         import os, msvcrt
                         msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
-                
-                    sys.stdout.write(data)              #binary output w/o newline!
-            if outputformat == INTELHEX:
-                makeihex((0, ''), eof=1)                #finish a intel-hex file
-            wait = 0    #wait makes no sense as after upload, the device is still stopped
 
-        if wait:                                        #wait at the end if desired
-            jtagobj.reset(1, 1)                         #reset and release target
+                    sys.stdout.write(data)              # binary output w/o newline!
+            if outputformat == INTELHEX:
+                makeihex((0, ''), eof=1)                # finish a intel-hex file
+            wait = 0    # wait makes no sense as after upload, the device is still stopped
+
+        if wait:                                        # wait at the end if desired
+            jtagobj.reset(1, 1)                         # reset and release target
             release_done = 1
-            sys.stderr.write("Press <ENTER> ...\n")     #display a prompt
+            sys.stderr.write("Press <ENTER> ...\n")     # display a prompt
             sys.stderr.flush()
-            raw_input()                                 #wait for newline
-    
+            raw_input()                                 # wait for newline
+
         abort_due_to_error = 0
     finally:
         if abort_due_to_error:
             sys.stderr.write("Cleaning up after error...\n")
         if not release_done:
-            jtagobj.reset(1, 1)                         #reset and release target
+            jtagobj.reset(1, 1)                         # reset and release target
         if do_close:
-            jtagobj.close()                             #release communication port
+            jtagobj.close()                             # release communication port
         elif DEBUG:
             sys.stderr.write("WARNING: JTAG port is left open (--no-close)\n")
 
@@ -609,12 +626,12 @@ if __name__ == '__main__':
     try:
         main()
     except SystemExit:
-        raise                                           #let pass exit() calls
+        raise                                           # let pass exit() calls
     except KeyboardInterrupt:
-        if DEBUG: raise                                 #show full trace in debug mode
-        sys.stderr.write("User abort.\n")               #short messy in user mode
-        sys.exit(1)                                     #set errorlevel for script usage
-    except Exception, msg:                              #every Exception is caught and displayed
-        if DEBUG: raise                                 #show full trace in debug mode
-        sys.stderr.write("\nAn error occoured:\n%s\n" % msg) #short messy in user mode
-        sys.exit(1)                                     #set errorlevel for script usage
+        if DEBUG: raise                                 # show full trace in debug mode
+        sys.stderr.write("User abort.\n")               # short messy in user mode
+        sys.exit(1)                                     # set errorlevel for script usage
+    except Exception, msg:                              # every Exception is caught and displayed
+        if DEBUG: raise                                 # show full trace in debug mode
+        sys.stderr.write("\nAn error occoured:\n%s\n" % msg) # short messy in user mode
+        sys.exit(1)                                     # set errorlevel for script usage

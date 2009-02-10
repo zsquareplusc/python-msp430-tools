@@ -9,7 +9,7 @@
 # and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
 # and HIL.dll/libHIL.so
 #
-# $Id: jtag.py,v 1.14 2009/02/08 19:39:03 cliechti Exp $
+# $Id: jtag.py,v 1.15 2009/02/10 16:30:10 cliechti Exp $
 
 import sys
 
@@ -460,7 +460,7 @@ def init_backend(force=None):
                     MSP430_Configure(FLASH_CALLBACK, self._callback)
                     MSP430_Configure.argtypes = argtypes
                 else:
-                    raise JTAGException("callbacks are not supprted with other libraries than mspgcc's")
+                    raise JTAGException("callbacks are not supported with other libraries than mspgcc's")
 
             def isHalted(self):
                 """Check if cpu is stuck on an address."""
@@ -636,7 +636,7 @@ class JTAG:
 
     def actionRun(self, address):
         """Start program at specified address."""
-        raise NotImplementedError
+        raise NotImplementedError("actionRun not supported")
         #sys.stderr.write("Load PC with 0x%04x ...\n" % address)
 
     def actionFunclet(self, timeout=1):

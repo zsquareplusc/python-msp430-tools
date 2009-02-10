@@ -15,19 +15,36 @@ import os, re, sys
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option("-d", "--detailed", dest="detailed", default=False,
-    help="print a detailed list of labels", action="store_true")
-parser.add_option("-c", "--compact", dest="compact", default=False,
-    help="print a compact list of used bytes", action="store_true")
+
+parser.add_option("-d", "--detailed",
+    dest = "detailed", default=False,
+    help = "print a detailed list of labels",
+    action = "store_true"
+)
+parser.add_option("-c", "--compact",
+    dest = "compact",
+    default = False,
+    help = "print a compact list of used bytes",
+    action = "store_true"
+)
 parser.add_option("-q", "--quiet",
-    action="store_false", dest="verbose", default=True,
-    help="don't print status messages to stdout")
+    action = "store_false",
+    dest = "verbose",
+    default = True,
+    help = "don't print status messages to stdout"
+)
+parser.add_option("--min-stack",
+    action = "store",
+    dest = "min_stack",
+    type = "int",
+    default = None,
+    help = "fail if free space for stack is not as large as this"
+)
 
 (options, args) = parser.parse_args()
 
 if len(args) != 1:
     parser.error("missing object file name")
-
 
 
 # regexp to parse lines like the following one
@@ -51,7 +68,7 @@ mmap = {}
 for name, (address, size, type) in objs.items():
     #~ print '0x%04x %3d %s %s' % (address, size, name, type)
     if type == 'OBJECT':
-        if size == 0: size=1    #make sure zero sized objects are shown too
+        if size == 0: size=1    # make sure zero sized objects are shown too
         for x in range(size):
             if x == 0:
                 #first line
@@ -61,12 +78,12 @@ for name, (address, size, type) in objs.items():
                     size,
                 )
             else:
-                #other lines
+                # other lines
                 desc = '%s%s' % (
                     ' ' * len(name),
                     (size>1) and '[%s]' % x or ''
                 )
-            #concatenate if there is more than one label
+            # concatenate if there is more than one label
             if mmap.has_key(address+x):
                 desc = '%s | %s' % (mmap[address+x], desc)
             mmap[address+x] = desc
@@ -96,10 +113,16 @@ address = objs['__stack'][0]
 while address >= objs['__data_start'][0] and not mmap.has_key(address):
     address -= 1
     stackmem += 1
+
 # calc total and print summary
 size = objs['__stack'][0] - objs['__data_start'][0]
 print 'RAM usage summary:'
 print '%d of %d bytes used (%d free)' % (size-free, size, free)
 print 'the stack can grow up to %d bytes (continous memory at end of RAM)' % (
-    stackmem & 0xfffe   #round size, even number
+    stackmem & 0xfffe   # round size, even number
 )
+
+if options.min_stack is not None:
+    if (stackmem & 0xfffe) < options.min_stack:
+        print "ERROR: Stack size is smaller than the given value (--min-stack=%d)" % (options.min_stack,)
+        sys.exit(2)

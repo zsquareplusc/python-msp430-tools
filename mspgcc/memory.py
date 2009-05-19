@@ -1,4 +1,4 @@
-# $Id: memory.py,v 1.4 2008/05/22 16:20:02 cliechti Exp $
+# $Id: memory.py,v 1.4.2.1 2009/05/19 09:07:21 rlim Exp $
 import sys
 import elf
 
@@ -53,13 +53,14 @@ class Memory:
         segmentdata = []
         currentAddr = 0
         startAddr   = 0
+        extendAddr  = 0
         lines = file.readlines()
         for l in lines:
             if not l.strip(): continue  #skip empty lines
             if l[0] != ':': raise FileFormatError("line not valid intel hex data: '%s...'" % l[0:10])
             l = l.strip()               #fix CR-LF issues...
             length  = int(l[1:3],16)
-            address = int(l[3:7],16)
+            address = int(l[3:7],16) + extendAddr
             type    = int(l[7:9],16)
             check   = int(l[-2:],16)
             if type == 0x00:
@@ -71,7 +72,9 @@ class Memory:
                 for i in range(length):
                     segmentdata.append( chr(int(l[9+2*i:11+2*i],16)) )
                 currentAddr = length + currentAddr
-            elif type in (0x01, 0x02, 0x03, 0x04, 0x05):
+            elif type == 0x02:
+                extendAddr =  int(l[9:13],16) << 4      
+            elif type in (0x01, 0x03, 0x04, 0x05):
                 pass
             else:
                 sys.stderr.write("Ignored unknown field (type 0x%02x) in ihex file.\n" % type)

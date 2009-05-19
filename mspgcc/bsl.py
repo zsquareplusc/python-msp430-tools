@@ -6,7 +6,7 @@
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.2 2006/04/23 21:37:35 cliechti Exp $
+# $Id: bsl.py,v 1.2.2.1 2009/05/19 09:07:21 rlim Exp $
 
 import sys, time, string, cStringIO, struct
 import serial
@@ -179,6 +179,7 @@ q
 #cpu types for "change baudrate"
 #use strings as ID so that they can be used in outputs too
 F1x                     = "F1x family"
+F2x                     = "F2x family"
 F4x                     = "F4x family"
 
 #known device list
@@ -194,6 +195,7 @@ deviceids = {
     0xf427: F4x,
     0xf439: F4x,
     0xf449: F4x,
+    0xf26f: F2x,
 }
 
 class BSLException(Exception):
@@ -212,6 +214,7 @@ class LowLevel:
     BSL_ERASE               = 0x16 #Erase one segment
     BSL_MERAS               = 0x18 #Erase complete FLASH memory
     BSL_CHANGEBAUD          = 0x20 #Change baudrate
+    BSL_SETMEMOFFSET        = 0x21 #MemoryAddress = OffsetValue << 16 + Actual Address
     BSL_LOADPC              = 0x1A #Load PC and start execution
     BSL_TXVERSION           = 0x1E #Get BSL version
 
@@ -277,6 +280,7 @@ class LowLevel:
         self.protocolMode = self.MODE_BSL
         self.BSLMemAccessWarning = 0            #Default: no warning.
         self.slowmode = 0                       #give a little more time when changing the control lines
+        self.memoffset = 0
 
     def comInit(self, port):
         """Tries to open the serial port given and
@@ -574,15 +578,26 @@ class LowLevel:
             if (length % 2) != 0:
                 length = length + 1
 
+        if (self.bslVer >= 0x0212) & (cmd == self.BSL_TXBLK) | (cmd == self.BSL_RXBLK):
+            if (self.memoffset!=(addr>>16)):
+                self.memoffset = (addr>>16)
+                self.bslTxRx(self.BSL_SETMEMOFFSET, self.memoffset)
+                if DEBUG > 1: sys.stderr.write("   * bslTxRx(): set mem offset 0x%02x\n" % self.memoffset)
+            addr &= 0xffff	
+        
         #if cmd == self.BSL_TXBLK or cmd == self.BSL_TXPWORD:
         #    length = len + 4
 
         #Add necessary information data to frame
-        dataOut =  struct.pack("<HH", addr, length)
+        if (cmd == self.BSL_SETMEMOFFSET):
+            dataOut =  struct.pack("<HH", length, addr)
+        else:
+            dataOut =  struct.pack("<HH", addr, length)
 
         if blkout: #Copy data out of blkout into frame
             dataOut = dataOut + blkout
 
+        if DEBUG > 1: sys.stderr.write("   CMD 0x%04x\n" % cmd)
         self.bslSync(wait)                          #synchronize BSL
         rxFrame = self.comTxRx(cmd, dataOut, len(dataOut))  #Send frame
         if rxFrame:                                 #test answer
@@ -675,7 +690,7 @@ class BootStrapLoader(LowLevel):
         self.verifyBlk(addr, blkout, action & self.ACTION_ERASE_CHECK)
 
         if action & self.ACTION_PROGRAM:
-            if DEBUG: sys.stderr.write("  Program starting at 0x%04x, %i bytes ...\n" % (addr, len(blkout)))
+            if DEBUG: sys.stderr.write("  Program starting at 0x%05x, %i bytes ...\n" % (addr, len(blkout)))
             self.preparePatch()
             #Program block
             self.bslTxRx(self.BSL_TXBLK, addr, len(blkout), blkout)
@@ -999,6 +1014,11 @@ class BootStrapLoader(LowLevel):
             38400:[0x87e0, 0x0002],
             57600:[0x0000, 0x0003],     #nonstandard XXX BSL dummy BCSCTL settings!
            115200:[0x0000, 0x0004],     #nonstandard XXX BSL dummy BCSCTL settings!
+        },
+        F2x: {
+             9600:[0x8580, 0x0000],  
+            19200:[0x8b00, 0x0001],
+            38400:[0x8c80, 0x0002],
         },
         F4x: {
              9600:[0x9800, 0x0000],

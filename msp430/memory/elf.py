@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-# $Id: elf.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
-
-import struct
 
 # ELF object file reader
-# (C) 2003 cliechti@gmx.net
+# (C) 2003-2010 cliechti@gmx.net
 # Python license
+
+import struct
+import msp430.memory
+import msp430.memory.error
+
 
 #            size  alignment
 # Elf32_Addr    4  4  Unsigned program address
@@ -46,7 +48,7 @@ import struct
     #~ Elf32_Word sh_info;
     #~ Elf32_Word sh_addralign;
     #~ Elf32_Word sh_entsize;
-#~ } Elf32_Shdr; 
+#~ } Elf32_Shdr;
 
 #~ typedef struct {
     #~ Elf32_Word p_type;
@@ -65,7 +67,7 @@ class ELFException(Exception): pass
 class ELFSection:
     """read and store a section"""
     Elf32_Shdr = "<IIIIIIIIII"          #header format
-    
+
     #section types
     SHT_NULL        = 0
     SHT_PROGBITS    = 1
@@ -103,7 +105,7 @@ class ELFSection:
         (self.sh_name, self.sh_type, self.sh_flags, self.sh_addr,
          self.sh_offset, self.sh_size, self.sh_link, self.sh_info,
          self.sh_addralign, self.sh_entsize) = struct.unpack(self.Elf32_Shdr, s)
-         
+
     def __str__(self):
         """pretty print for debug..."""
         return "%s(%s, sh_type=%s, sh_flags=%s, "\
@@ -118,7 +120,7 @@ class ELFSection:
 class ELFProgramHeader:
     """Store and parse a program header"""
     Elf32_Phdr = "<IIIIIIII"            #header format
-    
+
     #segmet types
     PT_NULL         = 0
     PT_LOAD         = 1
@@ -129,12 +131,12 @@ class ELFProgramHeader:
     PT_PHDR         = 6
     PT_LOPROC       = 0x70000000L
     PT_HIPROC       = 0x7fffffffL
-    
+
     #segment flags
     PF_R            = 0x4       #segment is readable
     PF_W            = 0x2       #segment is writable
     PF_X            = 0x1       #segment is executable
-     
+
     def __init__(self):
         """create a new, empty segment/program header"""
         (self.p_type, self.p_offset, self.p_vaddr, self.p_paddr,
@@ -161,7 +163,7 @@ class ELFObject:
     """Object to read and handle an LEF object file"""
     #header information
     Elf32_Ehdr = "<16sHHIIIIIHHHHHH"
-    
+
     #offsets within e_ident
     EI_MAG0         = 0     #File identification
     EI_MAG1         = 1     #File identification
@@ -239,7 +241,7 @@ class ELFObject:
             elfsection = ELFSection()
             elfsection.fromString(shdr)
             self.sections.append(elfsection)
-        
+
         #load data for all sections
         for section in self.sections:
             fileobj.seek(section.sh_offset)
@@ -248,18 +250,18 @@ class ELFObject:
             if section.sh_type == ELFSection.SHT_STRTAB:
                 section.values = data.split('\0')
             section.lma = self.getLMA(section)
-        
+
         #get section names
         for section in self.sections:
             start = self.sections[self.e_shstrndx].data[section.sh_name:]
             section.name = start.split('\0')[0]
-        
+
     def getSection(self, name):
         """get section by name"""
         for section in self.sections:
             if section.name == '.text':
                 return section
-    
+
     def getProgrammableSections(self):
         """get all program headers that are marked as executable and
         have suitable attributes to be code"""
@@ -297,9 +299,25 @@ class ELFObject:
     def __str__(self):
         """pretty print for debug..."""
         return "%s(self.e_type=%r, self.e_machine=%r, self.e_version=%r, sections=%r)" % (
-            self.__class__.__name__, 
+            self.__class__.__name__,
             self.e_type, self.e_machine, self.e_version,
             [section.name for section in self.sections])
+
+
+
+
+def load(filelike):
+    """load data from a (opened) file in ELF object format.
+    File must be seekable"""
+    memory = msp430.memory.Memory()
+    obj = ELFObject()
+    obj.fromFile(filelike)
+    if obj.e_type != ELFObject.ET_EXEC:
+        raise Exception("No executable")
+    for section in obj.getSections():
+        #~ sys.stderr.write("ELF section %s at 0x%04x %d bytes\n" % (section.name, section.lma, len(section.data)))
+        if len(section.data):
+            memory.segments.append(msp430.memory.Segment(section.lma, section.data))
 
 
 if __name__ == '__main__':

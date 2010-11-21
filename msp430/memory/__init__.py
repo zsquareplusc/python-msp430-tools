@@ -133,12 +133,13 @@ class Memory:
             self.segments.append(segment)
 
 
-def load(filename, fileobj=None):
+def load(filename, fileobj=None, format=None):
     """\
     Return a Memory object with the contents of a file.
     File type is determined from extension and/or inspection of content.
     :param filename: Name of the file to open
     :param fileobj: None to let this function open the file or an open, seekable file object
+    :param format: File format name, ``None`` for autodetection.
     :return: Memory object
     """
     close = False
@@ -146,30 +147,52 @@ def load(filename, fileobj=None):
         fileobj = open(filename, "rb")
         close = True
     try:
-        # first check extension
-        try:
-            if filename[-4:].lower() == '.txt':
-                return titext.load(fileobj)
-            elif filename[-4:].lower() in ('.a43', '.hex'):
-                return intelhex.load(fileobj)
-        except msp430.memory.error.FileFormatError:
-            # do contents based detection below
-            fileobj.seek(0)
-        # then do a contents based detection
-        try:
-            return elf.load(fileobj)
-        except elf.ELFException:
-            fileobj.seek(0)
+        if format is None:
+            # first check extension
             try:
-                return titext.load(fileobj)
+                if filename[-4:].lower() == '.txt':
+                    return titext.load(fileobj)
+                elif filename[-4:].lower() in ('.a43', '.hex'):
+                    return intelhex.load(fileobj)
             except msp430.memory.error.FileFormatError:
+                # do contents based detection below
+                fileobj.seek(0)
+            # then do a contents based detection
+            try:
+                return elf.load(fileobj)
+            except elf.ELFException:
                 fileobj.seek(0)
                 try:
                     return titext.load(fileobj)
                 except msp430.memory.error.FileFormatError:
-                    raise msp430.memory.error.FileFormatError(
-                            'file %s could not be loaded (not ELF, Intel-Hex, or TI-Text)' % (filename,))
+                    fileobj.seek(0)
+                    try:
+                        return titext.load(fileobj)
+                    except msp430.memory.error.FileFormatError:
+                        raise msp430.memory.error.FileFormatError(
+                                'file %s could not be loaded (not ELF, Intel-Hex, or TI-Text)' % (filename,))
+        else:
+            if format == 'titext':
+                return titext.load(fileobj)
+            elif format == 'ihex':
+                return intelhex.load(fileobj)
+            elif format == 'elf':
+                return elf.load(fileobj)
+            raise ValueError('unsupported file format %s' % (format,))
     finally:
         if close:
             fileobj.close()
 
+
+def save(memory, fileobj, format='titext'):
+    if format == 'titext':
+        return titext.save(memory, fileobj)
+    elif format == 'ihex':
+        return intelhex.save(memory, fileobj)
+    elif format == 'elf':
+        return elf.save(memory, fileobj)
+    raise ValueError('unsupported file format %s' % (format,))
+
+
+load_formats = ['titext', 'ihex', 'elf']
+save_formats = ['titext', 'ihex']

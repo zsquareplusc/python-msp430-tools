@@ -30,8 +30,6 @@ F4x_baudrate_args = {
 }
 
 class SerialBSL(bsl.BSL):
-    # delay after control line changes
-    control_delay = 0.05
 
     def __init__(self, port=0, baudrate=9600, ignore_answer=False):
         self.serial = None
@@ -60,6 +58,8 @@ class SerialBSL(bsl.BSL):
         self.swapResetTest = False
         self.testOnTX = False
         self.blindWrite = False
+        # delay after control line changes
+        self.control_delay = 0.05
 
     def __del__(self):
         self.close()
@@ -287,10 +287,12 @@ if __name__ == '__main__':
         help="memory read, see also --size", default=None)
     parser.add_option("", "--size", dest="size", action="store", type="address",
         help="see also --upload", default=512)
-    parser.add_option("", "--passwd", dest="passwd", action="store",
+    parser.add_option("--passwd", dest="passwd", action="store",
         help="transmit password before doing anything else", default=None)
-    parser.add_option("", "--ignore-answer", dest="ignore_answer", action="store_true",
+    parser.add_option("--ignore-answer", dest="ignore_answer", action="store_true",
         help="do not wait for answer", default=False)
+    parser.add_option("--control-delay", dest="control_delay", type="float",
+        help="Set delay in seconds (float) for BSL start pattern", default=0.05)
 
     parser.add_option("", "--time", dest="time", action="store_true",
         help="measure time", default=False)
@@ -304,6 +306,8 @@ if __name__ == '__main__':
         options.port,
         ignore_answer = options.ignore_answer,
     )
+
+    target.control_delay = options.control_delay
 
     if options.verbose:
         logging.basicConfig()

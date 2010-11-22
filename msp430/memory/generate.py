@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-# (C) 2004-2010 Chris Liechti <cliechti@gmx.net>
-# this is distributed under a free software license, see license.txt
-
 """\
 Test File generator.
 
@@ -10,6 +7,9 @@ This tool generates a hex file, of given size, ending on address
 0xffff if no start address is given.
 
 USAGE: generate.py -l size_in_bytes
+
+(C) 2004-2010 Chris Liechti <cliechti@gmx.net>
+this is distributed under a free software license, see LICENSE.txt.
 """
 
 from msp430 import memory
@@ -19,12 +19,18 @@ import struct
 from optparse import OptionParser
 
 
-parser = OptionParser(usage='USAGE: %prog [options] [-o filename]')
+parser = OptionParser(usage="""\
+%prog [options]
+
+Test File generator.
+
+This tool generates a hex file, of given size, ending on address
+0xffff if no start address is given.""")
 
 parser.add_option("-o", "--output",
         dest="output",
         help="write result to given file",
-        metavar="FILE")
+        metavar="DESTINATION")
 
 parser.add_option("-f", "--output-format",
         dest="output_format",
@@ -46,11 +52,13 @@ parser.add_option("-s", "--start-address",
 
 parser.add_option("-c", "--count",
         dest="count",
+        help="use address as data",
         action="store_true",
         default=False)
 
 parser.add_option("--const",
         dest="const",
+        help="use given 16 bit number as data (default=0x3fff)",
         default=0x3fff, # JMP $
         type="int")
 

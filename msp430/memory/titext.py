@@ -28,7 +28,7 @@ def load(filelike):
                 except ValueError, e:
                     raise msp430.memory.error.FileFormatError(
                             'File is no valid TI-Text: %s' % (e,),
-                            fileame = getattr(filelike, "name", "<unknown>"),
+                            filename = getattr(filelike, "name", "<unknown>"),
                             lineno = n+1)
     if segmentdata:
         memory.segments.append(msp430.memory.Segment(startAddr, ''.join(segmentdata)))

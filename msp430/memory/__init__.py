@@ -2,6 +2,7 @@ import titext
 import elf
 import intelhex
 import bin
+import error
 
 class Segment:
     """store a string with memory contents along with its startaddress"""
@@ -155,7 +156,7 @@ def load(filename, fileobj=None, format=None):
                     return titext.load(fileobj)
                 elif filename[-4:].lower() in ('.a43', '.hex'):
                     return intelhex.load(fileobj)
-            except msp430.memory.error.FileFormatError:
+            except error.FileFormatError:
                 # do contents based detection below
                 fileobj.seek(0)
             # then do a contents based detection
@@ -165,12 +166,12 @@ def load(filename, fileobj=None, format=None):
                 fileobj.seek(0)
                 try:
                     return titext.load(fileobj)
-                except msp430.memory.error.FileFormatError:
+                except error.FileFormatError:
                     fileobj.seek(0)
                     try:
                         return titext.load(fileobj)
-                    except msp430.memory.error.FileFormatError:
-                        raise msp430.memory.error.FileFormatError(
+                    except error.FileFormatError:
+                        raise error.FileFormatError(
                                 'file %s could not be loaded (not ELF, Intel-Hex, or TI-Text)' % (filename,))
         else:
             if format == 'titext':
@@ -194,8 +195,10 @@ def save(memory, fileobj, format='titext'):
         return intelhex.save(memory, fileobj)
     elif format == 'elf':
         return elf.save(memory, fileobj)
+    elif format == 'bin':
+        return bin.save(memory, fileobj)
     raise ValueError('unsupported file format %s' % (format,))
 
 
 load_formats = ['titext', 'ihex', 'elf', 'bin']
-save_formats = ['titext', 'ihex']
+save_formats = ['titext', 'ihex', 'bin']

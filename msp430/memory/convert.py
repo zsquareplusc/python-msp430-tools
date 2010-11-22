@@ -1,68 +1,102 @@
 #!/usr/bin/env python
 
-# simple converter for hex files
-# data can be read from stdin and output on stdout:
-# usage: cat file.txt | convert - >out.a43
-# usage: convert file.txt >out.a43
-# usage: convert file.txt -o out.a43
-#
-# It is also possible to specify multiple input files and create a single,
-# merged output.
-#
-# (C) 2004-2010 Chris Liechti <cliechti@gmx.net>
-# this is distributed under a free software license, see license.txt
+"""\
+Simple converter for hex files.
 
+data can be read from stdin and output on stdout:
+usage: cat file.txt | convert - >out.a43
+usage: convert file.txt >out.a43
+usage: convert file.txt -o out.a43
+
+(C) 2004-2010 Chris Liechti <cliechti@gmx.net>
+this is distributed under a free software license, see LICENSE.txt.
+"""
+
+import msp430.memory.error
 from msp430 import memory
 import sys
 
-from optparse import OptionParser
+debug = False
 
-parser = OptionParser(usage='USAGE: %prog [-o filename] [filename...]')
+def main():
+    from optparse import OptionParser
 
-parser.add_option("-o", "--output",
-        dest="output",
-        help="write result to given file",
-        metavar="FILE")
+    parser = OptionParser(usage="""\
+%prog [options] [INPUT...]
 
-parser.add_option("-i", "--input-format",
-        dest="input_format",
-        help="input format name (%s)" % (', '.join(memory.load_formats),),
-        default="titext",
-        metavar="TYPE")
+Simple hex file conversion tool.
 
-parser.add_option("-f", "--output-format",
-        dest="output_format",
-        help="output format name (%s)" % (', '.join(memory.save_formats),),
-        default="titext",
-        metavar="TYPE")
+It is also possible to specify multiple input files and create a single,
+merged output.
+""")
 
-(options, args) = parser.parse_args()
+    parser.add_option("-o", "--output",
+            dest="output",
+            help="write result to given file",
+            metavar="DESTINATION")
 
-if options.input_format not in memory.load_formats:
-    parser.error('Input format %s not supported.' % (options.input_format))
+    parser.add_option("-i", "--input-format",
+            dest="input_format",
+            help="input format name (%s)" % (', '.join(memory.load_formats),),
+            default="titext",
+            metavar="TYPE")
 
-if options.output_format not in memory.save_formats:
-    parser.error('Output format %s not supported.' % (options.output_format))
+    parser.add_option("-f", "--output-format",
+            dest="output_format",
+            help="output format name (%s)" % (', '.join(memory.save_formats),),
+            default="titext",
+            metavar="TYPE")
 
-if not args:
-    # if no files are given, read from stdin
-    args = ['-']
+    parser.add_option("-d", "--debug",
+            dest="debug",
+            help="print debug messages",
+            default=False,
+            action='store_true')
 
-# prepare output
-if options.output is None:
-    out = sys.stdout
-else:
-    out = file(options.output, 'wb')
+    (options, args) = parser.parse_args()
 
-# get input
-data = memory.Memory()          # prepare downloaded data
+    if options.input_format not in memory.load_formats:
+        parser.error('Input format %s not supported.' % (options.input_format))
 
-for filename in args:
-    if filename == '-':
-        data.merge(memory.load(sys.stdin, options.input_format))
+    if options.output_format not in memory.save_formats:
+        parser.error('Output format %s not supported.' % (options.output_format))
+
+    if not args:
+        # if no files are given, read from stdin
+        args = ['-']
+
+    global debug
+    debug = options.debug
+
+    # prepare output
+    if options.output is None:
+        out = sys.stdout
     else:
-        data.merge(memory.load(filename))
+        out = file(options.output, 'wb')
 
-# write ihex file
-memory.save(data, out, options.output_format)
+    # get input
+    data = memory.Memory()          # prepare downloaded data
 
+    for filename in args:
+        if filename == '-':
+            data.merge(memory.load('<stdin>', sys.stdin, format=options.input_format))
+        else:
+            data.merge(memory.load(filename, format=options.input_format))
+
+    # write ihex file
+    memory.save(data, out, options.output_format)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except SystemExit:
+        raise                                   # let pass exit() calls
+    except KeyboardInterrupt:
+        if debug: raise                         # show full trace in debug mode
+        sys.stderr.write("User abort.\n")       # short messy in user mode
+        sys.exit(1)                             # set error level for script usage
+    except Exception, msg:                      # every Exception is caught and displayed
+        if debug: raise                         # show full trace in debug mode
+        sys.stderr.write("\nAn error occoured:\n%s\n" % msg) # short messy in user mode
+        sys.exit(1)                             # set error level for script usage

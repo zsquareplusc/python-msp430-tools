@@ -3,7 +3,8 @@
 This is a little tool to generate hex dumps from .a43, .text, .elf or binary
 files.
 
-Chris <cliechti@gmx.net>
+(C) 2009-2010 Chris Liechti <cliechti@gmx.net>
+this is distributed under a free software license, see LICENSE.txt.
 """
 
 import sys
@@ -36,7 +37,7 @@ debug = False
 def main():
     from optparse import OptionParser
     parser = OptionParser(usage="""\
-%prog [options] [file|-]
+%prog [options] [SOURCE...]
 
 Hexdump tool.
 
@@ -45,34 +46,30 @@ This tool generates hex dumps from binary, ELF or hex input files.
 What is dumped?
 - Intel hex and TI-Text: only data
 - ELF: only segments that are programmed
-- binary: complete file, address column is byte offset in file
-""")
-
-    parser = OptionParser()
+- binary: complete file, address column is byte offset in file""")
 
     parser.add_option("-o", "--output",
             dest="output",
             help="write result to given file",
-            metavar="FILE")
+            metavar="DESTINATION")
 
-    parser.add_option("-d", "--debug", dest="debug",
-                      help="print debug messages",
-                      default=False, action='store_true')
-    parser.add_option("-v", "--verbose", dest="verbose",
-                      help="print more details",
-                      default=False, action='store_true')
+    parser.add_option("-d", "--debug",
+            dest="debug",
+            help="print debug messages",
+            default=False,
+            action='store_true')
+
+    parser.add_option("-v", "--verbose",
+            dest="verbose",
+            help="print more details",
+            default=False,
+            action='store_true')
 
     parser.add_option("-i", "--input-format",
             dest="input_format",
             help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
             default="titext",
             metavar="TYPE")
-
-    parser.add_option("-b", "--binary",
-            dest="input_format",
-            const="bin",
-            help="assume file(s) are binary",
-            action='store_const')
 
     (options, args) = parser.parse_args()
 
@@ -81,6 +78,9 @@ What is dumped?
 
     if options.input_format not in msp430.memory.load_formats:
         parser.error('Input format %s not supported.' % (options.input_format))
+
+    global debug
+    debug = options.debug
 
     output = sys.stdout
     if options.output:

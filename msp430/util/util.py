@@ -1,5 +1,3 @@
-# $Id: util.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
-
 import sys
 
 #for the use with memread
@@ -21,28 +19,6 @@ def hexdump( (adr, memstr), output=sys.stdout ):
             ascii = ''
     if count < 16: output.write("%s   %s\n" % ("   "*(16-count), ascii))
 
-def makeihex((address, data), eof=1, output=sys.stdout):
-    """work though the data and output lines in inzel hex format.
-    and end tag is appended"""
-    start = 0
-    while start<len(data):
-        end = start + 16
-        if end > len(data): end = len(data)
-        _ihexline(address, [ord(x) for x in data[start:end]], output=output)
-        start += 16
-        address += 16
-    if eof:
-        _ihexline(address, [], type=1, output=output)   #append no data but an end line
-
-def _ihexline(address, buffer, type=0, output=sys.stdout):
-    """encode one line, output with checksum"""
-    output.write( ':%02X%04X%02X' % (len(buffer), address & 0xffff, type) )
-    sum = len(buffer) + ((address >> 8) & 255) + (address & 255) + (type&255)
-    for b in buffer:
-        if b == None: b = 0         #substitute nonexistent values with zero
-        output.write('%02X' % (b & 255))
-        sum += b & 255
-    output.write('%02X\n' %( (-sum) & 255))
 
 #add some arguments to a function, but don't call it yet, instead return
 #a wrapper object for later invocation

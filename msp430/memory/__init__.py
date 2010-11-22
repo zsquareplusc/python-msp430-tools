@@ -1,6 +1,7 @@
 import titext
 import elf
 import intelhex
+import bin
 
 class Segment:
     """store a string with memory contents along with its startaddress"""
@@ -178,6 +179,8 @@ def load(filename, fileobj=None, format=None):
                 return intelhex.load(fileobj)
             elif format == 'elf':
                 return elf.load(fileobj)
+            elif format == 'bin':
+                return bin.load(fileobj)
             raise ValueError('unsupported file format %s' % (format,))
     finally:
         if close:
@@ -194,5 +197,5 @@ def save(memory, fileobj, format='titext'):
     raise ValueError('unsupported file format %s' % (format,))
 
 
-load_formats = ['titext', 'ihex', 'elf']
+load_formats = ['titext', 'ihex', 'elf', 'bin']
 save_formats = ['titext', 'ihex']

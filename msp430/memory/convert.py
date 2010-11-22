@@ -17,7 +17,7 @@ import sys
 
 from optparse import OptionParser
 
-parser = OptionParser(usage='usage: %prog [-o filename] [filename...]')
+parser = OptionParser(usage='USAGE: %prog [-o filename] [filename...]')
 
 parser.add_option("-o", "--output",
         dest="output",
@@ -26,13 +26,13 @@ parser.add_option("-o", "--output",
 
 parser.add_option("-i", "--input-format",
         dest="input_format",
-        help="input format name" % memory.load_formats,
+        help="input format name (%s)" % (', '.join(memory.load_formats),),
         default="titext",
         metavar="TYPE")
 
 parser.add_option("-f", "--output-format",
         dest="output_format",
-        help="output format name" % memory.save_formats,
+        help="output format name (%s)" % (', '.join(memory.save_formats),),
         default="titext",
         metavar="TYPE")
 

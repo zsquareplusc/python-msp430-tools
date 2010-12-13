@@ -126,7 +126,7 @@ Intel HEX. ELF files can also be loaded.
 If "-" is specified as file the data is read from stdin and intel-hex format
 is expected by default.
 
-Address parameters for --erase, --upload, --size, --execute can be given in
+Address parameters for --erase, --upload, --execute can be given in
 decimal, hexadecimal or octal.
 
 Examples:
@@ -332,21 +332,17 @@ only "V" does a "check by file" of a programmed device.
 
     parser.add_option_group(group)
 
-    group = OptionGroup(parser, "Data retrieving")
+    group = OptionGroup(parser, "Data retrieving", """\
+It is possible to use address ranges such as 0xf000-0xf0ff or 0xf000/256.
+Multiple --upload parameters are allowed.
+""")
 
     group.add_option("-u", "--upload",
             dest="upload_list",
             metavar="ADDRESS",
-            help='Upload a data block (see also: --size).  It is also possible to use address ranges. In that case, multiple --upload parameters are allowed.',
+            help='upload a data block, can be passed multiple times',
             default=[],
             action='append')
-
-    group.add_option("-s", "--size",
-            dest="upload_size",
-            type="int",
-            help="size of the data block to upload (Default is 2)",
-            default=2,
-            action='store')
 
     group.add_option("-o", "--output",
             dest="output",
@@ -407,8 +403,6 @@ only "V" does a "check by file" of a programmed device.
     jtagobj     = jtag.JTAG()
     toinit      = []
     todo        = []
-    startaddr   = None
-    size        = 2
     uploadlist  = []
     funclet     = None
     parameters  = []
@@ -463,11 +457,11 @@ only "V" does a "check by file" of a programmed device.
         except ValueError, e:
             parser.error("--erase: %s" % e)
     if options.do_info_erase:
-            # F2xx XXX: on F1xx/F4xx are segments erased twice
-            toinit.append(jtagobj.makeActionSegmentErase(0x1000))
-            toinit.append(jtagobj.makeActionSegmentErase(0x1040))
-            toinit.append(jtagobj.makeActionSegmentErase(0x1080))
-            toinit.append(jtagobj.makeActionSegmentErase(0x10c0))
+        # F2xx XXX: on F1xx/F4xx are segments erased twice
+        toinit.append(jtagobj.makeActionSegmentErase(0x1000))
+        toinit.append(jtagobj.makeActionSegmentErase(0x1040))
+        toinit.append(jtagobj.makeActionSegmentErase(0x1080))
+        toinit.append(jtagobj.makeActionSegmentErase(0x10c0))
 
     if options.do_program:
         todo.append(jtagobj.actionProgram)          # Program file
@@ -500,7 +494,7 @@ only "V" does a "check by file" of a programmed device.
             if end is not None:
                 uploadlist.append((start, end))
             else:
-                startaddr = start
+                uploadlist.append((start, start+15))
         except ValueError, e:
             parser.error("--upload: %s" % e)
 
@@ -594,23 +588,16 @@ only "V" does a "check by file" of a programmed device.
             sys.stderr.write("Warning: option --reset ignored as --go is specified!\n")
         reset = 0
 
-    if startaddr is not None and reset:
+    if options.upload_list and reset:
         if not options.quiet:
             sys.stderr.write("Warning: option --reset ignored as --upload is specified!\n")
         reset = 0
 
-    if startaddr is not None and options.wait:
+    if options.upload_list and options.wait:
         if not options.quiet:
             sys.stderr.write("Warning: option --wait ignored as --upload is specified!\n")
         options.wait = False
 
-    # upload ranges and address+size can not be mixed
-    if uploadlist and startaddr is not None:
-        sys.stderr.write("--upload: Either specify ranges (multiple --upload allowed) or one --upload and one --size\n")
-        sys.exit(2)
-    # backwards compatibility for old parameter format
-    if not uploadlist and startaddr is not None:
-        uploadlist.append((startaddr, startaddr+size-1))
 
     # prepare output
     if options.output is None:
@@ -700,7 +687,7 @@ only "V" does a "check by file" of a programmed device.
             for start, end in uploadlist:
                 size = end - start + 1
                 if options.verbose > 2:
-                    sys.stderr.write("upload 0x%04x %d Bytes\n" % (start, size))
+                    sys.stderr.write("Upload 0x%04x %d bytes\n" % (start, size))
                 data.append(memory.Segment(start, jtagobj.uploadData(start, size)))  # upload data
             memory.save(data, out, options.output_format)
             options.wait = False   # wait makes no sense as after upload, the device is still stopped

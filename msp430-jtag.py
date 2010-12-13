@@ -411,15 +411,16 @@ Multiple --upload parameters are allowed.
         help_on_backends()
         sys.exit()
 
-    if options.backend == 'mspgcc' or options.backend is None:
-        backend = jtag.CTYPES_MSPGCC
-    elif options.backend == 'parjtag':
-        backend = jtag.PARJTAG
-    elif options.backend == 'ti':
-        backend = jtag.CTYPES_TI
-    else:
-        raise parser.error("no such backend: %r" % options.backend)
-    jtag.init_backend(backend)
+    if options.backend is not None:
+        if options.backend == 'mspgcc':
+            backend = jtag.CTYPES_MSPGCC
+        elif options.backend == 'parjtag':
+            backend = jtag.PARJTAG
+        elif options.backend == 'ti':
+            backend = jtag.CTYPES_TI
+        else:
+            raise parser.error("no such backend: %r" % options.backend)
+        jtag.init_backend(backend)
 
     if options.spy_bi_wire:
         jtag.interface = 'spy-bi-wire'

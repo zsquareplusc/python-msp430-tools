@@ -5,7 +5,7 @@ Software to talk to the parallel port and USB JTAG adapters as seen with the
 FET kits.
 It is released under a free software license, see license.txt for more details.
 
-(C) 2002-2008 Chris Liechti <cliechti@gmx.net>
+(C) 2002-2010 Chris Liechti <cliechti@gmx.net>
 
 
 Features
@@ -17,17 +17,17 @@ Features
 - upload a memory block MSP->PC (output as binary data or hex dump, ihex)
 - written in Python, runs on Win32, Linux, BSD, ...
 - use on command line, or in a Python script
-- reset and wait for keypress (to run a device directly from the port
+- reset and wait for key press (to run a device directly from the port
   power)
-- TI/3rd party library support for USB JTAG adaptors (Windows only)
+- TI/3rd party library support for USB JTAG adaptors
 
 
 Requirements
 ------------
 - Linux, BSD, Un*x or Windows PC
-- Python 2.0 or newer, 2.3+ recomeded
+- Python 2.0 or newer, 2.3+ recommended
 - Parallel JTAG hardware with an MSP430 device connected
-  (optionaly a USB adapter and a coresponding MSP430.dll on Windows)
+- USB adapter with a corresponding 3rd party MSP430 library)
 
 
 Installation
@@ -42,7 +42,7 @@ Building from source
 --------------------
 The libraries from the CVS module jtag/* have to be built. This includes
 MSP430mspgcc.dll and HIL.dll (respectively libMSP430mspgcc.so and
-libHIL.so ony Un*x platforms)
+libHIL.so only Un*x platforms)
 
 On Linux/Un*x Python 2.2+ is needed. On some distributions is Python 1.5.2
 installed per default. You may meed to change the first line in the script
@@ -50,10 +50,10 @@ from "python" to "python2". Maybe Python 2.x is in a separate package that
 has to be installed. There are rpm and deb binary packages and a source
 tarball available through the Python homepage.
 
-There prefered backend is the a ctypes version, which means just
+There preferred backend is the ctypes version, which means just
 libMSP430mspgcc.so/dll libHIL.so/HIL.dll is needed and of course the ctypes
 python extension. The ctypes backend is also capable of using the closed
-source MSP430.dll/libMSP430.so library from TI or 3rd party supliers.
+source MSP430.dll/libMSP430.so library from TI or 3rd party suppliers.
 
 Alternatively there is the older python extension module implemented in c
 called _parjtag.so/dll. Its sources can be found in the "python" folder of
@@ -139,9 +139,9 @@ Program flow specifiers:
   -p, --program         Program file.
   -v, --verify          Verify by file.
   --secure              Blow JTAG security fuse.
-  
+
                         .. warning:: This is not reversible, use with care!
-                                
+
                         .. note:: Not supported with the simple parallel port
                                   adapter (7V source required).
 
@@ -155,7 +155,7 @@ No default action is taken if "p" and/or "v" is given, say specifying
 only "v" does a "check by file" of a programmed device.
 
 Data retrieving:
-  -u, --upload=addr     Upload a datablock (see also: --size).
+  -u, --upload=addr     Upload a data block (see also: --size).
                         It is also possible to use address ranges. In that
                         case, multiple --upload parameters are allowed.
   -s, --size=num        Size of the data block to upload (Default is 2).
@@ -167,11 +167,11 @@ Data retrieving:
                         This can be used to clone a device.
 
 Do before exit:
-  -g, --go=address      Start programm execution at specified address.
+  -g, --go=address      Start program execution at specified address.
                         This implies option "w" (wait)
   -r, --reset           Reset connected MSP430. Starts application.
                         This is a normal device reset and will start
-                        the programm that is specified in the reset
+                        the program that is specified in the reset
                         interrupt vector. (see also -g)
   -w, --wait            Wait for <ENTER> before closing parallel port.
   --no-close            Do not close port on exit. Allows to power devices
@@ -199,7 +199,7 @@ Examples:
     try programming the device *without* the '--no-close' option first,
     and introduce this option only if the uploaded code fails to start.
 
-    Aleternatively, it is possible run ``msp430-jtag -w`` to power the
+    Alternatively, it is possible run ``msp430-jtag -w`` to power the
     eval board from the JTAG interface.
 
 
@@ -214,7 +214,7 @@ The backend can be chosen with the --backend command line option.
 
 "ti" (default)
     Using MSP430.dll, the proprietary library from TI or a compatible one
-    from a 3rd pary supplier.
+    from a 3rd party supplier.
 
 "parjtag"
     Old way of using MSP430mspgcc.dll. Use "mspgcc" instead.
@@ -262,20 +262,20 @@ Examples
 ``msp430-jtag --go=0x220 ramtest.a43``
     Download a program into RAM and run it, may not work with all devices.
 
-``msp430-jtag -f blinking.a43``
+``msp430-jtag --funclet blinking.a43``
     Download a program into RAM and run it. It must be a special format with
     "startadr", "entrypoint", "exitpoint" as the first three words in the
     data and it must end on "jmp $". See MSP430mspgcc sources for more info.
 
-``msp430-jtag -u 0x0c00 -s 1024``
+``msp430-jtag -u 0x0c00/1k``
     Get a memory dump in HEX, from the bootstrap loader.
     Or save the binary in a file::
-    
-      msp430-jtag -u 0x0c00 -s 1024 -b >dump.bin
-    
+
+      msp430-jtag -u 0x0c00 -s 1024 -f bin >dump.bin
+
     or as an intel-hex file::
-    
-      msp430-jtag -u 0x0c00 -s 1024 -i >dump.a43
+
+      msp430-jtag -u 0x0c00 -s 1024 -f ihex >dump.a43
 
 ``msp430-jtag``
     Just start the user program (with a reset).
@@ -345,6 +345,10 @@ V2.2
 V2.3
     Added support for F2xx and MSP430X architectures. Improved 3rd party
     library support for Linux and Windows.
+
+V3.0
+    Rewrite command line frontend. Changed file type options, program flow
+    specifiers.
 
 
 References

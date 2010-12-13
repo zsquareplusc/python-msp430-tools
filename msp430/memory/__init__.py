@@ -2,6 +2,7 @@ import titext
 import elf
 import intelhex
 import bin
+import hexdump
 import error
 
 class Segment:
@@ -197,8 +198,10 @@ def save(memory, fileobj, format='titext'):
         return elf.save(memory, fileobj)
     elif format == 'bin':
         return bin.save(memory, fileobj)
+    elif format == 'hex':
+        return hexdump.save(memory, fileobj)
     raise ValueError('unsupported file format %s' % (format,))
 
 
-load_formats = ['titext', 'ihex', 'elf', 'bin']
-save_formats = ['titext', 'ihex', 'bin']
+load_formats = ['titext', 'ihex', 'bin', 'elf']
+save_formats = ['titext', 'ihex', 'bin', 'hex']

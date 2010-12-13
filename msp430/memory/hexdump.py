@@ -31,6 +31,12 @@ def hexdump( (adr, memstr), output=sys.stdout ):
     if count < 16: output.write("%s   %s\n" % ("   "*(16-count), ascii))
 
 
+def save(memory, filelike):
+    """output a hexdump to given file object"""
+    for n, segment in enumerate(sorted(memory.segments)):
+        if n: filelike.write('....:\n')
+        hexdump((segment.startaddress, segment.data), output=filelike)
+
 
 debug = False
 
@@ -97,9 +103,7 @@ What is dumped?
         if options.verbose:
             output.write('%s (%d segments):\n' % (filename, len(mem)))
 
-        for n, segment in enumerate(mem):
-            if n: output.write('....:\n')
-            hexdump((segment.startaddress, segment.data), output=output)
+        save(mem, output)
 
 
 if __name__ == '__main__':

@@ -165,7 +165,7 @@ Examples:
             dest="quiet",
             help="suppress all messages",
             default=False,
-            action='store')
+            action='store_true')
 
     group = OptionGroup(parser, "General Options")
 
@@ -524,7 +524,7 @@ only "V" does a "check by file" of a programmed device.
         else:
             parser.erro("Expected <key>=<value> pair in --parameter option, but no '=' found.")
 
-    if a in options.funclet_result:
+    for a in options.funclet_result:
         a = a.lower()
         if a == 'rall':
             for regnum in range(16):
@@ -545,17 +545,17 @@ only "V" does a "check by file" of a programmed device.
         jtagobj.verbose = 0
 
     if options.slowdown is not None:
-            import ctypes
-            if sys.platform == 'win32':
-                HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
-            else:
-                # XXX and posix platforms?!
-                HIL_SetSlowdown = ctypes.cdll.HIL.HIL_SetSlowdown
+        import ctypes
+        if sys.platform == 'win32':
             HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
-            HIL_SetSlowdown.argtypes  = [ctypes.c_ulong]
-            HIL_SetSlowdown.restype   = ctypes.c_int # actually void
-            # set slowdown
-            HIL_SetSlowdown(options.slowdown)
+        else:
+            # XXX and posix platforms?!
+            HIL_SetSlowdown = ctypes.cdll.HIL.HIL_SetSlowdown
+        HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
+        HIL_SetSlowdown.argtypes  = [ctypes.c_ulong]
+        HIL_SetSlowdown.restype   = ctypes.c_int # actually void
+        # set slowdown
+        HIL_SetSlowdown(options.slowdown)
 
 
     if options.verbose:

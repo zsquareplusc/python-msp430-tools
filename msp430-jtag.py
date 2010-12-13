@@ -86,6 +86,17 @@ def parseAddressRange(text):
         except ValueError:
             raise ValueError("Address range end address must be a valid number in dec, hex or octal")
         return (adr1, adr2)
+    elif '/' in text:
+        adr1, size = text.split('/', 1)
+        try:
+            adr1 = int(adr1, 0)
+        except ValueError:
+            raise ValueError("Address range start address must be a valid number in dec, hex or octal")
+        try:
+            size = int(size, 0)
+        except ValueError:
+            raise ValueError("Address range size must be a valid number in dec, hex or octal")
+        return (adr1, adr1 + size - 1)
     else:
         try:
             adr = int(text, 0)
@@ -158,11 +169,6 @@ Examples:
 
     group = OptionGroup(parser, "General Options")
 
-    group.add_option("-o", "--output",
-            dest="output",
-            help="write result to given file",
-            metavar="DESTINATION")
-
     group.add_option("-i", "--input-format",
             dest="input_format",
             help="input format name (%s)" % (', '.join(memory.load_formats),),
@@ -171,6 +177,7 @@ Examples:
 
     group.add_option("-R", "--ramsize",
             dest="ramsize",
+            type="int",
             help="Specify the amount of RAM to be used to program flash (autodetected, if --ramsize is not given)",
             default=None)
 
@@ -340,6 +347,11 @@ only "V" does a "check by file" of a programmed device.
             help="size of the data block to upload (Default is 2)",
             default=2,
             action='store')
+
+    group.add_option("-o", "--output",
+            dest="output",
+            help="write result to given file",
+            metavar="DESTINATION")
 
     group.add_option("-f", "--output-format",
             dest="output_format",

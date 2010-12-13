@@ -5,8 +5,6 @@
 # (C) 2002-2010 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
 #
-# http://mspgcc.sf.net
-#
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
 # and HIL.dll/libHIL.so
@@ -19,7 +17,7 @@ from msp430.memory import hexdump
 
 VERSION = "3.0"
 
-DEBUG = False                      # disable debug messages by default
+DEBUG = __debug__                      # disable debug messages by default
 
 
 def help_on_backends():

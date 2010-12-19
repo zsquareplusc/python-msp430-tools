@@ -173,7 +173,7 @@ Intel HEX. ELF files can also be loaded.
     group.add_option("-i", "--input-format",
             dest="input_format",
             help="input format name (%s)" % (', '.join(memory.load_formats),),
-            default="titext",
+            default=None,
             metavar="TYPE")
 
     group.add_option("-S", "--progress",
@@ -617,7 +617,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
 
     for filename in args:
         if filename == '-':
-            data.merge(memory.load('<stdin>', sys.stdin, format=options.input_format))
+            data.merge(memory.load('<stdin>', sys.stdin, format=options.input_format or "titext"))
         else:
             data.merge(memory.load(filename, format=options.input_format))
 

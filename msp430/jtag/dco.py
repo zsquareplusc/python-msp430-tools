@@ -6,12 +6,11 @@
 # that are connected to the JTAG. It can  display the supported frequencies,
 # or run a software FLL to find the settings for a specified frequency.
 #
-# (C) 2005-2006 Chris Liechti <cliechti@gmx.net>
+# (C) 2005-2006, 2010 Chris Liechti <cliechti@gmx.net>
 # this is distributed under a free software license, see license.txt
-#
-# $Id: msp430-dco.py,v 1.10 2007/03/08 15:39:08 cliechti Exp $
 
-from mspgcc import memory, jtag, clock
+from msp430 import memory
+from msp430.jtag import jtag, clock
 import sys
 import struct
 
@@ -48,10 +47,11 @@ def get_msp430_type():
     if debug: sys.stderr.write("MSP430 device: 0x%04x\n" % (device, ))
     return device
 
+
 def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
     """detect MSP430 type and try to set the clock to the given frequency.
     when successful, print the clock control register settings.
-    
+
     this function assumes that the jtag connection to the device has already
     been initialized and that the device is under jtag control and stopped.
     """
@@ -59,7 +59,7 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
         raise ValueError('tolerance out of range %f' % (tolerance,))
     device = get_msp430_type() >> 8
     variables = {}
-    
+
     if device == 0xf1:
         measured_frequency, dco, bcs1 = clock.setDCO(
             frequency*(1-tolerance),
@@ -144,6 +144,7 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
         raise IOError("unknown MSP430 type %02x" % device)
     return variables
 
+
 def measure_clock(out):
     """measure fmin and fmax"""
     device = get_msp430_type() >> 8
@@ -178,8 +179,8 @@ def measure_clock(out):
             f_all_min = min(fmin, f_all_min)
     elif device == 0xf4:
         f_all_min = clock.getDCOPlusFreq(0, 0, 0x80, 0x80, 0)
-        #XXX the F4xx has clock settings that go higher, but not all are valid
-        #for the CPU
+        # XXX the F4xx has clock settings that go higher, but not all are valid
+        # for the CPU
         #~ fmax = getDCOPlusFreq(0x03, 0xff, 0x80, 0x80, 0) # should be around 6MHz
         f_all_max = clock.getDCOPlusFreq(0x13, 0xbf, 0x80, 0x80, 0) # should be around 16MHz
     else:
@@ -204,11 +205,11 @@ def calibrate_clock(out, tolerance=0.002, dcor=False):
     device = get_msp430_type() >> 8
     variables = {}
     if device == 0xf2:
-        #first read the segment form the device, so that only the calibration values
-        #are updated. any other data in SegmentA is not changed.
+        # first read the segment form the device, so that only the calibration values
+        # are updated. any other data in SegmentA is not changed.
         segment_a = memory.Memory()
         segment_a.append(memory.Segment(0x10c0, jtag._parjtag.memread(0x10c0, 64)))
-        #get the settings for all the frequencies
+        # get the settings for all the frequencies
         for frequency in calibvalues_memory_map:
             measured_frequency, dco, bcs1 = clock.setDCO(
                 frequency*(1-tolerance),
@@ -223,7 +224,7 @@ def calibrate_clock(out, tolerance=0.002, dcor=False):
             )
             segment_a.setMem(calibvalues_memory_map[frequency]['DCO'], chr(dco))
             segment_a.setMem(calibvalues_memory_map[frequency]['BCS1'], chr(bcs1))
-        #erase segment and write new values
+        # erase segment and write new values
         jtag._parjtag.memerase(jtag.ERASE_SEGMENT, segment_a[0].startaddress)
         jtag._parjtag.memwrite(segment_a[0].startaddress, segment_a[0].data)
     else:
@@ -278,7 +279,7 @@ Use it at your own risk. No guarantee that the values are correct.""")
     parser.add_option("-c", "--calibrate", dest="calibrate",
                       help="Restore calibration values on F2xx devices",
                       default=False, action="store_true")
-                      
+
     parser.add_option("-t", "--tolerance", dest="tolerance",
                       help="set the clock tolerance as factor. e.g. 0.01 means 1% (default=0.005)",
                       default=0.005, type="float")
@@ -316,14 +317,14 @@ Use it at your own risk. No guarantee that the values are correct.""")
     if frequency is None and not (options.measure or options.calibrate):
         if len(args) != 1:
             parser.error('the target frequency expected')
-        
-    
+
+
     # prepare output
     if options.output is None or options.output == '-':
         out = sys.stdout
     else:
         out = file(options.output, 'w')
-    
+
     # connect to the target and do the work
     jtag.init_backend(jtag.CTYPES_MSPGCC)   #doesn't currently work with 3'rd party libs
     jtagobj = jtag.JTAG()
@@ -382,6 +383,7 @@ Use it at your own risk. No guarantee that the values are correct.""")
         jtagobj.reset(1, 1)                 #reset and release target
         jtagobj.close()                     #Release communication port
 
+
 if __name__ == '__main__':
     try:
         main()
@@ -394,4 +396,4 @@ if __name__ == '__main__':
     except Exception, msg:                              #every Exception is caught and displayed
         if debug: raise                                 #show full trace in debug mode
         sys.stderr.write("\nAn error occoured:\n%s\n" % msg) #short messy in user mode
-        sys.exit(1)                                     #set errorlevel for script usage    
+        sys.exit(1)                                     #set errorlevel for script usage

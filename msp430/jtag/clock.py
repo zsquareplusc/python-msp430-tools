@@ -2,17 +2,16 @@
 #
 # Functions to measure the DCO clock and functions to do a software FLL to
 # callibrate the clock to a gived frequency.
-#
-# $Id: clock.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
 
 import cStringIO
 import sys
-import memory, jtag
+from msp430 import memory
+from msp430.jtag import jtag
 
 debug = False
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-#see mspgcc cvs/jtag/funclets/counter.S
+# see mspgcc cvs/jtag/funclets/counter.S
 COUNTER_FUNCLET = """\
 @0200
 00 02 0a 02 2a 02 60 07 00 00 32 c2 d2 40 f9 ff
@@ -23,24 +22,27 @@ q
 
 
 def getDCOFreq(dcoctl, bcsctl1, bcsctl2=0):
-    """measure DCO frequency on a F1xx or F2xx device.
-    
-       return: frequency in Hz"""
-    funclet = memory.Memory()
-    funclet.loadTIText(cStringIO.StringIO(COUNTER_FUNCLET))
-    
+    """\
+    Measure DCO frequency on a F1xx or F2xx device.
+
+    return: frequency in Hz
+    """
+    funclet = memory.load('counter', cStringIO.StringIO(COUNTER_FUNCLET), format='titext')
+
     funclet[0].data = funclet[0].data[:6] \
                     + chr(dcoctl) + chr(bcsctl1) + chr(bcsctl2) \
                     + funclet[0].data[9:]
     runtime = jtag._parjtag.funclet(funclet[0].data, 100)
     count = jtag._parjtag.regread(14) | (jtag._parjtag.regread(15) << 16)
-    
+
     return 1000*count*4/runtime
 
 def setDCO(fmin, fmax, maxrsel=7, dcor=False):
-    """Software FLL for F1xx and F2xx devices.
-    
-       return: (frequency, DCOCTL, BCSCTL1)"""
+    """\
+    Software FLL for F1xx and F2xx devices.
+
+    return: (frequency, DCOCTL, BCSCTL1)
+    """
     if debug: sys.stderr.write("setDCO target: %dHz < frequency < %dHz\n" % (fmin, fmax))
     resolution = 128
     dco = 3<<5
@@ -48,7 +50,7 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
     fast = True
     upper = False
     lower = False
-    
+
     for tries in range(50):
         if upper and lower and resolution > 1:
             resolution /= 2
@@ -66,7 +68,7 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
                 bcs1 -= 1
                 if bcs1 < 0:
                     if resolution > 1:
-                        #try again with minimum settings but increased resolution
+                        # try again with minimum settings but increased resolution
                         resolution /= 2
                         if resolution < 1: resolution = 1
                         bcs1 = 0
@@ -82,7 +84,7 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
                 bcs1 += 1
                 if bcs1 > maxrsel:
                     if resolution > 1:
-                        #try again with maximum settings but increased resolution
+                        # try again with maximum settings but increased resolution
                         resolution /= 2
                         if resolution < 1: resolution = 1
                         bcs1 = maxrsel
@@ -96,7 +98,7 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-#see mspgcc cvs/jtag/funclets/counterplus.S
+# see mspgcc cvs/jtag/funclets/counterplus.S
 COUNTERPLUS_FUNCLET = """\
 @0200
 00 02 0c 02 3c 02 00 0e 80 80 00 00 32 c2 72 d0
@@ -107,11 +109,12 @@ q
 """
 
 def getDCOPlusFreq(scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1):
-    """measure DCO frequency on a F4xx device
-    
-       return: frequency in Hz"""
-    funclet = memory.Memory()
-    funclet.loadTIText(cStringIO.StringIO(COUNTERPLUS_FUNCLET))
+    """\
+    Measure DCO frequency on a F4xx device
+
+    return: frequency in Hz.
+    """
+    funclet = memory.load("counter", cStringIO.StringIO(COUNTERPLUS_FUNCLET), format='titext')
     funclet[0].data = funclet[0].data[:6] \
                     + chr(scfi0) + chr(scfi1) \
                     + chr(scfqctl) + chr(fll_ctl0) \
@@ -122,12 +125,14 @@ def getDCOPlusFreq(scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1):
     return 1000*count*4/runtime
 
 def setDCOPlus(fmin, fmax):
-    """Software FLL for F4xx devices.
-    
-       return: (frequency, SCFI0, SCFI1, SCFQCTL, FLL_CTL0, FLL_CTL1)"""
+    """\
+    Software FLL for F4xx devices.
+
+    return: (frequency, SCFI0, SCFI1, SCFQCTL, FLL_CTL0, FLL_CTL1)
+    """
     first = 0
     last = 27 << 5
-    
+
     if debug: sys.stderr.write("setDCOPlus target: %dHz < frequency < %dHz\n" % (fmin, fmax))
 
     # Binary search through the available frequencies, selecting the highest

@@ -7,7 +7,7 @@
 # the execution speed of the MCU, which means that several runs are need to
 # get meaningful numbers.
 
-import mspgcc.jtag
+from msp430.jtag import jtag
 import sys
 import os
 import time
@@ -36,11 +36,11 @@ if __name__ == '__main__':
     else:
         output = file(options.output, 'w')
 
-    mspgcc.jtag.init_backend(mspgcc.jtag.CTYPES_MSPGCC)   # doesn't currently work with 3'rd party libs
+    jtag.init_backend(jtag.CTYPES_MSPGCC)   # doesn't currently work with 3'rd party libs
     samples = [0] * 2**16
 
     try:
-        jtagobj = mspgcc.jtag.JTAG()
+        jtagobj = jtag.JTAG()
 
         if options.verbose:
             try:
@@ -48,17 +48,17 @@ if __name__ == '__main__':
             except IOError:
                 sys.stderr.write("WARNING: Failed to set debug level in backend library\n")
             #~ memory.DEBUG = options.verbose
-            mspgcc.jtag.DEBUG = options.verbose
+            jtag.DEBUG = options.verbose
 
         jtagobj.open()                          # try to open port
         try:
             jtagobj.connect()                   # try to connect to target
             connected = True
             jtagobj.reset(1, 0)
-            sys.stderr.write("profiling...\n")
+            sys.stderr.write("profiling... (CTRL-C to stop)\n")
             start_time = time.time()
             while True:
-                samples[mspgcc.jtag.MSP430_readMAB()] += 1
+                samples[jtag.MSP430_readMAB()] += 1
         finally:
             stop_time = time.time()
             if sys.exc_info()[:1]:              # if there is an exception pending

@@ -7,8 +7,8 @@ import cStringIO
 import sys
 from msp430 import memory
 from msp430.jtag import jtag
+import logging
 
-debug = False
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # see mspgcc cvs/jtag/funclets/counter.S
@@ -43,7 +43,8 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
 
     return: (frequency, DCOCTL, BCSCTL1)
     """
-    if debug: sys.stderr.write("setDCO target: %dHz < frequency < %dHz\n" % (fmin, fmax))
+    log = logging.getLogger('msp430.jtag.dco')
+    log.debug("setDCO target: %dHz < frequency < %dHz" % (fmin, fmax))
     resolution = 128
     dco = 3<<5
     bcs1 = maxrsel
@@ -55,12 +56,12 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
         if upper and lower and resolution > 1:
             resolution /= 2
             if resolution < 1: resolution = 1
-            if debug: sys.stderr.write("switching to higher resolution (-> %d)\n" % (resolution,))
+            log.debug("switching to higher resolution (-> %d)" % (resolution,))
             upper = False
             lower = False
         frequency = getDCOFreq(dco, bcs1, dcor and 1 or 0)
         if frequency > fmax:
-            if debug: sys.stderr.write("%luHz is too high, decreasing (was: BCSCTL1=0x%02x; DCOCTL=0x%02x)\n" % (frequency, bcs1, dco))
+            log.debug("%luHz is too high, decreasing (was: BCSCTL1=0x%02x; DCOCTL=0x%02x)" % (frequency, bcs1, dco))
             upper = True
             dco -= resolution
             if dco <= 0:
@@ -76,7 +77,7 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
                     else:
                         raise IOError("Couldn't get DCO working with correct frequency. Device is not slower than %dHz." % (frequency,))
         elif frequency < fmin:
-            if debug: sys.stderr.write("%luHz is too low, increasing (was: BCSCTL1=0x%02x; DCOCTL=0x%02x)\n" % (frequency, bcs1, dco))
+            log.debug("%luHz is too low, increasing (was: BCSCTL1=0x%02x; DCOCTL=0x%02x)" % (frequency, bcs1, dco))
             lower = True
             dco += resolution
             if dco > 255:
@@ -92,7 +93,7 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
                     else:
                         raise IOError("Couldn't get DCO working with correct frequency. Device is not faster than %dHz." % (frequency,))
         else:
-            if debug: sys.stderr.write("%luHz is OK (BCSCTL1=0x%02x; DCOCTL=0x%02x)\n" % (frequency, bcs1, dco))
+            log.debug("%luHz is OK (BCSCTL1=0x%02x; DCOCTL=0x%02x)" % (frequency, bcs1, dco))
             return frequency, dco, bcs1
     raise IOError("Couldn't get DCO working with correct frequency. Tolerance too tight? Last frequency was %dHz" % (frequency,))
 
@@ -132,8 +133,9 @@ def setDCOPlus(fmin, fmax):
     """
     first = 0
     last = 27 << 5
+    log = logging.getLogger('msp430.jtag.dco')
 
-    if debug: sys.stderr.write("setDCOPlus target: %dHz < frequency < %dHz\n" % (fmin, fmax))
+    log.debug("setDCOPlus target: %dHz < frequency < %dHz" % (fmin, fmax))
 
     # Binary search through the available frequencies, selecting the highest
     # frequency whithin the acceptable range
@@ -143,16 +145,16 @@ def setDCOPlus(fmin, fmax):
         # Disable Modulation. Enable DCO+.
         frequency = getDCOPlusFreq(mid&3, mid>>2, 0x80, 0x80, 0)
         if frequency > fmax:
-            if debug: sys.stderr.write("%luHz is too high, decreasing\n" % frequency)
+            log.debug("%luHz is too high, decreasing" % frequency)
             last = mid
         elif frequency < fmin:
-            if debug: sys.stderr.write("%luHz is too low, increasing\n" % frequency)
+            log.debug("%luHz is too low, increasing" % frequency)
             first = mid
         else:
             break
 
     frequency = getDCOPlusFreq(mid&3, mid>>2, 0x80, 0x80, 0)
-    if debug: sys.stderr.write("%luHz\n" % frequency)
+    log.debug("%luHz" % frequency)
     if fmin <= frequency <= fmax:
         return frequency, mid&3, mid>>2, 0x80, 0x80, 0
     raise IOError("Couldn't get DCO working with correct frequency.")

@@ -13,6 +13,7 @@ from msp430 import memory
 from msp430.jtag import jtag, clock
 import sys
 import struct
+import logging
 
 debug = False
 
@@ -44,16 +45,17 @@ TYPE_16BIT = '<H'
 def get_msp430_type():
     """return the MSP430 type id that is stored in the ROM"""
     (device, ) = struct.unpack(">H", jtag._parjtag.memread(0x0ff0, 2))
-    if debug: sys.stderr.write("MSP430 device: 0x%04x\n" % (device, ))
+    logging.getLogger('msp430.jtag.dco').info("MSP430 device: 0x%04x" % (device, ))
     return device
 
 
 def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
-    """detect MSP430 type and try to set the clock to the given frequency.
+    """\
+    detect MSP430 type and try to set the clock to the given frequency.
     when successful, print the clock control register settings.
 
-    this function assumes that the jtag connection to the device has already
-    been initialized and that the device is under jtag control and stopped.
+    this function assumes that the JTAG connection to the device has already
+    been initialized and that the device is under JTAG control and stopped.
     """
     if tolerance < 0.005 or tolerance > 50:
         raise ValueError('tolerance out of range %f' % (tolerance,))
@@ -200,8 +202,10 @@ calibvalues_memory_map = {
 }
 
 def calibrate_clock(out, tolerance=0.002, dcor=False):
-    """curently for F2xx only:
-       recalculate the clock calibration values and write them to the flash."""
+    """\
+    currently for F2xx only:
+    recalculate the clock calibration values and write them to the flash.
+    """
     device = get_msp430_type() >> 8
     variables = {}
     if device == 0xf2:
@@ -248,14 +252,14 @@ for a specified frequency.
 The target device has to be connected to the JTAG interface.
 
 Examples:
-    See min and max clock speeds:
-        %prog --measure
+  See min and max clock speeds:
+    %prog --measure
 
-    Get clock settings for 2.0MHz +/-1%:
-        %prog --tolerance=0.01 2.0e6
+  Get clock settings for 2.0MHz +/-1%:
+    %prog --tolerance=0.01 2.0e6
 
-    Write clock calibration for 1.5MHz to the information memory at 0x1000:
-        %prog 1.5e6 BCSCTL1@0x1000 DCOCTL@0x1000
+  Write clock calibration for 1.5MHz to the information memory at 0x1000:
+    %prog 1.5e6 BCSCTL1@0x1000 DCOCTL@0x1000
 
 Use it at your own risk. No guarantee that the values are correct.""")
     parser.add_option("-o", "--output", dest="output",
@@ -296,7 +300,12 @@ Use it at your own risk. No guarantee that the values are correct.""")
 
     global debug
     debug = options.debug
-    clock.debug = options.debug
+    if options.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARN)
+
+    log = logging.getLogger('msp430.jtag.dco')
 
     # check arguments, filter out variables
     frequency = None
@@ -326,10 +335,10 @@ Use it at your own risk. No guarantee that the values are correct.""")
         out = file(options.output, 'w')
 
     # connect to the target and do the work
-    jtag.init_backend(jtag.CTYPES_MSPGCC)   #doesn't currently work with 3'rd party libs
+    jtag.init_backend(jtag.CTYPES_MSPGCC)   # doesn't currently work with 3'rd party libs
     jtagobj = jtag.JTAG()
-    jtagobj.open(options.lpt)               #try to open port
-    jtagobj.connect()                       #try to connect to target
+    jtagobj.open(options.lpt)               # try to open port
+    jtagobj.connect()                       # try to connect to target
     try:
         if options.measure:
             variables = measure_clock(out)
@@ -348,14 +357,14 @@ Use it at your own risk. No guarantee that the values are correct.""")
                 options.define
             )
         #~ print "%.2f kHz" % (getDCOFreq(0, 0)/1e3)
-        # log valiable names and values
+        # log variable names and values
         if options.debug:
-            sys.stderr.write('Variables:\n')
+            log.debug('Variables:\n')
             sorted_items = variables.items()
             sorted_items.sort()
             for key, (vartype, value) in sorted_items:
-                sys.stderr.write('  %s = %d (0x%02x)\n' % (key, value, value))
-        # now write the variables to the targets memory, optionally erase segemnt before write
+                log.debug('  %s = %d (0x%02x)\n' % (key, value, value))
+        # now write the variables to the targets memory, optionally erase segment before write
         if options.erase is not None:
             try:
                 address = int(options.erase, 0)
@@ -366,7 +375,7 @@ Use it at your own risk. No guarantee that the values are correct.""")
         for variable, address in variable_addresses.items():
             if variable in variables:
                 vartype, value = variables[variable]
-                sys.stderr.write('writing 0x%02x(%s) to address 0x%04x \n' % (
+                log.info('writing 0x%02x(%s) to address 0x%04x \n' % (
                     value, variable.upper(), address
                 ))
                 jtag._parjtag.memwrite(address, struct.pack(vartype, value))
@@ -378,22 +387,22 @@ Use it at your own risk. No guarantee that the values are correct.""")
             else:
                 raise NameError('No such variable: %r' % variable)
     finally:
-        if sys.exc_info()[:1]:              #if there is an exception pending
-            jtagobj.verbose = 0             #do not write any more messages
-        jtagobj.reset(1, 1)                 #reset and release target
-        jtagobj.close()                     #Release communication port
+        if sys.exc_info()[:1]:              # if there is an exception pending
+            jtagobj.verbose = 0             # do not write any more messages
+        jtagobj.reset(1, 1)                 # reset and release target
+        jtagobj.close()                     # Release communication port
 
 
 if __name__ == '__main__':
     try:
         main()
     except SystemExit:
-        raise                                           #let pass exit() calls
+        raise                               # let pass exit() calls
     except KeyboardInterrupt:
-        if debug: raise                                 #show full trace in debug mode
-        sys.stderr.write("User abort.\n")               #short messy in user mode
-        sys.exit(1)                                     #set errorlevel for script usage
-    except Exception, msg:                              #every Exception is caught and displayed
-        if debug: raise                                 #show full trace in debug mode
-        sys.stderr.write("\nAn error occoured:\n%s\n" % msg) #short messy in user mode
-        sys.exit(1)                                     #set errorlevel for script usage
+        if debug: raise                     # show full trace in debug mode
+        sys.stderr.write("\nUser abort.\n") # short message in user mode
+        sys.exit(1)                         # set error level for script usage
+    except Exception, msg:                  # every Exception is caught and displayed
+        if debug: raise                     # show full trace in debug mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short message in user mode
+        sys.exit(1)                         # set error level for script usage

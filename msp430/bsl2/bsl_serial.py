@@ -13,8 +13,8 @@ F1x_baudrate_args = {
      9600:[0x8580, 0x0000],
     19200:[0x86e0, 0x0001],
     38400:[0x87e0, 0x0002],
-    57600:[0x0000, 0x0003],     #nonstandard XXX BSL dummy BCSCTL settings!
-   115200:[0x0000, 0x0004],     #nonstandard XXX BSL dummy BCSCTL settings!
+    57600:[0x0000, 0x0003],     # nonstandard XXX BSL dummy BCSCTL settings!
+   115200:[0x0000, 0x0004],     # nonstandard XXX BSL dummy BCSCTL settings!
 }
 F2x_baudrate_args = {
      9600:[0x8880, 0x0000],
@@ -25,17 +25,26 @@ F4x_baudrate_args = {
      9600:[0x9800, 0x0000],
     19200:[0xb000, 0x0001],
     38400:[0xc800, 0x0002],
-    57600:[0x0000, 0x0003],     #nonstandard XXX BSL dummy BCSCTL settings!
-   115200:[0x0000, 0x0004],     #nonstandard XXX BSL dummy BCSCTL settings!
+    57600:[0x0000, 0x0003],     # nonstandard XXX BSL dummy BCSCTL settings!
+   115200:[0x0000, 0x0004],     # nonstandard XXX BSL dummy BCSCTL settings!
 }
 
 class SerialBSL(bsl.BSL):
 
-    def __init__(self, port=0, baudrate=9600, ignore_answer=False):
+    def __init__(self):
         self.serial = None
-        self.ignore_answer = ignore_answer
-        self.extra_timeout = None
         self.logger = logging.getLogger('BSL')
+        self.extra_timeout = None
+        self.invertRST = False
+        self.invertTEST = False
+        self.swapResetTest = False
+        self.testOnTX = False
+        self.blindWrite = False
+        # delay after control line changes
+        self.control_delay = 0.05
+
+    def open(self, port=0, baudrate=9600, ignore_answer=False):
+        self.ignore_answer = ignore_answer
         self.logger.info('Opening serial port %r' % port)
         try:
             self.serial = serial.serial_for_url(
@@ -53,13 +62,6 @@ class SerialBSL(bsl.BSL):
                 stopbits=serial.STOPBITS_TWO,
                 timeout=1,
             )
-        self.invertRST = False
-        self.invertTEST = False
-        self.swapResetTest = False
-        self.testOnTX = False
-        self.blindWrite = False
-        # delay after control line changes
-        self.control_delay = 0.05
 
     def __del__(self):
         self.close()
@@ -89,7 +91,7 @@ class SerialBSL(bsl.BSL):
                 else:
                     if tries != '0':
                         self.logger.debug('Sync failed, retry...')
-                    #if something was received, ensure that a small delay is made
+                    # if something was received, ensure that a small delay is made
                     if ack:
                         time.sleep(0.2)
             self.logger.error('Sync failed, aborting...')
@@ -116,15 +118,15 @@ class SerialBSL(bsl.BSL):
         +-----+-----+----+----+-----------+----+----+
         """
         self.logger.info('Command 0x%02x %r' % (cmd, message))
-        #first synchronize with slave
+        # first synchronize with slave
         self.sync()
-        #prepare command with checksum
+        # prepare command with checksum
         txdata = struct.pack('<cBBB', bsl.DATA_FRAME, cmd, len(message), len(message)) + message
         txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   #append checksum
         #~ self.logger.debug('Sending command: %r' % (txdata,))
-        #transmit command
+        # transmit command
         self.serial.write(txdata)
-        #wait for command answer
+        # wait for command answer
         if self.blindWrite:
             time.sleep(0.100)
             return
@@ -138,7 +140,7 @@ class SerialBSL(bsl.BSL):
                 ans = self.serial.read(1)
                 if ans:
                     break
-        #depending on answer type, read more, raise exceptions etc.
+        # depending on answer type, read more, raise exceptions etc.
         if ans == '':
             raise bsl.BSLTimeout("timeout while reading answer (ack)")
         elif ans == bsl.DATA_NAK:
@@ -196,18 +198,14 @@ class SerialBSL(bsl.BSL):
         # invert signal if configured
         if self.invertTEST:
             level = not level
-        #set pin level
+        # set pin level
         if self.swapResetTest:
             self.serial.setDTR(level)
         else:
             self.serial.setRTS(level)
         # make TEST signal on TX pin, unsing break condition.
-        # currently only working on win32!
         if self.testOnTX:
-            if level:
-                serial.win32file.ClearCommBreak(self.serial.hComPort)
-            else:
-                serial.win32file.SetCommBreak(self.serial.hComPort)
+            self.serial.setBreak(level)
         time.sleep(self.control_delay)
 
     def set_baudrate(self, baudrate):
@@ -248,121 +246,117 @@ class SerialBSL(bsl.BSL):
 if __name__ == '__main__':
     #~ logging.config.fileConfig('logger.ini')
 
+    import msp430.target
+    from optparse import OptionGroup
     import sys
-    import mspgcc.memory
-    import mspgcc.util
+    import msp430.memory
     import optparse
-    from copy import copy
 
-    def check_address(option, opt, value):
-        try:
-            return int(value, 0)
-        except ValueError:
-            raise optparse.OptionValueError(
-                "option %s: invalid address: %r" % (opt, value))
+    class SerialBSLTarget(SerialBSL, msp430.target.Target):
+        def __init__(self):
+            msp430.target.Target.__init__(self)
+            SerialBSL.__init__(self)
 
-    class MyOption(optparse.Option):
-        TYPES = optparse.Option.TYPES + ("address",)
-        TYPE_CHECKER = copy(optparse.Option.TYPE_CHECKER)
-        TYPE_CHECKER["address"] = check_address
+        def add_extra_options(self):
+            group = OptionGroup(self.parser, "Communication settings")
 
-    parser = optparse.OptionParser(option_class=MyOption, usage="%prog [options] file.a43")
+            group.add_option("-p", "--port",
+                    dest="port",
+                    help="Use com-port",
+                    default=0)
+            group.add_option("--invert-test",
+                    dest="invert_test",
+                    action="store_true",
+                    help="invert RTS line",
+                    default=False)
+            group.add_option("--invert-reset",
+                    dest="invert_reset",
+                    action="store_true",
+                    help="invert DTR line",
+                    default=False)
 
-    parser.add_option("-p", "--port", dest="port",
-        help="Use com-port", default=0)
-    parser.add_option("",   "--invert-test", dest="invert_test", action="store_true",
-        help="invert RTS line", default=False)
-    parser.add_option("",   "--invert-reset", dest="invert_reset", action="store_true",
-        help="invert DTR line", default=False)
+            self.parser.add_option_group(group)
 
-    parser.add_option("",   "--no-start", dest="start_pattern", action="store_false",
-        help="no not use ROM-BSL start pattern on RST+TEST/TCK", default=True)
-    parser.add_option("-s", "--speed", dest="speed", type=int,
-        help="change baudrate (default 9600)", default=None)
 
-    parser.add_option("-e", "--erase", dest="erase", action="store_true",
-        help="erase flash memory", default=False)
+            group = OptionGroup(self.parser, "BSL settings")
 
-    parser.add_option("", "--upload", dest="upload", action="store", type="address",
-        help="memory read, see also --size", default=None)
-    parser.add_option("", "--size", dest="size", action="store", type="address",
-        help="see also --upload", default=512)
-    parser.add_option("--passwd", dest="passwd", action="store",
-        help="transmit password before doing anything else", default=None)
-    parser.add_option("--ignore-answer", dest="ignore_answer", action="store_true",
-        help="do not wait for answer", default=False)
-    parser.add_option("--control-delay", dest="control_delay", type="float",
-        help="Set delay in seconds (float) for BSL start pattern", default=0.05)
+            group.add_option("--no-start",
+                    dest="start_pattern",
+                    action="store_false",
+                    help="no not use ROM-BSL start pattern on RST+TEST/TCK",
+                    default=True)
 
-    parser.add_option("", "--time", dest="time", action="store_true",
-        help="measure time", default=False)
-    parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
-        help="print progress messages", default=False)
+            group.add_option("-s", "--speed",
+                    dest="speed",
+                    type=int,
+                    help="change baudrate (default 9600)",
+                    default=None)
 
-    (options, args) = parser.parse_args()
+            self.parser.add_option("--password",
+                    dest="password",
+                    action="store",
+                    help="transmit password before doing anything else, password is given in given (TI-Text/ihex/etc) file",
+                    default=None,
+                    metavar="FILE")
 
-    #instantiate BSL communication object
-    target = SerialBSL(
-        options.port,
-        ignore_answer = options.ignore_answer,
-    )
+            self.parser.add_option("--ignore-answer",
+                    dest="ignore_answer",
+                    action="store_true",
+                    help="do not wait for answer to BSL commands",
+                    default=False)
 
-    target.control_delay = options.control_delay
+            self.parser.add_option("--control-delay",
+                    dest="control_delay",
+                    type="float",
+                    help="Set delay in seconds (float) for BSL start pattern",
+                    default=0.05)
 
-    if options.verbose:
-        logging.basicConfig()
-        logger = logging.getLogger('BSL')
-        logger.setLevel(logging.DEBUG)
+            self.parser.add_option_group(group)
 
-    if options.invert_test:
-        target.invertTEST = True
-        target.set_TEST(1)
 
-    if options.invert_reset:
-        target.invertRST= True
-        target.set_RST(1)
+        def close_connection(self):
+            self.close()
 
-    if options.time:
-        start_time = time.time()
+        def open_connection(self):
+            self.open(
+                self.options.port,
+                ignore_answer = self.options.ignore_answer,
+            )
+            self.control_delay = self.options.control_delay
 
-    if options.start_pattern:
-        target.start_bsl()
+            if self.options.invert_test:
+                self.invertTEST = True
+                self.set_TEST(True)
 
-    if options.erase:
-        target.extra_timeout = 6
-        target.mass_erase()
-        target.extra_timeout = None
-        target.BSL_TXPWORD("\xff"*32)
-    else:
-        if options.passwd is not None:
-            target.BSL_TXPWORD(options.passwd)
+            if self.options.invert_reset:
+                self.invertRST= True
+                self.set_RST(True)
 
-    if options.speed is not None:
-        target.set_baudrate(options.speed)
+            if self.options.start_pattern:
+                self.start_bsl()
 
-    # if upload, do it and exit
-    if options.upload is not None:
-        mspgcc.util.hexdump((options.upload, target.memory_read(options.upload, options.size)))
-        sys.exit(0)
+            logger = logging.getLogger('BSL')
 
-    if args:
-        #else download firmware, error if no file is given
-        if len(args) != 1:
-            parser.error("expecting one firmware file name")
+            if self.options.do_mass_erase:
+                self.extra_timeout = 6
+                self.mass_erase()
+                self.extra_timeout = None
+                self.BSL_TXPWORD("\xff"*32)
+                # erase mass_erase from action list so that it is not done twice
+                self.remove_action(self.mass_erase)
+            else:
+                if self.options.password is not None:
+                    password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
+                    logger.info("Transmitting password: %s" % password.encode('hex'))
+                    self.BSL_TXPWORD(password)
 
-        application = mspgcc.memory.Memory()
-        application.loadFile(args[0])
+            if self.options.speed is not None:
+                self.set_baudrate(self.options.speed)
 
-        for segment in application:
-            if len(segment.data) & 1:
-                segment.data += '\xff'
-            target.memory_write(segment.startaddress, segment.data)
-            verify = target.memory_read(segment.startaddress, len(segment.data))
-            if verify != segment.data:
-                raise Exception("write segment at 0x%04x failed" % segment.startaddress)
-        target.reset()
-        if options.verbose: logging.info("Done")
+                if self.options.verbose: logging.info("Done")
 
-    if options.time:
-        end_time = time.time()
-        print "Time: %.1f s" % (end_time - start_time)
+
+
+
+    bsl_target = SerialBSLTarget()
+    bsl_target.main()

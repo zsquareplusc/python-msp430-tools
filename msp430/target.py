@@ -102,38 +102,40 @@ class Target(object):
 
     def memory_read(self, address, length):
         """Read from memory."""
-        raise NotImplementedError("Functionality not supported")
+        raise NotImplementedError("Memory read functionality not supported")
 
     def memory_write(self, address, data):
         """Write to memory."""
-        raise NotImplementedError("Functionality not supported")
+        raise NotImplementedError("Memory write functionality not supported")
 
     def mass_erase(self):
         """Clear all Flash memory."""
-        raise NotImplementedError("Functionality not supported")
+        raise NotImplementedError("Mass erase functionality not supported")
 
     def main_erase(self):
         """Clear main Flash memory (excl. infomem)."""
-        raise NotImplementedError("Functionality not supported")
+        raise NotImplementedError("Main erase functionality not supported")
 
     def erase(self, address):
         """Erase Flash segment containing the given address."""
-        raise NotImplementedError("Functionality not supported")
+        raise NotImplementedError("Segment erase functionality not supported")
 
     def execute(self, address):
         """Start executing code on the target."""
-        raise NotImplementedError("Functionality not supported")
+        raise NotImplementedError("Execute functionality not supported")
 
     def version(self):
         """The 16 bytes of the ROM that contain chip and BSL info are returned."""
-        raise NotImplementedError("Functionality not supported")
+        raise NotImplementedError("Reading version not supported")
 
     def reset(self):
         """Reset the device."""
-        raise NotImplementedError("Functionality not supported")
+        raise NotImplementedError("Reset functionality not supported")
 
     def add_extra_options(self):
         """The user class can add items to self.parser"""
+    def parse_extra_options(self):
+        """The user class can process self.options it added"""
     def open_connection(self):
         """Open the connection"""
     def close_connection(self):
@@ -308,7 +310,8 @@ NOTE: SegmentA on F2xx is NOT erased with --masserase, that must be
                 dest="erase_list",
                 help="selectively erase segment at the specified address or address range",
                 default=[],
-                action='append')
+                action='append',
+                metavar="ADDRESS")
 
         group.add_option("-E", "--erase-check",
                 dest="do_erase_check",
@@ -400,6 +403,7 @@ Multiple --upload options are allowed.
                 break
         else:
             raise IndexError('not found in action list')
+
 
     def parse_args(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -536,7 +540,7 @@ Multiple --upload options are allowed.
                     sys.stderr.write("   %s(%s)\n" % (f.func_name, params))
                 except AttributeError:
                     sys.stderr.write("   %r (%s)\n" % (f, params))
-            else:
+            if not self.action_list:
                 sys.stderr.write("   <no actions>\n")
             sys.stderr.flush()
 
@@ -574,6 +578,7 @@ Multiple --upload options are allowed.
             self.create_option_parser()
             self.add_extra_options()
             self.parse_args()
+            self.parse_extra_options()
             if self.options.time:
                 start_time = time.time()
             self.do_the_work()

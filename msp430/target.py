@@ -102,30 +102,36 @@ class Target(object):
     def memory_read(self, address, length):
         """Read from memory."""
         raise NotImplementedError
+        raise NotImplementedError("Functionality not supported")
 
     def memory_write(self, address, data):
         """Write to memory."""
         raise NotImplementedError
+        raise NotImplementedError("Functionality not supported")
 
     def mass_erase(self):
         """Clear all Flash memory."""
-        raise NotImplementedError
+        raise NotImplementedError("Functionality not supported")
+
+    def main_erase(self):
+        """Clear main Flash memory (excl. infomem)."""
+        raise NotImplementedError("Functionality not supported")
 
     def erase(self, address):
         """Erase Flash segment containing the given address."""
-        raise NotImplementedError
+        raise NotImplementedError("Functionality not supported")
 
     def execute(self, address):
         """Start executing code on the target."""
-        raise NotImplementedError
+        raise NotImplementedError("Functionality not supported")
 
     def version(self):
         """The 16 bytes of the ROM that contain chip and BSL info are returned."""
-        raise NotImplementedError
+        raise NotImplementedError("Functionality not supported")
 
     def reset(self):
         """Reset the device."""
-        raise NotImplementedError
+        raise NotImplementedError("Functionality not supported")
 
     def add_extra_options(self):
         """The user class can add items to self.parser"""

@@ -117,7 +117,7 @@ class SerialBSL(bsl.BSL):
         | HDR | CMD | L1 | L2 | D1 ... DN | CL | CH |
         +-----+-----+----+----+-----------+----+----+
         """
-        self.logger.info('Command 0x%02x %r' % (cmd, message))
+        self.logger.debug('Command 0x%02x %r' % (cmd, message))
         # first synchronize with slave
         self.sync()
         # prepare command with checksum

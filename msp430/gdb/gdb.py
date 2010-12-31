@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from struct import pack, unpack
 import socket
 import threading
@@ -42,11 +44,8 @@ STOP_THREAD = 'thread'
 STOP_EXITED = 'exited'
 
 
-
-
-
 class ClientSocketConnector(threading.Thread):
-    """
+    """\
     Make a connection through a TCP/IP socket. This version connects to a
     server (i.e. is a client).
     """
@@ -71,7 +70,6 @@ class ClientSocketConnector(threading.Thread):
     def close(self):
         """Close connection."""
         self.socket.shutdown(socket.SHUT_RDWR)
-        server.Connector.close(self)
         self.socket.close()
         self._alive = False
 
@@ -129,10 +127,8 @@ class GDBClient(ClientSocketConnector):
         ClientSocketConnector.__init__(self, *args, **kwargs)
         self.packet = []
         self.recv_mode = IDLE
-        self.deferred = None
-        self.timeoutid = None
         self.acknowledged = None
-        self.errorcounter = 0   #count NACKS
+        self.errorcounter = 0   # count NACKS
         self.decoder = None
         self._lock = threading.Lock()
         self.answer = Queue.Queue()
@@ -363,6 +359,8 @@ class GDBClient(ClientSocketConnector):
         finally:
             self._lock.release()
 
+
+# ----- test code only below this line -----
 if __name__ == '__main__':
     gdb = GDBClient(('', 2000))
     gdb.monitor('help')

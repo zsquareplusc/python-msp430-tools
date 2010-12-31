@@ -231,14 +231,13 @@ class Target(object):
         self.parser.add_option("-v", "--verbose",
                 dest="verbose",
                 help="show more messages (can be given multiple times)",
-                default=0,
+                default=1,
                 action='count')
 
         self.parser.add_option("-q", "--quiet",
-                dest="quiet",
+                dest="verbose",
                 help="suppress all messages",
-                default=False,
-                action='store_true')
+                action='store_const', const=0)
 
         self.parser.add_option("--time",
                 dest="time",
@@ -406,15 +405,15 @@ Multiple --upload options are allowed.
         self.debug = self.options.debug
         self.verbose = self.options.verbose
 
-        if self.verbose > 1 :
+        if self.verbose > 2 :
             level = logging.DEBUG
-        elif self.verbose:
+        elif self.verbose > 1:
             level = logging.INFO
         else:
             level = logging.WARN
         logging.basicConfig(level=level)
 
-        if self.verbose:   # debug infos
+        if self.verbose > 1:   # debug infos
             sys.stderr.write("Debug is %s\n" % self.options.debug)
             sys.stderr.write("Verbosity level set to %d\n" % self.options.verbose)
             #~ sys.stderr.write("logging module level set to %s\n" % (level,))
@@ -427,24 +426,19 @@ Multiple --upload options are allowed.
         if self.options.output_format not in memory.save_formats:
             self.parser.error('Output format %s not supported.' % (self.options.output_format))
 
-        if self.options.verbose:
-            if self.options.quiet:
-                self.options.quiet = False
-                sys.stderr.write("Disabling --quiet as --verbose is active\n")
-
         # sanity check of options
         if self.options.do_run is not None and self.options.do_reset:
-            if not self.options.quiet:
+            if self.verbose:
                 sys.stderr.write("Warning: option --reset ignored as --go is specified!\n")
             self.options.do_reset = False
 
         if self.options.upload_list and self.options.do_reset:
-            if not self.options.quiet:
+            if self.verbose:
                 sys.stderr.write("Warning: option --reset ignored as --upload is specified!\n")
             self.options.do_reset = False
 
         if self.options.upload_list and self.options.do_wait:
-            if not self.options.quiet:
+            if self.verbose:
                 sys.stderr.write("Warning: option --wait ignored as --upload is specified!\n")
             self.options.do_wait = False
 
@@ -531,7 +525,7 @@ Multiple --upload options are allowed.
         Do the actual work, such as upload and download.
         """
         # debug messages
-        if self.verbose:
+        if self.verbose > 1:
             # show a nice list of scheduled actions
             sys.stderr.write("action list:\n")
             for f, args, kwargs in self.action_list:
@@ -540,22 +534,23 @@ Multiple --upload options are allowed.
                     sys.stderr.write("   %s(%s)\n" % (f.func_name, params))
                 except AttributeError:
                     sys.stderr.write("   %r (%s)\n" % (f, params))
+            else:
+                sys.stderr.write("   <no actions>\n")
             sys.stderr.flush()
 
         abort_due_to_error = True
         self.open_connection()
         try:
-
             # work through action list
             for f, args, kwargs in self.action_list:
                 f(*args, **kwargs)
 
-            # upload data block and output
+            # output uploaded data
             if self.upload_data is not None:
                 memory.save(self.upload_data, self.output, self.options.output_format)
 
             if self.options.do_wait:                        # wait at the end if desired
-                if not self.options.quiet:
+                if self.verbose:
                     sys.stderr.write("Press <ENTER> ...\n") # display a prompt
                     sys.stderr.flush()
                 raw_input()                                 # wait for newline
@@ -584,7 +579,7 @@ Multiple --upload options are allowed.
             raise                                           # let pass exit() calls
         except KeyboardInterrupt:
             #~ if self.debug: raise                            # show full trace in debug mode
-            sys.stderr.write("Abort on user request.\n")    # short messy in user mode
+            sys.stderr.write("\nAbort on user request.\n")    # short messy in user mode
             sys.exit(1)                                     # set error level for script usage
         except Exception, msg:                              # every Exception is caught and displayed
             if self.debug: raise                            # show full trace in debug mode
@@ -595,7 +590,7 @@ Multiple --upload options are allowed.
                 end_time = time.time()
                 sys.stderr.write("Time: %.1f s\n" % (end_time - start_time))
 
-# test code
+# ----- test code only below this line -----
 if __name__ == '__main__':
     t = Target()
     t.main()

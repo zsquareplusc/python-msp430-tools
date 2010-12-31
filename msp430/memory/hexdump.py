@@ -11,10 +11,9 @@ import sys
 import msp430.memory
 
 
-# for the use with memread
 def hexdump( (adr, memstr), output=sys.stdout ):
-    """Print a hex dump of data collected with memread
-    arg1: tuple with adress, memory
+    """Print a hex dump.
+    arg1: tuple with address, memory
     return None"""
     count = 0
     ascii = ''
@@ -98,7 +97,7 @@ What is dumped?
             filename = '<stdin>'
         else:
             fileobj = open(filename, "rb")  # or from a file
-            mem = msp430.memory.load(filename, fileobj, options.input_format)
+        mem = msp430.memory.load(filename, fileobj, options.input_format)
 
         if options.verbose:
             output.write('%s (%d segments):\n' % (filename, len(mem)))
@@ -117,5 +116,5 @@ if __name__ == '__main__':
         sys.exit(1)                             # set error level for script usage
     except Exception, msg:                      # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occoured:\n%s\n" % msg) # short messy in user mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
         sys.exit(1)                             # set error level for script usage

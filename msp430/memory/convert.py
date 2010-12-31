@@ -98,5 +98,5 @@ if __name__ == '__main__':
         sys.exit(1)                             # set error level for script usage
     except Exception, msg:                      # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occoured:\n%s\n" % msg) # short messy in user mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
         sys.exit(1)                             # set error level for script usage

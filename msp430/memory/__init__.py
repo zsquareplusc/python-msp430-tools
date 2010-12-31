@@ -32,8 +32,7 @@ class Memory:
     def __init__(self, filename=None):
         self.segments = []
         if filename:
-            self.filename = filename
-            self.loadFile(filename)
+            load(self, filename)
 
     def append(self, seg):
         self.segments.append(seg)
@@ -129,7 +128,7 @@ class Memory:
         """\
         Merge an other Memory object into this one.
 
-        :param other: A Memory instace, its contents is copied to this instance.
+        :param other: A Memory instance, its contents is copied to this instance.
         """
         for segment in other:
             # XXX currently no support for overlapping data
@@ -142,7 +141,7 @@ def load(filename, fileobj=None, format=None):
     File type is determined from extension and/or inspection of content.
     :param filename: Name of the file to open
     :param fileobj: None to let this function open the file or an open, seekable file object
-    :param format: File format name, ``None`` for autodetection.
+    :param format: File format name, ``None`` for auto detection.
     :return: Memory object
     """
     close = False

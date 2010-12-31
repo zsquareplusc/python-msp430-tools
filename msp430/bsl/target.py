@@ -74,6 +74,7 @@ class SerialBSL(bsl.BSL):
 
 
     def close(self):
+        """Close serial port"""
         if self.serial is not None:
             self.logger.info('closing serial port')
             self.serial.close()
@@ -81,15 +82,16 @@ class SerialBSL(bsl.BSL):
 
 
     def sync(self):
-        """send the sync character and wait for an acknowledge.
-           the sync procedure is retried if it fails once or twice.
+        """\
+        Send the sync character and wait for an acknowledge.
+        The sync procedure is retried if it fails once or twice.
         """
         self.logger.debug('Sync...')
         if self.blindWrite:
             self.serial.write(bsl.BSL_SYNC)
             time.sleep(0.030)
         else:
-            for tries in "210":
+            for tries in '210':
                 self.serial.flushInput()
                 self.serial.write(bsl.BSL_SYNC)
                 ack = self.serial.read(1)
@@ -103,7 +105,7 @@ class SerialBSL(bsl.BSL):
                     if ack:
                         time.sleep(0.2)
             self.logger.error('Sync failed, aborting...')
-            raise bsl.BSLTimeout("could not sync")
+            raise bsl.BSLTimeout('could not sync')
 
 
     def bsl(self, cmd, message='', expect=None):
@@ -151,48 +153,50 @@ class SerialBSL(bsl.BSL):
                     break
         # depending on answer type, read more, raise exceptions etc.
         if ans == '':
-            raise bsl.BSLTimeout("timeout while reading answer (ack)")
+            raise bsl.BSLTimeout('timeout while reading answer (ack)')
         elif ans == bsl.DATA_NAK:
             self.logger.debug('Command failed (DATA_NAK)')
-            raise bsl.BSLError("command failed (DATA_NAK)")
+            raise bsl.BSLError('command failed (DATA_NAK)')
         elif ans == bsl.CMD_FAILED:
             self.logger.debug('Command failed (CMD_FAILED)')
-            raise bsl.BSLError("command failed (CMD_FAILED)")
+            raise bsl.BSLError('command failed (CMD_FAILED)')
         elif ans == bsl.DATA_ACK:
             self.logger.debug('Simple ACK')
             if expect is not None and expect > 0:
-                raise bsl.BSLError("expected data, but received a simple ACK")
+                raise bsl.BSLError('expected data, but received a simple ACK')
             return ''
         elif ans == bsl.DATA_FRAME:
             self.logger.debug('Data frame...')
             head = self.serial.read(3)
             if len(head) != 3:
-                raise BSLTimeout("timeout while reading answer (header)")
+                raise BSLTimeout('timeout while reading answer (header)')
             (self.dummy, l1, l2) = struct.unpack('<BBB', head)
             if l1 != l2:
-                raise bsl.BSLError("broken answer (L1 != L2)")
+                raise bsl.BSLError('broken answer (L1 != L2)')
             if l1:
                 data = self.serial.read(l1)
                 if len(data) != l1:
-                    raise bsl.BSLTimeout("timeout while reading answer (data)")
+                    raise bsl.BSLTimeout('timeout while reading answer (data)')
             else:
                 data = ''
             checksum = self.serial.read(2)
             if len(checksum) != 2:
-                raise bsl.BSLTimeout("timeout while reading answer (checksum)")
+                raise bsl.BSLTimeout('timeout while reading answer (checksum)')
             if self.checksum(ans + head + data) ^ 0xffff == struct.unpack("<H", checksum)[0]:
                 if expect is not None and len(data) != expect:
-                    raise bsl.BSLError("expected %d bytes, got %d bytes" % (expect, len(data)))
+                    raise bsl.BSLError('expected %d bytes, got %d bytes' % (expect, len(data)))
                 return data
             else:
-                raise bsl.BSLException("checksum error in answer")
+                raise bsl.BSLException('checksum error in answer')
         else:
             self.logger.debug('unexpected answer %r' % (ans,))
-            raise bsl.BSLError("unexpected answer: %r" % (ans,))
+            raise bsl.BSLError('unexpected answer: %r' % (ans,))
 
 
     def set_RST(self, level=True):
-        """Controls RST/NMI pin (0: GND; 1: VCC; unless inverted flag is set)"""
+        """\
+        Controls RST/NMI pin (0: GND; 1: VCC; unless inverted flag is set)
+        """
         # invert signal if configured
         if self.invertRST:
             level = not level
@@ -205,7 +209,10 @@ class SerialBSL(bsl.BSL):
 
 
     def set_TEST(self, level=True):
-        """Controls TEST pin (inverted on board: 0: VCC; 1: GND; unless inverted flag is set)"""
+        """\
+        Controls TEST pin (inverted on board: 0: VCC; 1: GND; unless inverted
+        flag is set)
+        """
         # invert signal if configured
         if self.invertTEST:
             level = not level
@@ -221,6 +228,9 @@ class SerialBSL(bsl.BSL):
 
 
     def set_baudrate(self, baudrate):
+        """\
+        Change the BSL baud rate on the target and switch the serial port.
+        """
         v = self.version()
         if v[0] == '\xf4':
             table = F4x_baudrate_args
@@ -228,7 +238,7 @@ class SerialBSL(bsl.BSL):
             table = F2x_baudrate_args
         else:
             table = F1x_baudrate_args
-        self.logger.info('changing baud rate to %s' % baudrate)
+        self.logger.info('changing baud rate to %s' % (baudrate,))
         try:
             a, l = table[baudrate]
         except:
@@ -239,6 +249,9 @@ class SerialBSL(bsl.BSL):
 
 
     def start_bsl(self):
+        """\
+        Start the ROM-BSL using the pulse pattern on TEST and RST.
+        """
         self.logger.info('ROM-BSL start pulse pattern')
         self.set_RST(True)      # power supply
         self.set_TEST(True)     # power supply
@@ -253,7 +266,7 @@ class SerialBSL(bsl.BSL):
         self.set_TEST(True)     # TEST pin: GND
         time.sleep(0.250)       # give MSP430's oscillator time to stabilize
 
-        self.serial.flushInput()    #clear buffers
+        self.serial.flushInput()    # clear buffers
 
 
 if __name__ == '__main__':
@@ -353,13 +366,14 @@ if __name__ == '__main__':
                 self.extra_timeout = 6
                 self.mass_erase()
                 self.extra_timeout = None
-                self.BSL_TXPWORD("\xff"*32)
-                # erase mass_erase from action list so that it is not done twice
+                self.BSL_TXPWORD('\xff'*32)
+                # remove mass_erase from action list so that it is not done
+                # twice
                 self.remove_action(self.mass_erase)
             else:
                 if self.options.password is not None:
                     password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                    logger.info("Transmitting password: %s" % password.encode('hex'))
+                    logger.info("Transmitting password: %s" % (password.encode('hex'),))
                     self.BSL_TXPWORD(password)
 
             if self.options.speed is not None:

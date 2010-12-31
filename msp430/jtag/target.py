@@ -84,7 +84,7 @@ if __name__ == '__main__':
     import msp430.memory
 
     class JTAG(JTAGTarget, msp430.target.Target):
-        """Combine the serial JTAG backend and the common target code."""
+        """Combine the JTAG backend and the common target code."""
 
         def __init__(self):
             JTAGTarget.__init__(self)
@@ -243,7 +243,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
                 jtag.interface = 'spy-bi-wire-jtag'
 
             if self.options.do_secure:
-                todo.append(jtagobj.actionSecure)
+                self.add_action(self.jtagobj.actionSecure)
 
             if self.verbose > 1:
                 try:

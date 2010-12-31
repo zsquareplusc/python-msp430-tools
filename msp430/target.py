@@ -597,6 +597,7 @@ Multiple --upload options are allowed.
                 end_time = time.time()
                 sys.stderr.write("Time: %.1f s\n" % (end_time - start_time))
 
+
 # ----- test code only below this line -----
 if __name__ == '__main__':
     t = Target()

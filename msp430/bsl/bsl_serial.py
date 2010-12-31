@@ -6,8 +6,8 @@ import bsl
 import serial
 import struct
 import logging
-import logging.config
 import time
+
 
 F1x_baudrate_args = {
      9600:[0x8580, 0x0000],
@@ -29,7 +29,11 @@ F4x_baudrate_args = {
    115200:[0x0000, 0x0004],     # nonstandard XXX BSL dummy BCSCTL settings!
 }
 
+
 class SerialBSL(bsl.BSL):
+    """\
+    Implementation of the BSL protocol over the serial port.
+    """
 
     def __init__(self):
         self.serial = None
@@ -42,6 +46,7 @@ class SerialBSL(bsl.BSL):
         self.blindWrite = False
         # delay after control line changes
         self.control_delay = 0.05
+
 
     def open(self, port=0, baudrate=9600, ignore_answer=False):
         self.ignore_answer = ignore_answer
@@ -63,14 +68,17 @@ class SerialBSL(bsl.BSL):
                 timeout=1,
             )
 
+
     def __del__(self):
         self.close()
+
 
     def close(self):
         if self.serial is not None:
             self.logger.info('closing serial port')
             self.serial.close()
             self.serial = None
+
 
     def sync(self):
         """send the sync character and wait for an acknowledge.
@@ -96,6 +104,7 @@ class SerialBSL(bsl.BSL):
                         time.sleep(0.2)
             self.logger.error('Sync failed, aborting...')
             raise bsl.BSLTimeout("could not sync")
+
 
     def bsl(self, cmd, message='', expect=None):
         """\
@@ -181,7 +190,8 @@ class SerialBSL(bsl.BSL):
             self.logger.debug('unexpected answer %r' % (ans,))
             raise bsl.BSLError("unexpected answer: %r" % (ans,))
 
-    def set_RST(self, level=1):
+
+    def set_RST(self, level=True):
         """Controls RST/NMI pin (0: GND; 1: VCC; unless inverted flag is set)"""
         # invert signal if configured
         if self.invertRST:
@@ -193,7 +203,8 @@ class SerialBSL(bsl.BSL):
             self.serial.setDTR(level)
         time.sleep(self.control_delay)
 
-    def set_TEST(self, level=1):
+
+    def set_TEST(self, level=True):
         """Controls TEST pin (inverted on board: 0: VCC; 1: GND; unless inverted flag is set)"""
         # invert signal if configured
         if self.invertTEST:
@@ -203,10 +214,11 @@ class SerialBSL(bsl.BSL):
             self.serial.setDTR(level)
         else:
             self.serial.setRTS(level)
-        # make TEST signal on TX pin, unsing break condition.
+        # make TEST signal on TX pin, using break condition.
         if self.testOnTX:
             self.serial.setBreak(level)
         time.sleep(self.control_delay)
+
 
     def set_baudrate(self, baudrate):
         v = self.version()
@@ -216,43 +228,43 @@ class SerialBSL(bsl.BSL):
             table = F2x_baudrate_args
         else:
             table = F1x_baudrate_args
-        self.logger.info('changing baudrate to %s' % baudrate)
+        self.logger.info('changing baud rate to %s' % baudrate)
         try:
             a, l = table[baudrate]
         except:
-            raise ValueError('unsupported baudrate %s' % (baudrate,))
+            raise ValueError('unsupported baud rate %s' % (baudrate,))
         else:
             self.BSL_CHANGEBAUD(a, l)
             self.serial.baudrate = baudrate
 
+
     def start_bsl(self):
         self.logger.info('ROM-BSL start pulse pattern')
-        self.set_RST(1)         # power suply
-        self.set_TEST(1)        # power suply
+        self.set_RST(True)      # power supply
+        self.set_TEST(True)     # power supply
         time.sleep(0.250)       # charge capacitor on boot loader hardware
 
-        self.set_RST(0)         # RST  pin: GND
-        self.set_TEST(1)        # TEST pin: GND
-        self.set_TEST(0)        # TEST pin: Vcc
-        self.set_TEST(1)        # TEST pin: GND
-        self.set_TEST(0)        # TEST pin: Vcc
-        self.set_RST (1)        # RST  pin: Vcc
-        self.set_TEST(1)        # TEST pin: GND
+        self.set_RST(False)     # RST  pin: GND
+        self.set_TEST(True)     # TEST pin: GND
+        self.set_TEST(False)    # TEST pin: Vcc
+        self.set_TEST(True)     # TEST pin: GND
+        self.set_TEST(False)    # TEST pin: Vcc
+        self.set_RST (True)     # RST  pin: Vcc
+        self.set_TEST(True)     # TEST pin: GND
         time.sleep(0.250)       # give MSP430's oscillator time to stabilize
 
         self.serial.flushInput()    #clear buffers
 
 
 if __name__ == '__main__':
-    #~ logging.config.fileConfig('logger.ini')
-
-    import msp430.target
-    from optparse import OptionGroup
     import sys
+    from optparse import OptionGroup
+    import msp430.target
     import msp430.memory
-    import optparse
 
     class SerialBSLTarget(SerialBSL, msp430.target.Target):
+        """Combine the serial BSL backend and the common target code."""
+
         def __init__(self):
             msp430.target.Target.__init__(self)
             SerialBSL.__init__(self)
@@ -277,7 +289,6 @@ if __name__ == '__main__':
 
             self.parser.add_option_group(group)
 
-
             group = OptionGroup(self.parser, "BSL settings")
 
             group.add_option("--no-start",
@@ -289,7 +300,7 @@ if __name__ == '__main__':
             group.add_option("-s", "--speed",
                     dest="speed",
                     type=int,
-                    help="change baudrate (default 9600)",
+                    help="change baud rate (default 9600)",
                     default=None)
 
             group.add_option("--password",
@@ -308,7 +319,7 @@ if __name__ == '__main__':
             group.add_option("--control-delay",
                     dest="control_delay",
                     type="float",
-                    help="Set delay in seconds (float) for BSL start pattern",
+                    help="set delay in seconds (float) for BSL start pattern",
                     default=0.05)
 
             self.parser.add_option_group(group)
@@ -316,6 +327,7 @@ if __name__ == '__main__':
 
         def close_connection(self):
             self.close()
+
 
         def open_connection(self):
             self.open(
@@ -329,7 +341,7 @@ if __name__ == '__main__':
                 self.set_TEST(True)
 
             if self.options.invert_reset:
-                self.invertRST= True
+                self.invertRST = True
                 self.set_RST(True)
 
             if self.options.start_pattern:
@@ -357,6 +369,6 @@ if __name__ == '__main__':
                     raise bsl.BSLError("--speed option not supported by BSL on target")
 
 
-
+    # run the main application
     bsl_target = SerialBSLTarget()
     bsl_target.main()

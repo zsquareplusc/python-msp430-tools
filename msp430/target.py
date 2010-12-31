@@ -224,30 +224,36 @@ class Target(object):
         self.parser = OptionParser(usage="%prog [OPTIONS] [FILE [FILE...]]", formatter=Formatter())
 
         self.parser.add_option("-d", "--debug",
+                help="print debug messages and tracebacks (development mode)",
                 dest="debug",
-                help="print debug messages",
                 default=False,
                 action='store_true')
 
         self.parser.add_option("-v", "--verbose",
-                dest="verbose",
                 help="show more messages (can be given multiple times)",
+                dest="verbose",
                 default=1,
                 action='count')
 
         self.parser.add_option("-q", "--quiet",
-                dest="verbose",
                 help="suppress all messages",
-                action='store_const', const=0)
+                dest="verbose",
+                action='store_const',
+                const=0)
 
         self.parser.add_option("--time",
+                help="measure time",
                 dest="time",
                 action="store_true",
-                help="measure time",
                 default=False)
 
+        self.parser.add_option("-S", "--progress",
+                dest="progress",
+                help="show progress while programming",
+                default=False,
+                action='store_true')
 
-        group = OptionGroup(self.parser, "Programing", """\
+        group = OptionGroup(self.parser, "Data input", """\
 File format is auto detected, unless --input-format is used.
 Preferred file extensions are ".txt" for TI-Text format, ".a43" or ".hex" for
 Intel HEX. ELF files can also be loaded.
@@ -262,32 +268,16 @@ download starts. "-" reads from stdin.
                 default=None,
                 metavar="TYPE")
 
-        group.add_option("-S", "--progress",
-                dest="progress",
-                help="show progress while programming",
-                default=False,
-                action='store_true')
-
         self.parser.add_option_group(group)
 
 
-        group = OptionGroup(self.parser, "Program flow specifiers", """\
-Program flow specifiers default to "-P" if a file is given.
-Don't forget to specify "-e", "-eE" or "-m" when programming flash!
-
-"-P" already verifies the programmed data, "-V" adds an additional
-verification through uploading the written data for a 1:1 compare.
-
-No default action is taken if "-P" and/or "-V" is given, say specifying
-only "-V" does a "check by file" of a programmed device.
-
-Multiple --erase options are allowed. It is possible to use address
+        group = OptionGroup(self.parser, "Flash erase", """\
+Multiple --erase options are allowed. It is also possible to use address
 ranges such as 0xf000-0xf0ff or 0xf000/4k.
 
-NOTE: SegmentA on F2xx is NOT erased with --masserase, that must be
-      done separately with --erase=0x10c0 or --eraseinfo".
-    """)
-
+NOTE: SegmentA on F2xx is NOT erased with --mass-erase, that must be
+done separately with --erase=0x10c0 or --info-erase".
+""")
         group.add_option("-e", "--mass-erase",
                 dest="do_mass_erase",
                 help="mass erase (clear all flash memory)",
@@ -313,6 +303,20 @@ NOTE: SegmentA on F2xx is NOT erased with --masserase, that must be
                 action='append',
                 metavar="ADDRESS")
 
+        self.parser.add_option_group(group)
+
+        group = OptionGroup(self.parser, "Program flow specifiers", """\
+All these options work against the file(s) provided on the command line.
+Program flow specifiers default to "-P" if a file is given.
+
+"-P" usually verifies the programmed data, "-V" adds an additional
+verification through uploading the written data for a 1:1 compare.
+
+No default action is taken if "-P", "-V" or "-E" is given, say specifying
+only "-V" does a "check by file" of a programmed device without programming.
+
+Don't forget to erase ("-e", "-eE" or "-m") before programming flash!
+""")
         group.add_option("-E", "--erase-check",
                 dest="do_erase_check",
                 help="erase check by file",
@@ -334,10 +338,12 @@ NOTE: SegmentA on F2xx is NOT erased with --masserase, that must be
         self.parser.add_option_group(group)
 
 
-        group = OptionGroup(self.parser, "Data retrieving", """\
-It is possible to use address ranges such as 0xf000-0xf0ff or 0xf000/256.
+        group = OptionGroup(self.parser, "Data upload", """\
+This can be sued to read out the device memory.
+It is possible to use address ranges such as 0xf000-0xf0ff or 0xf000/256, 0xfc00/1k.
+
 Multiple --upload options are allowed.
-    """)
+""")
 
         group.add_option("-u", "--upload",
                 dest="upload_list",
@@ -348,12 +354,12 @@ Multiple --upload options are allowed.
 
         group.add_option("-o", "--output",
                 dest="output",
-                help="write result to given file",
+                help="write uploaded data to given file",
                 metavar="DESTINATION")
 
         group.add_option("-f", "--output-format",
                 dest="output_format",
-                help="output format name (%s)" % (', '.join(memory.save_formats),),
+                help="output format name (%s), default:%%default" % (', '.join(memory.save_formats),),
                 default="hex",
                 metavar="TYPE")
 

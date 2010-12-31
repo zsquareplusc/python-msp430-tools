@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
             group.add_option("-c", "--connect",
                     dest="host_port",
-                    help="TCP/IP host and port of GDB server",
+                    help="TCP/IP host name or ip and port of GDB server (default: %default)",
                     action='store',
                     default='localhost:2000',
                     metavar='HOST:PORT')

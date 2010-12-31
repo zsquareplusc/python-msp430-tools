@@ -158,16 +158,24 @@ class Target(object):
         return version_row[0]
 
     def erase_infomem(self):
+        if self.verbose > 2:
+            sys.stderr.write("Erase info: check MCU type\n")
         mcu_family = self.get_mcu_family()
         if mcu_family == F1x:
+            if self.verbose > 1:
+                sys.stderr.write("Erase info: F1xx 0x1000, 2*128B\n")
             self.erase(0x1000)
             self.erase(0x1080)
         elif mcu_family == F2x:
+            if self.verbose > 1:
+                sys.stderr.write("Erase info: F2xx 0x1000, 4*64B\n")
             self.erase(0x1000)
             self.erase(0x1040)
             self.erase(0x1080)
             self.erase(0x10c0)
         elif mcu_family == F4x:
+            if self.verbose > 1:
+                sys.stderr.write("Erase info: F4xx 0x1000, 2*128B\n")
             self.erase(0x1000)
             self.erase(0x1080)
         else:
@@ -176,24 +184,25 @@ class Target(object):
     def upload(self, start, end):
         """upload given memory range and store it in upload_data"""
         size = 1 + end - start
-        if self.verbose > 2:
+        if self.verbose > 1:
             sys.stderr.write("Upload 0x%04x %d bytes\n" % (start, size))
         self.upload_data.append(memory.Segment(start, self.memory_read(start, size)))
 
     def program_file(self):
         """download data from self.download_data"""
         for segment in self.download_data:
+            if self.verbose > 1:
+                sys.stderr.write("Write segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
             # pad length if odd number of bytes
             if len(segment.data) & 1:
                 segment.data += '\xff'
             self.memory_write(segment.startaddress, segment.data)
-            #~ verify = target.memory_read(segment.startaddress, len(segment.data))
-            #~ if verify != segment.data:
-                #~ raise Exception("write segment at 0x%04x failed" % segment.startaddress)
 
     def verify_by_file(self):
         """upload and compare to self.download_data"""
         for segment in self.download_data:
+            if self.verbose > 1:
+                sys.stderr.write("Verify segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
             # pad length if odd number of bytes
             if len(segment.data) & 1:
                 segment.data += '\xff'
@@ -206,6 +215,8 @@ class Target(object):
     def erase_check_by_file(self):
         """upload address ranges used in self.download_data and check if erased"""
         for segment in self.download_data:
+            if self.verbose > 1:
+                sys.stderr.write("Erase check segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
             # pad length if odd number of bytes
             if len(segment.data) & 1:
                 segment.data += '\xff'
@@ -339,7 +350,7 @@ Don't forget to erase ("-e", "-eE" or "-m") before programming flash!
 
 
         group = OptionGroup(self.parser, "Data upload", """\
-This can be sued to read out the device memory.
+This can be used to read out the device memory.
 It is possible to use address ranges such as 0xf000-0xf0ff or 0xf000/256, 0xfc00/1k.
 
 Multiple --upload options are allowed.
@@ -430,7 +441,6 @@ Multiple --upload options are allowed.
             sys.stderr.write("Verbosity level set to %d\n" % self.options.verbose)
             #~ sys.stderr.write("logging module level set to %s\n" % (level,))
             sys.stderr.write("Python version: %s\n" % sys.version)
-            #~ sys.stderr.write("JTAG backend: %s\n" % jtag.backend)
 
         if self.options.input_format is not None and self.options.input_format not in memory.load_formats:
             self.parser.error('Input format %s not supported.' % (self.options.input_format))
@@ -467,7 +477,7 @@ Multiple --upload options are allowed.
                 if adr2 is not None:
                     while adr <= adr2:
                         if not (0x1000 <= adr <= 0xffff):
-                            self.parser.error("Start address is not within Flash memory")
+                            self.parser.error("Start address for --erase is not within Flash memory: 0x%04x" % (adr,))
                         elif adr < 0x1100:
                             modulo = 64     # F2xx XXX: on F1xx/F4xx are segments erased twice
                         elif adr < 0x1200:
@@ -524,12 +534,17 @@ Multiple --upload options are allowed.
 
         # prepare data to download / load files
         self.download_data = memory.Memory()                  # prepare downloaded data
-
         for filename in self.args:
             if filename == '-':
-                self.download_data.merge(memory.load('<stdin>', sys.stdin, format=self.options.input_format or "titext"))
+                data = memory.load(
+                        '<stdin>',
+                        sys.stdin,
+                        format=self.options.input_format or "titext")
             else:
-                self.download_data.merge(memory.load(filename, format=self.options.input_format))
+                data = memory.load(
+                        filename,
+                        format=self.options.input_format)
+            self.download_data.merge(data)
 
 
     def do_the_work(self):
@@ -592,7 +607,7 @@ Multiple --upload options are allowed.
             raise                                           # let pass exit() calls
         except KeyboardInterrupt:
             #~ if self.debug: raise                            # show full trace in debug mode
-            sys.stderr.write("\nAbort on user request.\n")    # short messy in user mode
+            sys.stderr.write("\nAbort on user request.\n")  # short messy in user mode
             sys.exit(1)                                     # set error level for script usage
         except Exception, msg:                              # every Exception is caught and displayed
             if self.debug: raise                            # show full trace in debug mode

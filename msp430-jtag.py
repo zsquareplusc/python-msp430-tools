@@ -401,7 +401,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
 
     (options, args) = parser.parse_args()
 
-    if options.input_format not in memory.load_formats:
+    if options.input_format is not None and options.input_format not in memory.load_formats:
         parser.error('Input format %s not supported.' % (options.input_format))
 
     if options.output_format not in memory.save_formats:
@@ -725,5 +725,5 @@ if __name__ == '__main__':
         sys.exit(1)                                     # set error level for script usage
     except Exception, msg:                              # every Exception is caught and displayed
         if DEBUG: raise                                 # show full trace in debug mode
-        sys.stderr.write("\nAn error occoured:\n%s\n" % msg) # short messy in user mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
         sys.exit(1)                                     # set error level for script usage

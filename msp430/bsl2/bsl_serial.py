@@ -67,8 +67,8 @@ class SerialBSL(bsl.BSL):
         self.close()
 
     def close(self):
-        self.logger.info('closing serial port')
         if self.serial is not None:
+            self.logger.info('closing serial port')
             self.serial.close()
             self.serial = None
 

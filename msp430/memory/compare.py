@@ -19,6 +19,10 @@ debug = False
 
 
 def compare(mem1, mem2, name1, name2, output=sys.stdout, html=False):
+    """\
+    Compare and output hex dump of two memory object.
+    :returns: True when files are identical, False otherwise.
+    """
     hexdumps = []
     for mem in (mem1, mem2):
         dump = cStringIO.StringIO()
@@ -37,8 +41,10 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, html=False):
     lines = list(diff)
     if len(lines):
         output.writelines(lines)
+        return False
     else:
         output.write("files are identical\n")
+        return True
 
 
 def main():
@@ -112,7 +118,8 @@ the differences between the files.
         if options.verbose:
             sys.stderr.write('Loaded %s (%d segments)\n' % (filename, len(mem)))
 
-    compare(*(input_data + filenames), output=output, html=options.html)
+    same = compare(*(input_data + filenames), output=output, html=options.html)
+    sys.exit(not same)  # exit code 0 if same, otherwise 1
 
 
 if __name__ == '__main__':
@@ -121,7 +128,7 @@ if __name__ == '__main__':
     except SystemExit:
         raise                                   # let pass exit() calls
     except KeyboardInterrupt:
-        if debug: raise                         # show full trace in debug mode
+        #~ if debug: raise                         # show full trace in debug mode
         sys.stderr.write("User abort.\n")       # short messy in user mode
         sys.exit(1)                             # set error level for script usage
     except Exception, msg:                      # every Exception is caught and displayed

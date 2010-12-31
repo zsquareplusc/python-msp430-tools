@@ -292,20 +292,20 @@ if __name__ == '__main__':
                     help="change baudrate (default 9600)",
                     default=None)
 
-            self.parser.add_option("--password",
+            group.add_option("--password",
                     dest="password",
                     action="store",
                     help="transmit password before doing anything else, password is given in given (TI-Text/ihex/etc) file",
                     default=None,
                     metavar="FILE")
 
-            self.parser.add_option("--ignore-answer",
+            group.add_option("--ignore-answer",
                     dest="ignore_answer",
                     action="store_true",
                     help="do not wait for answer to BSL commands",
                     default=False)
 
-            self.parser.add_option("--control-delay",
+            group.add_option("--control-delay",
                     dest="control_delay",
                     type="float",
                     help="Set delay in seconds (float) for BSL start pattern",

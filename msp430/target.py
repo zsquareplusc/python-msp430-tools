@@ -102,12 +102,10 @@ class Target(object):
 
     def memory_read(self, address, length):
         """Read from memory."""
-        raise NotImplementedError
         raise NotImplementedError("Functionality not supported")
 
     def memory_write(self, address, data):
         """Write to memory."""
-        raise NotImplementedError
         raise NotImplementedError("Functionality not supported")
 
     def mass_erase(self):
@@ -251,6 +249,9 @@ class Target(object):
 File format is auto detected, unless --input-format is used.
 Preferred file extensions are ".txt" for TI-Text format, ".a43" or ".hex" for
 Intel HEX. ELF files can also be loaded.
+
+Multiple files can be given on the command line, all are merged before the
+download starts. "-" reads from stdin.
     """)
 
         group.add_option("-i", "--input-format",

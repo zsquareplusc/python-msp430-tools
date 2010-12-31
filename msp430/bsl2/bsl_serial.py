@@ -117,9 +117,9 @@ class SerialBSL(bsl.BSL):
         | HDR | CMD | L1 | L2 | D1 ... DN | CL | CH |
         +-----+-----+----+----+-----------+----+----+
         """
-        self.logger.debug('Command 0x%02x %r' % (cmd, message))
         # first synchronize with slave
         self.sync()
+        self.logger.debug('Command 0x%02x %r' % (cmd, message))
         # prepare command with checksum
         txdata = struct.pack('<cBBB', bsl.DATA_FRAME, cmd, len(message), len(message)) + message
         txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   #append checksum
@@ -351,10 +351,10 @@ if __name__ == '__main__':
                     self.BSL_TXPWORD(password)
 
             if self.options.speed is not None:
-                self.set_baudrate(self.options.speed)
-
-                if self.options.verbose: logging.info("Done")
-
+                try:
+                    self.set_baudrate(self.options.speed)
+                except bsl.BSLError:
+                    raise bsl.BSLError("--speed option not supported by BSL on target")
 
 
 

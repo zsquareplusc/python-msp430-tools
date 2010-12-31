@@ -339,7 +339,7 @@ def init_backend(force=None):
                 connect() is called again.
                 The execution is started wherever the PC stays. Don't use this
                 function after Flash operations or memverify. The PC was modified
-                and points to an unpredicatble location. Use reset() before calling
+                and points to an unpredictable location. Use reset() before calling
                 this function."""
                 status = MSP430_Close(TRUE)
                 if status != STATUS_OK:
@@ -399,7 +399,7 @@ def init_backend(force=None):
 
                 The default address and length is fine for mass and main erase.
                 To erase a single segment ERASE_SEGMENT and an address within that
-                segement must be specified. The length can be choosen larger than
+                segment must be specified. The length can be chosen larger than
                 one segment to erase a consecutive block of segments.
                 The erased segments are checked for erasure using PSA analysis."""
                 if backend == CTYPES_TI:
@@ -507,7 +507,7 @@ class JTAG:
             _parjtag.open(lpt)
 
     def connect(self):
-        """Connect to devcice."""
+        """Connect to device."""
         _parjtag.connect()
 
     def close(self):

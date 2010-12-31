@@ -40,7 +40,7 @@ import time
 import logging
 from msp430 import memory
 
-from optparse import OptionParser, OptionGroup, IndentedHelpFormatter, TitledHelpFormatter
+from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 
 F1x = '\xf1'
 F2x = '\xf2'
@@ -49,11 +49,12 @@ F4x = '\xf4'
 class UnsupportedMCUFamily(Exception):
     """This exception is raised when the CPU family is not compatible"""
 
-# i dont like how texts are re-wrapped and paragraphs are joined. get rid
-# of that
-class Formatter(TitledHelpFormatter):
-    def format_description(self, description):
-        return description
+# i don't like how texts are re-wrapped and paragraphs are joined. get rid
+# of that "bug"
+class Formatter(IndentedHelpFormatter):
+    def _format_text(self, text):
+        paragraphs = text.split('\n\n')
+        return '\n\n'.join(IndentedHelpFormatter._format_text(self, p) for p in paragraphs)
 
 
 def parseAddressRange(text):

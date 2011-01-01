@@ -727,6 +727,7 @@ class BootStrapLoader(LowLevel):
     def programData(self, segments, action):
         """Programm or verify data"""
         if DEBUG > 1: sys.stderr.write("* programData()\n")
+        count = 0
         #count length if progress updates have to be done
         if self.showprogess:
             total = 0
@@ -735,7 +736,6 @@ class BootStrapLoader(LowLevel):
         for seg in segments:
             currentAddr = seg.startaddress
             pstart = 0
-            count = 0
             while pstart<len(seg.data):
                 length = self.maxData
                 if pstart+length > len(seg.data):

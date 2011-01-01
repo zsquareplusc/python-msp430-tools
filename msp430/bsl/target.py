@@ -299,6 +299,11 @@ if __name__ == '__main__':
                     action="store_true",
                     help="invert DTR line",
                     default=False)
+            group.add_option("--test-on-tx",
+                    dest="test_on_tx",
+                    action="store_true",
+                    help="TEST/TCK signal is muxed on TX line",
+                    default=False)
 
             self.parser.add_option_group(group)
 
@@ -349,13 +354,17 @@ if __name__ == '__main__':
             )
             self.control_delay = self.options.control_delay
 
+            if self.options.test_on_tx:
+                self.testOnTX = True
+
             if self.options.invert_test:
                 self.invertTEST = True
-                self.set_TEST(True)
 
             if self.options.invert_reset:
                 self.invertRST = True
-                self.set_RST(True)
+
+            self.set_TEST(True)
+            self.set_RST(True)
 
             if self.options.start_pattern:
                 self.start_bsl()

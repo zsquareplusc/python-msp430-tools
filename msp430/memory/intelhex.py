@@ -35,6 +35,8 @@ def load(filelike):
             currentAddr = length + currentAddr
         elif type == 0x02:
             extendAddr = int(l[9:13],16) << 4
+        elif type == 0x04 :
+            extendAddr = int(l[9:13], 16) << 16
         elif type in (0x01, 0x03, 0x04, 0x05):
             pass
         else:

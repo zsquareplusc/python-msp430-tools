@@ -188,6 +188,14 @@ class Target(object):
             sys.stderr.write("Upload 0x%04x %d bytes\n" % (start, size))
         self.upload_data.append(memory.Segment(start, self.memory_read(start, size)))
 
+    def upload_by_file(self):
+        """upload memory areas also contained in self.download_data"""
+        for segment in self.download_data:
+            if self.verbose > 1:
+                sys.stderr.write("Upload 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
+            data = self.memory_read(segment.startaddress, len(segment.data))
+            self.upload_data.append(memory.Segment(segment.startaddress, data))
+
     def program_file(self):
         """download data from self.download_data"""
         for segment in self.download_data:
@@ -203,26 +211,20 @@ class Target(object):
         for segment in self.download_data:
             if self.verbose > 1:
                 sys.stderr.write("Verify segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
-            # pad length if odd number of bytes
-            if len(segment.data) & 1:
-                segment.data += '\xff'
             data = self.memory_read(segment.startaddress, len(segment.data))
             if data != segment.data:
-                raise Exception("verify failed at 0x%04x failed" % (segment.startaddress,))
+                raise Exception("verify failed at 0x%04x" % (segment.startaddress,))
             # XXX show hex DIFF
         sys.stderr.write('Verify by file: OK\n')
 
     def erase_check_by_file(self):
-        """upload address ranges used in self.download_data and check if erased"""
+        """upload address ranges used in self.download_data and check if memory erased (0xff)"""
         for segment in self.download_data:
             if self.verbose > 1:
                 sys.stderr.write("Erase check segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
-            # pad length if odd number of bytes
-            if len(segment.data) & 1:
-                segment.data += '\xff'
             data = self.memory_read(segment.startaddress, len(segment.data))
             if data != '\xff'*len(segment.data):
-                raise Exception("erase check failed at 0x%04x failed" % (segment.startaddress,))
+                raise Exception("erase check failed at 0x%04x" % (segment.startaddress,))
             # XXX show hex DIFF
         sys.stderr.write('Erase check by file: OK\n')
 
@@ -343,6 +345,12 @@ Don't forget to erase ("-e", "-eE" or "-m") before programming flash!
         group.add_option("-V", "--verify",
                 dest="do_verify",
                 help="verify by file",
+                default=False,
+                action='store_true')
+
+        group.add_option("-U", "--upload-by-file",
+                dest="do_upload_by_file",
+                help="upload the memory that is present in the given file(s)",
                 default=False,
                 action='store_true')
 
@@ -502,6 +510,10 @@ Multiple --upload options are allowed.
         if self.options.do_verify:
             self.add_action(self.verify_by_file)
             default_action = False
+        if self.options.do_upload_by_file:
+            self.add_action(self.upload_by_file)
+            default_action = False
+
 
         # as default action (no other given by user), program if a file is given
         if default_action and self.args:
@@ -519,7 +531,7 @@ Multiple --upload options are allowed.
         if self.options.do_reset:
             self.add_action(self.reset)
 
-        if self.options.upload_list:
+        if self.options.upload_list or self.options.do_upload_by_file:
             self.upload_data = memory.Memory()
 
         # prepare output

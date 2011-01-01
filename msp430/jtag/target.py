@@ -262,7 +262,6 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
                 else:
                     # XXX and posix platforms?!
                     HIL_SetSlowdown = ctypes.cdll.HIL.HIL_SetSlowdown
-                HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
                 HIL_SetSlowdown.argtypes  = [ctypes.c_ulong]
                 #~ HIL_SetSlowdown.restype   = ctypes.c_int # actually void
                 # set slowdown

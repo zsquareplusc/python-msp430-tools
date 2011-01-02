@@ -38,13 +38,49 @@ Common operations that will work will all connection types are:
 import sys
 import time
 import logging
+import struct
 from msp430 import memory
 
 from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 
-F1x = '\xf1'
-F2x = '\xf2'
-F4x = '\xf4'
+# MCU types
+# use strings as ID so that they can be used in outputs too
+F1x                     = "F1x family"
+F2x                     = "F2x family"
+F4x                     = "F4x family"
+
+# known device list
+DEVICEIDS = {
+    (0x1132, None): F1x,      # F1122, F1132
+    (0x1232, None): F1x,      # F1222, F1232
+    (0xf112, None): F1x,      # F11x, F11x1, F11x1A
+    (0xf123, 0x0140): F1x,    # F21x1
+    (0xf123, None): F1x,      # F122, F123X
+    (0xf143, None): F1x,      # F14x
+    (0xf149, None): F1x,      # F13x, F14x(1)
+    (0xf169, None): F1x,      # F16x
+    (0xf16c, None): F1x,      # F161x
+    (0xf227, None): F2x,      # F22xx
+    (0xf26f, None): F2x,
+    (0xf413, None): F4x,
+    (0xf427, None): F4x,      # FE42x, FW42x, F41(5,7), F42x0
+    (0xf439, None): F4x,      # FG43x
+    (0xf449, None): F4x,      # F43x, F44x
+    (0xf46f, None): F4x,      # FG46xx
+}
+
+def idetify_device(device_id, bsl_version):
+    try:
+        try:
+            return DEVICEIDS[device_id, bsl_version]
+        except KeyError:
+            return DEVICEIDS[device_id, None]
+    except KeyError:
+        if device_id[0] == '0x1f': return F1x
+        if device_id[0] == '0x2f': return F2x
+        if device_id[0] == '0x4f': return F4x
+        raise KeyError('device type not known %04x/%04x' % (device_id, bsl_version))
+
 
 class UnsupportedMCUFamily(Exception):
     """This exception is raised when the CPU family is not compatible"""
@@ -165,8 +201,11 @@ class Target(object):
         return modulo
 
     def get_mcu_family(self):
-        version_row = self.version()
-        return version_row[0]
+        device_id, bsl_version = struct.unpack(">H8xH4x", self.version())
+        family = idetify_device(device_id, bsl_version)
+        if self.verbose > 2:
+            sys.stderr.write("MCU: %s (%04x)\n" % (family, device_id))
+        return family
 
     def erase_infomem(self):
         if self.verbose > 2:
@@ -481,9 +520,9 @@ Multiple --upload options are allowed.
         self.debug = self.options.debug
         self.verbose = self.options.verbose
 
-        if self.verbose > 2 :
+        if self.verbose > 3 :
             level = logging.DEBUG
-        elif self.verbose > 1:
+        elif self.verbose > 2:
             level = logging.INFO
         else:
             level = logging.WARN

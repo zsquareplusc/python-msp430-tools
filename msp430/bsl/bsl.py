@@ -28,6 +28,7 @@ BSL_LOADPC          = 0x1A    # Load PC and start execution
 BSL_ERASE_CHECK     = 0x1C    # Erase check of flash
 BSL_TXVERSION       = 0x1E    # Get BSL version
 
+
 class BSLException(Exception):
     """Errors from the slave"""
 
@@ -114,6 +115,9 @@ class BSL(object):
         when the size is larger than the block size.
         """
         data = []
+        odd = bool(length & 1)
+        if odd:
+            length += 1
         while length:
             size = min(self.MAXSIZE, length)
             if self.extended_address_mode:
@@ -121,13 +125,19 @@ class BSL(object):
             data.append(self.BSL_RXBLK(address & 0xffff, size))
             address += size
             length -= size
-        return ''.join(data)
+        if odd and data:
+            return ''.join(data)[:-1]
+        else:
+            return ''.join(data)
 
     def memory_write(self, address, data):
         """\
         Write to memory. It creates multiple BSL_TXBLK commands internally
         when the size is larger than the block size.
         """
+        if len(data) & 1:
+            data += '\xff'
+            #~ self.log.warn('memory_write: Odd legth data not supported, paddded with 0xff')
         while data:
             block, data = data[:self.MAXSIZE], data[self.MAXSIZE:]
             if self.extended_address_mode:
@@ -166,7 +176,7 @@ class BSL(object):
         try:
             return self.BSL_TXVERSION()
         except BSLError:
-            #if command is not supported, try a memory read instead
+            # if command is not supported, try a memory read instead
             return self.BSL_RXBLK(0x0ff0, 16)
 
     def reset(self):
@@ -181,7 +191,6 @@ class BSL(object):
         except BSLError:
             # we can't verify the success of the reset...
             pass
-        return True
 
 
 # ----- test code only below this line -----

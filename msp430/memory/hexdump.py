@@ -10,24 +10,36 @@ this is distributed under a free software license, see LICENSE.txt.
 import sys
 import msp430.memory
 
+def sixteen(address, sequence):
+    """A generator that yields sequences of 16 elements"""
+    # yield tuples of (current_address, sequence_of_16_elements)
+    row = []
+    for n, x in enumerate(sequence):
+        row.append(x)
+        if len(row) == 16:
+            yield address + n, row
+            del row[:]
+    # and the rest if input's length was not a multiple of 16
+    if row:
+        yield address + n, row
 
-def hexdump( (adr, memstr), output=sys.stdout ):
-    """Print a hex dump.
-    arg1: tuple with address, memory
-    return None"""
-    count = 0
-    ascii = ''
-    for value in map(ord, memstr):
-        if not count: output.write("%08x: " % adr)
-        output.write("%02x " % value)
-        ascii += (32 <= value < 128) and chr(value) or '.'
-        count += 1
-        adr += 1
-        if count == 16:
-            count = 0
-            output.write("  %s\n" % ascii)
-            ascii = ''
-    if count < 16: output.write("%s  %s\n" % ("   "*(16-count), ascii))
+
+
+def hexdump((adr, memstr), output=sys.stdout):
+    """\
+    Print a hex dump.
+    :param adr: address
+    :param memstr: memory contents (bytes/string)
+    :param output: file like object to write to
+    """
+    for address, row in sixteen(adr, memstr):
+        values = ' '.join("%02x" % ord(x) for x in row)
+        ascii  = ''.join((32 <= ord(x) < 128) and x or '.' for x in row)
+        # pad width
+        values += ' '*(47 - len(values))
+        ascii += ' '*(16 - len(values))
+        # output line, insert gap at 8
+        output.write("%08x:  %s %s %s %s\n" % (address, values[:24], values[24:], ascii[:8], ascii[8:]))
 
 
 def save(memory, filelike):

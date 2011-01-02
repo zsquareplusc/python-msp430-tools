@@ -180,6 +180,8 @@ def load(filename, fileobj=None, format=None):
                 return intelhex.load(fileobj)
             elif format == 'elf':
                 return elf.load(fileobj)
+            elif format == 'hex':
+                return hexdump.load(fileobj)
             elif format == 'bin':
                 return bin.load(fileobj)
             raise ValueError('unsupported file format %s' % (format,))
@@ -202,5 +204,5 @@ def save(memory, fileobj, format='titext'):
     raise ValueError('unsupported file format %s' % (format,))
 
 
-load_formats = ['titext', 'ihex', 'bin', 'elf']
+load_formats = ['titext', 'ihex', 'bin', 'hex', 'elf']
 save_formats = ['titext', 'ihex', 'bin', 'hex']

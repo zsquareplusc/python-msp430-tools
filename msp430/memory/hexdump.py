@@ -40,14 +40,55 @@ def hexdump((adr, memstr), output=sys.stdout):
         values += ' '*(47 - len(values))
         ascii += ' '*(16 - len(values))
         # output line, insert gap at 8
-        output.write("%08x:  %s %s %s %s\n" % (address, values[:24], values[24:], ascii[:8], ascii[8:]))
+        output.write("%08x:  %s %s  %s %s\n" % (
+                address,
+                values[:24], values[24:],
+                ascii[:8], ascii[8:]))
 
 
 def save(memory, filelike):
     """output a hexdump to given file object"""
     for n, segment in enumerate(sorted(memory.segments)):
-        if n: filelike.write('....:\n')
+        if n: filelike.write('........:\n')
         hexdump((segment.startaddress, segment.data), output=filelike)
+
+
+def load(filelike):
+    """\
+    Read back a hex dump. As hex dumps can look different, only a subset of
+    formats can be read. Its main purpose is to read the own format back.
+    """
+    memory = msp430.memory.Memory()
+    segmentdata = []
+    segment_address = 0
+    last_address = 0
+    for n, line in enumerate(filelike):
+        if not line.strip(): continue  # skip empty lines
+        if line.startswith('...'): continue  # skip marker lines
+        try:
+            adr, dump = line.split(':', 1)
+            address = int(adr, 16)
+            if address != last_address:
+                if segmentdata:
+                    memory.segments.append(msp430.memory.Segment(segment_address, ''.join(segmentdata)))
+                last_address = address
+                segment_address = address
+                segmentdata = []
+            # remove white space and take the first 2*16 hex digits
+            hex_data = dump.replace(' ', '')
+            # find out how many digits are relevant
+            digits = 2 * len(hex_data) / 3
+            segmentdata.append(hex_data[:digits].decode('hex'))
+            last_address += digits / 2
+        except Exception, e:
+            raise msp430.memory.error.FileFormatError(
+                    "line not valid hex dump (%s) : %r" % (e, line,),
+                    filename = getattr(filelike, "name", "<unknown>"),
+                    lineno = n+1)
+    if segmentdata:
+        memory.segments.append(msp430.memory.Segment(segment_address, ''.join(segmentdata)))
+    return memory
+
 
 
 debug = False
@@ -71,7 +112,7 @@ What is dumped?
             help="write result to given file",
             metavar="DESTINATION")
 
-    parser.add_option("-d", "--debug",
+    parser.add_option("--debug",
             dest="debug",
             help="print debug messages",
             default=False,

@@ -14,8 +14,8 @@ from memory import Memory
 
 DEBUG = 0
 
-#copy of the patch file provided by TI
-#this part is (C) by Texas Instruments
+# copy of the patch file provided by TI
+# this part is (C) by Texas Instruments
 PATCH = """@0220
 31 40 1A 02 09 43 B0 12 2A 0E B0 12 BA 0D 55 42
 0B 02 75 90 12 00 1F 24 B0 12 BA 02 55 42 0B 02
@@ -33,7 +33,7 @@ PATCH = """@0220
 q
 """
 
-#These BSL's are (C) by TI. They come with the application note slaa089a
+# These BSL's are (C) by TI. They come with the application note slaa089a
 F1X_BSL = """@0220
 24 02 2E 02 31 40 20 02 2B D2 C0 43 EA FF 32 C2
 F2 C0 32 00 00 00 B2 40 80 5A 20 01 F2 40 85 00
@@ -176,13 +176,13 @@ E2 B3 20 00 FD 23 92 42 70 01 72 01 92 52 04 02
 q
 """
 
-#cpu types for "change baudrate"
-#use strings as ID so that they can be used in outputs too
+# cpu types for "change baudrate"
+# use strings as ID so that they can be used in outputs too
 F1x                     = "F1x family"
 F2x                     = "F2x family"
 F4x                     = "F4x family"
 
-#known device list
+# known device list
 deviceids = {
     0x1132: F1x,
     0x1232: F1x,
@@ -218,11 +218,11 @@ class LowLevel:
     BSL_LOADPC              = 0x1A #Load PC and start execution
     BSL_TXVERSION           = 0x1E #Get BSL version
 
-    #Upper limit of address range that might be modified by
-    #"BSL checksum bug".
+    # Upper limit of address range that might be modified by
+    # "BSL checksum bug".
     BSL_CRITICAL_ADDR       = 0x0A00
 
-    #Header Definitions
+    # Header Definitions
     CMD_FAILED              = 0x70
     DATA_FRAME              = 0x80
     DATA_ACK                = 0x90
@@ -242,10 +242,10 @@ class LowLevel:
 
     MAX_FRAME_COUNT         = 16
 
-    #Error messages
+    # Error messages
     ERR_COM                 = "Unspecific error"
     ERR_RX_NAK              = "NAK received (wrong password?)"
-    #ERR_CMD_NOT_COMPLETED   = "Command did not send ACK: indicates that it didn't complete correctly"
+    # ERR_CMD_NOT_COMPLETED  = "Command did not send ACK: indicates that it didn't complete correctly"
     ERR_CMD_FAILED          = "Command failed, is not defined or is not allowed"
     ERR_BSL_SYNC            = "Bootstrap loader synchronization error"
     ERR_FRAME_NUMBER        = "Frame sequence number error."
@@ -256,7 +256,7 @@ class LowLevel:
 
         for i in range(length/2):
             checksum = checksum ^ (ord(data[i*2]) | (ord(data[i*2+1]) << 8))    #xor-ing
-        return 0xffff & (checksum ^ 0xffff)         #inverting
+        return 0xffff & (checksum ^ 0xffff)         # inverting
 
     def __init__(self, aTimeout = None, aProlongFactor = None):
         """init bsl object, don't connect yet"""
@@ -269,17 +269,17 @@ class LowLevel:
         else:
             self.prolongFactor = aProlongFactor
 
-        #flags for inverted use of control pins
-        #used for some hardware
+        # flags for inverted use of control pins
+        # used for some hardware
         self.invertRST = 0
         self.invertTEST = 0
         self.swapResetTest = 0
         self.testOnTX = 0
         self.ignoreAnswer = 0
-        
+
         self.protocolMode = self.MODE_BSL
-        self.BSLMemAccessWarning = 0            #Default: no warning.
-        self.slowmode = 0                       #give a little more time when changing the control lines
+        self.BSLMemAccessWarning = 0            # Default: no warning.
+        self.slowmode = 0                       # give a little more time when changing the control lines
         self.memoffset = 0
 
     def comInit(self, port):
@@ -302,8 +302,8 @@ class LowLevel:
             timeout = self.timeout
         )
         if DEBUG: sys.stderr.write("using serial port %r\n" % self.serialport.portstr)
-        self.SetRSTpin()                        #enable power
-        self.SetTESTpin()                       #enable power
+        self.SetRSTpin()                        # enable power
+        self.SetTESTpin()                       # enable power
         self.serialport.flushInput()
         self.serialport.flushOutput()
 
@@ -314,8 +314,8 @@ class LowLevel:
         used in other programs.
         Returns zero if the function is successful."""
         if DEBUG > 1: sys.stderr.write("* comDone()")
-        self.SetRSTpin(0)                       #disable power
-        self.SetTESTpin(0)                      #disable power
+        self.SetRSTpin(0)                       # disable power
+        self.SetTESTpin(0)                      # disable power
         self.serialport.close()
 
     def comRxHeader(self):
@@ -344,27 +344,27 @@ class LowLevel:
         rxFrame = rxFrame + rxFramedata
 
         if DEBUG > 3: sys.stderr.write("  comRxFrame() check header...\n")
-        if rxFrame[1] == chr(0) and rxFrame[2] == rxFrame[3]:   #Add. header info. correct?
-            rxLengthCRC = ord(rxFrame[2]) + 2       #Add CRC-Bytes to length
+        if rxFrame[1] == chr(0) and rxFrame[2] == rxFrame[3]:   # Add. header info. correct?
+            rxLengthCRC = ord(rxFrame[2]) + 2       # Add CRC-Bytes to length
             if DEBUG > 2: sys.stderr.write("  comRxFrame() receiving data, size: %s\n" % rxLengthCRC)
 
             rxFramedata = self.serialport.read(rxLengthCRC)
             if len(rxFramedata) != rxLengthCRC: raise BSLException("Timeout")
             rxFrame = rxFrame + rxFramedata
-            #Check received frame:
+            # Check received frame:
             if DEBUG > 3: sys.stderr.write("  comRxFrame() crc check\n")
-            #rxLength+4: Length with header but w/o CRC:
+            # rxLength+4: Length with header but w/o CRC:
             checksum = self.calcChecksum(rxFrame, ord(rxFrame[2]) + 4)
             if rxFrame[ord(rxFrame[2])+4] == chr(0xff & checksum) and \
-               rxFrame[ord(rxFrame[2])+5] == chr(0xff & (checksum >> 8)): #Checksum correct?
-                #Frame received correctly (=> send next frame)
+               rxFrame[ord(rxFrame[2])+5] == chr(0xff & (checksum >> 8)): # Checksum correct?
+                # Frame received correctly (=> send next frame)
                 if DEBUG > 2: sys.stderr.write("* comRxFrame() OK\n")
                 return rxFrame
             else:
                 if DEBUG: sys.stderr.write("  comRxFrame() Checksum wrong\n")
         else:
             if DEBUG: sys.stderr.write("  comRxFrame() Header corrupt %r" % rxFrame)
-        raise BSLException(self.ERR_COM)            #Frame has errors!
+        raise BSLException(self.ERR_COM)            # Frame has errors!
 
     def comTxHeader(self, txHeader):
         """send header"""
@@ -383,17 +383,17 @@ class LowLevel:
         rxHeader    = 0
         rxNum       = 0
 
-        dataOut = list(dataOut)     #convert to a list for simpler data fill in
-        #Transmitting part ----------------------------------------
-        #Prepare data for transmit
+        dataOut = list(dataOut)     # convert to a list for simpler data fill in
+        # Transmitting part ----------------------------------------
+        # Prepare data for transmit
         if (length % 2) != 0:
-            #Fill with one byte to have even number of bytes to send
+            # Fill with one byte to have even number of bytes to send
             if self.protocolMode == self.MODE_BSL:
-                dataOut.append(0xFF)  #fill with 0xFF
+                dataOut.append(0xFF)  # fill with 0xFF
             else:
-                dataOut.append(0)     #fill with zero
+                dataOut.append(0)     # fill with zero
             length += 1
-        
+
         txFrame = "%c%c%c%c" % (self.DATA_FRAME | self.seqNo, cmd, len(dataOut), len(dataOut))
 
         self.reqNo = (self.seqNo + 1) % self.MAX_FRAME_COUNT
@@ -403,13 +403,13 @@ class LowLevel:
         txFrame = txFrame + chr(checksum & 0xff)
         txFrame = txFrame + chr((checksum >> 8) & 0xff)
 
-        accessAddr = (0x0212 + (checksum^0xffff)) & 0xfffe  #0x0212: Address of wCHKSUM
+        accessAddr = (0x0212 + (checksum^0xffff)) & 0xfffe  # 0x0212: Address of wCHKSUM
         if self.BSLMemAccessWarning and accessAddr < self.BSL_CRITICAL_ADDR:
             sys.stderr.write("WARNING: This command might change data at address %04x or %04x!\n" % (accessAddr, accessAddr + 1))
 
         self.serialport.flushInput()                #clear receiving queue
-        #TODO: Check after each transmitted character,
-        #TODO: if microcontroller did send a character (probably a NAK!).
+        # TODO: Check after each transmitted character,
+        # TODO: if microcontroller did send a character (probably a NAK!).
         for c in txFrame:
             self.serialport.write(c)
             if DEBUG > 3: sys.stderr.write("\ttx %02x" % ord(c))
@@ -421,25 +421,25 @@ class LowLevel:
         if self.ignoreAnswer:
             time.sleep(0.1)
         else:
-            rxHeader, rxNum = self.comRxHeader()        #receive header
+            rxHeader, rxNum = self.comRxHeader()        # receive header
             if DEBUG > 1: sys.stderr.write("  comTxRx() rxHeader=0x%02x, rxNum=%d, seqNo=%d, reqNo=%s\n" % (rxHeader, rxNum, self.seqNo, self.reqNo))
-            if rxHeader == self.DATA_ACK:               #acknowledge/OK
+            if rxHeader == self.DATA_ACK:               # acknowledge/OK
                 if DEBUG > 2: sys.stderr.write("  comTxRx() DATA_ACK\n")
                 if rxNum == self.reqNo:
                     self.seqNo = self.reqNo
                     if DEBUG > 2: sys.stderr.write("* comTxRx() DATA_ACK OK\n")
-                    return          #Acknowledge received correctly => next frame
+                    return          # Acknowledge received correctly => next frame
                 raise BSLException(self.ERR_FRAME_NUMBER)
-            elif rxHeader == self.DATA_NAK:             #not acknowledge/error
+            elif rxHeader == self.DATA_NAK:             # not acknowledge/error
                 if DEBUG > 2: sys.stderr.write("* comTxRx() DATA_NAK\n")
                 raise BSLException(self.ERR_RX_NAK)
-            elif rxHeader == self.DATA_FRAME:           #receive data
+            elif rxHeader == self.DATA_FRAME:           # receive data
                 if DEBUG > 2: sys.stderr.write("* comTxRx() DATA_FRAME\n")
                 if rxNum == self.reqNo:
                     rxFrame = self.comRxFrame(rxNum)
                     return rxFrame
                 raise BSLException(self.ERR_FRAME_NUMBER)
-            elif rxHeader == self.CMD_FAILED:           #Frame ok, but command failed.
+            elif rxHeader == self.CMD_FAILED:           # Frame ok, but command failed.
                 if DEBUG > 2: sys.stderr.write("*  comTxRx() CMD_FAILED\n")
                 raise BSLException(self.ERR_CMD_FAILED)
 
@@ -447,15 +447,15 @@ class LowLevel:
 
     def SetRSTpin(self, level=1):
         """Controls RST/NMI pin (0: GND; 1: VCC; unless inverted flag is set)"""
-        #invert signal if configured
+        # invert signal if configured
         if self.invertRST:
             level = not level
-        #set pin level
+        # set pin level
         if self.swapResetTest:
             self.serialport.setRTS(level)
         else:
             self.serialport.setDTR(level)
-        #add some delay
+        # add some delay
         if self.slowmode:
             time.sleep(0.200)
         else:
@@ -463,22 +463,22 @@ class LowLevel:
 
     def SetTESTpin(self, level=1):
         """Controls TEST pin (inverted on board: 0: VCC; 1: GND; unless inverted flag is set)"""
-        #invert signal if configured
+        # invert signal if configured
         if self.invertTEST:
             level = not level
-        #set pin level
+        # set pin level
         if self.swapResetTest:
             self.serialport.setDTR(level)
         else:
             self.serialport.setRTS(level)
-        #make TEST signal on TX pin, unsing break condition.
-        #currently only working on win32!
+        # make TEST signal on TX pin, unsing break condition.
+        # currently only working on win32!
         if self.testOnTX:
             if level:
                 serial.win32file.ClearCommBreak(self.serialport.hComPort)
             else:
                 serial.win32file.SetCommBreak(self.serialport.hComPort)
-        #add some delay
+        # add some delay
         if self.slowmode:
             time.sleep(0.200)
         else:
@@ -494,27 +494,27 @@ class LowLevel:
         TEST is inverted (only once)
         Need positive voltage on DTR, RTS for power-supply of hardware"""
         if DEBUG > 1: sys.stderr.write("* bslReset(invokeBSL=%s)\n" % invokeBSL)
-        self.SetRSTpin(1)       #power suply
-        self.SetTESTpin(1)      #power suply
+        self.SetRSTpin(1)       # power suply
+        self.SetTESTpin(1)      # power suply
         if self.slowmode:
-            time.sleep(0.500)   #charge capacitor on boot loader hardware
+            time.sleep(0.500)   # charge capacitor on boot loader hardware
         else:
-            time.sleep(0.250)   #charge capacitor on boot loader hardware
+            time.sleep(0.250)   # charge capacitor on boot loader hardware
 
-        self.SetRSTpin(0)       #RST  pin: GND
+        self.SetRSTpin(0)       # RST  pin: GND
         if invokeBSL:
-            self.SetTESTpin(1)  #TEST pin: GND
-            self.SetTESTpin(0)  #TEST pin: Vcc
-            self.SetTESTpin(1)  #TEST pin: GND
-            self.SetTESTpin(0)  #TEST pin: Vcc
-            self.SetRSTpin (1)  #RST  pin: Vcc
+            self.SetTESTpin(1)  # TEST pin: GND
+            self.SetTESTpin(0)  # TEST pin: Vcc
+            self.SetTESTpin(1)  # TEST pin: GND
+            self.SetTESTpin(0)  # TEST pin: Vcc
+            self.SetRSTpin (1)  # RST  pin: Vcc
             if self.testOnTX:
                 serial.win32file.ClearCommBreak(self.serialport.hComPort)
             else:
-                self.SetTESTpin(1)  #TEST pin: GND
+                self.SetTESTpin(1)  # TEST pin: GND
         else:
-            self.SetRSTpin(1)   #RST  pin: Vcc
-        time.sleep(0.250)       #give MSP430's oscillator time to stabilize
+            self.SetRSTpin(1)   # RST  pin: Vcc
+        time.sleep(0.250)       # give MSP430's oscillator time to stabilize
 
         self.serialport.flushInput()    #clear buffers
 
@@ -523,30 +523,30 @@ class LowLevel:
         if wait is 0 it must work the first time. otherwise if wait is 1
         it is retried (forever).
         """
-        loopcnt = 3                                 #Max. tries to get synchronization
+        loopcnt = 3                                 # Max. tries to get synchronization
 
         if DEBUG > 1: sys.stderr.write("* bslSync(wait=%d)\n" % wait)
         if self.ignoreAnswer:
-            self.serialport.write(chr(self.BSL_SYNC))   #Send synchronization byte
+            self.serialport.write(chr(self.BSL_SYNC))   # Send synchronization byte
         else:
             while wait or loopcnt:
-                loopcnt = loopcnt - 1                   #count down tries
-                self.serialport.flushInput()            #clear input, in case a prog is running
-    
-                self.serialport.write(chr(self.BSL_SYNC))   #Send synchronization byte
-                c = self.serialport.read(1)             #read answer
-                if c == chr(self.DATA_ACK):             #ACk
+                loopcnt = loopcnt - 1                   # count down tries
+                self.serialport.flushInput()            # clear input, in case a prog is running
+
+                self.serialport.write(chr(self.BSL_SYNC))   # Send synchronization byte
+                c = self.serialport.read(1)             # read answer
+                if c == chr(self.DATA_ACK):             # ACk
                     if DEBUG > 1: sys.stderr.write("  bslSync() OK\n")
-                    return                              #Sync. successful
-                elif not c:                             #timeout
+                    return                              # Sync. successful
+                elif not c:                             # timeout
                     if DEBUG > 1:
                         if loopcnt:
                             sys.stderr.write("  bslSync() timeout, retry ...\n")
                         else:
                             sys.stderr.write("  bslSync() timeout\n")
-                else:                                   #garbage
+                else:                                   # garbage
                     if DEBUG > 1: sys.stderr.write("  bslSync() failed (0x%02x), retry ...\n" % ord(c))
-            raise BSLException(self.ERR_BSL_SYNC)       #Sync. failed
+            raise BSLException(self.ERR_BSL_SYNC)       # Sync. failed
 
     def bslTxRx(self, cmd, addr, length = 0, blkout = None, wait=0):
         """Transmits a command (cmd) with its parameters:
@@ -559,22 +559,22 @@ class LowLevel:
         if DEBUG > 1: sys.stderr.write("* bslTxRx()\n")
 
         if cmd == self.BSL_TXBLK:
-            #Align to even start address
+            # Align to even start address
             if (addr % 2) != 0:
-                addr = addr - 1                     #Decrement address and
-                blkout = chr(0xFF) + blkout         #fill first byte of blkout with 0xFF
+                addr = addr - 1                     # Decrement address and
+                blkout = chr(0xFF) + blkout         # fill first byte of blkout with 0xFF
                 length = length + 1
-            #Make sure that len is even
+            # Make sure that len is even
             if (length % 2) != 0:
-                blkout = blkout + chr(0xFF)         #Inc. len and fill last byte of blkout with 0xFF
+                blkout = blkout + chr(0xFF)         # Inc. len and fill last byte of blkout with 0xFF
                 length = length + 1
 
         elif cmd == self.BSL_RXBLK:
-            #Align to even start address
+            # Align to even start address
             if (addr % 2) != 0:
-                addr = addr - 1                     #Decrement address but
-                length = length + 1                 #request an additional byte
-            #Make sure that len is even
+                addr = addr - 1                     # Decrement address but
+                length = length + 1                 # request an additional byte
+            # Make sure that len is even
             if (length % 2) != 0:
                 length = length + 1
 
@@ -583,25 +583,25 @@ class LowLevel:
                 self.memoffset = (addr>>16)
                 self.bslTxRx(self.BSL_SETMEMOFFSET, self.memoffset)
                 if DEBUG > 1: sys.stderr.write("   * bslTxRx(): set mem offset 0x%02x\n" % self.memoffset)
-            addr &= 0xffff	
-        
-        #if cmd == self.BSL_TXBLK or cmd == self.BSL_TXPWORD:
+            addr &= 0xffff
+
+        # if cmd == self.BSL_TXBLK or cmd == self.BSL_TXPWORD:
         #    length = len + 4
 
-        #Add necessary information data to frame
+        # Add necessary information data to frame
         if (cmd == self.BSL_SETMEMOFFSET):
             dataOut =  struct.pack("<HH", length, addr)
         else:
             dataOut =  struct.pack("<HH", addr, length)
 
-        if blkout: #Copy data out of blkout into frame
+        if blkout: # Copy data out of blkout into frame
             dataOut = dataOut + blkout
 
         if DEBUG > 1: sys.stderr.write("   CMD 0x%04x\n" % cmd)
-        self.bslSync(wait)                          #synchronize BSL
-        rxFrame = self.comTxRx(cmd, dataOut, len(dataOut))  #Send frame
-        if rxFrame:                                 #test answer
-            return rxFrame[4:] #return only data w/o [hdr,null,len,len]
+        self.bslSync(wait)                          # synchronize BSL
+        rxFrame = self.comTxRx(cmd, dataOut, len(dataOut))  # Send frame
+        if rxFrame:                                 # test answer
+            return rxFrame[4:] # return only data w/o [hdr,null,len,len]
         else:
             return rxFrame
 
@@ -612,12 +612,12 @@ class BootStrapLoader(LowLevel):
     ERR_VERIFY_FAILED       = "Error: verification failed"
     ERR_ERASE_CHECK_FAILED  = "Error: erase check failed"
 
-    ACTION_PROGRAM          = 0x01 #Mask: program data
-    ACTION_VERIFY           = 0x02 #Mask: verify data
-    ACTION_ERASE_CHECK      = 0x04 #Mask: erase check
+    ACTION_PROGRAM          = 0x01 # Mask: program data
+    ACTION_VERIFY           = 0x02 # Mask: verify data
+    ACTION_ERASE_CHECK      = 0x04 # Mask: erase check
 
-    #Max. bytes sent within one frame if parsing a TI TXT file.
-    #( >= 16 and == n*16 and <= MAX_DATA_BYTES!)
+    # Max. bytes sent within one frame if parsing a TI TXT file.
+    # ( >= 16 and == n*16 and <= MAX_DATA_BYTES!)
     MAXDATA                 = 240-16
 
 
@@ -641,18 +641,18 @@ class BootStrapLoader(LowLevel):
         if DEBUG > 1: sys.stderr.write("* preparePatch()\n")
 
         if self.patchLoaded:
-            #Load PC with 0x0220.
-            #This will invoke the patched bootstrap loader subroutines.
-            self.bslTxRx(self.BSL_LOADPC,           #Command: Load PC
-                           0x0220)                  #Address to load into PC
-            self.BSLMemAccessWarning = 0 #Error is removed within workaround code
+            # Load PC with 0x0220.
+            # This will invoke the patched bootstrap loader subroutines.
+            self.bslTxRx(self.BSL_LOADPC,           # Command: Load PC
+                           0x0220)                  # Address to load into PC
+            self.BSLMemAccessWarning = 0 # Error is removed within workaround code
         return
 
     def postPatch(self):
         """Setup after the patch is loaded"""
         if DEBUG > 1: sys.stderr.write("* postPatch()\n")
         if self.patchLoaded:
-            self.BSLMemAccessWarning = 1                #Turn warning back on.
+            self.BSLMemAccessWarning = 1                # Turn warning back on.
 
 
     def verifyBlk(self, addr, blkout, action):
@@ -668,37 +668,37 @@ class BootStrapLoader(LowLevel):
 
             for i in range(len(blkout)):
                 if action & self.ACTION_VERIFY:
-                    #Compare data in blkout and blkin
+                    # Compare data in blkout and blkin
                     if blkin[i] != blkout[i]:
                         sys.stderr.write("Verification failed at 0x%04x (0x%02x, 0x%02x)\n" % (addr+i, ord(blkin[i]), ord(blkout[i])))
                         sys.stderr.flush()
-                        raise BSLException(self.ERR_VERIFY_FAILED)      #Verify failed!
+                        raise BSLException(self.ERR_VERIFY_FAILED)      # Verify failed!
                     continue
                 elif action & self.ACTION_ERASE_CHECK:
-                    #Compare data in blkin with erase pattern
+                    # Compare data in blkin with erase pattern
                     if blkin[i] != chr(0xff):
                         sys.stderr.write("Erase Check failed at 0x%04x (0x%02x)\n" % (addr+i, ord(blkin[i])))
                         sys.stderr.flush()
-                        raise BSLException(self.ERR_ERASE_CHECK_FAILED) #Erase Check failed!
+                        raise BSLException(self.ERR_ERASE_CHECK_FAILED) # Erase Check failed!
                     continue
 
     def programBlk(self, addr, blkout, action):
         """Programm a memory block"""
         if DEBUG > 1: sys.stderr.write("* programBlk()\n")
 
-        #Check, if specified range is erased
+        # Check, if specified range is erased
         self.verifyBlk(addr, blkout, action & self.ACTION_ERASE_CHECK)
 
         if action & self.ACTION_PROGRAM:
             if DEBUG: sys.stderr.write("  Program starting at 0x%05x, %i bytes ...\n" % (addr, len(blkout)))
             self.preparePatch()
-            #Program block
+            # Program block
             self.bslTxRx(self.BSL_TXBLK, addr, len(blkout), blkout)
             self.postPatch()
 
-        #Verify block
+        # Verify block
         self.verifyBlk(addr, blkout, action & self.ACTION_VERIFY)
-    
+
     def progess_update(self, count, total):
         """Textual progress output. Override in subclass to implement a different output"""
         sys.stderr.write("\r%d%%" % (100*count/total))
@@ -721,9 +721,9 @@ class BootStrapLoader(LowLevel):
             #~ count = count + length
             #~ if self.showprogess:
                 #~ self.progess_update(count, total)
-    #segments:
-    #list of tuples or lists:
-    #segements = [ (addr1, [d0,d1,d2,...]), (addr2, [e0,e1,e2,...])]
+    # segments:
+    # list of tuples or lists:
+    # segements = [ (addr1, [d0,d1,d2,...]), (addr2, [e0,e1,e2,...])]
     def programData(self, segments, action):
         """Programm or verify data"""
         if DEBUG > 1: sys.stderr.write("* programData()\n")
@@ -743,7 +743,7 @@ class BootStrapLoader(LowLevel):
                 self.programBlk(currentAddr, seg.data[pstart:pstart+length], action)
                 pstart = pstart + length
                 currentAddr = currentAddr + length
-                self.byteCtr = self.byteCtr + length #total sum
+                self.byteCtr = self.byteCtr + length # total sum
                 count = count + length
                 if self.showprogess:
                     self.progess_update(count, total)
@@ -760,7 +760,7 @@ class BootStrapLoader(LowLevel):
             data = data + self.bslTxRx(self.BSL_RXBLK,
                                        pstart+startaddress,
                                        length,
-                                       wait=wait)[:-2] #cut away checksum
+                                       wait=wait)[:-2] # cut away checksum
             pstart = pstart + length
         return data
 
@@ -768,23 +768,23 @@ class BootStrapLoader(LowLevel):
         """Transmit password, default if None is given."""
         if DEBUG > 1: sys.stderr.write("* txPassword(%r)\n" % passwd)
         if passwd is None:
-            #Send "standard" password to get access to protected functions.
+            # Send "standard" password to get access to protected functions.
             sys.stderr.write("Transmit default password ...\n")
             sys.stderr.flush()
-            #Flash is completely erased, the contents of all Flash cells is 0xff
+            # Flash is completely erased, the contents of all Flash cells is 0xff
             passwd = chr(0xff)*32
         else:
-            #sanity check of password
+            # sanity check of password
             if len(passwd) != 32:
                 raise ValueError, "password has wrong length (%d)\n" % len(passwd)
             sys.stderr.write('Transmit password ...\n')
             sys.stderr.flush()
-        #send the password
-        self.bslTxRx(self.BSL_TXPWORD,      #Command: Transmit Password
-                       0xffe0,              #Address of interupt vectors
-                       0x0020,              #Number of bytes
-                       passwd,              #password
-                       wait=wait)           #if wait is 1, try to sync forever
+        # send the password
+        self.bslTxRx(self.BSL_TXPWORD,      # Command: Transmit Password
+                       0xffe0,              # Address of interupt vectors
+                       0x0020,              # Number of bytes
+                       passwd,              # password
+                       wait=wait)           # if wait is 1, try to sync forever
 
 
     #-----------------------------------------------------------------
@@ -793,32 +793,32 @@ class BootStrapLoader(LowLevel):
         """Erase the flash memory completely (with mass erase command)"""
         sys.stderr.write("Mass Erase...\n")
         sys.stderr.flush()
-        self.bslReset(1)                            #Invoke the boot loader.
+        self.bslReset(1)                            # Invoke the boot loader.
         for i in range(self.meraseCycles):
             if i == 1: sys.stderr.write("Additional Mass Erase Cycles...\n")
-            self.bslTxRx(self.BSL_MERAS,            #Command: Mass Erase
-                                0xfffe,             #Any address within flash memory.
-                                0xa506)             #Required setting for mass erase!
-        self.passwd = None                          #No password file required!
-        #print "Mass Erase complete"
-        #Transmit password to get access to protected BSL functions.
+            self.bslTxRx(self.BSL_MERAS,            # Command: Mass Erase
+                                0xfffe,             # Any address within flash memory.
+                                0xa506)             # Required setting for mass erase!
+        self.passwd = None                          # No password file required!
+        # print "Mass Erase complete"
+        # Transmit password to get access to protected BSL functions.
         self.txPasswd()
 
     def actionMainErase(self):
         """Erase the main flash memory only"""
         sys.stderr.write("Main Erase...\n")
         sys.stderr.flush()
-        self.bslTxRx(self.BSL_ERASE,                #Command: Segment Erase
-                            0xfffe,                 #Any address within flash memory.
-                            0xa504)                 #Required setting for main erase!
-        self.passwd = None                          #Password gets erased
+        self.bslTxRx(self.BSL_ERASE,                # Command: Segment Erase
+                            0xfffe,                 # Any address within flash memory.
+                            0xa504)                 # Required setting for main erase!
+        self.passwd = None                          # Password gets erased
 
     def actionSegmentErase(self, address):
         """Erase the memory segemnts. Address parameter is an address within the
         segment to be erased"""
-        self.bslTxRx(self.BSL_ERASE,                #Command: Segment Erase
-                            address,                #Any address within flash segment.
-                            0xa502)                 #Required setting for segment erase!
+        self.bslTxRx(self.BSL_ERASE,                # Command: Segment Erase
+                            address,                # Any address within flash segment.
+                            0xa502)                 # Required setting for segment erase!
 
     def makeActionSegmentErase(self, address):
         """Selective segment erase, the returned object can be called
@@ -840,95 +840,95 @@ class BootStrapLoader(LowLevel):
         sys.stderr.write("Invoking BSL...\n")
         sys.stderr.flush()
         if bslreset:
-            self.bslReset(1)                        #Invoke the boot loader.
-        self.txPasswd(self.passwd)                  #transmit password
+            self.bslReset(1)                        # Invoke the boot loader.
+        self.txPasswd(self.passwd)                  # transmit password
 
-        #Read actual bootstrap loader version.
-        #sys.stderr.write("Reading BSL version ...\n")
-        blkin = self.bslTxRx(self.BSL_RXBLK,        #Command: Read/Receive Block
-                          0x0ff0,                   #Start address
-                          16)                       #No. of bytes to read
-        dev_id, bslVerHi, bslVerLo = struct.unpack(">H8xBB4x", blkin[:-2]) #cut away checksum and extract data
+        # Read actual bootstrap loader version.
+        # sys.stderr.write("Reading BSL version ...\n")
+        blkin = self.bslTxRx(self.BSL_RXBLK,        # Command: Read/Receive Block
+                          0x0ff0,                   # Start address
+                          16)                       # No. of bytes to read
+        dev_id, bslVerHi, bslVerLo = struct.unpack(">H8xBB4x", blkin[:-2]) # cut away checksum and extract data
 
-        if self.cpu is None:                        #cpy type forced?
+        if self.cpu is None:                        # cpy type forced?
             if deviceids.has_key(dev_id):
                 self.cpu = deviceids[dev_id]        #try to autodectect CPU type
                 if DEBUG:
                     sys.stderr.write("Autodetect successful: %04x -> %s\n" % (dev_id, self.cpu))
             else:
                 sys.stderr.write("Autodetect failed! Unknown ID: %04x. Trying to continue anyway.\n" % dev_id)
-                self.cpu = F1x                      #assume something and try anyway..
+                self.cpu = F1x                      # assume something and try anyway..
 
         sys.stderr.write("Current bootstrap loader version: %x.%x (Device ID: %04x)\n" % (bslVerHi, bslVerLo, dev_id))
         sys.stderr.flush()
         self.bslVer = (bslVerHi << 8) | bslVerLo
 
-        if self.bslVer <= 0x0110:                   #check if patch is needed
+        if self.bslVer <= 0x0110:                   # check if patch is needed
             self.BSLMemAccessWarning = 1
         else:
-            self.BSLMemAccessWarning = 0 #Fixed in newer versions of BSL.
+            self.BSLMemAccessWarning = 0 # Fixed in newer versions of BSL.
 
         if self.bslVer <= 0x0130 and adjsp:
-            #only do this on BSL where it's needed to prevent
-            #malfunction with F4xx devices/ newer ROM-BSLs
-            
-            #Execute function within bootstrap loader
-            #to prepare stack pointer for the following patch.
-            #This function will lock the protected functions again.
+            # only do this on BSL where it's needed to prevent
+            # malfunction with F4xx devices/ newer ROM-BSLs
+
+            # Execute function within bootstrap loader
+            # to prepare stack pointer for the following patch.
+            # This function will lock the protected functions again.
             sys.stderr.write("Adjust SP. Load PC with 0x0C22 ...\n")
-            self.bslTxRx(self.BSL_LOADPC,           #Command: Load PC
-                                0x0C22)             #Address to load into PC
-            #Re-send password to re-gain access to protected functions.
+            self.bslTxRx(self.BSL_LOADPC,           # Command: Load PC
+                                0x0C22)             # Address to load into PC
+            # Re-send password to re-gain access to protected functions.
             self.txPasswd(self.passwd)
 
-        #get internal BSL replacement if needed or forced by the user
-        #required if speed is set but an old BSL is in the device
-        #if a BSL is given by the user, that one is used and not the internal one
+        # get internal BSL replacement if needed or forced by the user
+        # required if speed is set but an old BSL is in the device
+        # if a BSL is given by the user, that one is used and not the internal one
         if ((mayuseBSL and speed and self.bslVer < 0x0150) or forceBSL) and replacementBSL is None:
             replacementBSL = Memory() #File to program
             if self.cpu == F4x:
                 if DEBUG:
                     sys.stderr.write("Using built in BSL replacement for F4x devices\n")
                     sys.stderr.flush()
-                replacementBSL.loadTIText(cStringIO.StringIO(F4X_BSL))  #parse embedded BSL
+                replacementBSL.loadTIText(cStringIO.StringIO(F4X_BSL))  # parse embedded BSL
             else:
                 if DEBUG:
                     sys.stderr.write("Using built in BSL replacement for F1x devices\n")
                     sys.stderr.flush()
-                replacementBSL.loadTIText(cStringIO.StringIO(F1X_BSL))  #parse embedded BSL
-    
-        #now download the new BSL, if allowed and needed (version lower than the
-        #the replacement) or forced
+                replacementBSL.loadTIText(cStringIO.StringIO(F1X_BSL))  # parse embedded BSL
+
+        # now download the new BSL, if allowed and needed (version lower than the
+        # the replacement) or forced
         if replacementBSL is not None:
             self.actionDownloadBSL(replacementBSL)
 
-        #debug message with the real BSL version in use (may have changed after replacement BSL)
+        # debug message with the real BSL version in use (may have changed after replacement BSL)
         if DEBUG:
             sys.stderr.write("Current bootstrap loader version: 0x%04x\n" % (self.bslVer,))
             sys.stderr.flush()
 
-        #now apply workarounds or patches if BSL in use requires that
-        if self.bslVer <= 0x0110:                   #check if patch is needed
-            if usepatch:                            #test if patch is desired
+        # now apply workarounds or patches if BSL in use requires that
+        if self.bslVer <= 0x0110:                   # check if patch is needed
+            if usepatch:                            # test if patch is desired
                 sys.stderr.write("Patch for flash programming required!\n")
                 self.patchRequired = 1
 
                 sys.stderr.write("Load and verify patch ...\n")
                 sys.stderr.flush()
-                #Programming and verification is done in one pass.
-                #The patch file is only read and parsed once.
+                # Programming and verification is done in one pass.
+                # The patch file is only read and parsed once.
                 segments = Memory()                     #data to program
                 segments.loadTIText(cStringIO.StringIO(PATCH))  #parse embedded patch
-                #program patch
+                # program patch
                 self.programData(segments, self.ACTION_PROGRAM | self.ACTION_VERIFY)
                 self.patchLoaded = 1
             else:
                 if DEBUG:
-                    sys.stderr.write("Device needs patch, but not applied (usepatch is false).\n")    #message if not patched
+                    sys.stderr.write("Device needs patch, but not applied (usepatch is false).\n")    # message if not patched
 
-        #should the baudrate be changed?
+        # should the baudrate be changed?
         if speed is not None:
-            self.actionChangeBaudrate(speed)            #change baudrate
+            self.actionChangeBaudrate(speed)            # change baudrate
 
     def actionDownloadBSL(self, bslsegments):
         """Download and start a new BSL (Devices with 2kB RAM only)"""
@@ -937,11 +937,11 @@ class BootStrapLoader(LowLevel):
         self.programData(bslsegments, self.ACTION_PROGRAM)
         sys.stderr.write("Verify new BSL...\n")
         sys.stderr.flush()
-        self.programData(bslsegments, self.ACTION_VERIFY) #File to verify
+        self.programData(bslsegments, self.ACTION_VERIFY) # File to verify
 
-        #Read startvector of bootstrap loader
-        #blkin = self.bslTxRx(self.BSL_RXBLK, 0x0300, 2)
-        #blkin = self.bslTxRx(self.BSL_RXBLK, 0x0220, 2)
+        # Read startvector of bootstrap loader
+        # blkin = self.bslTxRx(self.BSL_RXBLK, 0x0300, 2)
+        # blkin = self.bslTxRx(self.BSL_RXBLK, 0x0220, 2)
         blkin = self.bslTxRx(self.BSL_RXBLK, bslsegments[0].startaddress, 2)
         startaddr = struct.unpack("<H", blkin[:2])[0]
 
@@ -950,18 +950,18 @@ class BootStrapLoader(LowLevel):
         self.bslTxRx(self.BSL_LOADPC,  #Command: Load PC
                      startaddr)        #Address to load into PC
 
-        #BSL-Bugs should be fixed within "new" BSL
+        # BSL-Bugs should be fixed within "new" BSL
         self.BSLMemAccessWarning = 0
         self.patchRequired = 0
         self.patchLoaded   = 0
 
-        #Re-send password to re-gain access to protected functions.
+        # Re-send password to re-gain access to protected functions.
         if self.retrasnmitPasswd:
             self.txPasswd(self.passwd)
 
-        #update version info
-        #verison only valid for the internal ones, but it also makes sure
-        #that the patches are not applied if the user d/ls one
+        # update version info
+        # verison only valid for the internal ones, but it also makes sure
+        # that the patches are not applied if the user d/ls one
         self.bslVer = 0x0150
 
     def actionEraseCheck(self):
@@ -1003,17 +1003,17 @@ class BootStrapLoader(LowLevel):
         """Start program at specified address"""
         sys.stderr.write("Load PC with 0x%04x ...\n" % address)
         sys.stderr.flush()
-        self.bslTxRx(self.BSL_LOADPC, #Command: Load PC
-                            address)  #Address to load into PC
+        self.bslTxRx(self.BSL_LOADPC, # Command: Load PC
+                            address)  # Address to load into PC
 
-    #table with values from slaa089a.pdf
+    # table with values from slaa089a.pdf
     bauratetable = {
         F1x: {
              9600:[0x8580, 0x0000],
             19200:[0x86e0, 0x0001],
             38400:[0x87e0, 0x0002],
-            57600:[0x0000, 0x0003],     #nonstandard XXX BSL dummy BCSCTL settings!
-           115200:[0x0000, 0x0004],     #nonstandard XXX BSL dummy BCSCTL settings!
+            57600:[0x0000, 0x0003],     # nonstandard XXX BSL dummy BCSCTL settings!
+           115200:[0x0000, 0x0004],     # nonstandard XXX BSL dummy BCSCTL settings!
         },
         F2x: {
              9600:[0x8580, 0x0000],  
@@ -1024,8 +1024,8 @@ class BootStrapLoader(LowLevel):
              9600:[0x9800, 0x0000],
             19200:[0xb000, 0x0001],
             38400:[0xc800, 0x0002],
-            57600:[0x0000, 0x0003],     #nonstandard XXX BSL dummy BCSCTL settings!
-           115200:[0x0000, 0x0004],     #nonstandard XXX BSL dummy BCSCTL settings!
+            57600:[0x0000, 0x0003],     # nonstandard XXX BSL dummy BCSCTL settings!
+           115200:[0x0000, 0x0004],     # nonstandard XXX BSL dummy BCSCTL settings!
         },
     }
     def actionChangeBaudrate(self, baudrate=9600):
@@ -1040,20 +1040,20 @@ class BootStrapLoader(LowLevel):
             a,l = baudconfigs[baudrate]
         except KeyError:
             raise ValueError, "baudrate not valid. valid values are %r" % baudconfigs.keys()
-        
+
         sys.stderr.write("Changing baudrate to %d ...\n" % baudrate)
         if baudrate > 38400:
             sys.stderr.write("Note: The selected baudrate is not TI standard! They will not work with TI's BSLs.\n")
         sys.stderr.flush()
-        self.bslTxRx(self.BSL_CHANGEBAUD,   #Command: change baudrate
-                    a, l)                   #args are coded in adr and len
-        time.sleep(0.010)                   #recomended delay
+        self.bslTxRx(self.BSL_CHANGEBAUD,   # Command: change baudrate
+                    a, l)                   # args are coded in adr and len
+        time.sleep(0.010)                   # recomended delay
         self.serialport.setBaudrate(baudrate)
 
     def actionReadBSLVersion(self):
         """Informational output of BSL version number.
         (newer MSP430-BSLs only)"""
-        ans = self.bslTxRx(self.BSL_TXVERSION, 0) #Command: receive version info
-        #the following values are in big endian style!!!
-        family_type, bsl_version = struct.unpack(">H8xH4x", ans[:-2]) #cut away checksum and extract data
+        ans = self.bslTxRx(self.BSL_TXVERSION, 0) # Command: receive version info
+        # the following values are in big endian style!!!
+        family_type, bsl_version = struct.unpack(">H8xH4x", ans[:-2]) # cut away checksum and extract data
         print "Device Type: 0x%04x\nBSL version: 0x%04x\n" % (family_type, bsl_version)

@@ -23,6 +23,7 @@ BSL_RXBLK           = 0x14    # Receive  block from boot loader
 BSL_ERASE           = 0x16    # Erase one segment
 BSL_MERAS           = 0x18    # Erase complete FLASH memory
 BSL_CHANGEBAUD      = 0x20    # Change baud rate
+BSL_SETMEMOFFSET    = 0x21    # MemoryAddress = OffsetValue << 16 + Actual Address
 BSL_LOADPC          = 0x1A    # Load PC and start execution
 BSL_ERASE_CHECK     = 0x1C    # Erase check of flash
 BSL_TXVERSION       = 0x1E    # Get BSL version
@@ -65,13 +66,17 @@ class BSL(object):
         packet = struct.pack('<HH', 0xfffe, 0xa506)
         answer = self.bsl(BSL_MERAS, packet, expect=0)
 
-    def BSL_ERASE(self, address):
-        packet = struct.pack('<HH', address, 0xa502)
+    def BSL_ERASE(self, address, option=0xa502):
+        packet = struct.pack('<HH', address, option)
         answer = self.bsl(BSL_ERASE, packet, expect=0)
 
     def BSL_CHANGEBAUD(self, bcsctl, multiply):
         packet = struct.pack('<HH', bcsctl, multiply)
         answer = self.bsl(BSL_CHANGEBAUD, packet, expect=0)
+
+    def BSL_SETMEMOFFSET(self, address_hi_bits):
+        packet = struct.pack('<HH', address_hi_bits, 0)
+        answer = self.bsl(BSL_SETMEMOFFSET, packet, expect=0)
 
     def BSL_LOADPC(self, address):
         packet = struct.pack('<HH', address, 0)
@@ -123,6 +128,13 @@ class BSL(object):
     def erase(self, address):
         """Erase Flash segment containing the given address."""
         return self.BSL_ERASE(address)
+
+    def main_erase(self):
+        """Erase Flash segment containing the given address."""
+        # must execute command multiple times to meet cumulative erase time
+        # required, see slaa89d, pg. 8
+        for i in range(12):
+            self.BSL_ERASE(0xff00, 0xa504)
 
     def execute(self, address):
         """Start executing code on the target"""

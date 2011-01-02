@@ -86,9 +86,11 @@ if options.start_address is None:
 
 # create data
 if options.count:
-    data = ''.join([struct.pack("<H", x) for x in xrange(options.start_address, options.start_address + options.size, 2)])
+    data = ''.join([struct.pack("<H", x & 0xffff) 
+            for x in xrange(options.start_address, options.start_address + options.size, 2)])
 else:
-    data = ''.join([struct.pack("<H", options.const) for x in xrange(options.start_address, options.start_address + options.size, 2)])
+    data = ''.join([struct.pack("<H", options.const) 
+            for x in xrange(options.start_address, options.start_address + options.size, 2)])
 
 mem.append(memory.Segment(options.start_address, data))
 

@@ -18,16 +18,16 @@ def hexdump( (adr, memstr), output=sys.stdout ):
     count = 0
     ascii = ''
     for value in map(ord, memstr):
-        if not count: output.write("%04x:  " % adr)
+        if not count: output.write("%08x: " % adr)
         output.write("%02x " % value)
         ascii += (32 <= value < 128) and chr(value) or '.'
         count += 1
         adr += 1
         if count == 16:
             count = 0
-            output.write("   %s\n" % ascii)
+            output.write("  %s\n" % ascii)
             ascii = ''
-    if count < 16: output.write("%s   %s\n" % ("   "*(16-count), ascii))
+    if count < 16: output.write("%s  %s\n" % ("   "*(16-count), ascii))
 
 
 def save(memory, filelike):

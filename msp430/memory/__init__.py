@@ -7,7 +7,12 @@ import error
 
 
 class DataStream(object):
-    """An iterator for addressed bytes"""
+    """\
+    An iterator for addressed bytes. It yields all the bytes of a ``Memory``
+    instance in ascending order. It allows peeking at the current position
+    by reading the ``.address`` attribute. ``None`` signals that there are
+    no more bytes (and ``next()`` would raise ``StopIteration``).
+    """
     def __init__(self, memory):
         self.segments = sorted(list(memory.segments))   # get a sorted copy
         self.address = None
@@ -41,6 +46,12 @@ class DataStream(object):
 
 
 def stream_merge(*streams):
+    """\
+    Merge multiple streams of addressed bytes. If data is overlapping, take
+    it from the later stream in the list.
+
+    :param streams: Any number of ``DataStream`` instances.
+    """
     streams = list(streams)
     while streams:
         # get the lowest address, if there are several entries with the same
@@ -68,7 +79,7 @@ def stream_merge(*streams):
 
 
 class Segment:
-    """store a string with memory contents along with its startaddress"""
+    """Store a string or list with memory contents (bytes) along with its startaddress"""
     def __init__(self, startaddress = 0, data=None):
         if data is None:
             self.data = ''
@@ -220,6 +231,7 @@ def load(filename, fileobj=None, format=None):
     """\
     Return a Memory object with the contents of a file.
     File type is determined from extension and/or inspection of content.
+
     :param filename: Name of the file to open
     :param fileobj: None to let this function open the file or an open, seekable file object
     :param format: File format name, ``None`` for auto detection.
@@ -253,7 +265,7 @@ def load(filename, fileobj=None, format=None):
                         return titext.load(fileobj)
                     except error.FileFormatError:
                         raise error.FileFormatError(
-                                'file %s could not be loaded (not ELF, Intel-Hex, or TI-Text)' % (filename,))
+                                'file %s could not be loaded (auto detection failed)' % (filename,))
         else:
             if format == 'titext':
                 return titext.load(fileobj)

@@ -57,6 +57,9 @@ def load(filelike):
     """\
     Read back a hex dump. As hex dumps can look different, only a subset of
     formats can be read. Its main purpose is to read the own format back.
+
+    Note: The hex dump is decoded, the ASCII dump is required for correct
+          decoding but is itself not decoded.
     """
     memory = msp430.memory.Memory()
     segmentdata = []
@@ -74,11 +77,19 @@ def load(filelike):
                 last_address = address
                 segment_address = address
                 segmentdata = []
-            # remove white space and take the first 2*16 hex digits
+            # We remove any whitespace and count the total number of chars to
+            # find out how many digits there are. The ASCII dump is counted
+            # too. The advantage of this method is that the gaps in the dump
+            # and the space between hex and ASCII dump are irrelevant. The
+            # drawback is that the ASCII dump needs to be present.
+
+            # remove white space
             hex_data = dump.replace(' ', '')
             # find out how many digits are relevant
             digits = 2 * len(hex_data) / 3
+            # take these and decode the hex data
             segmentdata.append(hex_data[:digits].decode('hex'))
+            # update address
             last_address += digits / 2
         except Exception, e:
             raise msp430.memory.error.FileFormatError(

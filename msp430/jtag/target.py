@@ -251,12 +251,12 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             if self.options.do_secure:
                 self.add_action(self.jtagobj.actionSecure)
 
-            if self.verbose > 1:
-                try:
-                    self.jtagobj.setDebugLevel(self.options.verbose - 1)
-                except IOError:
-                    sys.stderr.write("WARNING: Failed to set debug level in backend library\n")
-                memory.DEBUG = self.options.verbose
+            internal_level = max(self.verbose - 1, 0)
+            try:
+                self.jtagobj.setDebugLevel(internal_level)
+            except IOError:
+                sys.stderr.write("WARNING: Failed to set debug level in backend library\n")
+            #~ memory.DEBUG = internal_level
 
             if self.options.progress:
                 self.jtagobj.showprogess = 1
@@ -309,7 +309,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             sys.argv.remove(x)
             break
     if library_path is not None:
-        print sys.argv
+        #~ print sys.argv
         if sys.platform == 'win32':
             os.environ['PATH'] = '%s;%s' % (library_path, os.environ.get('PATH', ''))
         else:

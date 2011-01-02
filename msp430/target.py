@@ -180,6 +180,8 @@ class Target(object):
             self.erase(0x1080)
         else:
             raise UnsupportedMCUFamily('%02x not supported' % mcu_family)
+        if self.verbose:
+            sys.stderr.write('Erase infomem: done\n')
 
     def upload(self, start, end):
         """upload given memory range and store it in upload_data"""
@@ -195,6 +197,8 @@ class Target(object):
                 sys.stderr.write("Upload 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
             data = self.memory_read(segment.startaddress, len(segment.data))
             self.upload_data.append(memory.Segment(segment.startaddress, data))
+        if self.verbose:
+            sys.stderr.write('Upload by file: done\n')
 
     def program_file(self):
         """download data from self.download_data"""
@@ -205,6 +209,8 @@ class Target(object):
             if len(segment.data) & 1:
                 segment.data += '\xff'
             self.memory_write(segment.startaddress, segment.data)
+        if self.verbose:
+            sys.stderr.write('Programming: OK\n')
 
     def verify_by_file(self):
         """upload and compare to self.download_data"""
@@ -215,7 +221,8 @@ class Target(object):
             if data != segment.data:
                 raise Exception("verify failed at 0x%04x" % (segment.startaddress,))
             # XXX show hex DIFF
-        sys.stderr.write('Verify by file: OK\n')
+        if self.verbose:
+            sys.stderr.write('Verify by file: OK\n')
 
     def erase_check_by_file(self):
         """upload address ranges used in self.download_data and check if memory erased (0xff)"""
@@ -226,7 +233,38 @@ class Target(object):
             if data != '\xff'*len(segment.data):
                 raise Exception("erase check failed at 0x%04x" % (segment.startaddress,))
             # XXX show hex DIFF
-        sys.stderr.write('Erase check by file: OK\n')
+        if self.verbose:
+            sys.stderr.write('Erase check by file: OK\n')
+
+    def flash_segment_size(self, address):
+        """Determine the Flash segment size"""
+        # XXX make it device family aware
+        if address < 0x1000:
+            modulo = 64
+        elif address < 0x1100:
+            modulo = 256
+        else:
+            modulo = 512
+        return modulo
+
+    def erase_by_file(self):
+        """\
+        Erase Flash segments that will be used by the data in self.download_data.
+        """
+        for segment in self.download_data:
+            address = segment.startaddress
+            # mask address to get to segment start
+            address -= address % self.flash_segment_size(address)
+            end_address = segment.startaddress + len(segment.data)
+            #~ end_address |= self.flash_segment_size(end_address) - 1
+            if self.verbose > 1:
+                sys.stderr.write("Erase segments at 0x%04x-0x%04x\n" % (address, end_address))
+            while address < end_address:
+                self.erase(address)
+                address += self.flash_segment_size(address)
+        if self.verbose:
+            sys.stderr.write('Erase by file: OK\n')
+
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # command line interface implementation
@@ -309,6 +347,12 @@ done separately with --erase=0x10c0 or --info-erase".
                 default=False,
                 action='store_true')
 
+        group.add_option("-b", "--erase-by-file",
+                dest="do_erase_by_file",
+                help="erase only Flash segments where new data is downloaded",
+                default=False,
+                action='store_true')
+
         group.add_option("--erase",
                 dest="erase_list",
                 help="selectively erase segment at the specified address or address range",
@@ -328,7 +372,7 @@ verification through uploading the written data for a 1:1 compare.
 No default action is taken if "-P", "-V" or "-E" is given, say specifying
 only "-V" does a "check by file" of a programmed device without programming.
 
-Don't forget to erase ("-e", "-eE" or "-m") before programming flash!
+Don't forget to erase ("-e", "-b" or "-m") before programming flash!
 """)
         group.add_option("-E", "--erase-check",
                 dest="do_erase_check",
@@ -477,6 +521,8 @@ Multiple --upload options are allowed.
             self.add_action(self.mass_erase)
         if self.options.do_main_erase:
             self.add_action(self.main_erase)
+        if self.options.do_erase_by_file:
+            self.add_action(self.erase_by_file)
         if self.options.do_info_erase:
             self.add_action(self.erase_infomem)
         for a in self.options.erase_list:

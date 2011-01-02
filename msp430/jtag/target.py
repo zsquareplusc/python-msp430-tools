@@ -92,6 +92,7 @@ if __name__ == '__main__':
             msp430.target.Target.__init__(self)
             self.logger = logging.getLogger('JTAG')
 
+            # some variables used in help texts
             self.text_variables = {
                 'prog': sys.argv[0],
                 'version': VERSION,
@@ -100,6 +101,7 @@ if __name__ == '__main__':
             }
 
         def help_on_backends(self):
+            """Show extended help text on backends"""
             sys.stderr.write("""\
 %(prog)s can use different libraries to connect to the target.
 The backend can be chosen with the --backend command line option.
@@ -129,7 +131,7 @@ Software support for interfaces:
 
 Notes:
     (1) 4 wire JTAG on devices with spy-bi-wire capability needs special
-        timings.
+        timing.
     (2) Timing critical, may not work on all machines or at every try.
     (3) Using --spy-bi-wire-jtag option.
     (4) Using --spy-bi-wire option.
@@ -227,7 +229,9 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
 """ % self.text_variables)
             self.parser.add_option_group(group)
 
+
         def parse_extra_options(self):
+            """Process the extra options we added above"""
             if self.options.help_backend:
                 self.help_on_backends()
                 sys.exit()
@@ -261,18 +265,6 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             if self.options.progress:
                 self.jtagobj.showprogess = 1
 
-            if self.options.slowdown is not None:
-                import ctypes
-                if sys.platform == 'win32':
-                    HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
-                else:
-                    # XXX and posix platforms?!
-                    HIL_SetSlowdown = ctypes.cdll.HIL.HIL_SetSlowdown
-                HIL_SetSlowdown.argtypes  = [ctypes.c_ulong]
-                #~ HIL_SetSlowdown.restype   = ctypes.c_int # actually void
-                # set slowdown
-                HIL_SetSlowdown(self.options.slowdown)
-
             if self.verbose:
                 sys.stderr.write("MSP430 JTAG programmer Version: %s\n" % VERSION)
 
@@ -280,15 +272,29 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
 
 
         def close_connection(self):
+            """Close connection to target"""
             self.close()
 
 
         def open_connection(self):
-            self.jtagobj.open(self.options.port_name)            # try to open port
+            """Connect to target"""
+            self.jtagobj.open(self.options.port_name)   # try to open port
             if self.options.ramsize is not None:
                 self.jtagobj.setRamsize(self.options.ramsize)
+            self.jtagobj.connect()                  # connect to target
 
-            self.jtagobj.connect()                               # connect to target
+            if self.options.slowdown is not None:
+                import ctypes
+                if sys.platform == 'win32':
+                    HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
+                else:
+                    # XXX and posix platforms?!
+                    libHIL, backend_info = jtag.locate_library('libHIL.so', jtag.search_path, ctypes.cdll)
+                    HIL_SetSlowdown = libHIL.HIL_SetSlowdown
+                HIL_SetSlowdown.argtypes  = [ctypes.c_ulong]
+                #~ HIL_SetSlowdown.restype   = ctypes.c_int # actually void
+                # set slowdown
+                HIL_SetSlowdown(int(self.options.slowdown))
 
 
 

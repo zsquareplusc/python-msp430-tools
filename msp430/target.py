@@ -153,29 +153,40 @@ class Target(object):
         self.debug = True   # XXX
 
 
+    def flash_segment_size(self, address):
+        """Determine the Flash segment size"""
+        # XXX make it device family aware
+        if address < 0x1000:
+            modulo = 64
+        elif address < 0x1100:
+            modulo = 256
+        else:
+            modulo = 512
+        return modulo
+
     def get_mcu_family(self):
         version_row = self.version()
         return version_row[0]
 
     def erase_infomem(self):
         if self.verbose > 2:
-            sys.stderr.write("Erase info: check MCU type\n")
+            sys.stderr.write("Erase infomem: check MCU type\n")
         mcu_family = self.get_mcu_family()
         if mcu_family == F1x:
             if self.verbose > 1:
-                sys.stderr.write("Erase info: F1xx 0x1000, 2*128B\n")
+                sys.stderr.write("Erase infomem: F1xx 0x1000, 2*128B\n")
             self.erase(0x1000)
             self.erase(0x1080)
         elif mcu_family == F2x:
             if self.verbose > 1:
-                sys.stderr.write("Erase info: F2xx 0x1000, 4*64B\n")
+                sys.stderr.write("Erase infomem: F2xx 0x1000, 4*64B\n")
             self.erase(0x1000)
             self.erase(0x1040)
             self.erase(0x1080)
             self.erase(0x10c0)
         elif mcu_family == F4x:
             if self.verbose > 1:
-                sys.stderr.write("Erase info: F4xx 0x1000, 2*128B\n")
+                sys.stderr.write("Erase infomem: F4xx 0x1000, 2*128B\n")
             self.erase(0x1000)
             self.erase(0x1080)
         else:
@@ -236,17 +247,6 @@ class Target(object):
         if self.verbose:
             sys.stderr.write('Erase check by file: OK\n')
 
-    def flash_segment_size(self, address):
-        """Determine the Flash segment size"""
-        # XXX make it device family aware
-        if address < 0x1000:
-            modulo = 64
-        elif address < 0x1100:
-            modulo = 256
-        else:
-            modulo = 512
-        return modulo
-
     def erase_by_file(self):
         """\
         Erase Flash segments that will be used by the data in self.download_data.
@@ -255,11 +255,10 @@ class Target(object):
             address = segment.startaddress
             # mask address to get to segment start
             address -= address % self.flash_segment_size(address)
-            end_address = segment.startaddress + len(segment.data)
-            #~ end_address |= self.flash_segment_size(end_address) - 1
+            end_address = segment.startaddress + len(segment.data) - 1
             if self.verbose > 1:
                 sys.stderr.write("Erase segments at 0x%04x-0x%04x\n" % (address, end_address))
-            while address < end_address:
+            while address <= end_address:
                 self.erase(address)
                 address += self.flash_segment_size(address)
         if self.verbose:
@@ -458,6 +457,7 @@ Multiple --upload options are allowed.
 
         self.parser.add_option_group(group)
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def add_action(self, function, *args, **kwargs):
         """Store a function to be called and parameters in the list of actions"""
@@ -473,6 +473,7 @@ Multiple --upload options are allowed.
         else:
             raise IndexError('not found in action list')
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def parse_args(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -645,10 +646,11 @@ Multiple --upload options are allowed.
             if abort_due_to_error:
                 sys.stderr.write("Cleaning up after error...\n")
             if not self.options.no_close:
-                self.close_connection()                             # release communication port
+                self.close_connection()                     # release communication port
             elif self.verbose:
                 sys.stderr.write("WARNING: port is left open (--no-close)\n")
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def main(self):
         """Main command line entry"""
@@ -664,7 +666,7 @@ Multiple --upload options are allowed.
         except SystemExit:
             raise                                           # let pass exit() calls
         except KeyboardInterrupt:
-            #~ if self.debug: raise                            # show full trace in debug mode
+            if self.debug: raise                            # show full trace in debug mode
             sys.stderr.write("\nAbort on user request.\n")  # short messy in user mode
             sys.exit(1)                                     # set error level for script usage
         except Exception, msg:                              # every Exception is caught and displayed

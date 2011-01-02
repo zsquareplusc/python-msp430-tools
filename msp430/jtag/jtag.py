@@ -12,6 +12,7 @@
 # $Id: jtag.py,v 1.15 2009/02/10 16:30:10 cliechti Exp $
 
 import sys
+import os
 
 # erase modes
 ERASE_SEGMENT = 0       # Erase a segment.
@@ -65,12 +66,27 @@ CTYPES_TI = "ctypes/TI or 3rd party"
 # exceptions
 class JTAGException(Exception): pass
 
+# create a wrapper class with ctypes, that has the same API as _parjtag
+def locate_library(libname, paths=sys.path, loader=None):
+    if loader is None: loader=ctypes.windll
+    for path in paths:
+        if path.lower().endswith('.zip'):
+            path = os.path.dirname(path)
+        library = os.path.join(path, libname)
+        if DEBUG > 4: sys.stderr.write('trying %r...\n' % library)
+        if os.path.exists(library):
+            if DEBUG > 4: sys.stderr.write('using %r\n' % library)
+            return loader.LoadLibrary(library), library
+    else:
+        raise IOError('%s not found' % libname)
+
 backend = None
 backend_info = None
 def init_backend(force=None):
     global backend
     global backend_info
     global _parjtag
+    global search_path
 
     # 1st try the ctypes implementation, if that's not available try to use the C extension
     try:
@@ -93,21 +109,6 @@ def init_backend(force=None):
         else:
             backend = PARJTAG
     else:
-        import os
-        # create a wrapper class with ctypes, that has the same API as _parjtag
-        def locate_library(libname, paths=sys.path, loader=None):
-            if loader is None: loader=ctypes.windll
-            for path in paths:
-                if path.lower().endswith('.zip'):
-                    path = os.path.dirname(path)
-                library = os.path.join(path, libname)
-                if DEBUG > 4: sys.stderr.write('trying %r...\n' % library)
-                if os.path.exists(library):
-                    if DEBUG > 4: sys.stderr.write('using %r\n' % library)
-                    return loader.LoadLibrary(library), library
-            else:
-                raise IOError('%s not found' % libname)
-
         # an absolute path to the library can be given.
         # LIBMSPGCC_PATH is used to pass its location
         search_path = sys.path[:]   #copy sys.path list

@@ -518,6 +518,7 @@ class JTAG:
         """Set level of debugging messages."""
         global DEBUG
         DEBUG = level
+        self.verbose = level
         # this option is only available in the mspgcc library
         if backend == CTYPES_MSPGCC:
             _parjtag.configure(DEBUG_OPTION, level)

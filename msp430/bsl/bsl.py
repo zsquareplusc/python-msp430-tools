@@ -98,6 +98,16 @@ class BSL(object):
         answer = self.bsl(BSL_RESET, "\0"*4, expect=0)
 
     # - - - - - - High level functions - - - - - -
+
+    def __init__(self):
+        self.extended_address_mode = False
+
+    def check_extended(self):
+        """Automitcally determine if BSL_SETMEMOFFSET can be used"""
+        device_id, bsl_version = struct.unpack(">H8xH4x", self.version())
+        if bsl_version > 0x0212:
+            self.extended_address_mode = True
+
     def memory_read(self, address, length):
         """\
         Read from memory. It creates multiple BSL_RXBLK commands internally
@@ -106,7 +116,9 @@ class BSL(object):
         data = []
         while length:
             size = min(self.MAXSIZE, length)
-            data.append(self.BSL_RXBLK(address, size))
+            if self.extended_address_mode:
+                self.BSL_SETMEMOFFSET(address >> 16)
+            data.append(self.BSL_RXBLK(address & 0xffff, size))
             address += size
             length -= size
         return ''.join(data)
@@ -118,7 +130,9 @@ class BSL(object):
         """
         while data:
             block, data = data[:self.MAXSIZE], data[self.MAXSIZE:]
-            self.BSL_TXBLK(address, block)
+            if self.extended_address_mode:
+                self.BSL_SETMEMOFFSET(address >> 16)
+            self.BSL_TXBLK(address & 0xffff, block)
             address += len(block)
 
     def mass_erase(self):
@@ -168,6 +182,7 @@ class BSL(object):
             # we can't verify the success of the reset...
             pass
         return True
+
 
 # ----- test code only below this line -----
 

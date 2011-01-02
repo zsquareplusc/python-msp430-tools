@@ -36,6 +36,7 @@ class SerialBSL(bsl.BSL):
     """
 
     def __init__(self):
+        bsl.BSL.__init__(self)
         self.serial = None
         self.logger = logging.getLogger('BSL')
         self.extra_timeout = None
@@ -59,7 +60,7 @@ class SerialBSL(bsl.BSL):
                 stopbits=serial.STOPBITS_TWO,
                 timeout=1,
             )
-        except AttributeError:  # old PySerial versions do not have serial_for_url
+        except AttributeError:  # old pySerial versions do not have serial_for_url
             self.serial = serial.Serial(
                 port,
                 baudrate=baudrate,
@@ -384,6 +385,10 @@ if __name__ == '__main__':
                     password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
                     logger.info("Transmitting password: %s" % (password.encode('hex'),))
                     self.BSL_TXPWORD(password)
+
+            # check for extended features (e.g. >64kB support)
+            logger.debug('Checking if device has extended features')
+            self.check_extended()
 
             if self.options.speed is not None:
                 try:

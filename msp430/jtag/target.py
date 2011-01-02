@@ -12,6 +12,7 @@ and HIL.dll/libHIL.so
 """
 
 import sys
+import os
 import struct
 import logging
 import time
@@ -151,6 +152,11 @@ Features of backends:
                     default=False,
                     action='store_true')
 
+            self.parser.add_option("-l", "--library-path",
+                    dest="library_path",
+                    help="search for %(msp430)s or %(msp430mspgcc)s in this place first" % self.text_variables,
+                    default=None)
+
             group = OptionGroup(self.parser, "Connection", """\
 NOTE: On Windows, use "USB", "TIUSB" or "COM5" etc if using MSP430.dll from TI.
 On other platforms, e.g. Linux, use "/dev/ttyUSB0" etc. if using
@@ -169,7 +175,7 @@ inaccurate for large values.
                     help="select an alternate backend. See --help-backend for more information",
                     default=None)
 
-            group.add_option("-l", "--lpt",
+            group.add_option("-p", "--port",
                     dest="port_name",
                     metavar="PORT",
                     help='specify an other parallel port or serial port for the USBFET (the later requires %(msp430)s instead of %(msp430mspgcc)s).  (defaults to "LPT1" ("/dev/parport0" on Linux))' % self.text_variables,
@@ -285,6 +291,34 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             self.jtagobj.connect()                               # connect to target
 
 
+
+    # special preprocessing of command line arguments.
+    # because setting the LD_LIBRARY_PATH only works correctly for new
+    # processes, as the loader for the current one does not re-check the
+    # variable. therefore we have to restart ourselves. do this now before any
+    # other actions have been done, such as writing to stdout/stderr.
+    library_path = None
+    for x in sys.argv:
+        if x.startswith('-l=') or x.startswith('--library-path='):
+            _, library_path = x.split('=', 1)
+            sys.argv.remove(x)
+            break
+        if x == '-l' or x == '--library-path':
+            index = sys.argv.index(x)
+            library_path = sys.argv.pop(index+1)
+            sys.argv.remove(x)
+            break
+    if library_path is not None:
+        print sys.argv
+        if sys.platform == 'win32':
+            os.environ['PATH'] = '%s;%s' % (library_path, os.environ.get('PATH', ''))
+        else:
+            os.environ['LD_LIBRARY_PATH'] = library_path
+            os.environ['LIBMSPGCC_PATH'] = library_path
+        # start a new process
+        # XXX this does only work if module is in pythons search path..
+        os.execve(sys.executable, [sys.executable, '-m', 'msp430.jtag.target'] + sys.argv[1:], os.environ)
+        #~ os.execve(sys.executable, [sys.executable, __file__] + sys.argv, os.environ)
 
     # run the main application
     jtag_target = JTAG()

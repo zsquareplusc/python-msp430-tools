@@ -9,14 +9,16 @@
 # $Id: msp430-bsl.py,v 1.12 2006/04/23 21:28:24 cliechti Exp $
 
 import sys
-from mspgcc.util import curry, hexdump, makeihex
-from mspgcc import memory, bsl
+from msp430.memory.hexdump import hexdump
+from msp430.memory import intelhex
+from msp430 import memory
+from msp430.legacy import bsl
 
 VERSION = "2.0"
 
-DEBUG = 0                                       #disable debug messages by default
+DEBUG = 0   # disable debug messages by default
 
-#enumeration of output formats for uploads
+# enumeration of output formats for uploads
 HEX             = 0
 INTELHEX        = 1
 BINARY          = 2
@@ -125,17 +127,17 @@ erased before programming.
 """ % (sys.argv[0], VERSION))
 
 
-#Main:
+# Main:
 def main():
     global DEBUG
     import getopt
     filetype    = None
     filename    = None
-    comPort     = 0     #Default setting.
+    comPort     = 0     # Default setting.
     speed       = None
     unpatched   = 0
     reset       = 0
-    wait        = 0     #wait at the end
+    wait        = 0     # wait at the end
     goaddr      = None
     bslobj      = bsl.BootStrapLoader()
     toinit      = []
@@ -173,22 +175,22 @@ def main():
             sys.exit()
         elif o in ("-c", "--comport"):
             try:
-                comPort = int(a)                    #try to convert decimal
+                comPort = int(a)                    # try to convert decimal
             except ValueError:
-                comPort = a                         #take the string and let serial driver decide
+                comPort = a                         # take the string and let serial driver decide
         elif o in ("-P", "--password"):
-            #extract password from file
+            # extract password from file
             bslobj.passwd = memory.Memory(a).getMemrange(0xffe0, 0xffff)
         elif o in ("-w", "--wait"):
             wait = 1
         elif o in ("-f", "--framesize"):
             try:
-                maxData = int(a)                    #try to convert decimal
+                maxData = int(a)                    # try to convert decimal
             except ValueError:
                 sys.stderr.write("Framesize must be a valid number\n")
                 sys.exit(2)
-            #Make sure that conditions for maxData are met:
-            #( >= 16 and == n*16 and <= MAX_DATA_BYTES!)
+            # Make sure that conditions for maxData are met:
+            # ( >= 16 and == n*16 and <= MAX_DATA_BYTES!)
             if maxData > bsl.BootStrapLoader.MAX_DATA_BYTES:
                 maxData = bsl.BootStrapLoader.MAX_DATA_BYTES
             elif maxData < 16:
@@ -197,11 +199,11 @@ def main():
             sys.stderr.write( "Max. number of data bytes within one frame set to %i.\n" % maxData)
         elif o in ("-m", "--erasecycles"):
             try:
-                meraseCycles = int(a)              #try to convert decimal
+                meraseCycles = int(a)              # try to convert decimal
             except ValueError:
                 sys.stderr.write("Erasecycles must be a valid number\n")
                 sys.exit(2)
-            #sanity check of value
+            # sanity check of value
             if meraseCycles < 1:
                 sys.stderr.write("Erasecycles must be a positive number\n")
                 sys.exit(2)
@@ -210,9 +212,9 @@ def main():
             sys.stderr.write( "Number of mass erase cycles set to %i.\n" % meraseCycles)
             bslobj.meraseCycles = meraseCycles
         elif o in ("-e", "--masserase"):
-            toinit.append(bslobj.actionMassErase)  #Erase entire Flash
+            toinit.append(bslobj.actionMassErase)  # Erase entire Flash
         elif o in ("-m", "--mainerase"):
-            toinit.append(bslobj.actionMainErase)  #Erase main Flash
+            toinit.append(bslobj.actionMainErase)  # Erase main Flash
         elif o == "--erase":
             if '-' in a:
                 adr, adr2 = a.split('-', 1)
@@ -244,19 +246,19 @@ def main():
                     sys.stderr.write("Segment address must be a valid number in dec, hex or octal or a range adr1-adr2\n")
                     sys.exit(2)
         elif o in ("-E", "--erasecheck"):
-            toinit.append(bslobj.actionEraseCheck) #Erase Check (by file)
+            toinit.append(bslobj.actionEraseCheck) # Erase Check (by file)
         elif o in ("-p", "--programm"):
-            todo.append(bslobj.actionProgram)      #Program file
+            todo.append(bslobj.actionProgram)      # Program file
         elif o in ("-v", "--verify"):
-            todo.append(bslobj.actionVerify)       #Verify file
+            todo.append(bslobj.actionVerify)       # Verify file
         elif o in ("-r", "--reset"):
             reset = 1
         elif o in ("-g", "--go"):
             try:
-                goaddr = int(a)                    #try to convert decimal
+                goaddr = int(a)                    # try to convert decimal
             except ValueError:
                 try:
-                    goaddr = int(a[2:],16)         #try to convert hex
+                    goaddr = int(a[2:],16)         # try to convert hex
                 except ValueError:
                     sys.stderr.write("Go address must be a valid number\n")
                     sys.exit(2)
@@ -269,10 +271,10 @@ def main():
             memory.DEBUG = memory.DEBUG + 1
         elif o in ("-u", "--upload"):
             try:
-                startaddr = int(a)                  #try to convert decimal
+                startaddr = int(a)                  # try to convert decimal
             except ValueError:
                 try:
-                    startaddr = int(a,16)           #try to convert hex
+                    startaddr = int(a,16)           # try to convert hex
                 except ValueError:
                     sys.stderr.write("Upload address must be a valid number\n")
                     sys.exit(2)
@@ -285,29 +287,29 @@ def main():
                 except ValueError:
                     sys.stderr.write("Size must be a valid number\n")
                     sys.exit(2)
-        #outut formats
+        # outut formats
         elif o in ("-x", "--hex"):
             outputformat = HEX
         elif o in ("-b", "--bin"):
             outputformat = BINARY
         elif o in ("-i", "--ihex"):
             outputformat = INTELHEX
-        #input formats
+        # input formats
         elif o in ("-I", "--intelhex"):
             filetype = 0
         elif o in ("-T", "--titext"):
             filetype = 1
-        #others
+        # others
         elif o in ("-N", "--notimeout"):
             notimeout = 1
         elif o in ("-B", "--bsl"):
-            bslrepl = memory.Memory() #File to program
+            bslrepl = memory.Memory() # File to program
             bslrepl.loadFile(a)
         elif o in ("-V", "--bslversion"):
-            todo.append(bslobj.actionReadBSLVersion) #load replacement BSL as first item
+            todo.append(bslobj.actionReadBSLVersion) # load replacement BSL as first item
         elif o in ("-S", "--speed"):
             try:
-                speed = int(a)                      #try to convert decimal
+                speed = int(a)                      # try to convert decimal
             except ValueError:
                 sys.stderr.write("Speed must be decimal number\n")
                 sys.exit(2)
@@ -334,14 +336,14 @@ def main():
 
     if len(args) == 0:
         sys.stderr.write("Use -h for help\n")
-    elif len(args) == 1:                            #a filename is given
-        if not todo:                                #if there are no actions yet
-            todo.extend([                           #add some useful actions...
+    elif len(args) == 1:                            # a filename is given
+        if not todo:                                # if there are no actions yet
+            todo.extend([                           # add some useful actions...
                 bslobj.actionProgram,
                 bslobj.actionVerify,
             ])
         filename = args[0]
-    else:                                           #number of args is wrong
+    else:                                           # number of args is wrong
         usage()
         sys.exit(2)
 
@@ -384,39 +386,39 @@ def main():
                     sys.stderr.write("   %s\n" % f.func_name)
                 except AttributeError:
                     sys.stderr.write("   %r\n" % f)
-    
+
     sys.stderr.flush()
-    
+
     #prepare data to download
-    bslobj.data = memory.Memory()                          #prepare downloaded data
-    if filetype is not None:                        #if the filetype is given...
+    bslobj.data = memory.Memory()                   # prepare downloaded data
+    if filetype is not None:                        # if the filetype is given...
         if filename is None:
             raise ValueError("No filename but filetype specified")
-        if filename == '-':                         #get data from stdin
+        if filename == '-':                         # get data from stdin
             file = sys.stdin
         else:
-            file = open(filename, "rb")             #or from a file
-        if filetype == 0:                           #select load function
-            bslobj.data.loadIHex(file)              #intel hex
+            file = open(filename, "rb")             # or from a file
+        if filetype == 0:                           # select load function
+            bslobj.data.loadIHex(file)              # intel hex
         elif filetype == 1:
-            bslobj.data.loadTIText(file)            #TI's format
+            bslobj.data.loadTIText(file)            # TI's format
         else:
             raise ValueError("Illegal filetype specified")
-    else:                                           #no filetype given...
-        if filename == '-':                         #for stdin:
-            bslobj.data.loadIHex(sys.stdin)         #assume intel hex
+    else:                                           # no filetype given...
+        if filename == '-':                         # for stdin:
+            bslobj.data.loadIHex(sys.stdin)         # assume intel hex
         elif filename:
-            bslobj.data.loadFile(filename)          #autodetect otherwise
+            bslobj.data.loadFile(filename)          # autodetect otherwise
 
     if DEBUG > 3: sys.stderr.write("File: %r" % filename)
 
-    bslobj.comInit(comPort)                         #init port
+    bslobj.comInit(comPort)                         # init port
 
     #initialization list
     if toinit:  #erase and erase check
         if DEBUG: sys.stderr.write("Preparing device ...\n")
-        #bslobj.actionStartBSL(usepatch=0, adjsp=0)     #no workarounds needed
-        #if speed: bslobj.actionChangeBaudrate(speed)   #change baud rate as fast as possible
+        #bslobj.actionStartBSL(usepatch=0, adjsp=0)     # no workarounds needed
+        #if speed: bslobj.actionChangeBaudrate(speed)   # change baud rate as fast as possible
         for f in toinit: f()
 
     if todo or goaddr or startaddr:
@@ -432,38 +434,47 @@ def main():
 
     #work list
     if todo:
-        for f in todo: f()                          #work through todo list
+        for f in todo: f()                          # work through todo list
 
-    if reset:                                       #reset device first if desired
+    if reset:                                       # reset device first if desired
         bslobj.actionReset()
 
-    if goaddr is not None:                          #start user programm at specified address
-        bslobj.actionRun(goaddr)                    #load PC and execute
+    if goaddr is not None:                          # start user program at specified address
+        bslobj.actionRun(goaddr)                    # load PC and execute
 
-    #upload datablock and output
+    # upload data block and output
     if startaddr is not None:
-        if goaddr:                                  #if a program was started...
-            #don't restart BSL but wait for the device to enter it itself
+        if goaddr:                                  # if a program was started...
+            # don't restart BSL but wait for the device to enter it itself
             sys.stderr.write("Waiting for device to reconnect for upload: ")
             sys.stderr.flush()
-            bslobj.txPasswd(bslobj.passwd, wait=1)     #synchronize, try forever...
-            data = bslobj.uploadData(startaddr, size)  #upload data
+            bslobj.txPasswd(bslobj.passwd, wait=1)     # synchronize, try forever...
+            data = bslobj.uploadData(startaddr, size)  # upload data
         else:
-            data = bslobj.uploadData(startaddr, size)  #upload data
-        if outputformat == HEX:                     #depending on output format
-            hexdump( (startaddr, data) )            #print a hex display
+            data = bslobj.uploadData(startaddr, size)  # upload data
+        if outputformat == HEX:                     # depending on output format
+            hexdump( (startaddr, data) )            # print a hex display
         elif outputformat == INTELHEX:
-            makeihex( (startaddr, data) )           #ouput a intel-hex file
+            # output a intel-hex file
+            address = startaddr
+            start = 0
+            while start < len(data):
+                end = start + 16
+                if end > len(data): end = len(data)
+                sys.stdout.write(intelhex._ihexline(address, data[start:end]))
+                start += 16
+                address += 16
+            sys.stdout.write(intelhex._ihexline(0, [], end=True))   # append no data but an end line
         else:
-            sys.stdout.write(data)                  #binary output w/o newline!
-        wait = 0    #wait makes no sense as after the upload the device is still in BSL
+            sys.stdout.write(data)                  # binary output w/o newline!
+        wait = 0    # wait makes no sense as after the upload the device is still in BSL
 
-    if wait:                                        #wait at the end if desired
-        sys.stderr.write("Press <ENTER> ...\n")     #display a prompt
+    if wait:                                        # wait at the end if desired
+        sys.stderr.write("Press <ENTER> ...\n")     # display a prompt
         sys.stderr.flush()
-        raw_input()                                 #wait for newline
+        raw_input()                                 # wait for newline
 
-    bslobj.comDone()                                #Release serial communication port
+    bslobj.comDone()                                # Release serial communication port
 
 if __name__ == '__main__':
     try:

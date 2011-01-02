@@ -10,7 +10,7 @@
 
 import sys, time, string, cStringIO, struct
 import serial
-from memory import Memory
+from msp430.memory import Memory
 
 DEBUG = 0
 

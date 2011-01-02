@@ -14,14 +14,15 @@ def sixteen(address, sequence):
     """A generator that yields sequences of 16 elements"""
     # yield tuples of (current_address, sequence_of_16_elements)
     row = []
-    for n, x in enumerate(sequence):
+    for x in sequence:
         row.append(x)
         if len(row) == 16:
-            yield address + n, row
+            yield address, row
             del row[:]
+            address += 16
     # and the rest if input's length was not a multiple of 16
     if row:
-        yield address + n, row
+        yield address, row
 
 
 

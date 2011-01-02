@@ -18,7 +18,7 @@ def load(filelike):
         if not l.strip(): continue  # skip empty lines
         if l[0] != ':': raise msp430.memory.error.FileFormatError(
                 "line not valid intel hex data: '%s...'" % l[0:10],
-                fileame = getattr(filelike, "name", "<unknown>"),
+                filename = getattr(filelike, "name", "<unknown>"),
                 lineno = n+1)
         l = l.strip()               # fix CR-LF issues...
         length  = int(l[1:3], 16)

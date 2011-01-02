@@ -5,6 +5,68 @@ import bin
 import hexdump
 import error
 
+
+class DataStream(object):
+    """An iterator for addressed bytes"""
+    def __init__(self, memory):
+        self.segments = sorted(list(memory.segments))   # get a sorted copy
+        self.address = None
+        self.current_offset = None
+        self.current_data = None
+        if self.segments:
+            segment = self.segments.pop(0)
+            self.current_data = segment.data
+            self.address = segment.startaddress
+            self.current_offset = 0
+
+    def next(self):
+        if self.current_data is None:
+            raise StopIteration()
+        result = (self.address, self.current_data[self.current_offset])
+        self.address += 1
+        self.current_offset += 1
+        if self.current_offset >= len(self.current_data):
+            if self.segments:
+                segment = self.segments.pop(0)
+                self.current_data = segment.data
+                self.address = segment.startaddress
+                self.current_offset = 0
+            else:
+                self.current_data = None
+                self.address = None
+        return result
+
+    def __repr__(self):
+        return "DS[%s %s]" % (self.address, len(self.segments))
+
+
+def stream_merge(*streams):
+    streams = list(streams)
+    while streams:
+        # get the lowest address, if there are several entries with the same
+        # address, take the latest
+        next_stream = None
+        address = 2**32
+        for s in streams:
+            if s.address is not None and s.address <= address:
+                address = s.address
+                next_stream = s
+        if next_stream is not None:
+            # got one, yield that
+            yield next_stream.next()
+            # then remove all the elements with lower addresses from all
+            # streams. if a stream is exhausted, remove it from the list
+            # of streams
+            for s in list(streams): # iterate over copy as we delete
+                while s.address is not None and s.address <= address:
+                    s.next()
+                if s.address is None:
+                    streams.remove(s)
+        else:
+            raise ValueError('streams not sorted?')
+
+
+
 class Segment:
     """store a string with memory contents along with its startaddress"""
     def __init__(self, startaddress = 0, data=None):
@@ -89,7 +151,7 @@ class Memory:
         for seg in self.segments:
             #~ print "0x%04x  " * 2 % (seg.startaddress, seg.startaddress + len(seg.data))
             if seg.startaddress <= address and seg.startaddress + len(seg.data) >= address:
-                #segment contains data in the address range
+                # segment contains data in the address range
                 offset = address - seg.startaddress
                 length = min(len(seg.data)-offset, size)
                 data.append(seg.data[offset:offset+length])
@@ -104,7 +166,7 @@ class Memory:
         Write a range of bytes to the memory. A segment covering the address
         range to be written has to be existent. A ValueError is raised if not
         all data could be written (attention: a part of the data may have been
-        written!). The contains may span multiple (existing) segments.
+        written!). The contents may span multiple (existing) segments.
 
         :param address: Start address of block to read
         :param contents: Bytes to write to the memory
@@ -130,9 +192,28 @@ class Memory:
 
         :param other: A Memory instance, its contents is copied to this instance.
         """
-        for segment in other:
-            # XXX currently no support for overlapping data
-            self.segments.append(segment)
+        if self.segments:
+            # not empty, smart merge
+            new_segments = []
+            segmentdata = []
+            segment_address = 0
+            last_address = 0
+            for address, byte in stream_merge(DataStream(self), DataStream(other)):
+                if address != last_address:
+                    if segmentdata:
+                        new_segments.append(Segment(segment_address, ''.join(segmentdata)))
+                    last_address = address
+                    segment_address = address
+                    segmentdata = []
+                segmentdata.append(byte)
+                last_address += 1
+            if segmentdata:
+                new_segments.append(Segment(segment_address, ''.join(segmentdata)))
+            self.segments = new_segments
+        else:
+            # empty: just take the new data
+            for segment in other:
+                self.segments.append(segment)
 
 
 def load(filename, fileobj=None, format=None):

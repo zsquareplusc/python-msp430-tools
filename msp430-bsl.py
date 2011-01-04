@@ -268,7 +268,6 @@ def main():
         elif o in ("-D", "--debug"):
             DEBUG = DEBUG + 1
             bsl.DEBUG = bsl.DEBUG + 1
-            memory.DEBUG = memory.DEBUG + 1
         elif o in ("-u", "--upload"):
             try:
                 startaddr = int(a)                  # try to convert decimal

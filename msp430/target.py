@@ -255,10 +255,11 @@ class Target(object):
         for segment in self.download_data:
             if self.verbose > 1:
                 sys.stderr.write("Write segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
+            data = segment.data
             # pad length if odd number of bytes
-            if len(segment.data) & 1:
-                segment.data += '\xff'
-            self.memory_write(segment.startaddress, segment.data)
+            if len(data) & 1:
+                data += '\xff'
+            self.memory_write(segment.startaddress, data)
         if self.verbose:
             sys.stderr.write('Programming: OK\n')
 

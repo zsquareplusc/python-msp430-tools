@@ -105,8 +105,8 @@ class BSL(object):
 
     def check_extended(self):
         """Automatically determine if BSL_SETMEMOFFSET can be used"""
-        device_id, bsl_version = struct.unpack(">H8xH4x", self.version())
-        if bsl_version > 0x0212:
+        self.device_id, self.bsl_version = struct.unpack(">H8xH4x", self.version())
+        if self.bsl_version >= 0x0212:
             self.extended_address_mode = True
 
     def memory_read(self, address, length):

@@ -2,7 +2,7 @@
 Simple MSP430 BSL implementation using the serial port.
 """
 
-import bsl
+from msp430.bsl import bsl, bsl_code
 import serial
 import struct
 import logging
@@ -131,7 +131,7 @@ class SerialBSL(bsl.BSL):
         """
         # first synchronize with slave
         self.sync()
-        self.logger.debug('Command 0x%02x %r' % (cmd, message))
+        self.logger.debug('Command 0x%02x %s' % (cmd, message.encode('hex')))
         # prepare command with checksum
         txdata = struct.pack('<cBBB', bsl.DATA_FRAME, cmd, len(message), len(message)) + message
         txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   #append checksum
@@ -186,6 +186,7 @@ class SerialBSL(bsl.BSL):
             if self.checksum(ans + head + data) ^ 0xffff == struct.unpack("<H", checksum)[0]:
                 if expect is not None and len(data) != expect:
                     raise bsl.BSLError('expected %d bytes, got %d bytes' % (expect, len(data)))
+                self.logger.debug('Data frame: %s' % data.encode('hex'))
                 return data
             else:
                 raise bsl.BSLException('checksum error in answer')
@@ -217,14 +218,15 @@ class SerialBSL(bsl.BSL):
         # invert signal if configured
         if self.invertTEST:
             level = not level
-        # set pin level
-        if self.swapResetTest:
-            self.serial.setDTR(level)
-        else:
-            self.serial.setRTS(level)
         # make TEST signal on TX pin, using break condition.
         if self.testOnTX:
             self.serial.setBreak(level)
+        else:
+            # set pin level
+            if self.swapResetTest:
+                self.serial.setDTR(level)
+            else:
+                self.serial.setRTS(level)
         time.sleep(self.control_delay)
 
 
@@ -256,14 +258,15 @@ class SerialBSL(bsl.BSL):
         self.logger.info('ROM-BSL start pulse pattern')
         self.set_RST(True)      # power supply
         self.set_TEST(True)     # power supply
-        time.sleep(0.250)       # charge capacitor on boot loader hardware
+        #~ time.sleep(0.250)       # charge capacitor on boot loader hardware
+        time.sleep(0.500)       # charge capacitor on boot loader hardware
 
         self.set_RST(False)     # RST  pin: GND
         self.set_TEST(True)     # TEST pin: GND
         self.set_TEST(False)    # TEST pin: Vcc
         self.set_TEST(True)     # TEST pin: GND
         self.set_TEST(False)    # TEST pin: Vcc
-        self.set_RST (True)     # RST  pin: Vcc
+        self.set_RST(True)      # RST  pin: Vcc
         self.set_TEST(True)     # TEST pin: GND
         time.sleep(0.250)       # give MSP430's oscillator time to stabilize
 
@@ -282,6 +285,7 @@ if __name__ == '__main__':
         def __init__(self):
             msp430.target.Target.__init__(self)
             SerialBSL.__init__(self)
+            self.patch_in_use = False
 
         def add_extra_options(self):
             group = OptionGroup(self.parser, "Communication settings")
@@ -299,6 +303,11 @@ if __name__ == '__main__':
                     dest="invert_reset",
                     action="store_true",
                     help="invert DTR line",
+                    default=False)
+            group.add_option("--swap-reset-test",
+                    dest="swap_reset_test",
+                    action="store_true",
+                    help="exchenage RST and TEST signals (DTR/RTS)",
                     default=False)
             group.add_option("--test-on-tx",
                     dest="test_on_tx",
@@ -339,7 +348,13 @@ if __name__ == '__main__':
                     dest="control_delay",
                     type="float",
                     help="set delay in seconds (float) for BSL start pattern",
-                    default=0.05)
+                    default=0.01)
+
+            group.add_option("--replace-bsl",
+                    dest="replace_bsl",
+                    action="store_true",
+                    help="download replacement BSL (V1.50) for F1x and F4x devices with 2k RAM",
+                    default=False)
 
             self.parser.add_option_group(group)
 
@@ -364,13 +379,16 @@ if __name__ == '__main__':
             if self.options.invert_reset:
                 self.invertRST = True
 
+            if self.options.swap_reset_test:
+                self.swapResetTest = True
+
             self.set_TEST(True)
             self.set_RST(True)
 
             if self.options.start_pattern:
                 self.start_bsl()
 
-            logger = logging.getLogger('BSL')
+            self.logger = logging.getLogger('BSL')
 
             if self.options.do_mass_erase:
                 self.extra_timeout = 6
@@ -383,12 +401,32 @@ if __name__ == '__main__':
             else:
                 if self.options.password is not None:
                     password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                    logger.info("Transmitting password: %s" % (password.encode('hex'),))
+                    self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
                     self.BSL_TXPWORD(password)
 
             # check for extended features (e.g. >64kB support)
-            logger.debug('Checking if device has extended features')
+            self.logger.debug('Checking if device has extended features')
             self.check_extended()
+
+            if self.options.replace_bsl:
+                family = msp430.target.idetify_device(self.device_id, self.bsl_version)
+                if family == msp430.target.F1x:
+                    replacement_bsl = bsl_code.F1X_BSL
+                elif family == msp430.target.F4x:
+                    replacement_bsl = bsl_code.F4X_BSL
+                else:
+                    raise BSLError('No replacement BSL for %s' % (family))
+                self.logger.info('Download replacement BSL as requested by --replace-bsl')
+                self.memory_write(0x0220, replacement_bsl)
+                bsl_start_address = struct.unpack("<H", replacement_bsl[:2])[0]
+                self.execute(bsl_start_address)
+                self.logger.info("Starting new BSL at 0x%04x" % (bsl_start_address,))
+            else:
+                if self.bsl_version <= 0x0110:
+                    self.logger.info('Buggy BSL, applying patch')
+                    self.memory_write(0x0220, bsl_code.PATCH)
+                    #~ self.execute(0x0220)
+                    self.patch_in_use = True
 
             if self.options.speed is not None:
                 try:
@@ -396,6 +434,20 @@ if __name__ == '__main__':
                 except bsl.BSLError:
                     raise bsl.BSLError("--speed option not supported by BSL on target")
 
+        # special versions of TX and RX block functions are needed in order to
+        # apply the patch on buggy devices
+
+        def BSL_TXBLK(self, address, data):
+            if self.patch_in_use:
+                self.logger.debug("activate patch")
+                self.BSL_LOADPC(0x0220)
+            return SerialBSL.BSL_TXBLK(self, address, data)
+
+        def BSL_RXBLK(self, address, length):
+            if self.patch_in_use:
+                self.logger.debug("activate patch")
+                self.BSL_LOADPC(0x0220)
+            return SerialBSL.BSL_RXBLK(self, address, length)
 
     # run the main application
     bsl_target = SerialBSLTarget()

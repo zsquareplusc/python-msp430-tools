@@ -170,7 +170,7 @@ class SerialBSL(bsl.BSL):
             self.logger.debug('Data frame...')
             head = self.serial.read(3)
             if len(head) != 3:
-                raise BSLTimeout('timeout while reading answer (header)')
+                raise bsl.BSLTimeout('timeout while reading answer (header)')
             (self.dummy, l1, l2) = struct.unpack('<BBB', head)
             if l1 != l2:
                 raise bsl.BSLError('broken answer (L1 != L2)')
@@ -234,13 +234,15 @@ class SerialBSL(bsl.BSL):
         """\
         Change the BSL baud rate on the target and switch the serial port.
         """
-        v = self.version()
-        if v[0] == '\xf4':
-            table = F4x_baudrate_args
-        elif v[0] == '\xf2':
-            table = F2x_baudrate_args
-        else:
+        family = msp430.target.idetify_device(self.device_id, self.bsl_version)
+        if family == msp430.target.F1x:
             table = F1x_baudrate_args
+        elif family == msp430.target.F2x:
+            table = F2x_baudrate_args
+        elif family == msp430.target.F4x:
+            table = F4x_baudrate_args
+        else:
+            raise BSLError('No baud rate table for %s' % (family,))
         self.logger.info('changing baud rate to %s' % (baudrate,))
         try:
             a, l = table[baudrate]
@@ -248,6 +250,7 @@ class SerialBSL(bsl.BSL):
             raise ValueError('unsupported baud rate %s' % (baudrate,))
         else:
             self.BSL_CHANGEBAUD(a, l)
+            time.sleep(0.010)   # recomended delay
             self.serial.baudrate = baudrate
 
 
@@ -421,12 +424,15 @@ if __name__ == '__main__':
                 elif family == msp430.target.F4x:
                     replacement_bsl = bsl_code.F4X_BSL
                 else:
-                    raise BSLError('No replacement BSL for %s' % (family))
+                    raise BSLError('No replacement BSL for %s' % (family,))
                 self.logger.info('Download replacement BSL as requested by --replace-bsl')
                 self.memory_write(0x0220, replacement_bsl)
                 bsl_start_address = struct.unpack("<H", replacement_bsl[:2])[0]
                 self.execute(bsl_start_address)
                 self.logger.info("Starting new BSL at 0x%04x" % (bsl_start_address,))
+                time.sleep(0.020)   # give BSL some time to initialize
+                #~ if self.options.password is not None:
+                    #~ self.BSL_TXPWORD(password)
             else:
                 if self.bsl_version <= 0x0110:
                     self.logger.info('Buggy BSL, applying patch')
@@ -454,6 +460,21 @@ if __name__ == '__main__':
                 self.logger.debug("activate patch")
                 self.BSL_LOADPC(0x0220)
             return SerialBSL.BSL_RXBLK(self, address, length)
+
+
+        # override reset method: use control line
+        def reset(self):
+            #~ time.sleep(0.25)
+            #~ self.set_RST(True)      # power supply
+            #~ self.set_TEST(True)     # power supply
+            #~ time.sleep(0.1)
+            #~ self.patch_in_use = False
+            self.set_RST(False)
+            #~ time.sleep(0.5)
+            #~ SerialBSL.reset(self)
+            #~ self.set_RST(True)
+            #~ time.sleep(0.250)       # give MSP430's oscillator time to stabilize
+
 
     # run the main application
     bsl_target = SerialBSLTarget()

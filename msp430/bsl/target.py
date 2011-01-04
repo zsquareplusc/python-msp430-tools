@@ -359,6 +359,12 @@ if __name__ == '__main__':
             self.parser.add_option_group(group)
 
 
+        def parse_extra_options(self):
+            if self.verbose > 1:   # debug infos
+                if hasattr(serial, 'VERSION'):
+                    sys.stderr.write("pySerial version: %s\n" % serial.VERSION)
+
+
         def close_connection(self):
             self.close()
 

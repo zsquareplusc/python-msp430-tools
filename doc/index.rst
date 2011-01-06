@@ -9,13 +9,10 @@ python-msp430-tools documentation
 Contents:
 
 .. toctree::
-   :maxdepth: 2
-   
-   msp430-bsl
-   msp430-jtag
-   msp430-downloader
-   msp430-dco
-   license
+    :maxdepth: 2
+
+    commandline_tools
+    license
 
 Indices and tables
 ==================

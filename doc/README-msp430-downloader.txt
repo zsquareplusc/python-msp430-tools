@@ -1,6 +1,5 @@
-===================
- msp430-downloader
-===================
+msp430-downloader
+=================
 
 Software to talk to the parallel port and USB JTAG adapters as seen with the
 FET kits.
@@ -10,7 +9,7 @@ It is released under a free software license, see license.txt for more details.
 
 
 Features
-========
+--------
 
 - understands ELF, TI-Text and Intel-hex object files
 - download to Flash and/or RAM, erase flash, verify
@@ -24,7 +23,7 @@ Features
 
 
 Installation
-============
+------------
 Binaries for Windows can be found in the download section of
 http://mspgcc.sf.net
 
@@ -32,7 +31,7 @@ Linux users should refer to the last section.
 
 
 Short introduction
-==================
+------------------
 The tool is intended to be assigned to .a43 and .elf files (the mspgcc Windows
 installer is doing this on request, by default).
 
@@ -128,10 +127,10 @@ Example configuration file ``downloader-demo.m43``::
 
 
 Building from source
-====================
+--------------------
 
 Requirements
-------------
+~~~~~~~~~~~~
 - Linux, BSD, Un*x or Windows PC
 - Python 2.3+, EasyDialogs extension
 - Parallel JTAG hardware with an MSP430 device connected

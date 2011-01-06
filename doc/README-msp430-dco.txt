@@ -60,15 +60,15 @@ The target device has to be connected to the JTAG interface.
 
 Examples:
     See min and max clock speeds::
-    
+
         msp430-dco --measure
 
     Get clock settings for 2.0MHz +/-1%::
-    
+
         msp430-dco --tolerance=0.01 2.0e6
 
     Write clock calibration for 1.5MHz to the information memory at 0x1000::
-    
+
         msp430-dco 1.5e6 BCSCTL1@0x1000 DCOCTL@0x1001
 
 Use it at your own risk. No guarantee that the values are correct.
@@ -166,11 +166,11 @@ Examples
     Measure calibration values for 1MHz, then erase the information memory
     flash page at 0x1000. These values are then written to the flash at
     0x1000 and 0x1001.
-    
+
     This can be useful in combination with firmware downloads. For example
     make a mass erase, write firmware, then write clock calibration for this
     device::
-    
+
         msp430-jtag -e my_firmware.elf
         msp430-dco 1e6 BCSCTL1@0x1000 DCOCTL@0x1001
 
@@ -190,7 +190,7 @@ Examples
 Known Issues
 ------------
 The algorithm does not search for the best match, it stops when the frequency
-iswithin the window. Therefor it's not unlikely that the frequency is at the
+iswithin the window. Therefore it's not unlikely that the frequency is at the
 border of the tolerance window and not in the center.
 
 

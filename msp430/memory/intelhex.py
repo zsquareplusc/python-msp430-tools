@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2001-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
 """\
 Helper functions to read and write intel hex files.
 """

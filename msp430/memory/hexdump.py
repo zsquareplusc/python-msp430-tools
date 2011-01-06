@@ -1,10 +1,13 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2009-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
 """
 This is a little tool to generate hex dumps from .a43, .text, .elf or binary
-files.
-
-(C) 2009-2010 Chris Liechti <cliechti@gmx.net>
-this is distributed under a free software license, see LICENSE.txt.
+files. It can also read and frite hex dumps to Memory objects.
 """
 
 import sys

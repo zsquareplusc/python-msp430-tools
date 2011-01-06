@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2002-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
+"""\
+Interface to GDB server suing a TCP/IP connection.
+
+It can be used to talk to e.g. msp430-gdbproxy or mspdebug.
+"""
 
 from struct import pack, unpack
 import socket

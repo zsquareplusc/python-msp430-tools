@@ -1,10 +1,13 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
 """
 This is a little tool to compare .a43, .text, .elf or binary
 files.
-
-(C) 2010 Chris Liechti <cliechti@gmx.net>
-this is distributed under a free software license, see LICENSE.txt.
 """
 
 import sys

@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2002-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
+"""\
+Manage a set of addressed binary strings (Segments) in a Memory object.
+This type of data is used to represent memory contents of teh MCU.
+"""
+
 import titext
 import elf
 import intelhex

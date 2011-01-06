@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2003-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
 """\
 Helper module to parse IAR listing files.
 """
@@ -223,3 +230,4 @@ if __name__ == '__main__':
         print "error while reading arguments: %s" % e
         raise SystemExit(1)
     pprint.pprint(symbols)
+

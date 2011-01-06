@@ -1,3 +1,18 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2006-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+#
+# These the binary codes represented here are (C) by TI.
+# They come with the application note slaa089a
+
+"""\
+LIbrary with:
+- patch required for F13x/F14x devices in order to be able to use Flash
+- Replacement BSLs V1.50 for F1x and F2x with 2kB RAM
+"""
 
 from msp430 import memory
 from cStringIO import StringIO

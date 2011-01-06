@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2004-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
 
 """\
 Simple converter for hex files.
@@ -7,9 +12,6 @@ data can be read from stdin and output on stdout:
 usage: cat file.txt | convert - >out.a43
 usage: convert file.txt >out.a43
 usage: convert file.txt -o out.a43
-
-(C) 2004-2010 Chris Liechti <cliechti@gmx.net>
-this is distributed under a free software license, see LICENSE.txt.
 """
 
 import msp430.memory.error

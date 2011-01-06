@@ -1,13 +1,17 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# MSP430 clock calibration utility.
-#
-# This tool can measure the internal oscillator of F1xx, F2xx and F4xx devices
-# that are connected to the JTAG. It can  display the supported frequencies,
-# or run a software FLL to find the settings for a specified frequency.
-#
-# (C) 2005-2006, 2010 Chris Liechti <cliechti@gmx.net>
-# this is distributed under a free software license, see license.txt
+# Copyright (c) 2005-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
+"""\
+MSP430 clock calibration utility.
+
+This tool can measure the internal oscillator of F1xx, F2xx and F4xx devices
+that are connected to the JTAG. It can  display the supported frequencies,
+ or run a software FLL to find the settings for a specified frequency.
+"""
 
 from msp430 import memory
 from msp430.jtag import jtag, clock

@@ -1,13 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# JTAG programmer for the MSP430 embedded processor.
-#
-# (C) 2002-2010 Chris Liechti <cliechti@gmx.net>
-# this is distributed under a free software license, see license.txt
-#
-# Requires Python 2+ and the binary extension _parjtag or ctypes
-# and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
-# and HIL.dll/libHIL.so
+# Copyright (c) 2002-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
 
 """\
 This module defines a default target that represents a MSP430 device. It
@@ -15,24 +11,16 @@ defines some common operations and the basics of a command line frontend using
 these functions. Separate implementations, using subclassing, then provide JTAG
 or BSL connectivity.
 
-class Target
-    def read_memory
-    def write_memory
-    def reset
-    def execute
-    def mass_erase
-    def main_erase
-    def erase
-
-Common operations that will work will all connection types are:
+Common operations that will work with all connection types are:
 - segment erase
-- erase infomem - read device type 1st
+- erase infomem - reads device type 1st
 - mass erase
 - main erase
 - download file
 - verify by file
 - erase check by file
 - upload
+- upload by file
 """
 
 import sys
@@ -45,12 +33,13 @@ from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 
 # MCU types
 # use strings as ID so that they can be used in outputs too
-F1x                     = "F1x family"
-F2x                     = "F2x family"
-F4x                     = "F4x family"
+F1x = "F1x family"
+F2x = "F2x family"
+F4x = "F4x family"
 
 # known device list
 DEVICEIDS = {
+#    CPUID   BSLVER family
     (0x1132, None): F1x,      # F1122, F1132
     (0x1232, None): F1x,      # F1222, F1232
     (0xf112, None): F1x,      # F11x, F11x1, F11x1A
@@ -707,11 +696,11 @@ Multiple --upload options are allowed.
             raise                                           # let pass exit() calls
         except KeyboardInterrupt:
             if self.debug: raise                            # show full trace in debug mode
-            sys.stderr.write("\nAbort on user request.\n")  # short messy in user mode
+            sys.stderr.write("\nAbort on user request.\n")  # short message in user mode
             sys.exit(1)                                     # set error level for script usage
         except Exception, msg:                              # every Exception is caught and displayed
             if self.debug: raise                            # show full trace in debug mode
-            sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
+            sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short message in user mode
             sys.exit(1)                                     # set error level for script usage
         finally:
             if start_time is not None:

@@ -1,8 +1,13 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2003-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
 
-# ELF object file reader
-# (C) 2003-2010 cliechti@gmx.net
-# Python license
+"""\
+ELF object file reader.
+"""
 
 import struct
 import msp430.memory

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2006-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
 """\
 Helper module to parse [msp]gcc/binutils listing files.
 """
@@ -24,3 +31,4 @@ def label_address_map(filename):
             label   = m.group(3)
             labels[label] = address
     return labels
+

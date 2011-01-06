@@ -1,11 +1,19 @@
 #!/usr/bin/env python
-# statistical profiler for the MSP430
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2002-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
 
-# it works by sampling the address bus and counting addresses seen.
-# the problem there is, that it is not sure that we're reading a valid address
-# every time. an other issue is the relatively slow sampling rate compared to
-# the execution speed of the MCU, which means that several runs are need to
-# get meaningful numbers.
+"""\
+Statistical profiler for the MSP430.
+
+it works by sampling the address bus and counting addresses seen.
+the problem there is, that it is not sure that we're reading a valid address
+every time. an other issue is the relatively slow sampling rate compared to
+the execution speed of the MCU, which means that several runs are need to
+get meaningful numbers.
+"""
 
 from msp430.jtag import jtag
 import sys

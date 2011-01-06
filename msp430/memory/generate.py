@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2004-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
 
 """\
 Test File generator.
@@ -7,9 +12,6 @@ This tool generates a hex file, of given size, ending on address
 0xffff if no start address is given.
 
 USAGE: generate.py -l size_in_bytes
-
-(C) 2004-2010 Chris Liechti <cliechti@gmx.net>
-this is distributed under a free software license, see LICENSE.txt.
 """
 
 from msp430 import memory

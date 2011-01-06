@@ -1,5 +1,18 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2002-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
+"""\
+Error messages for file handler modules.
+"""
+
 class FileFormatError(Exception):
-    """file is not in the expected format"""
+    """\
+    Exception for "file is not in the expected format" messages.
+    """
     def __init__(self, message, filename=None, lineno=None):
         Exception.__init__(self, message)
         self.filename = filename

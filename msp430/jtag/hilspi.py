@@ -1,13 +1,15 @@
-# Using the MSP430 JTAG parallel port board as SPI interface.
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# (C) 2004 Chris Liechti <cliechti@gmx.net>
-# this is distributed under a free software license, see license.txt
-# 
-# http://mspgcc.sf.net
-# 
-# Requires Python 2+, ctypes and HIL.dll/libHIL.so
-# 
-# $Id: hilspi.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
+# Copyright (c) 2004 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
+"""\
+Using the MSP430 JTAG parallel port board as SPI interface.
+
+Requires Python 2+, ctypes and HIL.dll/libHIL.so
+"""
 
 import HIL
 #~ import psyco

@@ -1,14 +1,16 @@
-# Python bindings to the functions in the MSP430 JTAG HIL
-# (Hardware Interface Library)
-# 
-# (C) 2004 Chris Liechti <cliechti@gmx.net>
-# this is distributed under a free software license, see license.txt
-# 
-# http://mspgcc.sf.net
-# 
-# Requires Python 2+, ctypes and HIL.dll/libHIL.so
-# 
-# $Id: HIL.py,v 1.1 2006/04/11 18:35:23 cliechti Exp $
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2004 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
+"""\
+Python bindings to the functions in the MSP430 JTAG HIL
+(Hardware Interface Library)
+ 
+Requires Python 2+, ctypes and HIL.dll/libHIL.so
+"""
 
 import ctypes
 

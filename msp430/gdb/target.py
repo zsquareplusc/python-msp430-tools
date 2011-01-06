@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
 
-"""
+"""\
 Remote GDB programmer for the MSP430 embedded processor.
-
-(C) 2010 Chris Liechti <cliechti@gmx.net>
-this is distributed under a free software license, see license.txt
 """
 
 import sys

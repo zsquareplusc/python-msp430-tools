@@ -1,12 +1,15 @@
-# (C) 2001-2004 Chris Liechti <cliechti@gmx.net>
-# this is distributed under a free software license, see license.txt
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2001-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
 #
 # fixes from Colin Domoney
 #
 # based on the application note slas96b.pdf from Texas Instruments, Inc.,
 # Volker Rzehak
 # additional infos from slaa089a.pdf
-# $Id: bsl.py,v 1.2.2.1 2009/05/19 09:07:21 rlim Exp $
 
 import sys, time, string, cStringIO, struct
 import serial

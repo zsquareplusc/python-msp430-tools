@@ -1,7 +1,16 @@
-# Utility functions for the DCO clock in MSP430 devices.
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# Functions to measure the DCO clock and functions to do a software FLL to
-# callibrate the clock to a gived frequency.
+# Copyright (c) 2001-2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
+"""\
+Utility functions for the DCO clock in MSP430 devices.
+
+Functions to measure the DCO clock and functions to do a software FLL to
+callibrate the clock to a gived frequency.
+"""
 
 import cStringIO
 import sys

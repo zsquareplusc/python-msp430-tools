@@ -15,6 +15,11 @@ import struct
 import logging
 import time
 
+import sys
+from optparse import OptionGroup
+import msp430.target
+import msp430.memory
+
 
 F1x_baudrate_args = {
      9600:[0x8580, 0x0000],
@@ -283,206 +288,204 @@ class SerialBSL(bsl.BSL):
         self.serial.flushInput()    # clear buffers
 
 
-if __name__ == '__main__':
-    import sys
-    from optparse import OptionGroup
-    import msp430.target
-    import msp430.memory
+class SerialBSLTarget(SerialBSL, msp430.target.Target):
+    """Combine the serial BSL backend and the common target code."""
 
-    class SerialBSLTarget(SerialBSL, msp430.target.Target):
-        """Combine the serial BSL backend and the common target code."""
+    def __init__(self):
+        msp430.target.Target.__init__(self)
+        SerialBSL.__init__(self)
+        self.patch_in_use = False
 
-        def __init__(self):
-            msp430.target.Target.__init__(self)
-            SerialBSL.__init__(self)
-            self.patch_in_use = False
+    def add_extra_options(self):
+        group = OptionGroup(self.parser, "Communication settings")
 
-        def add_extra_options(self):
-            group = OptionGroup(self.parser, "Communication settings")
+        group.add_option("-p", "--port",
+                dest="port",
+                help="Use com-port",
+                default=0)
+        group.add_option("--invert-test",
+                dest="invert_test",
+                action="store_true",
+                help="invert RTS line",
+                default=False)
+        group.add_option("--invert-reset",
+                dest="invert_reset",
+                action="store_true",
+                help="invert DTR line",
+                default=False)
+        group.add_option("--swap-reset-test",
+                dest="swap_reset_test",
+                action="store_true",
+                help="exchenage RST and TEST signals (DTR/RTS)",
+                default=False)
+        group.add_option("--test-on-tx",
+                dest="test_on_tx",
+                action="store_true",
+                help="TEST/TCK signal is muxed on TX line",
+                default=False)
 
-            group.add_option("-p", "--port",
-                    dest="port",
-                    help="Use com-port",
-                    default=0)
-            group.add_option("--invert-test",
-                    dest="invert_test",
-                    action="store_true",
-                    help="invert RTS line",
-                    default=False)
-            group.add_option("--invert-reset",
-                    dest="invert_reset",
-                    action="store_true",
-                    help="invert DTR line",
-                    default=False)
-            group.add_option("--swap-reset-test",
-                    dest="swap_reset_test",
-                    action="store_true",
-                    help="exchenage RST and TEST signals (DTR/RTS)",
-                    default=False)
-            group.add_option("--test-on-tx",
-                    dest="test_on_tx",
-                    action="store_true",
-                    help="TEST/TCK signal is muxed on TX line",
-                    default=False)
+        self.parser.add_option_group(group)
 
-            self.parser.add_option_group(group)
+        group = OptionGroup(self.parser, "BSL settings")
 
-            group = OptionGroup(self.parser, "BSL settings")
+        group.add_option("--no-start",
+                dest="start_pattern",
+                action="store_false",
+                help="no not use ROM-BSL start pattern on RST+TEST/TCK",
+                default=True)
 
-            group.add_option("--no-start",
-                    dest="start_pattern",
-                    action="store_false",
-                    help="no not use ROM-BSL start pattern on RST+TEST/TCK",
-                    default=True)
+        group.add_option("-s", "--speed",
+                dest="speed",
+                type=int,
+                help="change baud rate (default 9600)",
+                default=None)
 
-            group.add_option("-s", "--speed",
-                    dest="speed",
-                    type=int,
-                    help="change baud rate (default 9600)",
-                    default=None)
+        group.add_option("--password",
+                dest="password",
+                action="store",
+                help="transmit password before doing anything else, password is given in given (TI-Text/ihex/etc) file",
+                default=None,
+                metavar="FILE")
 
-            group.add_option("--password",
-                    dest="password",
-                    action="store",
-                    help="transmit password before doing anything else, password is given in given (TI-Text/ihex/etc) file",
-                    default=None,
-                    metavar="FILE")
+        group.add_option("--ignore-answer",
+                dest="ignore_answer",
+                action="store_true",
+                help="do not wait for answer to BSL commands",
+                default=False)
 
-            group.add_option("--ignore-answer",
-                    dest="ignore_answer",
-                    action="store_true",
-                    help="do not wait for answer to BSL commands",
-                    default=False)
+        group.add_option("--control-delay",
+                dest="control_delay",
+                type="float",
+                help="set delay in seconds (float) for BSL start pattern",
+                default=0.01)
 
-            group.add_option("--control-delay",
-                    dest="control_delay",
-                    type="float",
-                    help="set delay in seconds (float) for BSL start pattern",
-                    default=0.01)
+        group.add_option("--replace-bsl",
+                dest="replace_bsl",
+                action="store_true",
+                help="download replacement BSL (V1.50) for F1x and F4x devices with 2k RAM",
+                default=False)
 
-            group.add_option("--replace-bsl",
-                    dest="replace_bsl",
-                    action="store_true",
-                    help="download replacement BSL (V1.50) for F1x and F4x devices with 2k RAM",
-                    default=False)
-
-            self.parser.add_option_group(group)
+        self.parser.add_option_group(group)
 
 
-        def parse_extra_options(self):
-            if self.verbose > 1:   # debug infos
-                if hasattr(serial, 'VERSION'):
-                    sys.stderr.write("pySerial version: %s\n" % serial.VERSION)
+    def parse_extra_options(self):
+        if self.verbose > 1:   # debug infos
+            if hasattr(serial, 'VERSION'):
+                sys.stderr.write("pySerial version: %s\n" % serial.VERSION)
 
 
-        def close_connection(self):
-            self.close()
+    def close_connection(self):
+        self.close()
 
 
-        def open_connection(self):
-            self.open(
-                self.options.port,
-                ignore_answer = self.options.ignore_answer,
-            )
-            self.control_delay = self.options.control_delay
+    def open_connection(self):
+        self.logger = logging.getLogger('BSL')
+        self.open(
+            self.options.port,
+            ignore_answer = self.options.ignore_answer,
+        )
+        self.control_delay = self.options.control_delay
 
-            if self.options.test_on_tx:
-                self.testOnTX = True
+        if self.options.test_on_tx:
+            self.testOnTX = True
 
-            if self.options.invert_test:
-                self.invertTEST = True
+        if self.options.invert_test:
+            self.invertTEST = True
 
-            if self.options.invert_reset:
-                self.invertRST = True
+        if self.options.invert_reset:
+            self.invertRST = True
 
-            if self.options.swap_reset_test:
-                self.swapResetTest = True
+        if self.options.swap_reset_test:
+            self.swapResetTest = True
 
-            self.set_TEST(True)
-            self.set_RST(True)
+        self.set_TEST(True)
+        self.set_RST(True)
 
-            if self.options.start_pattern:
-                self.start_bsl()
+        if self.options.start_pattern:
+            self.start_bsl()
 
-            self.logger = logging.getLogger('BSL')
 
-            if self.options.do_mass_erase:
-                self.extra_timeout = 6
-                self.mass_erase()
-                self.extra_timeout = None
-                self.BSL_TXPWORD('\xff'*32)
-                # remove mass_erase from action list so that it is not done
-                # twice
-                self.remove_action(self.mass_erase)
+        if self.options.do_mass_erase:
+            self.extra_timeout = 6
+            self.mass_erase()
+            self.extra_timeout = None
+            self.BSL_TXPWORD('\xff'*32)
+            # remove mass_erase from action list so that it is not done
+            # twice
+            self.remove_action(self.mass_erase)
+        else:
+            if self.options.password is not None:
+                password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
+                self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
+                self.BSL_TXPWORD(password)
+
+        # check for extended features (e.g. >64kB support)
+        self.logger.debug('Checking if device has extended features')
+        self.check_extended()
+
+        if self.options.replace_bsl:
+            family = msp430.target.idetify_device(self.device_id, self.bsl_version)
+            if family == msp430.target.F1x:
+                replacement_bsl = bsl_code.F1X_BSL
+            elif family == msp430.target.F4x:
+                replacement_bsl = bsl_code.F4X_BSL
             else:
-                if self.options.password is not None:
-                    password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                    self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
-                    self.BSL_TXPWORD(password)
+                raise BSLError('No replacement BSL for %s' % (family,))
+            self.logger.info('Download replacement BSL as requested by --replace-bsl')
+            self.memory_write(0x0220, replacement_bsl)
+            bsl_start_address = struct.unpack("<H", replacement_bsl[:2])[0]
+            self.execute(bsl_start_address)
+            self.logger.info("Starting new BSL at 0x%04x" % (bsl_start_address,))
+            time.sleep(0.020)   # give BSL some time to initialize
+            #~ if self.options.password is not None:
+                #~ self.BSL_TXPWORD(password)
+        else:
+            if self.bsl_version <= 0x0110:
+                self.logger.info('Buggy BSL, applying patch')
+                self.memory_write(0x0220, bsl_code.PATCH)
+                #~ self.execute(0x0220)
+                self.patch_in_use = True
 
-            # check for extended features (e.g. >64kB support)
-            self.logger.debug('Checking if device has extended features')
-            self.check_extended()
+        if self.options.speed is not None:
+            try:
+                self.set_baudrate(self.options.speed)
+            except bsl.BSLError:
+                raise bsl.BSLError("--speed option not supported by BSL on target")
 
-            if self.options.replace_bsl:
-                family = msp430.target.idetify_device(self.device_id, self.bsl_version)
-                if family == msp430.target.F1x:
-                    replacement_bsl = bsl_code.F1X_BSL
-                elif family == msp430.target.F4x:
-                    replacement_bsl = bsl_code.F4X_BSL
-                else:
-                    raise BSLError('No replacement BSL for %s' % (family,))
-                self.logger.info('Download replacement BSL as requested by --replace-bsl')
-                self.memory_write(0x0220, replacement_bsl)
-                bsl_start_address = struct.unpack("<H", replacement_bsl[:2])[0]
-                self.execute(bsl_start_address)
-                self.logger.info("Starting new BSL at 0x%04x" % (bsl_start_address,))
-                time.sleep(0.020)   # give BSL some time to initialize
-                #~ if self.options.password is not None:
-                    #~ self.BSL_TXPWORD(password)
-            else:
-                if self.bsl_version <= 0x0110:
-                    self.logger.info('Buggy BSL, applying patch')
-                    self.memory_write(0x0220, bsl_code.PATCH)
-                    #~ self.execute(0x0220)
-                    self.patch_in_use = True
+    # special versions of TX and RX block functions are needed in order to
+    # apply the patch on buggy devices
 
-            if self.options.speed is not None:
-                try:
-                    self.set_baudrate(self.options.speed)
-                except bsl.BSLError:
-                    raise bsl.BSLError("--speed option not supported by BSL on target")
+    def BSL_TXBLK(self, address, data):
+        if self.patch_in_use:
+            self.logger.debug("activate patch")
+            self.BSL_LOADPC(0x0220)
+        return SerialBSL.BSL_TXBLK(self, address, data)
 
-        # special versions of TX and RX block functions are needed in order to
-        # apply the patch on buggy devices
-
-        def BSL_TXBLK(self, address, data):
-            if self.patch_in_use:
-                self.logger.debug("activate patch")
-                self.BSL_LOADPC(0x0220)
-            return SerialBSL.BSL_TXBLK(self, address, data)
-
-        def BSL_RXBLK(self, address, length):
-            if self.patch_in_use:
-                self.logger.debug("activate patch")
-                self.BSL_LOADPC(0x0220)
-            return SerialBSL.BSL_RXBLK(self, address, length)
+    def BSL_RXBLK(self, address, length):
+        if self.patch_in_use:
+            self.logger.debug("activate patch")
+            self.BSL_LOADPC(0x0220)
+        return SerialBSL.BSL_RXBLK(self, address, length)
 
 
-        # override reset method: use control line
-        def reset(self):
-            #~ time.sleep(0.25)
-            #~ self.set_RST(True)      # power supply
-            #~ self.set_TEST(True)     # power supply
-            #~ time.sleep(0.1)
-            #~ self.patch_in_use = False
-            self.set_RST(False)
-            #~ time.sleep(0.5)
-            #~ SerialBSL.reset(self)
-            #~ self.set_RST(True)
-            #~ time.sleep(0.250)       # give MSP430's oscillator time to stabilize
+    # override reset method: use control line
+    def reset(self):
+        #~ time.sleep(0.25)
+        #~ self.set_RST(True)      # power supply
+        #~ self.set_TEST(True)     # power supply
+        #~ time.sleep(0.1)
+        #~ self.patch_in_use = False
+        self.set_RST(False)
+        #~ time.sleep(0.5)
+        #~ SerialBSL.reset(self)
+        #~ self.set_RST(True)
+        #~ time.sleep(0.250)       # give MSP430's oscillator time to stabilize
 
 
+def main():
     # run the main application
     bsl_target = SerialBSLTarget()
     bsl_target.main()
+
+if __name__ == '__main__':
+    main()

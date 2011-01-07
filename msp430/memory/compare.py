@@ -50,7 +50,7 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, html=False):
         return True
 
 
-def main():
+def inner_main():
     from optparse import OptionParser
     parser = OptionParser(usage="""\
 %prog [options] FILE FILE
@@ -125,9 +125,9 @@ the differences between the files.
     sys.exit(not same)  # exit code 0 if same, otherwise 1
 
 
-if __name__ == '__main__':
+def main():
     try:
-        main()
+        inner_main()
     except SystemExit:
         raise                                   # let pass exit() calls
     except KeyboardInterrupt:
@@ -138,3 +138,6 @@ if __name__ == '__main__':
         if debug: raise                         # show full trace in debug mode
         sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
         sys.exit(1)                             # set error level for script usage
+
+if __name__ == '__main__':
+    main()

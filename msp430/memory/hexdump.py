@@ -107,7 +107,7 @@ def load(filelike):
 
 debug = False
 
-def main():
+def inner_main():
     from optparse import OptionParser
     parser = OptionParser(usage="""\
 %prog [options] [SOURCE...]
@@ -173,9 +173,9 @@ What is dumped?
         save(mem, output)
 
 
-if __name__ == '__main__':
+def main():
     try:
-        main()
+        inner_main()
     except SystemExit:
         raise                                   # let pass exit() calls
     except KeyboardInterrupt:
@@ -186,3 +186,6 @@ if __name__ == '__main__':
         if debug: raise                         # show full trace in debug mode
         sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
         sys.exit(1)                             # set error level for script usage
+
+if __name__ == '__main__':
+    main()

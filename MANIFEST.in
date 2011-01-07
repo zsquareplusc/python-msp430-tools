@@ -1,0 +1,15 @@
+include README.txt
+include LICENSE.txt
+include CHANGES.txt
+include MANIFEST.in
+include setup.py
+recursive-include msp430
+
+recursive-include examples
+
+include scripts/*.py
+
+include doc/*.rst
+include doc/*.txt
+include doc/conf.py
+include doc/Makefile

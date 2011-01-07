@@ -61,7 +61,7 @@ class JTAGTarget(object):
 
     def reset(self):
         """Reset the device."""
-        self.jtagobj.reset()
+        self.jtagobj.reset(1, 1)
 
     def close(self):
         if not self.release_done:
@@ -254,7 +254,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
         if self.verbose:
             sys.stderr.write("MSP430 JTAG programmer Version: %s\n" % VERSION)
 
-        self.jtagobj.data = self.download_data       # prepare downloaded data
+        self.jtagobj.data = self.download_data      # prepare downloaded data
 
 
     def close_connection(self):

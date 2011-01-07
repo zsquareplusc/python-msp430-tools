@@ -19,12 +19,22 @@ msp430-dco
     Command line application for the MSP430 parallel JTAG adapter. Measure
     or callibrate the DCO clock.
 
-
 msp430-gdb
     Command line application do download using a GDB proxy (TCP/IP connection).
 
 msp430-convert
     Command line utility to convert between hex file formats.
+
+msp430-compare
+    Compare two hex files
+
+msp430-hexdump
+    Show contents of hex files
+
+msp430-generate
+    Create hex files with a defined pattern. Can be used for testing or to
+    create underlays for other binaries (e.g. to fill unused memory with
+    "NOPs" or "JMP $")
 
 msp430-downloader
     Small program, suitable for file associations, so that double clicking an
@@ -42,6 +52,9 @@ Description of Python library
 - msp430.jtag   JTAG tools using the MSP430[mspgcc] library.
 - msp430.memory Memory implementation, used to store an memory image used
                 to download to the MSP. File format handlers are here too.
+- msp430.shell  shell commands, useful for makefiles etc.
+- msp430.listing Parse listing files
+- msp430.legacy Support code for older tools.
 
 Other files
 ===========

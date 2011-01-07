@@ -10,12 +10,11 @@ Remote GDB programmer for the MSP430 embedded processor.
 """
 
 import sys
-import struct
 import logging
-import time
-from msp430 import memory
 from msp430.gdb import gdb
 
+from optparse import OptionGroup
+import msp430.target
 
 VERSION = "1.0"
 
@@ -67,49 +66,48 @@ class GDBTarget(object):
             self.gdb = None
 
 
-if __name__ == '__main__':
-    import sys
-    from optparse import OptionGroup
-    import msp430.target
-    import msp430.memory
 
-    class GDB(GDBTarget, msp430.target.Target):
-        """Combine the GDB backend and the common target code."""
+class GDB(GDBTarget, msp430.target.Target):
+    """Combine the GDB backend and the common target code."""
 
-        def __init__(self):
-            GDBTarget.__init__(self)
-            msp430.target.Target.__init__(self)
-            self.logger = logging.getLogger('GDB')
+    def __init__(self):
+        GDBTarget.__init__(self)
+        msp430.target.Target.__init__(self)
+        self.logger = logging.getLogger('GDB')
 
 
-        def add_extra_options(self):
-            group = OptionGroup(self.parser, "Connection")
+    def add_extra_options(self):
+        group = OptionGroup(self.parser, "Connection")
 
-            group.add_option("-c", "--connect",
-                    dest="host_port",
-                    help="TCP/IP host name or ip and port of GDB server (default: %default)",
-                    action='store',
-                    default='localhost:2000',
-                    metavar='HOST:PORT')
+        group.add_option("-c", "--connect",
+                dest="host_port",
+                help="TCP/IP host name or ip and port of GDB server (default: %default)",
+                action='store',
+                default='localhost:2000',
+                metavar='HOST:PORT')
 
-            self.parser.add_option_group(group)
-
-
-        def parse_extra_options(self):
-            host, port = self.options.host_port.split(':')
-            self.host_port = (host, int(port))
-            if self.verbose:
-                sys.stderr.write("MSP430 remote GDB programmer Version: %s\n" % VERSION)
+        self.parser.add_option_group(group)
 
 
-        def close_connection(self):
-            self.close()
+    def parse_extra_options(self):
+        host, port = self.options.host_port.split(':')
+        self.host_port = (host, int(port))
+        if self.verbose:
+            sys.stderr.write("MSP430 remote GDB programmer Version: %s\n" % VERSION)
 
 
-        def open_connection(self):
-            self.open(self.host_port)
+    def close_connection(self):
+        self.close()
 
 
+    def open_connection(self):
+        self.open(self.host_port)
+
+
+def main():
     # run the main application
     gdb_target = GDB()
     gdb_target.main()
+
+if __name__ == '__main__':
+    main()

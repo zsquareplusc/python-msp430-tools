@@ -9,13 +9,13 @@
 Simple MSP430 BSL implementation using the serial port.
 """
 
+import sys
 from msp430.bsl import bsl, bsl_code
 import serial
 import struct
 import logging
 import time
 
-import sys
 from optparse import OptionGroup
 import msp430.target
 import msp430.memory

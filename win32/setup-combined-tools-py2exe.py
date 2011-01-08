@@ -15,7 +15,7 @@ setup(
     name = 'http://mspgcc.sourceforge.net',
     author="Chris Liechti",
     author_email="cliechti@gmx.net",
-    url="http://mspgcc.sourceforge.net/",
+    url="http://launchpad.net/python-msp430-tools/",
     
     version = '1.0',
     options = { "py2exe":
@@ -30,10 +30,10 @@ setup(
         "msp430-bsl.py",
         "msp430-jtag.py",
         "msp430-dco.py",
-        "ihex2titext.py", "titext2ihex.py",
         "msp430-ram-usage.py",
         "msp430-hexdump.py",
-        "msp430-miniterm.py",
+        "msp430-convert.py",
+        "msp430-generate.py",
     ],
     windows = [
         {

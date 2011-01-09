@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2010 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+#
+#
+# This is a configuration file that is machine read. be careful when editing!
+#
+# The syntax is quite simple: it is parsed as white space delimited words.
+# <-- this is a comment, it skips the rest of the line
+#
+# Supported commands are:
+# - segment <name>    <memory_range>
+# - memory-map-begin
+# - memory-map-end
+# - name <name>
+# - based_on <name>
+# - template-begin
+# - template-variables
+# - template-values
+# - template-end
+# - read-only
+# - programmable
+#
+# Words in brackets ("<...>") mean that the words following the command
+# are consumed as parameter to the command.
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Logical Segmentation
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+memory-map-begin
+    name        LOGICAL
+    # declare a "DATA" segment at the beginning of RAM
+    segment     .data           in:RAM
+    segment     .bss            in:RAM
+    segment     .noinit         in:RAM
+    symbol      _stack          in:RAM,location:end
+
+    # declare multiple segments that are located in FLASH
+    programmable segment    .text           in:FLASH
+    programmable segment    .const          in:FLASH
+    programmable segment    .data_init      in:FLASH,mirror:.data
+memory-map-end
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Physical Memory Layout
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+memory-map-begin
+    name         MSP430F1xx
+    based-on     LOGICAL
+    read-only    segment     .bootloader     0x0c00-0x0fff
+    programmable segment     .infomem        0x1000-0x10ff   # 256B Information memory (Flash)
+    programmable segment     .infoB          0x1000-0x107f
+    programmable segment     .infoA          0x1080-0x10ff
+    programmable segment     .vectors        0xffe0-0xffff
+memory-map-end
+
+memory-map-begin
+    name         MSP430F1121
+    based-on     MSP430F1xx
+                 segment     RAM             0x0200-0x02ff       # 256B
+    programmable segment     FLASH           0xf000-0xffdf       # 4kB
+memory-map-end
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+memory-map-begin
+    name         MSP430F2xx
+    based-on     LOGICAL
+    read-only    segment     .bootloader     0x0c00-0x0fff
+    programmable segment     .infomem        0x1000-0x10ff
+    programmable segment     .infoD          0x1000-0x103f
+    programmable segment     .infoC          0x1040-0x107f
+    programmable segment     .infoB          0x1080-0x10bf
+    programmable segment     .infoA          0x10c0-0x10ff
+    programmable segment     .vectors        0xffe0-0xffff
+memory-map-end
+
+template-begin
+    memory-map-begin
+        based-on     MSP430F2xx
+                     segment     RAM             <RAM>
+        programmable segment     FLASH           <FLASH>
+        name                                     <MCU>
+    memory-map-end
+template-variables
+    <MCU>           <RAM>           <FLASH>
+template-values
+    MSP430F2001     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
+    MSP430F2002     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
+    MSP430F2003     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
+    MSP430F2011     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
+    MSP430F2012     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
+    MSP430F2013     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
+
+    MSP430G2121     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
+    MSP430G2131     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
+    MSP430G2221     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
+    MSP430G2231     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
+template-end
+

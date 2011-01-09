@@ -365,6 +365,11 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
                 help="download replacement BSL (V1.50) for F1x and F4x devices with 2k RAM",
                 default=False)
 
+        group.add_option("--erase-cycles",
+                dest="extra_erase_cycles",
+                type="int",
+                help="configure extra erase cycles (e.g. very old F149 chips require this for --main-erase)",
+                default=None)
         self.parser.add_option_group(group)
 
 
@@ -385,6 +390,9 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
             ignore_answer = self.options.ignore_answer,
         )
         self.control_delay = self.options.control_delay
+
+        if self.options.extra_erase_cycles is not None:
+            self.main_erase_cycles += self.options.extra_erase_cycles
 
         if self.options.test_on_tx:
             self.testOnTX = True

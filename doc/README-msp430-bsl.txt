@@ -1,234 +1,196 @@
 msp430-bsl
 ==========
 
-BootStrapLoader software for the flash devices MSP430F1xx 
-(maybe F4xx too, but its not tested).
-Based on the example provided by TI but with more features.
-
-It is released under a free software license,
-see license.txt for more details.
-
-(C) 2001-2003 Chris Liechti <cliechti@gmx.net>
-
+MSP430 Boot Strap Loader software for F1xx, F2xx, F4xx.
 
 Features
 --------
 
 - understands ELF, TI-Text and Intel-hex object files
-- download to Flash and/or RAM, erase, verify
-- reset and wait for keypress (to run a device directly from the port
+- download to Flash and/or RAM, erase, verify, ...
+- reset and wait for key press (to run a device directly from the port
   power)
-- load addres into R0/PC and run
+- load address into R0/PC and run
 - password file can be any data file, e.g. the one used to program the
   device in an earlier session
 - upload a memory block MSP->PC (output as binary data or hex dump)
-- written in Python, runs on Win32, Linux, BSD (other unices have other
-  device names but should be faisible)
+- written in Python, runs on Win32, Linux, BSD (and others.)
 - use on command line, or in a Python script
-- download a program, execute it, resynchronize and upload results.
-  (for testing and callibration)
-- downloadable BSL for larger devices (integrated or user supplied)
-- baudrate change for newer MSP430-BSLs
-- test and reset lines can be inverted for non standard BSL hardware
+- downloadable BSL for larger devices (integrated)
+- baud rate change for newer MSP430-BSLs
+- test and reset lines can be inverted or exchanged for non standard BSL
+  hardware. test singal on TX line is also possible
 
 
 Requirements
 ------------
 - Linux, BSD, Un*x or Windows PC
-- Python 2.0 or newer (1.5.2 untested), 2.2 recomeded
-- win32all extensions to Python on Windows
-- BSL hardware with an MSP430 device connected to a serial port 
-
-
-Installation
-------------
-Python installations are available from www.python.org. On Windows simply
-use the installer. The win32all package has an installer too. These
-installations should run fine with the deafults.
-
-XXX
+- Python 2.5 or newer
+- pySerial (2.4 or newer recommended)
+- BSL hardware with an MSP430 device connected to a serial port
 
 
 Short introduction
 ------------------
 First the MSP430 BSL hardware is needed. An example schematics can be found
 in the application note "slaa96b" from TI (see references). Then this
-programm can be used to communicate between the PC and the MSP430 device.
+program can be used to communicate between the PC and the MSP430 device.
 
 The program can be started by typing "msp430-bsl" in a console.
 To run it in the source directory, use "python msp430-bsl.py"
 
-USAGE: msp430-bsl [options] [file]
+Usage: target.py [OPTIONS] [FILE [FILE...]]
 
-If "-" is specified as file the data is read from the stdinput.
-A file ending with ".txt" is considered to be in TIText format,
-'.a43' and '.hex' as IntelHex and all other filenames are
-considered as ELF files.
+Options:
+  -h, --help            show this help message and exit
+  -d, --debug           print debug messages and tracebacks (development mode)
+  -v, --verbose         show more messages (can be given multiple times)
+  -q, --quiet           suppress all messages
+  --time                measure time
+  -S, --progress        show progress while programming
 
-General options:
-  -h, --help            Show this help screen.
-  -c, --comport=port    Specify the communication port to be used.
-                        (Default is 0)::
-                        
-                                0->COM1 / ttyS0
-                                1->COM2 / ttyS1
-                                etc.
-                                
-  -P, --password=file   Specify a file with the interrupt vectors that
-                        are used as password. This can be any file that
-                        has previously been used to program the device.
-                        (e.g. -P INT_VECT.TXT).
-  -f, --framesize=num   Max. number of data bytes within one transmitted
-                        frame (16 to 240 in steps of 16) (e.g. -f 240).
-  -m, --erasecycles=num  Number of mass erase cycles (default is 1). Some
-                        old F149 devices need additional erase cycles.
-                        On newer devices it is no longer needed. (e.g. for
-                        an old F149: -m20)
-  -U, --unpatched       Do not download the BSL patch, even when it is
-                        needed. This is used when a program is downloaded
-                        into RAM and executed from there (and where flash
-                        programming is not needed.)
-  -D, --debug           Increase level of debug messages. This won't be
-                        very useful for the average user...
-  -I, --intelhex        Force fileformat to IntelHex
-  -T, --titext          Force fileformat to be TIText
-  -N, --notimeout       Don't use timeout on serial port (use with care)
-  -B, --bsl=filename    Load and use new BSL from the TI Text file
-  -S, --speed=baud      Reconfigure speed, only possible with newer
-                        MSP403-BSL versions (>1.5, read slaa089a.pdf for
-                        details). If the --bsl option is not used, an
-                        internal BSL replacement will be loaded.
-                        Needs a target with at least 2kB RAM!
-                        Possible values are 9600, 19200, 38400
-                        (default 9600)
-  -1, --f1x             Specify CPU family, in case autodetect fails
-  -4, --f4x             Specify CPU family, in case autodetect fails
-                        --F1x and --f2x are only needed when the "change
-                        baudrate" feature is used and the autodetect feature
-                        fails. If the device ID that is uploaded is known, it
-                        has precedence to the command line option.
-  --invert-reset        Invert signal on RST pin (used for some BSL hardware)
-  --invert-test         Invert signal on TEST/TCK pin (used for some BSL
-                        hardware)
-  --slow                Add delays when operating the conrol pins. Useful if
-                        the pins/circuit has high capacitance.
+  Data input:
+    File format is auto detected, unless --input-format is used. Preferred
+    file extensions are ".txt" for TI-Text format, ".a43" or ".hex" for
+    Intel HEX. ELF files can also be loaded.
 
-Program Flow Specifiers:
-  -e, --masserase       Mass Erase (clear all flash memory)
-  -E, --erasecheck      Erase Check by file
-  -p, --program         Program file
-  -v, --verify          Verify by file
+    Multiple files can be given on the command line, all are merged before
+    the download starts. "-" reads from stdin.
 
-The order of the above options matters! The table is ordered by normal
-execution order. For the options "Epv" a file must be specified.
-Program flow specifiers default to "pvr" if a file is given.
-Don't forget to specify "e" or "eE" when programming flash!
+    -i TYPE, --input-format=TYPE
+                        input format name (titext, ihex, bin, hex, elf)
 
-Data retreiving:
-  -u, --upload=addr     Upload a datablock (see also: -s).
-  -s, --size=num        Size of the data block do upload. (Default is 2)
-  -x, --hex             Show a hexadecimal display of the uploaded data.
-                        (Default)
-  -b, --bin             Get binary uploaded data. This can be used
-                        to redirect the output into a file.
+  Flash erase:
+    Multiple --erase options are allowed. It is also possible to use
+    address ranges such as 0xf000-0xf0ff or 0xf000/4k.
 
-Do before exit:
-  -g, --go=address      Start programm execution at specified address.
-                        This implies option --wait.
-  -r, --reset           Reset connected MSP430. Starts application.
-                        This is a normal device reset and will start
-                        the programm that is specified in the reset
-                        vector. (see also -g)
-  -w, --wait            Wait for <ENTER> before closing serial port.
+    NOTE: SegmentA on F2xx is NOT erased with --mass-erase, that must be
+    done separately with --erase=0x10c0 or --info-erase".
 
-If it says "NAK received" it's probably because you specified no or a
-wrong password.
+    -e, --mass-erase    mass erase (clear all flash memory)
+    -m, --main-erase    erase main flash memory only
+    --info-erase        erase info flash memory only (0x1000-0x10ff)
+    -b, --erase-by-file
+                        erase only Flash segments where new data is downloaded
+    --erase=ADDRESS     selectively erase segment at the specified address or
+                        address range
+
+  Program flow specifiers:
+    All these options work against the file(s) provided on the command
+    line. Program flow specifiers default to "-P" if a file is given.
+
+    "-P" usually verifies the programmed data, "-V" adds an additional
+    verification through uploading the written data for a 1:1 compare.
+
+    No default action is taken if "-P", "-V" or "-E" is given, say
+    specifying only "-V" does a "check by file" of a programmed device
+    without programming.
+
+    Don't forget to erase ("-e", "-b" or "-m") before programming flash!
+
+    -E, --erase-check   erase check by file
+    -P, --program       program file
+    -V, --verify        verify by file
+    -U, --upload-by-file
+                        upload the memory that is present in the given file(s)
+
+  Data upload:
+    This can be used to read out the device memory. It is possible to use
+    address ranges such as 0xf000-0xf0ff or 0xf000/256, 0xfc00/1k.
+
+    Multiple --upload options are allowed.
+
+    -u ADDRESS, --upload=ADDRESS
+                        upload a data block, can be passed multiple times
+    -o DESTINATION, --output=DESTINATION
+                        write uploaded data to given file
+    -f TYPE, --output-format=TYPE
+                        output format name (titext, ihex, bin, hex),
+                        default:hex
+
+  Do before exit:
+    -x ADDRESS, --execute=ADDRESS
+                        start program execution at specified address, might
+                        only be useful in conjunction with --wait
+    -r, --reset         perform a normal device reset that will start the
+                        program that is specified in the reset interrupt
+                        vector
+    -w, --wait          wait for <ENTER> before closing the port
+    --no-close          do not close port on exit
+
+  Communication settings:
+    -p PORT, --port=PORT
+                        Use com-port
+    --invert-test       invert RTS line
+    --invert-reset      invert DTR line
+    --swap-reset-test   exchenage RST and TEST signals (DTR/RTS)
+    --test-on-tx        TEST/TCK signal is muxed on TX line
+
+  BSL settings:
+    --no-start          no not use ROM-BSL start pattern on RST+TEST/TCK
+    -s SPEED, --speed=SPEED
+                        change baud rate (default 9600)
+    --password=FILE     transmit password before doing anything else, password
+                        is given in given (TI-Text/ihex/etc) file
+    --ignore-answer     do not wait for answer to BSL commands
+    --control-delay=CONTROL_DELAY
+                        set delay in seconds (float) for BSL start pattern
+    --replace-bsl       download replacement BSL (V1.50) for F1x and F4x
+                        devices with 2k RAM
+    --erase-cycles=EXTRA_ERASE_CYCLES
+                        configure extra erase cycles (e.g. very old F149 chips
+                        require this for --main-erase)
+
+
+
+If it says ``command failed (DATA_NAK)`` it's probably because no or a wrong
+password was specified, while a ``ERROR:BSL:Sync failed, aborting...`` is
+typical when the BSL could not be started at all.
 
 
 Examples
 --------
+``led.txt`` in the following examples is a place holder for some sort of binary
+for the MSP430. A ``led.txt`` that contains an example in TI-Text format can be
+built from the code in ``examples/asm/led``.
+
 ``msp430-bsl -e``
         Only erase flash.
 
-``msp430-bsl -eErw 6port.a43``
+``msp430-bsl -eErw led.txt``
         Erase flash, erase check, download an executable, run it (reset)
         and wait.
-        
-        Old F149 devices need addidional erase cycles! Use the -m
-        option in this case (-m20 will be OK is most cases):
-        "msp430-bsl -eErwm20 6port.a43"
 
-``msp430-bsl 6port.a43``
+        Old F149 devices need additional erase cycles! Use the
+        ``--erase-cycles`` option in this case (``--erase-cycles 20`` will be
+        OK is most cases)
+
+``msp430-bsl led.txt``
         Download of an executable to en empty (new or erased) device.
-        (Note that in new devices some of the first bytes in the
+        (Note that in new devices, some of the first bytes in the
         information memory are random data. If data should be
-        downloaded there, specify -eE.)
+        downloaded there, specify -e.)
 
-``msp430-bsl --go=0x220 ramtest.a43``
-        Download a program into RAM and run it (on an erased device)
 
-``msp430-bsl --go=0x200 -P 6port.a43 ramtest.a43``
-        Download a program into RAM and run it (on a device that was
-        previously programmed with 6port.a43 and therefore needs a
-        specific password).
-
-        For old devices that use the patch the above command gives a
-        conflict with the patch. But as the patch is only needed to
-        programm flash, it can be left out when running a program solely
-        from RAM::
-        
-          msp430-bsl --go=0x200 -u -P 6port.a43 ramtest.a43
-
-``msp430-bsl -u 0x0c00 -s 1024 -P 6port.a43``
+``msp430-bsl --upload 0x0c00/1024 --password led.txt``
         Get a memory dump in HEX, from the bootstrap loader (on a device
-        that was previously programmed with 6port.a43 and therefore needs
+        that was previously programmed with led.txt and therefore needs
         a specific password):
-
-        or on unix with the use of "hexdump"::
-        
-          msp430-bsl -u 0x0c00 -s 1024 -P 6port.a43 -b | hexdump
-
-        or save the binary in a file::
-        
-          msp430-bsl -u 0x0c00 -s 1024 -P 6port.a43 -b >dump.bin
-
-``msp430-bsl --go=0x220 --upload=0x200 --size=256 ramtest.a43``
-        Download the file ramtest.a43 to an empty device, execute its
-        main function at 0x0220. The BSL then tries to reconnect to the
-        device. This does only work when the program on the MSP430
-        does enter the BSL by jumping at address 0x0c00. It is not
-        forced to enter the BSL by a reset as this would stop the
-        program excution.
-        When the reconnection was successful, the data, specified with
-        the --upload and --size parameters, is loaded and printed.
-        
-        This configuration can be useful for software tests, getting
-        callibration data, etc.
-        
-        PS: dont specify -r when using -g. A reset starts the user
-        program which possibly destroys a program that was downloaded
-        to RAM.
 
 ``msp430-bsl -rw``
         Just start the user program (with a reset) and wait.
 
-``msp430-bsl -rwc1``
-        Reset the device on the second serial/COM port and wait.
 
-``cat 6port.a43|msp430-bsl -eE -``
+``cat led.txt|msp430-bsl -e -``
         Pipe the data from "cat" to the BSL to erase and program the
         flash. (un*x example, don't forget the dash at the end of the
         line)
 
-``msp430-bsl -e -S 38400 6port.a43``
+``msp430-bsl --replace-bsl -e -s 38400 led.txt``
         First download the internal replacement BSL and then use it
         to program at 38400 baud. Only works with targets with more
-        than 1kB of RAM.
-
-``msp430-bsl -e -B BL_150S_14x.txt -S 38400 6port.a43``
-        First download the given replacement BSL and then use it to
-        program at 38400 baud. Only works with targets with more
-        than 1kB of RAM.
+        than 1kB of RAM. Newer devices with already know this command, in that
+        case omit the ``--replace-bsl``
 
 
 History
@@ -242,17 +204,16 @@ V1.5
     ELF file support,
     replacement BSLs are now internal
 
+V2.0
+    New implementation. Some command line options have been renamed or
+    replaced.
+
 
 References
 ----------
 - Python: http://www.python.org
 
-- Jython: http://www.jython.org
-
-- Serial Extension for Python: http://pyserial.sourceforge.net
-
-- win32all: http://starship.python.net/crew/mhammond/
-  and http://www.activestate.com/Products/ActivePython/win32all.html
+- Serial port extension for Python: http://pyserial.sourceforge.net
 
 - slaa89.pdf: "Features of the MSP430 Bootstrap Loader in the
   MSP430F1121", TI, http://www.ti.com/msp430
@@ -260,6 +221,6 @@ References
 - slaa96b.pdf: "Application of Bootstrap Loader in MSP430 With Flash
   Hardware and Software Proposal", TI
 
-- Texas Instruments MSP430 Homepage, links to Datasheets and Application
-  Notes: http://www.ti.com/msp430
+- Texas Instruments MSP430 Homepage, links to data sheets and application
+  notes: http://www.ti.com/msp430
 

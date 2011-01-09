@@ -108,6 +108,7 @@ class BSL(object):
 
     def __init__(self):
         self.extended_address_mode = False
+        self.main_erase_cycles = 12
 
     def check_extended(self):
         """Automatically determine if BSL_SETMEMOFFSET can be used"""
@@ -163,7 +164,7 @@ class BSL(object):
         """Erase Flash segment containing the given address."""
         # must execute command multiple times to meet cumulative erase time
         # required, see slaa89d, pg. 8
-        for i in range(12):
+        for i in range(self.main_erase_cycles):
             self.BSL_ERASE(0xff00, 0xa504)
 
     def execute(self, address):

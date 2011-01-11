@@ -3,14 +3,12 @@ msp430-dco
 
 MSP430 clock calibration utility.
 
-(C) 2005-2006 Chris Liechti <cliechti@gmx.net>
-
 
 Features
 --------
 
 - can handle F1xx, F2xx and F4xx devices, with or without external
-  Rsel resisitor
+  Rsel resistor
 - measure calibration values for a given frequency
 - restore calibration values of F2xx devices
 - selectable clock tolerance
@@ -20,23 +18,10 @@ Features
 Requirements
 ------------
 - Linux, BSD, Un*x or Windows PC
-- Python 2.3 or newer
+- Python 2.5 or newer
 - Parallel JTAG hardware with an MSP430 device connected
   (currently only the parallel port adapter with the MSP430mspgcc library
   is supported)
-
-
-Installation
-------------
-Binaries for Windows are included in the installer.
-
-Linux users should refer to the next section.
-
-
-Building from source
---------------------
-Please refer to the msp430-jtag documentation. The steps are identical, just
-the python frontend has a different name.
 
 
 Short introduction
@@ -45,12 +30,12 @@ This software uses the JTAG hardware that comes with the FET kits. It is
 connected to the parallel port.
 
 The program can be started by typing ``msp430-dco`` when installed correctly
-If it's used from the source directory use ``python msp430-dco.py``.
+If it's used from the source directory use ``python -m msp430.jtag.dco``.
 
 
-usage: msp430-dco [options] frequency
+Usage: dco.py [options] frequency
 
-MSP430 clock calibration utility.
+MSP430 clock calibration utility V1.1
 
 This tool can measure the internal oscillator of F1xx, F2xx and F4xx devices,
 display the supported frequencies, or run a software FLL to find the settings
@@ -59,21 +44,18 @@ for a specified frequency.
 The target device has to be connected to the JTAG interface.
 
 Examples:
-    See min and max clock speeds::
+  See min and max clock speeds:
+    dco.py --measure
 
-        msp430-dco --measure
+  Get clock settings for 2.0MHz +/-1%:
+    dco.py --tolerance=0.01 2.0e6
 
-    Get clock settings for 2.0MHz +/-1%::
-
-        msp430-dco --tolerance=0.01 2.0e6
-
-    Write clock calibration for 1.5MHz to the information memory at 0x1000::
-
-        msp430-dco 1.5e6 BCSCTL1@0x1000 DCOCTL@0x1001
+  Write clock calibration for 1.5MHz to the information memory at 0x1000:
+    dco.py 1.5e6 BCSCTL1@0x1000 DCOCTL@0x1000
 
 Use it at your own risk. No guarantee that the values are correct.
 
-options:
+Options:
   -h, --help            show this help message and exit
   -o FILE, --output=FILE
                         write result to given file
@@ -88,18 +70,11 @@ options:
   --define              output #defines instead of assignments
   --erase=ERASE         erase flash page at given address. Use with care!
 
-Notes:
-
-- the --output option can be used to redirect the output. One could also use
-  the usual stdout redirection from the shell (``>filename``)
-- --tolerance specifies a window in which the clock has to be to complete the
-  calibration.
-
 
 Variables
 ---------
 
-Arguments in the form ``variable@address`` are used to write the coresponding
+Arguments in the form ``variable@address`` are used to write the corresponding
 values to the target device.
 Variable names are case insensitive, addresses can be specified in decimal,
 octal or hexadecimal format.
@@ -190,7 +165,7 @@ Examples
 Known Issues
 ------------
 The algorithm does not search for the best match, it stops when the frequency
-iswithin the window. Therefore it's not unlikely that the frequency is at the
+is within the window. Therefore it's not unlikely that the frequency is at the
 border of the tolerance window and not in the center.
 
 
@@ -207,6 +182,6 @@ References
 ----------
 - Python: http://www.python.org
 
-- Texas Instruments MSP430 Homepage, links to Datasheets and Application
-  Notes: http://www.ti.com/msp430
+- Texas Instruments MSP430 homepage, links to data sheets and application
+  notes: http://www.ti.com/msp430
 

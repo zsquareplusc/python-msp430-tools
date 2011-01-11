@@ -3,9 +3,6 @@ msp430-downloader
 
 Software to talk to the parallel port and USB JTAG adapters as seen with the
 FET kits.
-It is released under a free software license, see license.txt for more details.
-
-(C) 2002-2008 Chris Liechti <cliechti@gmx.net>
 
 
 Features
@@ -22,25 +19,16 @@ Features
 - TI/3rd party library support for USB JTAG adaptors (Windows only)
 
 
-Installation
-------------
-Binaries for Windows can be found in the download section of
-http://mspgcc.sf.net
-
-Linux users should refer to the last section.
-
-
 Short introduction
 ------------------
-The tool is intended to be assigned to .a43 and .elf files (the mspgcc Windows
-installer is doing this on request, by default).
+The tool is intended to be assigned to .a43 and .elf files.
 
 Without configuration file a dialog box is shown, first to ask for the
 programmer type, USB or parallel, and then the erase mode. These settings
 and some additional options can be preconfigured in a configuration file.
 
-The confiuration file togther with the binary can be bundled into a single ZIP
-archive (extension must be renamed tp .z43). The name of the configuration file
+The configuration file together with the binary can be bundled into a single ZIP
+archive (extension must be renamed to .z43). The name of the configuration file
 is irrelevant as the first one with the ending ``.m43`` is loaded. The binary
 is referenced in the configuration file, its name must match.
 
@@ -83,14 +71,14 @@ Example configuration file ``downloader-demo.m43``::
 
     ##########################################################################
     ## Ask again before programming.
-    ## Recomended if no ther questions before programming are enabled, so that
-    ## the user has a chance to abort. It is forced on if "loop" programming
-    ## is on.
+    ## Recommended if no ther questions before programming are enabled, so
+    ## that the user has a chance to abort. It is forced on if "loop"
+    ## programming is on.
     #ask_start = Yes
 
     ##########################################################################
     ## Fake the progress bar and increment depending on state, not depending
-    ## on data. Automaticaly set if the USB JTAG is used.
+    ## on data. Automatically set if the USB JTAG is used.
     fake_progess = No
 
     ##########################################################################
@@ -101,7 +89,7 @@ Example configuration file ``downloader-demo.m43``::
     ##########################################################################
     ## Backend selection:
     ##   "mspgcc"            use MSP430mspgcc.dll
-    ##   "parjtag"           use _parjtag + MSP430mspgcc.dll (not recomended)
+    ##   "parjtag"           use _parjtag + MSP430mspgcc.dll (not recommended)
     ##   "ti"                use MSP430.dll from TI ord 3rd party
     ## Autodetect if key is not given.
     #backend = mspgcc
@@ -119,39 +107,8 @@ Example configuration file ``downloader-demo.m43``::
 
     ##########################################################################
     ## Select the viewer for the readme. Possible values are:
-    ##   "browser"           the default webbrowser or text editor, depending
+    ##   "browser"           the default web browser or text editor, depending
     ##                       on file ending
     ##   "internal"          use a message box (only for very short texts)
     viewer = browser
 
-
-
-Building from source
---------------------
-
-Requirements
-~~~~~~~~~~~~
-- Linux, BSD, Un*x or Windows PC
-- Python 2.3+, EasyDialogs extension
-- Parallel JTAG hardware with an MSP430 device connected
-  (optionaly a USB adapter and a coresponding MSP430.dll on Windows)
-
-The libraries from the CVS module jtag/* have to be built. This includes
-MSP430mspgcc.dll and HIL.dll (respectively libMSP430mspgcc.so and
-libHIL.so ony Un*x platforms)
-
-On Linux/Un*x Python 2.2+ is needed. On some distributions is Python 1.5.2
-installed per default. You may meed to change the first line in the script
-from "python" to "python2". Maybe Python 2.x is in a separate package that
-has to be installed. There are rpm and deb binary packages and a source
-tarball available through the Python homepage.
-
-There prefered backend is the a ctypes version, which means just
-libMSP430mspgcc.so/dll libHIL.so/HIL.dll is needed and of course the ctypes
-python extension. The ctypes backend is also capable of using the closed
-source MSP430.dll/libMSP430.so library from TI or 3rd party supliers.
-
-Alternatively there is the older python extension module implemented in c
-called _parjtag.so/dll. Its sources can be found in the "python" folder of
-the CVS repository mentioned above. However, not all of the newest features
-may work with this backend.

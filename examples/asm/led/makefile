@@ -42,7 +42,7 @@ clean:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .PHONY: download-jtag download-bsl download-gdb
 download-jtag: led.txt
-	python -m msp430.jtag.target -e -l /opt/mspgcc/lib $^
+	python -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
 download-bsl: led.txt
 	python -m msp430.bsl.target -e $^
 download-gdb: led.txt

@@ -1,12 +1,7 @@
 msp430-jtag
 ===========
 
-Software to talk to the parallel port and USB JTAG adapters as seen with the
-FET kits.
-It is released under a free software license, see license.txt for more details.
-
-(C) 2002-2010 Chris Liechti <cliechti@gmx.net>
-
+Software to talk to the parallel port and USB JTAG adapters for the MSP430.
 
 Features
 --------
@@ -25,40 +20,9 @@ Features
 Requirements
 ------------
 - Linux, BSD, Un*x or Windows PC
-- Python 2.0 or newer, 2.3+ recommended
+- Python 2.5 or newer
 - Parallel JTAG hardware with an MSP430 device connected
-- USB adapter with a corresponding 3rd party MSP430 library)
-
-
-Installation
-------------
-Binaries for Windows can be found in the download section of
-http://mspgcc.sf.net
-
-Linux users should refer to the next section.
-
-
-Building from source
---------------------
-The libraries from the CVS module jtag/* have to be built. This includes
-MSP430mspgcc.dll and HIL.dll (respectively libMSP430mspgcc.so and
-libHIL.so only Un*x platforms)
-
-On Linux/Un*x Python 2.2+ is needed. On some distributions is Python 1.5.2
-installed per default. You may meed to change the first line in the script
-from "python" to "python2". Maybe Python 2.x is in a separate package that
-has to be installed. There are rpm and deb binary packages and a source
-tarball available through the Python homepage.
-
-There preferred backend is the ctypes version, which means just
-libMSP430mspgcc.so/dll libHIL.so/HIL.dll is needed and of course the ctypes
-python extension. The ctypes backend is also capable of using the closed
-source MSP430.dll/libMSP430.so library from TI or 3rd party suppliers.
-
-Alternatively there is the older python extension module implemented in c
-called _parjtag.so/dll. Its sources can be found in the "python" folder of
-the CVS repository mentioned above. However, not all of the newest features
-may work with this backend.
+- or USB adapter with a corresponding [3rd party] MSP430 library
 
 
 Short introduction
@@ -68,121 +32,132 @@ connected to the parallel port. Using 3rd party backends it is also possible
 to use USB programmers.
 
 The program can be started by typing ``msp430-jtag`` when installed correctly
-If it's used from the source directory use "python msp430-jtag.py".
+If it's used from the source directory use "python -m msp430.jtag.target".
 
+Usage: target.py [OPTIONS] [FILE [FILE...]]
 
-USAGE: msp430-jtag [options] [file]
-Version: 2.2
+Options:
+  -h, --help            show this help message and exit
+  -d, --debug           print debug messages and tracebacks (development mode)
+  -v, --verbose         show more messages (can be given multiple times)
+  -q, --quiet           suppress all messages
+  --time                measure time
+  -S, --progress        show progress while programming
+  --help-backend        show help about the different backends
+  -l LIBRARY_PATH, --library-path=LIBRARY_PATH
+                        search for libMSP430.so or libMSP430mspgcc.so in this
+                        place first
 
-If "-" is specified as file the data is read from stdin.
-A file ending with ".txt" is considered to be in TI-Text format all
-other filenames are considered to be in Intel HEX format.
+  Data input:
+    File format is auto detected, unless --input-format is used. Preferred
+    file extensions are ".txt" for TI-Text format, ".a43" or ".hex" for
+    Intel HEX. ELF files can also be loaded.
 
-General options:
-  -h, --help            Show this help text.
-  --help-backend        Show help about the different backends.
-  -D, --debug           Increase level of debug messages. This won't be
-                        very useful for the average user.
-  -I, --intelhex        Force input file format to Intel HEX.
-  -T, --titext          Force input file format to be TI-Text.
-  -R, --ramsize         Specify the amount of RAM to be used to program
-                        flash (default, if --ramsize is not given is
-                        autodetect).
+    Multiple files can be given on the command line, all are merged before
+    the download starts. "-" reads from stdin.
 
-Connection:
-  -l, --lpt=name        Specify an other parallel port or serial port for the
-                        USBFET (the later requires MSP430.dll instead of
-                        MSP430mspgcc.dll).
-                        (defaults to "LPT1" ("/dev/parport0" on Linux))
-  --slowdown=microsecs  Artificially slow down the communication. Can help
+    -i TYPE, --input-format=TYPE
+                        input format name (titext, ihex, bin, hex, elf)
+
+  Flash erase:
+    Multiple --erase options are allowed. It is also possible to use
+    address ranges such as 0xf000-0xf0ff or 0xf000/4k.
+
+    NOTE: SegmentA on F2xx is NOT erased with --mass-erase, that must be
+    done separately with --erase=0x10c0 or --info-erase".
+
+    -e, --mass-erase    mass erase (clear all flash memory)
+    -m, --main-erase    erase main flash memory only
+    --info-erase        erase info flash memory only (0x1000-0x10ff)
+    -b, --erase-by-file
+                        erase only Flash segments where new data is downloaded
+    --erase=ADDRESS     selectively erase segment at the specified address or
+                        address range
+
+  Program flow specifiers:
+    All these options work against the file(s) provided on the command
+    line. Program flow specifiers default to "-P" if a file is given.
+
+    "-P" usually verifies the programmed data, "-V" adds an additional
+    verification through uploading the written data for a 1:1 compare.
+
+    No default action is taken if "-P", "-V" or "-E" is given, say
+    specifying only "-V" does a "check by file" of a programmed device
+    without programming.
+
+    Don't forget to erase ("-e", "-b" or "-m") before programming flash!
+
+    -E, --erase-check   erase check by file
+    -P, --program       program file
+    -V, --verify        verify by file
+    -U, --upload-by-file
+                        upload the memory that is present in the given file(s)
+
+  Data upload:
+    This can be used to read out the device memory. It is possible to use
+    address ranges such as 0xf000-0xf0ff or 0xf000/256, 0xfc00/1k.
+
+    Multiple --upload options are allowed.
+
+    -u ADDRESS, --upload=ADDRESS
+                        upload a data block, can be passed multiple times
+    -o DESTINATION, --output=DESTINATION
+                        write uploaded data to given file
+    -f TYPE, --output-format=TYPE
+                        output format name (titext, ihex, bin, hex),
+                        default:hex
+
+  Do before exit:
+    -x ADDRESS, --execute=ADDRESS
+                        start program execution at specified address, might
+                        only be useful in conjunction with --wait
+    -r, --reset         perform a normal device reset that will start the
+                        program that is specified in the reset interrupt
+                        vector
+    -w, --wait          wait for <ENTER> before closing the port
+    --no-close          do not close port on exit
+
+  Connection:
+    NOTE: On Windows, use "USB", "TIUSB" or "COM5" etc if using MSP430.dll
+    from TI. On other platforms, e.g. Linux, use "/dev/ttyUSB0" etc. if
+    using libMSP430.so. If a libMSP430.so is found, it is preferred,
+    otherwise libMSP430mspgcc.so is used.
+
+    NOTE: --slowdown > 50 can result in failures for the RAM size auto
+    detection (use --ramsize option to fix this). Use the --verbose option
+    and watch the outputs. The DCO clock adjustment and thus the Flash
+    timing may be inaccurate for large values.
+
+    --backend=BACKEND   select an alternate backend. See --help-backend for
+                        more information
+    -p PORT, --port=PORT
+                        specify an other parallel port or serial port for the
+                        USBFET (the later requires libMSP430.so instead of
+                        libMSP430mspgcc.so).  (defaults to "LPT1"
+                        ("/dev/parport0" on Linux))
+    --spy-bi-wire-jtag  interface is 4 wire on a spy-bi-wire capable device
+    --spy-bi-wire       interface is 2 wire on a spy-bi-wire capable device
+    --slowdown=MICROSECONDS
+                        artificially slow down the communication. Can help
                         with long lines, try values between 1 and 50 (parallel
                         port interface with mspgcc's HIL library only).
                         (experts only)
-  --backend=backend     Select an alternate backend. See --help-backend for
-                        more information.
+    -R BYTES, --ramsize=BYTES
+                        specify the amount of RAM to be used to program flash
+                        (default: auto detected)
 
-.. note:: On Windows, use "TIUSB" or "COM5" etc if using MSP430.dll from TI.
-          If a MSP430.dll is found it is prefered, otherwise MSP430mspgcc.dll
-          is used.
-.. note:: --slowdown > 50 can result in failures for the ramsize autodetection
-          (use --ramsize option to fix this). Use the --debug option and watch
-          the outputs. The DCO clock adjustment and thus the Flash timing may
-          be inaccurate for large values.
+  JTAG fuse:
+    WARNING: This is not reversible, use with care!  Note: Not supported
+    with the simple parallel port adapter (7V source required).",
 
-Funclets:
-  -f, --funclet         The given file is a funclet (a small program to
-                        be run in RAM).
-  --parameter=option    Pass parameters to funclets.
-                        Registers can be written like "R15=123" or "R4=0x55"
-                        A string can be written to memory with "0x2e0=hello"
-                        --parameter can be given more than once.
-  --result=value        Read results from funclets. "Rall" reads all registers
-                        (case insensitive) "R15" reads R15 etc. Address ranges
-                        can be read with "0x2e0-0x2ff". See also --upload.
-                        --result can be given more than once.
-  --timeout=value       Abort the funclet after the given time in seconds
-                        if it does not exit no itself. (default 1)
+    --secure            blow JTAG security fuse
 
-.. note:: Writing and/or reading RAM before and/or after running a funclet may
-          not work as expected on devices with the JTAG bug like the F123.
-.. note:: Only possible with MSP430mspgcc.dll, not other backends.
+  Examples:
+    Mass erase and program from file: "/home/lch/python-mspgcc-
+    tools/msp430/jtag/target.py -e firmware.elf" Dump information memory:
+    "/home/lch/python-mspgcc-tools/msp430/jtag/target.py
+    --upload=0x1000-0x10ff"
 
-Program flow specifiers:
-  -e, --masserase       Mass Erase (clear all flash memory).
-                        Note: SegmentA on F2xx is NOT erased, that must be
-                        done separately with --erase=0x1000
-  -m, --mainerase       Erase main flash memory only.
-  --eraseinfo           Erase info flash memory only (0x1000-0x10ff).
-  --erase=address       Selectively erase segment at the specified address.
-  --erase=adr1-adr2     Selectively erase a range of segments.
-  -E, --erasecheck      Erase Check by file.
-  -p, --program         Program file.
-  -v, --verify          Verify by file.
-  --secure              Blow JTAG security fuse.
-
-                        .. warning:: This is not reversible, use with care!
-
-                        .. note:: Not supported with the simple parallel port
-                                  adapter (7V source required).
-
-The order of the above options matters! The table is ordered by normal
-execution order. For the options "E", "p" and "v" a file must be specified.
-Program flow specifiers default to "p" if a file is given.
-Don't forget to specify "e", "eE" or "m" when programming flash!
-"p" already verifies the programmed data, "v" adds an additional
-verification through uploading the written data for a 1:1 compare.
-No default action is taken if "p" and/or "v" is given, say specifying
-only "v" does a "check by file" of a programmed device.
-
-Data retrieving:
-  -u, --upload=addr     Upload a data block (see also: --size).
-                        It is also possible to use address ranges. In that
-                        case, multiple --upload parameters are allowed.
-  -s, --size=num        Size of the data block to upload (Default is 2).
-  -x, --hex             Show a hexadecimal display of the uploaded data.
-                        This is the default format, see also --bin, --ihex.
-  -b, --bin             Get binary uploaded data. This can be used
-                        to redirect the output into a file.
-  -i, --ihex            Uploaded data is output in Intel HEX format.
-                        This can be used to clone a device.
-
-Do before exit:
-  -g, --go=address      Start program execution at specified address.
-                        This implies option "w" (wait)
-  -r, --reset           Reset connected MSP430. Starts application.
-                        This is a normal device reset and will start
-                        the program that is specified in the reset
-                        interrupt vector. (see also -g)
-  -w, --wait            Wait for <ENTER> before closing parallel port.
-  --no-close            Do not close port on exit. Allows to power devices
-                        from the parallel port interface.
-
-Address parameters for --erase, --upload, --size can be given in
-decimal, hexadecimal or octal.
-
-Examples:
-    Mass erase and program from file: "msp430-jtag -e firmware.elf"
-    Dump Information memory: "msp430-jtag --upload=0x1000-0x10ff"
 
 
 .. note::
@@ -244,28 +219,17 @@ Examples
 ``msp430-jtag -e``
     Only erase flash.
 
-``msp430-jtag -eErw 6port.a43``
+``msp430-jtag -eErw led.txt``
     Erase flash, erase check, download an executable, run it (reset) and wait,
     the keep it powered (from the parallel port).
 
-``msp430-jtag -mS -R 2048 6port.a43``
-    Use ramsize option on a device with 2k RAM to speed up download. Of
-    course any value from 128B up to the maximum a device has is allowed.
-    The progress and mainerase options are also activated. Only erasing the
-    main memory is useful to keep calibration data in the information memory.
-
-``msp430-jtag 6port.a43``
+``msp430-jtag led.txt``
     Download of an executable to en empty (new or erased) device. (Note that
     in new devices some of the first bytes in the information memory are
     random data. If data should be downloaded there, specify -eE.)
 
 ``msp430-jtag --go=0x220 ramtest.a43``
     Download a program into RAM and run it, may not work with all devices.
-
-``msp430-jtag --funclet blinking.a43``
-    Download a program into RAM and run it. It must be a special format with
-    "startadr", "entrypoint", "exitpoint" as the first three words in the
-    data and it must end on "jmp $". See MSP430mspgcc sources for more info.
 
 ``msp430-jtag -u 0x0c00/1k``
     Get a memory dump in HEX, from the bootstrap loader.
@@ -280,14 +244,14 @@ Examples
 ``msp430-jtag``
     Just start the user program (with a reset).
 
-``cat 6port.a43|msp430-jtag -e -``
+``cat led.txt|msp430-jtag -e -``
     Pipe the data from "cat" to msp430-jtag to erase and program the flash.
     (un*x example, don't forget the dash at the end of the line)
 
 
 USB JTAG adapters
 -----------------
-This section only applies to Windows. On linux replace MSP430.dll with
+This section only applies to Windows. On Linux replace MSP430.dll with
 libMSP430.so etc.
 
 USB JTAG adapters are supported through the MSP430.dlls from the adaptor
@@ -359,6 +323,6 @@ References
   This module is included in the standard distribution since Python 2.5:
   http://docs.python.org/lib/module-ctypes.html
 
-- Texas Instruments MSP430 Homepage, links to Datasheets and Application
-  Notes: http://www.ti.com/msp430
+- Texas Instruments MSP430 homepage, links to data sheets and application
+  notes: http://www.ti.com/msp430
 

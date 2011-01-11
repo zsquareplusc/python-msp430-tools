@@ -5,8 +5,8 @@ This is about the python-msp430-tools, that provide a number of tools related
 to the MSP430 embedded processor.
 
 Python 2.5 or newer should be used. The python package "msp430" can be
-installed with "python setup.py install". These modules can be used in user
-programs too.
+installed with "python setup.py install". These modules can be used as
+standalone applications or as library for other programs.
 
 
 Description of command line tools
@@ -47,14 +47,34 @@ msp430-jtag
 
 Description of Python library
 =============================
-- msp430        Python modules related to the MSP430.
-- msp430.bsl    Support for the boot strap loader.
-- msp430.jtag   JTAG tools using the MSP430[mspgcc] library.
-- msp430.memory Memory implementation, used to store an memory image used
-                to download to the MSP. File format handlers are here too.
-- msp430.shell  shell commands, useful for makefiles etc.
-- msp430.listing Parse listing files
-- msp430.legacy Support code for older tools.
+msp430
+    Root package for the Python modules related to the MSP430.
+
+msp430.bsl
+    Support for the boot strap loader. ``msp430.bsl.target`` is the main module
+    for the downloader.
+
+msp430.jtag
+    JTAG tools using the MSP430[mspgcc] library. ``msp430.jtag.target`` is the
+    main module for the downloader.
+
+msp430.gdb
+    Communicate with a GDB server/proxy. ``msp430.gdb.target`` is the
+    main module for the downloader.
+
+msp430.memory
+    Memory implementation, used to store an memory image used to download to
+    the MSP430. File format handlers are here too.
+
+msp430.shell.commands
+    Shell commands, useful for makefiles etc.
+
+msp430.listing
+    Parser for listing files.
+
+msp430.legacy
+    Support code for older tools.
+
 
 Other files
 ===========

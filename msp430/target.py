@@ -239,9 +239,11 @@ class Target(object):
         if self.verbose:
             sys.stderr.write('Upload by file: done\n')
 
-    def program_file(self):
-        """download data from self.download_data"""
-        for segment in self.download_data:
+    def program_file(self, download_data=None):
+        """download data from self.download_data or the optional parameter"""
+        if download_data is None:
+            download_data = self.download_data
+        for segment in download_data:
             if self.verbose > 1:
                 sys.stderr.write("Write segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
             data = segment.data
@@ -302,7 +304,7 @@ class Target(object):
         """create OptionParser with default options"""
         self.parser = OptionParser(usage="%prog [OPTIONS] [FILE [FILE...]]", formatter=Formatter())
 
-        self.parser.add_option("-d", "--debug",
+        self.parser.add_option("--debug",
                 help="print debug messages and tracebacks (development mode)",
                 dest="debug",
                 default=False,
@@ -609,6 +611,9 @@ Multiple --upload options are allowed.
 
         if self.options.upload_list or self.options.do_upload_by_file:
             self.upload_data = memory.Memory()
+
+        if self.options.do_run:
+            self.add_action(self.execute, self.options.do_run)
 
         # prepare output
         if self.options.output is None:

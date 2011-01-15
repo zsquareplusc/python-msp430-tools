@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2006-2010 Chris Liechti <cliechti@gmx.net>
+# Copyright (c) 2006-2011 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
 # Simplified BSD License (see LICENSE.txt for full text)
 
@@ -39,7 +39,7 @@ class BSLException(Exception):
     """Errors from the slave"""
 
 class BSLTimeout(BSLException):
-    """got no answer from slave wthin time"""
+    """got no answer from slave within time"""
 
 class BSLError(BSLException):
     """command execution failed"""
@@ -97,10 +97,6 @@ class BSL(object):
         answer = self.bsl(BSL_TXVERSION, "\0"*4)
         return answer
 
-    def BSL_HARDWARE_INFO(self):
-        answer = self.bsl(BSL_HARDWARE_INFO, "\0"*4)
-        return answer
-
     def BSL_RESET(self):
         answer = self.bsl(BSL_RESET, "\0"*4, expect=0)
 
@@ -144,7 +140,7 @@ class BSL(object):
         """
         if len(data) & 1:
             data += '\xff'
-            #~ self.log.warn('memory_write: Odd legth data not supported, paddded with 0xff')
+            #~ self.log.warn('memory_write: Odd length data not supported, padded with 0xff')
         while data:
             block, data = data[:self.MAXSIZE], data[self.MAXSIZE:]
             if self.extended_address_mode:
@@ -206,7 +202,7 @@ class DummyBSL(BSL):
     """Test code: show what the BSL command would send"""
     def bsl(self, cmd, message='', expect=None, bad_crc=False):
         txdata = struct.pack('<cBBB', DATA_FRAME, cmd, len(message), len(message)) + message
-        txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   #append checksum
+        txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   # append checksum
         print repr(txdata), len(txdata)
         print ''.join(['\\x%02x' % ord(x) for x in txdata])
 

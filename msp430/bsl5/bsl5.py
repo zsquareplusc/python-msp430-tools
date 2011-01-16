@@ -69,16 +69,6 @@ class BSL5(object):
         elif data[0] != '\x3a':
             raise BSL5Error('unknown response 0x%02x' % ord(data[0]))
 
-    #~ def checksum(self, data):
-        #~ """calculate the 16 bit checksum over the given data"""
-        #~ if len(data) & 1:
-            #~ raise ValueError("can't build checksum over odd-length data")
-        #~ checksum = 0
-        #~ for i in range(0, len(data), 2):
-            #~ (w,) = struct.unpack("<H", data[i:i+2])
-            #~ checksum ^= w
-        #~ return checksum & 0xffff
-
     def BSL_RX_DATA_BLOCK(self, address, data):
         packet = three_bytes(address) + data
         answer = self.bsl(BSL_RX_DATA_BLOCK, packet, expect=0)

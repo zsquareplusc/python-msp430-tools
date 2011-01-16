@@ -10,11 +10,13 @@ Simple MSP430 BSL implementation using the serial port.
 """
 
 import sys
-from msp430.bsl import bsl, bsl_code
+from msp430.bsl import bsl
 import serial
 import struct
 import logging
 import time
+import pkgutil
+from cStringIO import StringIO
 
 from optparse import OptionGroup
 import msp430.target
@@ -123,7 +125,7 @@ class SerialBSL(bsl.BSL):
 
     def bsl(self, cmd, message='', expect=None):
         """\
-        Lowlevel access to the serial communication.
+        Low level access to the serial communication.
 
         This function sends a command and waits until it receives an answer
         (including timeouts). It will return a string with the data part of
@@ -262,7 +264,7 @@ class SerialBSL(bsl.BSL):
             raise ValueError('unsupported baud rate %s' % (baudrate,))
         else:
             self.BSL_CHANGEBAUD(a, l)
-            time.sleep(0.010)   # recomended delay
+            time.sleep(0.010)   # recommended delay
             self.serial.baudrate = baudrate
 
 
@@ -274,7 +276,7 @@ class SerialBSL(bsl.BSL):
         self.set_RST(True)      # power supply
         self.set_TEST(True)     # power supply
         #~ time.sleep(0.250)       # charge capacitor on boot loader hardware
-        time.sleep(0.500)       # charge capacitor on boot loader hardware
+        time.sleep(0.250)       # charge capacitor on boot loader hardware
 
         self.set_RST(False)     # RST  pin: GND
         self.set_TEST(True)     # TEST pin: GND
@@ -434,24 +436,30 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         if self.options.replace_bsl:
             family = msp430.target.idetify_device(self.device_id, self.bsl_version)
             if family == msp430.target.F1x:
-                replacement_bsl = bsl_code.F1X_BSL
+                bsl_name = 'BL_150S_14x.txt'
+                #~ bsl_name = 'BS_150S_14x.txt'
             elif family == msp430.target.F4x:
-                replacement_bsl = bsl_code.F4X_BSL
+                bsl_name = 'BL_150S_44x.txt'
             else:
                 raise BSLError('No replacement BSL for %s' % (family,))
+
             self.logger.info('Download replacement BSL as requested by --replace-bsl')
-            self.memory_write(0x0220, replacement_bsl)
-            bsl_start_address = struct.unpack("<H", replacement_bsl[:2])[0]
+            replacement_bsl_txt = pkgutil.get_data('msp430.bsl', bsl_name)
+            replacement_bsl = msp430.memory.load('BSL', StringIO(replacement_bsl_txt), format='titext')
+            self.program_file(replacement_bsl)
+
+            bsl_start_address = struct.unpack("<H", replacement_bsl.get(0x0220, 2))[0]
             self.execute(bsl_start_address)
             self.logger.info("Starting new BSL at 0x%04x" % (bsl_start_address,))
-            time.sleep(0.020)   # give BSL some time to initialize
+            time.sleep(0.050)   # give BSL some time to initialize
             #~ if self.options.password is not None:
                 #~ self.BSL_TXPWORD(password)
         else:
             if self.bsl_version <= 0x0110:
                 self.logger.info('Buggy BSL, applying patch')
-                self.memory_write(0x0220, bsl_code.PATCH)
-                #~ self.execute(0x0220)
+                patch_txt = pkgutil.get_data('msp430.bsl', 'patch.txt')
+                patch = msp430.memory.load('PATCH', StringIO(patch_txt), format='titext')
+                self.program_file(patch)
                 self.patch_in_use = True
 
         if self.options.speed is not None:
@@ -484,9 +492,9 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         #~ time.sleep(0.1)
         #~ self.patch_in_use = False
         self.set_RST(False)
-        #~ time.sleep(0.5)
+        time.sleep(0.1)
         #~ SerialBSL.reset(self)
-        #~ self.set_RST(True)
+        self.set_RST(True)
         #~ time.sleep(0.250)       # give MSP430's oscillator time to stabilize
 
 

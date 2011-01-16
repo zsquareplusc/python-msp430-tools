@@ -78,7 +78,7 @@ class SerialBSL5(bsl5.BSL5):
             self.serial = serial.serial_for_url(
                 port,
                 baudrate=baudrate,
-                #~ parity=serial.PARITY_EVEN,
+                parity=serial.PARITY_EVEN,
                 stopbits=serial.STOPBITS_ONE,
                 timeout=1,
             )
@@ -86,7 +86,7 @@ class SerialBSL5(bsl5.BSL5):
             self.serial = serial.Serial(
                 port,
                 baudrate=baudrate,
-                #~ parity=serial.PARITY_EVEN,
+                parity=serial.PARITY_EVEN,
                 stopbits=serial.STOPBITS_ONE,
                 timeout=1,
             )

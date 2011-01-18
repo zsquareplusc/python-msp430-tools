@@ -44,8 +44,9 @@ if sys.platform == 'win32':
                 filter = hid.HidDeviceFilter(vendor_id = 0x2047, product_id = 0x0200)
                 all_devices = filter.get_devices()
                 self.hid_device = all_devices[0]
-            #~ else:
+            else:
                 #~ ... by serial number?
+                raise ValueError("don't (yet) know how to handle --device")
             self.logger.info('Opening HID device %r' % (self.hid_device,))
             self.hid_device.open()
             self.hid_device.set_raw_data_handler(self._data_input_handler)
@@ -114,6 +115,7 @@ if sys.platform == 'win32':
                     raise bsl5.BSL5Error('received bad PI, expected 0x3f (got empty response)')
 
 else:
+    import glob
     class HIDBSL5(bsl5.BSL5):
         """\
         Implementation of the BSL protocol over HID.
@@ -125,6 +127,20 @@ else:
             self.logger = logging.getLogger('BSL5')
 
         def open(self, device):
+            if device is None:
+                # try to autodetect device
+                self.logger.debug('HID device auto detection using sysfs')
+                for path in glob.glob('/sys/class/hidraw/hidraw*'):
+                    try:
+                        #~ self.logger.debug('trying %r' % (path,))
+                        for line in open(os.path.join(path, 'device/uevent')):
+                            if 'HID 2047:0200' in line:
+                                device = os.path.join('/dev', os.path.basename(path))
+                                break
+                    except IOError:
+                        pass # file could not be opened
+            if device is None: raise ValueError('USB VID:PID 2047:0200 not found (not in BSL mode? or try --device)')
+
             self.logger.info('Opening HID device %r' % (device,))
             self.hid_device = os.open(device, os.O_RDWR)
 
@@ -217,7 +233,6 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
 
     def open_connection(self):
         self.logger = logging.getLogger('BSL')
-        #~ if self.options.device is None: raise ValueError('device name required')
         self.open(self.options.device)
 
         # only fast mode supported by USB boot loader

@@ -23,21 +23,72 @@ import msp430.memory
 from cStringIO import StringIO
 
 
+class HIDBSL5Base(bsl5.BSL5):
+    """\
+    Implementation of the BSL protocol over HID.
 
+    A subclass needs to implement open(), close(), read_report() and
+    write_report().
+    """
+
+    def __init__(self):
+        bsl5.BSL5.__init__(self)
+        self.hid_device = None
+        self.logger = logging.getLogger('BSL5')
+
+    def __del__(self):
+        self.close()
+
+    def bsl(self, cmd, message='', expect=None, receive_response=True):
+        """\
+        Low level access to the HID communication.
+
+        This function sends a command and waits until it receives an answer
+        (including timeouts). It will return a string with the data part of
+        the answer. The first byte will be the response code from the BSL
+
+        If the parameter "expect" is not None, "expect" bytes are expected in
+        the answer, an exception is raised if the answer length does not match.
+        If "expect" is None, the answer is just returned.
+
+        Frame format:
+        +------+-----+-----------+
+        | 0x3f | len | D1 ... DN |
+        +------+-----+-----------+
+        """
+        # first synchronize with slave
+        self.logger.debug('Command 0x%02x %s (%d bytes)' % (cmd, message.encode('hex'), 1+len(message)))
+        txdata = struct.pack('<BBB', 0x3f, 1+len(message), cmd) + message
+        txdata += '\xac'*(64 - len(txdata)) # pad up to block size
+        #~ self.logger.debug('Sending command: %r %d Bytes' % (txdata.encode('hex'), len(txdata)))
+        # transmit command
+        self.write_report(txdata)
+        if receive_response:
+            self.logger.debug('Reading answer...')
+            report = self.read_report()
+            self.logger.debug('report = %r' % report.encode('hex'))
+            pi = report[0]
+            if pi == '\x3f':
+                length = ord(report[1])
+                data = report[2:2+length]
+                #~ if expect is not None and len(data) != expect:
+                    #~ raise bsl5.BSL5Error('expected %d bytes, got %d bytes' % (expect, len(data)))
+                return data
+            else:
+                if pi: raise bsl5.BSL5Error('received bad PI, expected 0x3f (got 0x%02x)' % (ord(pi),))
+                raise bsl5.BSL5Error('received bad PI, expected 0x3f (got empty response)')
+
+
+# some platform specific code follows
 if sys.platform == 'win32':
     from pywinusb import hid
     import ctypes
     import Queue
 
-    class HIDBSL5(bsl5.BSL5):
+    class HIDBSL5(HIDBSL5Base):
         """\
-        Implementation of the BSL protocol over HID.
+        HID support for running on Windows.
         """
-
-        def __init__(self):
-            bsl5.BSL5.__init__(self)
-            self.hid_device = None
-            self.logger = logging.getLogger('BSL5')
 
         def open(self, device):
             if device is None:
@@ -51,10 +102,6 @@ if sys.platform == 'win32':
             self.hid_device.open()
             self.hid_device.set_raw_data_handler(self._data_input_handler)
             self.receiving_queue = Queue.Queue()
-
-
-        def __del__(self):
-            self.close()
 
         def close(self):
             """Close serial port"""
@@ -70,65 +117,26 @@ if sys.platform == 'win32':
             #~ print "Raw data: %r" % data
             self.receiving_queue.put(''.join(chr(x) for x in data))
 
-
-        def bsl(self, cmd, message='', expect=None, receive_response=True):
-            """\
-            Low level access to the HID communication.
-
-            This function sends a command and waits until it receives an answer
-            (including timeouts). It will return a string with the data part of
-            the answer. The first byte will be the response code from the BSL
-
-            If the parameter "expect" is not None, "expect" bytes are expected in
-            the answer, an exception is raised if the answer length does not match.
-            If "expect" is None, the answer is just returned.
-
-            Frame format:
-            +------+-----+-----------+
-            | 0x3f | len | D1 ... DN |
-            +------+-----+-----------+
-            """
-            # clear input queue
+        def write_report(self, data):
+            # clear input queue. we can do this because we expect at most one
+            # answer per written report and no spontaneous messages
             while self.receiving_queue.qsize():
                 self.receiving_queue.get_nowait()
-            # send command
-            self.logger.debug('Command 0x%02x %s (%d bytes)' % (cmd, message.encode('hex'), 1+len(message)))
-            txdata = struct.pack('<BBB', 0x3f, 1+len(message), cmd) + message
-            txdata += '\xac'*(64 - len(txdata)) # pad up to block size
-            #~ self.logger.debug('Sending command: %r %d Bytes' % (txdata.encode('hex'), len(txdata)))
-            # transmit command
-            self.hid_device.send_output_report([ctypes.c_ubyte(ord(x)) for x in txdata])
-            if receive_response:
-                self.logger.debug('Reading answer...')
-                report = self.receiving_queue.get()
-                self.logger.debug('report = %r' % report.encode('hex'))
-                pi = report[0]
-                if pi == '\x3f':
-                    length = ord(report[1])
-                    data = report[2:2+length]
-                    #~ if expect is not None and len(data) != expect:
-                        #~ raise bsl5.BSL5Error('expected %d bytes, got %d bytes' % (expect, len(data)))
-                    self.logger.debug('Command OK: %r' % (data.encode('hex')))
-                    return data
-                else:
-                    if pi: raise bsl5.BSL5Error('received bad PI, expected 0x3f (got 0x%02x)' % (ord(pi),))
-                    raise bsl5.BSL5Error('received bad PI, expected 0x3f (got empty response)')
+            # write report
+            self.hid_device.send_output_report([ctypes.c_ubyte(ord(x)) for x in data])
 
+        def read_report(self):
+            return self.receiving_queue.get()
 else:
     import glob
-    class HIDBSL5(bsl5.BSL5):
+    class HIDBSL5(HIDBSL5Base):
         """\
-        Implementation of the BSL protocol over HID.
+        HID support for running on Linux (systems with /dev/hidraw*).
         """
-
-        def __init__(self):
-            bsl5.BSL5.__init__(self)
-            self.hid_device = None
-            self.logger = logging.getLogger('BSL5')
 
         def open(self, device):
             if device is None:
-                # try to autodetect device
+                # try to auto detect device
                 self.logger.debug('HID device auto detection using sysfs')
                 for path in glob.glob('/sys/class/hidraw/hidraw*'):
                     try:
@@ -144,9 +152,6 @@ else:
             self.logger.info('Opening HID device %r' % (device,))
             self.hid_device = os.open(device, os.O_RDWR)
 
-        def __del__(self):
-            self.close()
-
         def close(self):
             """Close serial port"""
             if self.hid_device is not None:
@@ -157,46 +162,14 @@ else:
                     self.logger.exception('error closing device:')
                 self.hid_device = None
 
+        def write_report(self, data):
+            os.write(self.hid_device, data)
 
-        def bsl(self, cmd, message='', expect=None, receive_response=True):
-            """\
-            Low level access to the HID communication.
+        def read_report(self):
+            return os.read(self.hid_device, 64)
 
-            This function sends a command and waits until it receives an answer
-            (including timeouts). It will return a string with the data part of
-            the answer. The first byte will be the response code from the BSL
 
-            If the parameter "expect" is not None, "expect" bytes are expected in
-            the answer, an exception is raised if the answer length does not match.
-            If "expect" is None, the answer is just returned.
-
-            Frame format:
-            +------+-----+-----------+
-            | 0x3f | len | D1 ... DN |
-            +------+-----+-----------+
-            """
-            # first synchronize with slave
-            self.logger.debug('Command 0x%02x %s (%d bytes)' % (cmd, message.encode('hex'), 1+len(message)))
-            txdata = struct.pack('<BBB', 0x3f, 1+len(message), cmd) + message
-            txdata += '\xac'*(64 - len(txdata)) # pad up to block size
-            #~ self.logger.debug('Sending command: %r %d Bytes' % (txdata.encode('hex'), len(txdata)))
-            # transmit command
-            os.write(self.hid_device, txdata)
-            if receive_response:
-                self.logger.debug('Reading answer...')
-                report = os.read(self.hid_device, 64)
-                self.logger.debug('report = %r' % report.encode('hex'))
-                pi = report[0]
-                if pi == '\x3f':
-                    length = ord(report[1])
-                    data = report[2:2+length]
-                    #~ if expect is not None and len(data) != expect:
-                        #~ raise bsl5.BSL5Error('expected %d bytes, got %d bytes' % (expect, len(data)))
-                    return data
-                else:
-                    if pi: raise bsl5.BSL5Error('received bad PI, expected 0x3f (got 0x%02x)' % (ord(pi),))
-                    raise bsl5.BSL5Error('received bad PI, expected 0x3f (got empty response)')
-
+# and now back to multi-platform code
 
 class HIDBSL5Target(HIDBSL5, msp430.target.Target):
     """Combine the HID BSL5 backend and the common target code."""
@@ -210,7 +183,7 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
 
         group.add_option("-d", "--device",
                 dest="device",
-                help="hidraw device name",
+                help="device name (default: auto detection)",
                 default=None)
 
         self.parser.add_option_group(group)
@@ -258,7 +231,8 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
                 self.BSL_RX_PASSWORD(password)
 
         # download full BSL
-        self.logger.info("Download full BSL...")
+        if self.verbose:
+            sys.stderr.write('Download full BSL...\n')
         bsl_version_expected = (0x00, 0x05, 0x04, 0x34)
         full_bsl_txt = pkgutil.get_data('msp430.bsl5', 'RAM_BSL.00.05.04.34.txt')
         full_bsl = msp430.memory.load('BSL', StringIO(full_bsl_txt), format='titext')

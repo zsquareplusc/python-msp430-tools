@@ -4,8 +4,8 @@ LED
 Minimalistic assembler program that can be used to test the assembler and
 download tools.
 
-This version uses the peripherals (WDT, PORT1) of a 1xx, 2xx, 4xx or
-ValueLine device (not compatiple with 5xx/6xx).
+This version uses the peripherals on a 5xx/6xx device (WDT, PORT1), MSP430X
+instructions and the upper Flash memory (starting at 0x10000).
 
 
 Function
@@ -17,8 +17,8 @@ Building
 --------
 Assembling and linking::
 
-    python -m msp430.asm.as -o led.o4 led.S
-    python -m msp430.asm.ld --mcu MSP430G2121 -o led.txt led.o4
+    python -m msp430.asm.as -x -o led.o4 led.S
+    python -m msp430.asm.ld --mcu MSP430F5529 -o led.txt led.o4
 
 
 Usage
@@ -29,7 +29,7 @@ the pin P1.1.
 
 Download::
 
-    python -m msp430.bsl.target -e led.txt
+    python -m msp430.bsl5.hid -e led.txt
 
 The download could also be made with msp430.jtag.target or msp430.gdb.target
 

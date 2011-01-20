@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Chris Liechti <cliechti@gmx.net>
+# Copyright (c) 2010-2011 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
 # Simplified BSD License (see LICENSE.txt for full text)
 #
@@ -53,54 +53,388 @@ memory-map-end
 memory-map-begin
     name         MSP430F1xx
     based-on     LOGICAL
-    read-only    segment     .bootloader     0x0c00-0x0fff
-    programmable segment     .infomem        0x1000-0x10ff   # 256B Information memory (Flash)
-    programmable segment     .infoB          0x1000-0x107f
-    programmable segment     .infoA          0x1080-0x10ff
-    programmable segment     .vectors        0xffe0-0xffff
+    read-only    segment     .bootloader    0x0c00-0x0fff
+    programmable segment     .infomem       0x1000-0x10ff   # 256B Information memory (Flash)
+    programmable segment     .infoB         0x1000-0x107f
+    programmable segment     .infoA         0x1080-0x10ff
+    programmable segment     .vectors       0xffe0-0xffff
 memory-map-end
 
-memory-map-begin
-    name         MSP430F1121
-    based-on     MSP430F1xx
-                 segment     RAM             0x0200-0x02ff       # 256B
-    programmable segment     FLASH           0xf000-0xffdf       # 4kB
-memory-map-end
+template-begin
+    memory-map-begin
+        based-on     MSP430F1xx
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        name                                <MCU>
+    memory-map-end
+template-variables
+    <MCU>               <RAM>           <FLASH>
+template-values
+    MSP430F110          0x0200-0x027f   0xfc00-0xffdf    #  128B     1kB
+    MSP430F1101         0x0200-0x027f   0xfc00-0xffdf    #  128B     1kB
+    MSP430F1111         0x0200-0x027f   0xf800-0xffdf    #  128B     2kB
+    MSP430F112          0x0200-0x02ff   0xf000-0xffdf    #  256B     4kB
+    MSP430F1121         0x0200-0x02ff   0xf000-0xffdf    #  256B     4kB
+    MSP430F1122         0x0200-0x02ff   0xf000-0xffdf    #  256B     4kB
+    MSP430F1132         0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430F122          0x0200-0x02ff   0xf000-0xffdf    #  256B     4kB
+    MSP430F1222         0x0200-0x02ff   0xf000-0xffdf    #  256B     4kB
+    MSP430F123          0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430F1232         0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430F133          0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430F1331         0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430F135          0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430F1351         0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430F147          0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F1471         0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F148          0x0200-0x09ff   0x4000-0xffdf    #    2kB   48kB
+    MSP430F1481         0x0200-0x09ff   0x4000-0xffdf    #    2kB   48kB
+    MSP430F149          0x0200-0x09ff   0x1100-0xffdf    #    2kB   60kB
+    MSP430F1491         0x0200-0x09ff   0x1100-0xffdf    #    2kB   60kB
+    MSP430F155          0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430F156          0x0200-0x03ff   0xa000-0xffdf    #  512B    24kB
+    MSP430F157          0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F1610         0x1100-0x24ff   0x8000-0xffdf    #    5kB   32kB
+    MSP430F1611         0x1100-0x38ff   0x4000-0xffdf    #   10kB   48kB
+    MSP430F1612         0x1100-0x24ff   0x2500-0xffdf    #    5kB   55kB
+    MSP430F167          0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F168          0x0200-0x09ff   0x4000-0xffdf    #    2kB   48kB
+    MSP430F169          0x0200-0x09ff   0x1100-0xffdf    #    2kB   60kB
+template-end
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 memory-map-begin
     name         MSP430F2xx
     based-on     LOGICAL
-    read-only    segment     .bootloader     0x0c00-0x0fff
-    programmable segment     .infomem        0x1000-0x10ff
-    programmable segment     .infoD          0x1000-0x103f
-    programmable segment     .infoC          0x1040-0x107f
-    programmable segment     .infoB          0x1080-0x10bf
-    programmable segment     .infoA          0x10c0-0x10ff
-    programmable segment     .vectors        0xffe0-0xffff
+    read-only    segment     .bootloader    0x0c00-0x0fff
+    programmable segment     .infomem       0x1000-0x10ff
+    programmable segment     .infoD         0x1000-0x103f
+    programmable segment     .infoC         0x1040-0x107f
+    programmable segment     .infoB         0x1080-0x10bf
+    programmable segment     .infoA         0x10c0-0x10ff
+    programmable segment     .vectors       0xffe0-0xffff
 memory-map-end
 
 template-begin
     memory-map-begin
         based-on     MSP430F2xx
-                     segment     RAM             <RAM>
-        programmable segment     FLASH           <FLASH>
-        name                                     <MCU>
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        name                                <MCU>
     memory-map-end
 template-variables
-    <MCU>           <RAM>           <FLASH>
+    <MCU>               <RAM>           <FLASH>
 template-values
-    MSP430F2001     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
-    MSP430F2002     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
-    MSP430F2003     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
-    MSP430F2011     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
-    MSP430F2012     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
-    MSP430F2013     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
-
-    MSP430G2121     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
-    MSP430G2131     0x0200-0x027f   0xfc00-0xffdf   # 128B RAM, 1kB Flash
-    MSP430G2221     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
-    MSP430G2231     0x0200-0x027f   0xf800-0xffdf   # 128B RAM, 2kB Flash
+    MSP430F2001         0x0200-0x027f   0xfc00-0xffdf    #  128B     1kB
+    MSP430F2002         0x0200-0x027f   0xfc00-0xffdf    #  128B     1kB
+    MSP430F2003         0x0200-0x027f   0xfc00-0xffdf    #  128B     1kB
+    MSP430F2011         0x0200-0x027f   0xf800-0xffdf    #  128B     2kB
+    MSP430F2012         0x0200-0x027f   0xf800-0xffdf    #  128B     2kB
+    MSP430F2013         0x0200-0x027f   0xf800-0xffdf    #  128B     2kB
+    MSP430F2121         0x0200-0x02ff   0xf000-0xffdf    #  256B     4kB
+    MSP430F2122         0x0200-0x02ff   0xf000-0xffdf    #  256B     4kB
+    MSP430F2131         0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430F2132         0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430F2232         0x0200-0x03ff   0xe000-0xffdf    #  512B     8kB
+    MSP430F2234         0x0200-0x03ff   0xe000-0xffdf    #  512B     8kB
+    MSP430F2252         0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430F2254         0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430F2272         0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F2274         0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F2330         0x0200-0x05ff   0xe000-0xffdf    #    1kB    8kB
+    MSP430F233          0x0200-0x05ff   0xe000-0xffdf    #    1kB    8kB
+    MSP430F2350         0x0200-0x09ff   0xc000-0xffdf    #    2kB   16kB
+    MSP430F235          0x0200-0x09ff   0xc000-0xffdf    #    2kB   16kB
+    MSP430F2370         0x0200-0x09ff   0x8000-0xffdf    #    2kB   32kB
+    MSP430F2410         0x1100-0x20ff   0x2100-0xffdf    #    4kB   56kB
+    MSP430F247          0x1100-0x20ff   0x8000-0xffdf    #    4kB   32kB
+    MSP430F2471         0x1100-0x20ff   0x8000-0xffdf    #    4kB   32kB
+    MSP430F248          0x1100-0x20ff   0x4000-0xffdf    #    4kB   48kB
+    MSP430F2481         0x1100-0x20ff   0x4000-0xffdf    #    4kB   48kB
+    MSP430F249          0x0200-0x09ff   0x1100-0xffdf    #    2kB   60kB
+    MSP430F2491         0x0200-0x09ff   0x1100-0xffdf    #    2kB   60kB
 template-end
 
+template-begin
+    memory-map-begin
+        based-on     MSP430F2xx
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        programmable segment     FLASH2     <FLASH2>
+        name                                <MCU>
+    memory-map-end
+template-variables
+    <MCU>               <RAM>           <FLASH>         <FLASH2>
+template-values
+    MSP430F2416         0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x00018fff    #    4kB   91kB
+    MSP430F2417         0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x00019fff    #    8kB   91kB
+    MSP430F2418         0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x0001ffff    #    8kB  115kB
+    MSP430F2419         0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x0001ffff    #    4kB  119kB
+    MSP430F2616         0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x00018fff    #    4kB   91kB
+    MSP430F2617         0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x00019fff    #    8kB   91kB
+    MSP430F2618         0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x0001ffff    #    8kB  115kB
+    MSP430F2619         0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x0001ffff    #    4kB  119kB
+template-end
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# value line
+template-begin
+    memory-map-begin
+        based-on     MSP430F2xx
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        name                                <MCU>
+    memory-map-end
+template-variables
+    <MCU>               <RAM>           <FLASH>
+template-values
+    MSP430G2001         0x0200-0x027f   0xfe00-0xffdf   #  128B   512B
+    MSP430G2101         0x0200-0x027f   0xfc00-0xffdf   #  128B     1kB
+    MSP430G2102         0x0200-0x027f   0xf800-0xffdf   #  128B     1kB
+    MSP430G2111         0x0200-0x027f   0xf800-0xffdf   #  128B     2kB
+    MSP430G2112         0x0200-0x027f   0xf800-0xffdf   #  128B     2kB
+    MSP430G2121         0x0200-0x027f   0xfc00-0xffdf   #  128B     1kB
+    MSP430G2131         0x0200-0x027f   0xfc00-0xffdf   #  128B     1kB
+    MSP430G2132         0x0200-0x027f   0xfc00-0xffdf   #  128B     1kB
+    MSP430G2152         0x0200-0x027f   0xfc00-0xffdf   #  128B     1kB
+    MSP430G2201         0x0200-0x027f   0xf800-0xffdf   #  128B     2kB
+    MSP430G2211         0x0200-0x027f   0xf800-0xffdf   #  128B     2kB
+    MSP430G2212         0x0200-0x027f   0xf800-0xffdf   #  128B     2kB
+    MSP430G2221         0x0200-0x027f   0xf800-0xffdf   #  128B     2kB
+    MSP430G2231         0x0200-0x027f   0xf800-0xffdf   #  128B     2kB
+    MSP430G2232         0x0200-0x037f   0xf800-0xffdf   #  256B     2kB
+    MSP430G2252         0x0200-0x037f   0xf800-0xffdf   #  256B     2kB
+    MSP430G2302         0x0200-0x037f   0xf800-0xffdf   #  256B     2kB
+    MSP430G2312         0x0200-0x037f   0xf000-0xffdf   #  256B     4kB
+    MSP430G2332         0x0200-0x037f   0xfc00-0xffdf   #  256B     1kB
+    MSP430G2352         0x0200-0x037f   0xf000-0xffdf   #  256B     4kB
+    MSP430G2402         0x0200-0x037f   0xf000-0xffdf   #  256B     4kB
+    MSP430G2432         0x0200-0x037f   0xe000-0xffdf   #  256B     8kB
+    MSP430G2452         0x0200-0x037f   0xe000-0xffdf   #  256B     8kB
+template-end
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+memory-map-begin
+    name         MSP430F4xx
+    based-on     LOGICAL
+    read-only    segment     .bootloader    0x0c00-0x0fff
+    programmable segment     .infomem       0x1000-0x10ff   # 256B Information memory (Flash)
+    programmable segment     .infoB         0x1000-0x107f
+    programmable segment     .infoA         0x1080-0x10ff
+    programmable segment     .vectors       0xffe0-0xffff
+memory-map-end
+
+template-begin
+    memory-map-begin
+        based-on     MSP430F4xx
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        name                                <MCU>
+    memory-map-end
+template-variables
+    <MCU>               <RAM>           <FLASH>
+template-values
+    MSP430F412          0x0200-0x02ff   0xf000-0xffdf    #  256B     4kB
+    MSP430F413          0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430F415          0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430F417          0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F423          0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430F425          0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430F4250         0x0200-0x02ff   0xc000-0xffdf    #  256B    16kB
+    MSP430F4260         0x0200-0x02ff   0xa000-0xffdf    #  256B    24kB
+    MSP430F427          0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F4270         0x0200-0x02ff   0x8000-0xffdf    #  256B    32kB
+    MSP430F435          0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430F4351         0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430F436          0x0200-0x05ff   0xa000-0xffdf    #    1kB   24kB
+    MSP430F4361         0x0200-0x05ff   0xa000-0xffdf    #    1kB   24kB
+    MSP430F437          0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F4371         0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F447          0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430F448          0x0200-0x09ff   0x4000-0xffdf    #    2kB   48kB
+    MSP430F449          0x0200-0x09ff   0x1100-0xffdf    #    2kB   60kB
+    MSP430F4783         0x0200-0x09ff   0x4000-0xffdf    #    2kB   48kB
+    MSP430F4784         0x0200-0x09ff   0x4000-0xffdf    #    2kB   48kB
+    MSP430F4793         0x0200-0x0bff   0x1100-0xffdf    #    2kB   60kB
+    MSP430F4794         0x0200-0x0bff   0x1100-0xffdf    #    2kB   60kB
+    MSP430FE423         0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430FE4232        0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430FE4242        0x0200-0x03ff   0xd000-0xffdf    #  512B    12kB
+    MSP430FE425         0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430FE4252        0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430FE427         0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430FE4272        0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430FG4250        0x0200-0x02ff   0xc000-0xffdf    #  256B    16kB
+    MSP430FG4260        0x0200-0x02ff   0xa000-0xffdf    #  256B    24kB
+    MSP430FG4270        0x0200-0x02ff   0x8000-0xffdf    #  256B    32kB
+    MSP430FG437         0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+    MSP430FG438         0x0200-0x09ff   0x4000-0xfeef    #    2kB   48kB
+    MSP430FG439         0x0200-0x09ff   0x1100-0xffdf    #    2kB   60kB
+    MSP430FW423         0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430FW425         0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430FW427         0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+template-end
+
+template-begin
+    memory-map-begin
+        based-on     MSP430F4xx
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        programmable segment     FLASH2     <FLASH2>
+        name                                <MCU>
+    memory-map-end
+template-variables
+    <MCU>               <RAM>           <FLASH>         <FLASH2>
+template-values
+    MSP430F47166        0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x00018fff    #    4kB   91kB
+    MSP430F47167        0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x00018fff    #    4kB   91kB
+    MSP430F47176        0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x00019fff    #    8kB   91kB
+    MSP430F47177        0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x00019fff    #    8kB   91kB
+    MSP430F47186        0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x0001ffff    #    8kB  115kB
+    MSP430F47187        0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x0001ffff    #    8kB  115kB
+    MSP430F47196        0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x0001ffff    #    4kB  119kB
+    MSP430F47197        0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x0001ffff    #    4kB  119kB
+    MSP430FG4616        0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x000190ff    #    4kB   92kB
+    MSP430FG4617        0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x0001a0ff    #    8kB   92kB
+    MSP430FG4618        0x1100-0x30ff   0x3100-0xffdf   0x00010000-0x000200ff    #    8kB  116kB
+    MSP430FG4619        0x1100-0x20ff   0x2100-0xffdf   0x00010000-0x000200ff    #    4kB  120kB
+template-end
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+memory-map-begin
+    name         MSP430F5xx
+    based-on     LOGICAL
+    read-only    segment     .bootloader    0x1000-0x17ff  # 2kB boot loader (Flash)
+    read-only    segment     .bootloaderD   0x1000-0x11ff
+    read-only    segment     .bootloaderC   0x1200-0x13ff
+    read-only    segment     .bootloaderB   0x1400-0x15ff
+    read-only    segment     .bootloaderA   0x1600-0x17ff
+    programmable segment     .infomem       0x1800-0x19ff   # 512B Information memory (Flash)
+    programmable segment     .infoD         0x1800-0x187f
+    programmable segment     .infoC         0x1880-0x18ff
+    programmable segment     .infoB         0x1900-0x197f
+    programmable segment     .infoA         0x1980-0x19ff
+    programmable segment     .vectors       0xffe0-0xffff
+memory-map-end
+
+template-begin
+    memory-map-begin
+        based-on     MSP430F5xx
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        name                                <MCU>
+    memory-map-end
+template-variables
+    <MCU>               <RAM>           <FLASH>
+    MSP430F5510         0x2400-0x33ff   0x8000-0xffdf   #    4kB    32kB
+    MSP430F5513         0x2400-0x33ff   0x8000-0xffdf   #    4kB    32kB
+    MSP430F5521         0x2400-0x3bff   0x8000-0xffdf   #    6kB    32kB
+    MSP430F5522         0x2400-0x43ff   0x8000-0xffdf   #    8kB    32kB
+template-values
+template-end
+
+
+template-begin
+    memory-map-begin
+        based-on     MSP430F5xx
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        programmable segment     FLASH2     <FLASH2>
+        name                                <MCU>
+    memory-map-end
+template-variables
+    <MCU>               <RAM>           <FLASH>         <FLASH2>
+template-values
+    MSP430F5418         0x1c00-0x5bff   0x5c00-0xffdf   0x00010000-0x00025bff    #   16kB   128kB
+    MSP430F5419         0x1c00-0x5bff   0x5c00-0xffdf   0x00010000-0x00025bff    #   16kB   128kB
+    MSP430F5435         0x1c00-0x5bff   0x5c00-0xffdf   0x00010000-0x00035bff    #   16kB   192kB
+    MSP430F5436         0x1c00-0x5bff   0x5c00-0xffdf   0x00010000-0x00035bff    #   16kB   192kB
+    MSP430F5437         0x1c00-0x5bff   0x5c00-0xffdf   0x00010000-0x00045bff    #   16kB   256kB
+    MSP430F5438         0x1c00-0x5bff   0x5c00-0xffdf   0x00010000-0x00045bff    #   16kB   256kB
+    MSP430F5514         0x2400-0x33ff   0x4400-0xffdf   0x00010000-0x000143ff    #    4kB    64kB
+    MSP430F5515         0x2400-0x33ff   0x4400-0xffdf   0x00010000-0x000143ff    #    4kB    64kB
+    MSP430F5517         0x2400-0x3bff   0x4400-0xffdf   0x00010000-0x0001c3ff    #    6kB    96kB
+    MSP430F5519         0x2400-0x43ff   0x4400-0xffdf   0x00010000-0x000243ff    #    8kB   128kB
+    MSP430F5524         0x2400-0x33ff   0x4400-0xffdf   0x00010000-0x000143ff    #    4kB    64kB
+    MSP430F5525         0x2400-0x33ff   0x4400-0xffdf   0x00010000-0x000143ff    #    4kB    64kB
+    MSP430F5526         0x2400-0x3bff   0x4400-0xffdf   0x00010000-0x0001c3ff    #    6kB    96kB
+    MSP430F5527         0x2400-0x3bff   0x4400-0xffdf   0x00010000-0x0001c3ff    #    6kB    96kB
+    MSP430F5528         0x2400-0x43ff   0x4400-0xffdf   0x00010000-0x000243ff    #    8kB   128kB
+    MSP430F5529         0x2400-0x43ff   0x4400-0xffdf   0x00010000-0x000243ff    #    8kB   128kB
+    MSP430F6638         0x2400-0x63ff   0x8000-0xffdf   0x00010000-0x00047fff    #   16kB   256kB
+template-end
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+memory-map-begin
+    name         CC430x
+    based-on     LOGICAL
+    read-only    segment     .bootloader    0x1000-0x17ff  # 2kB boot loader (Flash)
+    read-only    segment     .bootloaderD   0x1000-0x11ff
+    read-only    segment     .bootloaderC   0x1200-0x13ff
+    read-only    segment     .bootloaderB   0x1400-0x15ff
+    read-only    segment     .bootloaderA   0x1600-0x17ff
+    programmable segment     .infomem       0x1800-0x10ff   # 512B Information memory (Flash)
+    programmable segment     .infoD         0x1800-0x187f
+    programmable segment     .infoC         0x1880-0x18ff
+    programmable segment     .infoB         0x1900-0x197f
+    programmable segment     .infoA         0x1980-0x19ff
+    programmable segment     .vectors       0xffe0-0xffff
+memory-map-end
+
+template-begin
+    memory-map-begin
+        based-on     CC430x
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        name                                <MCU>
+    memory-map-end
+template-variables
+    <MCU>               <RAM>           <FLASH>
+template-values
+    CC430X5125          0x1c00-0x23ff   0xc000-0xffdf    #    2kB    16kB
+    CC430X5133          0x1c00-0x23ff   0xe000-0xffdf    #    2kB     8kB
+    CC430X5137          0x1c00-0x2bff   0x8000-0xffdf    #    4kB    32kB
+    CC430X6125          0x1c00-0x23ff   0xc000-0xffdf    #    2kB    16kB
+    CC430X6126          0x1c00-0x23ff   0x8000-0xffdf    #    2kB    32kB
+    CC430X6127          0x1c00-0x2bff   0x8000-0xffdf    #    4kB    32kB
+    CC430X6135          0x1c00-0x23ff   0xc000-0xffdf    #    2kB    16kB
+    CC430X6137          0x1c00-0x2bff   0x8000-0xffdf    #    4kB    32kB
+template-end
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+memory-map-begin
+    name         MSP430x3xx
+    based-on     LOGICAL
+    programmable segment     .infomem       0x1000-0x10ff   # 256B Information memory (Flash)
+    programmable segment     .infoB         0x1000-0x107f
+    programmable segment     .infoA         0x1080-0x10ff
+    programmable segment     .vectors       0xffe0-0xffff
+memory-map-end
+
+template-begin
+    memory-map-begin
+        based-on     MSP430x3xx
+                     segment     RAM        <RAM>
+        programmable segment     FLASH      <FLASH>
+        name                                <MCU>
+    memory-map-end
+template-variables
+    <MCU>               <RAM>           <FLASH>
+template-values
+    MSP430x311          0x0200-0x027f   0xf800-0xffdf    #  128B     2kB
+    MSP430x312          0x0200-0x02ff   0xf000-0xffdf    #  256B     4kB
+    MSP430x313          0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430x314          0x0200-0x03ff   0xd000-0xffdf    #  512B    12kB
+    MSP430x315          0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430x323          0x0200-0x02ff   0xe000-0xffdf    #  256B     8kB
+    MSP430x325          0x0200-0x03ff   0xc000-0xffdf    #  512B    16kB
+    MSP430x336          0x0200-0x05ff   0xa000-0xffdf    #    1kB   24kB
+    MSP430x337          0x0200-0x05ff   0x8000-0xffdf    #    1kB   32kB
+template-end
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

@@ -745,18 +745,6 @@ class MSP430Assembler(object):
         """Add carry bit to destination (20 bit)"""
         return self._x_emulation('ADDCX', '',  u'#0, %s' % arg[1])
 
-    def insnx_BRA_1(self, insn, mode, arg):
-        """Jump unconditionally (20 bit, any address)"""
-        return self.insnx_MOVA_2('MOVA', '', *self.tokenize_operands(u'%s, PC' % arg[1]))
-
-    def insnx_RETA_0(self, insn, mode):
-        """Return from subroutine (when invoked with CALLA)"""
-        return self._x_emulation('MOVA', '', u'@SP+, PC')
-
-    def insnx_CLRA_1(self, insn, mode, arg):
-        """Clear 20 bit address resgiter"""
-        return self._x_emulation('MOVA', '', u'#0, %s' % arg[1])
-
     def insnx_CLRX_1(self, insn, mode, arg):
         """Clear 20 bit"""
         return self._x_emulation('MOVX', '', u'#0, %s' % arg[1])
@@ -769,10 +757,6 @@ class MSP430Assembler(object):
         """Decrement destination by one (20 bit)"""
         return self._x_emulation('SUBX', '', u'#1, %s' % arg[1])
 
-    def insnx_DECDA_1(self, insn, mode, arg):
-        """Decrement destination address register by one"""
-        return self._x_emulation('SUBA', '', u'#2, %s' % arg[1])
-
     def insnx_DECDX_1(self, insn, mode, arg):
         """Decrement destination by two (20 bit)"""
         return self._x_emulation('SUBX', '', u'#2, %s' % arg[1])
@@ -780,10 +764,6 @@ class MSP430Assembler(object):
     def insnx_INCX_1(self, insn, mode, arg):
         """Increment destination by one (20 bit)"""
         return self._x_emulation('ADDX', '', '#1, %s' % arg[1])
-
-    def insnx_INCDA_1(self, insn, mode, arg):
-        """Increment destination address register by two"""
-        return self._x_emulation('ADDA', '', u'#2, %s' % arg[1])
 
     def insnx_INCDX_1(self, insn, mode, arg):
         """Increment destination by two (20 bit)"""
@@ -805,10 +785,6 @@ class MSP430Assembler(object):
         """Subtract carry bit (20 bit)"""
         return self._x_emulation('SUBCX', '', u'#0, %s' % arg[1])
 
-    def insnx_TSTA_1(self, insn, mode, arg):
-        """Compare destination address register against 0"""
-        return self._x_emulation('CMPA', '', u'#0, %s' % arg[1])
-
     def insnx_TSTX_1(self, insn, mode, arg):
         """Compare destination against 0 (20 bit)"""
         return self._x_emulation('CMPX', '', u'#0, %s' % arg[1])
@@ -816,6 +792,32 @@ class MSP430Assembler(object):
     def insnx_POPX_1(self, insn, mode, arg):
         """Pop value from stack to destination (20 bit)"""
         return self._x_emulation('MOVX', '', u'@SP+, %s' % arg[1])
+
+    # more emulated instructions
+
+    def insnx_BRA_1(self, insn, mode, arg):
+        """Jump unconditionally (20 bit, any address)"""
+        return self.insnx_MOVA_2('MOVA', '', *self.tokenize_operands(u'%s, PC' % arg[1]))
+
+    def insnx_CLRA_1(self, insn, mode, arg):
+        """Clear 20 bit address resgiter"""
+        return self.insnx_MOVA_2('MOVA', '', *self.tokenize_operands(u'#0, %s' % arg[1]))
+
+    def insnx_DECDA_1(self, insn, mode, arg):
+        """Decrement destination address register by one"""
+        return self.insnx_SUBA_2('SUBA', '', *self.tokenize_operands(u'#2, %s' % arg[1]))
+
+    def insnx_INCDA_1(self, insn, mode, arg):
+        """Increment destination address register by two"""
+        return self.insnx_ADDA_2('ADDA', '', *self.tokenize_operands(u'#2, %s' % arg[1]))
+
+    def insnx_RETA_0(self, insn, mode):
+        """Return from subroutine (when invoked with CALLA)"""
+        return self.insnx_MOVA_2('MOVA', '', *self.tokenize_operands(u'@SP+, PC'))
+
+    def insnx_TSTA_1(self, insn, mode, arg):
+        """Compare destination address register against 0"""
+        return self.insnx_CMPA_2('CMPA', '', *self.tokenize_operands(u'#0, %s' % arg[1]))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

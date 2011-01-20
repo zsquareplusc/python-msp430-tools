@@ -274,7 +274,7 @@ class MSP430Assembler(object):
     def assembleDoubleOperandInstruction(self, insn, mode, source, destination):
         """Double operand instruction."""
         bw, al = self._addressing_mode(mode)
-        if not al: raise AssemblerError('Bad mode (%s) for this instruction: %s%s' (mode, insn, mode))
+        if not al: raise AssemblerError('Bad mode (%s) for this instruction: %s%s' % (mode, insn, mode))
 
         asrc, src, op1, rel1 = self._buildArg(insn, source)
         adst, dst, op2, rel2 = self._buildArg(insn, destination, constreg=False)
@@ -747,7 +747,7 @@ class MSP430Assembler(object):
 
     def insnx_BRA_1(self, insn, mode, arg):
         """Jump unconditionally (20 bit, any address)"""
-        return self._x_emulation('MOVA', '', u'%s, PC' % arg[1])
+        return self.insnx_MOVA_2('MOVA', '', *self.tokenize_operands(u'%s, PC' % arg[1]))
 
     def insnx_RETA_0(self, insn, mode):
         """Return from subroutine (when invoked with CALLA)"""

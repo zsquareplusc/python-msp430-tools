@@ -4,3 +4,5 @@ doc/_build/*
 doc/_static/*
 doc/_templates/*
 MANIFEST
+*.o4
+examples/asm/*/led.txt

@@ -614,6 +614,9 @@ Multiple --upload options are allowed.
 
         if self.options.do_run:
             self.add_action(self.execute, self.options.do_run)
+        else:
+            # XXX reset otherwise, independently of -r option. imitate old behavior
+            self.add_action(self.reset)
 
         # prepare output
         if self.options.output is None:

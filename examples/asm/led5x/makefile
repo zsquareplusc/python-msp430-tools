@@ -46,6 +46,6 @@ download-jtag: led.txt
 download-bsl: led.txt
 	python -m msp430.bsl5.uart -e $^
 download-usb: led.txt
-	python -m msp430.bsl5.hid -evvr $^
+	python -m msp430.bsl5.hid -e $^
 download-gdb: led.txt
 	python -m msp430.gdb.target -e $^

@@ -15,6 +15,7 @@ and HIL.dll/libHIL.so
 
 import sys
 import os
+import ctypes
 
 # erase modes
 ERASE_SEGMENT = 0       # Erase a segment.
@@ -113,17 +114,17 @@ def init_backend(force=None):
     else:
         # an absolute path to the library can be given.
         # LIBMSPGCC_PATH is used to pass its location
-        search_path = sys.path[:]   #copy sys.path list
+        search_path = []
         # if environment variable is set, insert this path first
         try:
             search_path.insert(0, os.environ['LIBMSPGCC_PATH'])
         except KeyError:
             if DEBUG > 4: sys.stderr.write('LIBMSPGCC_PATH is not set\n')
-        # as fallback, append PATH
-        try:
-            search_path.extend(os.environ['PATH'].split(os.pathsep))
-        except KeyError:
-            pass
+            # as fallback, append PATH
+            try:
+                search_path.extend(os.environ['PATH'].split(os.pathsep))
+            except KeyError:
+                pass
         #~ print search_path
 
         STATUS_OK    = 0

@@ -305,6 +305,7 @@ def main():
         #~ print sys.argv
         if sys.platform == 'win32':
             os.environ['PATH'] = '%s;%s' % (library_path, os.environ.get('PATH', ''))
+            os.environ['LIBMSPGCC_PATH'] = library_path
         else:
             os.environ['LD_LIBRARY_PATH'] = library_path
             os.environ['LIBMSPGCC_PATH'] = library_path

@@ -154,7 +154,7 @@ class SerialBSL5(bsl5.BSL5):
                     break
         if ans != BSL5_ACK:
             if ans: raise bsl5.BSL5Error('BSL reports error: %s' % BSL5_UART_ERROR_CODES.get(ans, 'unknown error'))
-            raise bsl5.BSL5Error('No ACK received')
+            raise bsl5.BSL5Error('No ACK received (timeout)')
 
         head = self.serial.read(3)
         if len(head) != 3: raise bsl5.BSL5Timeout('timeout while reading answer (header)')
@@ -359,10 +359,16 @@ class SerialBSL5Target(SerialBSL5, msp430.target.Target):
 
 
         if self.options.do_mass_erase:
-            self.extra_timeout = 6
-            self.mass_erase()
-            self.extra_timeout = None
-            self.BSL_TXPWORD('\xff'*32)
+            self.logger.info("Mass erase...")
+            try:
+                self.BSL_RX_PASSWORD('\xff'*30 + '\0'*2)
+            except bsl5.BSL5Error:
+                pass # it will fail - that is our intention to trigger the erase
+            time.sleep(1)
+            #~ self.extra_timeout = 6
+            #~ self.mass_erase()
+            #~ self.extra_timeout = None
+            self.BSL_RX_PASSWORD('\xff'*32)
             # remove mass_erase from action list so that it is not done
             # twice
             self.remove_action(self.mass_erase)
@@ -370,7 +376,7 @@ class SerialBSL5Target(SerialBSL5, msp430.target.Target):
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
                 self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
-                self.BSL_TXPWORD(password)
+                self.BSL_RX_PASSWORD(password)
 
         if self.options.speed is not None:
             try:

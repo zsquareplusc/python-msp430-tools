@@ -130,6 +130,7 @@ Example::
 """
 
 import rpn
+import pkgutil
 
 class MCUDefintitionError(Exception):
     """for errors in de MCU definition file"""
@@ -301,33 +302,33 @@ def expand_definition(memory_maps, name):
     return map
 
 
-def load_maps(filename):
-    """\
-    Load memory maps for multiple MCU from given filename.
-    """
-    return parse_words(rpn.words_in_file(filename).next)
-
-
-def memory_map(mcu_name, config_filename):
+def load_internal():
     """\
     Load configuration file and only return a single, expanded memory map for
     given mcu_name.
     """
-    m = load_maps(config_filename)
-    return expand_definition(m, mcu_name)
+    data = pkgutil.get_data('msp430.asm', 'definitions/msp430-mcu-list.txt')
+    return parse_words(rpn.words_in_string(data).next)
+
+def load_from_file(mcu_name, filename):
+    """\
+    Load configuration file and only return a single, expanded memory map for
+    given mcu_name.
+    """
+    return parse_words(rpn.words_in_file(filename).next)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # test only
 if __name__ == '__main__':
     import os.path
+    from pprint import pprint
 
     try:
-        memory_maps = load_maps(os.path.join(os.path.dirname(__file__), 'msp430_mcu.txt'))
-        from pprint import pprint
-        pprint(memory_maps)
+        memory_maps = load_internal()
+        #~ pprint(memory_maps)
     except rpn.RPNError, e:
         print "%s:%s: %s" % (e.filename, e.lineno, e)
     else:
         print '== memory map for MSP430F2013 =='
-        pprint(expand_definition(memory_maps, 'MSP430F2013'))
+        pprint(expand_definition(memory_maps, 'MSP430G2013'))

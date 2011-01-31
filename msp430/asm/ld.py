@@ -629,16 +629,14 @@ Output is in "TI-Text" format."""
         sys.stderr.write("Step 1: load segment descriptions.\n")
 
     # load the file and get the desired MCU description
-    if options.segmentfile:
-        segmentfile = options.segmentfile
-    else:
-        segmentfile = os.path.join(os.path.dirname(__file__), 'msp430-mcu-list.txt')
     try:
-        segment_definitions = mcu_definition_parser.memory_map(
-                options.mcu_name,
-                segmentfile)
+        if options.segmentfile:
+            mem_maps = mcu_definition_parser.load_from_file(options.segmentfile)
+        else:
+            mem_maps = mcu_definition_parser.load_internal()
+        segment_definitions = mcu_definition_parser.expand_definition(mem_maps, options.mcu_name)
     except Exception, msg:
-        sys.stderr.write('ERROR loading %s: %s\n' % (segmentfile, msg))
+        sys.stderr.write('ERROR loading segment descriptions: %s\n' % (msg,))
         sys.exit(1)
 
     linker.segments_from_definition(segment_definitions)

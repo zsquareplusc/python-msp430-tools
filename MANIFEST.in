@@ -5,7 +5,7 @@ include MANIFEST.in
 include setup.py
 recursive-include msp430 *.py *.txt
 
-recursive-include examples *.py *.txt
+recursive-include examples *.py *.txt *.S *akefile *.ini *.nsi *.m43
 
 include scripts/*.py
 

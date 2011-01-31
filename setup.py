@@ -12,13 +12,23 @@ import sys
 
 setup(
     name="python-msp430-tools",
-    description="Python MSP430 tools",
-    version="0.1",
+    description="Python MSP430 Tools",
+    version="0.2",
     author="Chris Liechti",
     author_email="cliechti@gmx.net",
     url="http://launchpad.net/python-msp430-tools/",
     packages=['msp430'],
-    license="Python",
+    package_dir={'msp430': 'msp430'},
+    package_data={'msp430': [
+            'msp430/asm/definitions/F1xx.txt',
+            'msp430/asm/definitions/msp430-mcu-list.txt',
+            'msp430/bsl/BL_150S_14x.txt',
+            'msp430/bsl/BL_150S_44x.txt',
+            'msp430/bsl/BS_150S_14x.txt',
+            'msp430/bsl/patch.txt',
+            'msp430/bsl5/RAM_BSL.00.05.04.34.txt',
+            ]},
+    license="Simplified BSD License",
     long_description=open('README.txt').read(),
     classifiers = [
 #        'Development Status :: 5 - Production/Stable',

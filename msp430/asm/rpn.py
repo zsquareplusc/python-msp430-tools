@@ -46,6 +46,15 @@ def annotated_words(sequence, filename=None, lineno=None, offset=None, text=None
             yield Word(word, filename, lineno, text)
 
 
+def words_in_string(data, name='<string>'):
+    """\
+    Yield word for word of a string, with comments removed. Words are annotated
+    with position in source string.
+    """
+    for n, line in enumerate(data.splitlines()):
+        for word in m_comment.sub('', line).split():
+            yield Word(word, name, n+1, line)
+
 def words_in_file(filename):
     """\
     Yield word for word of a file, with comments removed. Words are annotated
@@ -64,6 +73,9 @@ class RPNError(Exception):
         self.lineno = lineno
         self.offset = offset
         self.text = text
+
+    #~ def __str__(self):
+        #~ return '%s:%s: %s' % (self.filename, self.lineno, self.message)
 
 
 def rpn_function(code):

@@ -321,14 +321,44 @@ def load_from_file(mcu_name, filename):
 
 # test only
 if __name__ == '__main__':
-    import os.path
+    from optparse import OptionParser
     from pprint import pprint
+
+    parser = OptionParser()
+
+    parser.add_option("-l", "--list",
+            action = "store_true",
+            dest = "list",
+            default = False,
+            help = "list available MCU names")
+
+    parser.add_option("-d", "--dump",
+            action = "store_true",
+            dest = "dump",
+            default = False,
+            help = "dump all data instead of pretty printing")
+
+    (options, args) = parser.parse_args()
 
     try:
         memory_maps = load_internal()
-        #~ pprint(memory_maps)
     except rpn.RPNError, e:
         print "%s:%s: %s" % (e.filename, e.lineno, e)
     else:
-        print '== memory map for MSP430F2013 =='
-        pprint(expand_definition(memory_maps, 'MSP430G2013'))
+        if options.list:
+            for mcu in sorted(memory_maps):
+                print mcu
+            #~ pprint(memory_maps)
+        for mcu in args:
+            print '== memory map for %s ==' % mcu
+            memmap = expand_definition(memory_maps, mcu)
+            if options.dump:
+                pprint(memmap)
+            else:
+                for name, segment in sorted(memmap.items()):
+                    if not name.startswith('__') and 'start' in segment:
+                        print '%-12s %08x-%08x %s' % (
+                                name,
+                                segment['start'],
+                                segment['end'],
+                                ','.join(segment['flags']))

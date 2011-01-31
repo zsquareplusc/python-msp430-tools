@@ -50,6 +50,69 @@ memory-map-end
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 memory-map-begin
+    name         MSP430F0xx
+    # Logical
+    segment     .data           in:RAM
+    segment     .bss            in:RAM
+    segment     .noinit         in:RAM
+    symbol      _stack          in:RAM,location:end
+    # Physical
+                 segment     RAM            0x2380-0x23ff
+memory-map-end
+
+memory-map-begin
+    name         MSP430C091
+    based-on     MSP430F0xx
+    programmable segment     .vectors       0xffe0-0xffff
+    read-only    segment    BC              0xf800-0xf87f
+    programmable segment    ROM             0xfc80-0xffdf
+    programmable segment    .text           in:ROM
+    programmable segment    .const          in:ROM
+    programmable segment    .data_init      in:ROM,mirror:.data
+                 segment    CRAM            0x1c00-0x1c5f
+memory-map-end
+
+memory-map-begin
+    name         MSP430C092
+    based-on     MSP430F0xx
+    programmable segment     .vectors       0xffe0-0xffff
+    read-only    segment    BC              0xf800-0xf87f
+    programmable segment    ROM             0xf880-0xffdf
+    programmable segment    .text           in:ROM
+    programmable segment    .const          in:ROM
+    programmable segment    .data_init      in:ROM,mirror:.data
+                 segment    CRAM            0x1c00-0x1c5f
+memory-map-end
+
+memory-map-begin
+    name         MSP430L092
+    based-on     MSP430F0xx
+    programmable segment     .vectors       0x1c60-0x1c7f
+    read-only    segment    .bootloader     0xf800-0xffdf
+    programmable segment    LRAM            0x1c80-0x237f
+    programmable segment    .text           in:LRAM
+    programmable segment    .const          in:LRAM
+    programmable segment    .data_init      in:LRAM,mirror:.data
+                 segment    CRAM            0x1c00-0x1c5f
+memory-map-end
+
+memory-map-begin
+    name         MSP430L092_EMU
+    based-on     MSP430F0xx
+    programmable segment     .vectors       0xffe0-0xffff
+                 segment    BC              0xf800-0xf87f
+    programmable segment    LRAM            0xf900-0xffdf
+    programmable segment    .text           in:LRAM
+    programmable segment    .const          in:LRAM
+    programmable segment    .data_init      in:LRAM,mirror:.data
+                 segment    CRAM            0xf880-0xf8ff
+memory-map-end
+
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+memory-map-begin
     name         MSP430F1xx
     based-on     LOGICAL
     read-only    segment     .bootloader    0x0c00-0x0fff

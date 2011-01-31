@@ -4,7 +4,7 @@
 This is about the python-msp430-tools, that provide a number of tools related
 to the MSP430 embedded processor.
 
-Python 2.5 or newer should be used. The python package "msp430" can be
+Python 2.6 or newer should be used. The python package "msp430" can be
 installed with "python setup.py install". These modules can be used as
 standalone applications or as library for other programs.
 
@@ -50,9 +50,17 @@ Description of Python library
 msp430
     Root package for the Python modules related to the MSP430.
 
+msp430.asm
+    A simple assember and linker, also a disassembler, supporting MSP430(X).
+
 msp430.bsl
     Support for the boot strap loader. ``msp430.bsl.target`` is the main module
     for the downloader.
+
+msp430.bsl5
+    Support for the boot strap loader of F5xx/F6xx devices. ``msp430.bsl5.hid``
+    is the main module for the downloader for F5xx USB devices and
+    ``msp430.bsl5.uart`` for all others.
 
 msp430.jtag
     JTAG tools using the MSP430[mspgcc] library. ``msp430.jtag.target`` is the
@@ -65,9 +73,17 @@ msp430.gdb
 msp430.memory
     Memory implementation, used to store an memory image used to download to
     the MSP430. File format handlers are here too.
+    Interesting submodules are:
+    - convert
+    - compare
+    - hexdump
+    - generate
 
 msp430.shell.commands
     Shell commands, useful for makefiles etc.
+
+msp430.shell.watch
+    Watch a file for changes and execute a command in that case.
 
 msp430.listing
     Parser for listing files.

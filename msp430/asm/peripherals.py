@@ -58,6 +58,8 @@ class SymbolDefintitions(rpn.RPN):
         self.peripherals = {}
         self.peripheral = None
         self.bits = None
+        self.values = None
+        self.named = None
 
     @rpn.word('BIT')
     def word_BIT(self, stack):
@@ -65,7 +67,7 @@ class SymbolDefintitions(rpn.RPN):
         if self.bits is None:
             raise SymbolError('BIT outside REGISTER definition not allowed')
         bit_name = self.next_word()
-        self.bits.setdefault('__bits__', {})[1 << self.pop()] = bit_name
+        self.bits[1 << self.pop()] = bit_name
 
     @rpn.word('VALUE')
     def word_VALUE(self, stack):
@@ -73,7 +75,7 @@ class SymbolDefintitions(rpn.RPN):
         if self.bits is None:
             raise SymbolError('VALUE outside REGISTER definition not allowed')
         value_name = self.next_word()
-        self.bits[self.pop()] = value_name
+        self.values[self.pop()] = value_name
 
     @rpn.word('REGISTER')
     def word_REGISTER(self, stack):
@@ -83,6 +85,9 @@ class SymbolDefintitions(rpn.RPN):
         if self.peripheral is None:
             raise SymbolError('not within PERIPHERAL')
         self.bits = {}
+        self.values = {}
+        self.register_width = None
+        self.named = []
 
     @rpn.word('SHORTCUT')
     def word_SHORTCUT(self, stack):
@@ -91,7 +96,7 @@ class SymbolDefintitions(rpn.RPN):
             raise SymbolError('only possible within REGISTER definition')
         symbol_name = self.next_word()
         def update_bits(stack, bits=self.bits):
-            self.bits.setdefault('__bits__', {}).update(bits['__bits__'])
+            self.bits.update(bits)
         self.namespace[symbol_name.lower()] = update_bits
 
     @rpn.word('NAMED')
@@ -99,36 +104,44 @@ class SymbolDefintitions(rpn.RPN):
         """Set a name for an address that represents current register"""
         if self.bits is None:
             raise SymbolError('only possible within REGISTER definition')
-        symbol_name = self.next_word()
+        name = self.next_word()
         address = self.pop()
-        register = {}
-        register['__name__'] = symbol_name
-        register['__address__'] = address
-        register['__bits__'] = self.bits
-        self.registers_by_name[symbol_name] = register
-        self.registers_by_address[address] = register
-        self.peripheral[symbol_name] = register
+        self.named.append((name, address))
 
     @rpn.word('BYTE-ACCESS')
     def word_BYTE_ACCESS(self, stack):
         """Set access mode for current peripheral"""
         if self.bits is None:
             raise SymbolError('only possible within REGISTER definition')
-        self.bits['__width__'] = 8
+        self.register_width = 8
 
     @rpn.word('WORD-ACCESS')
     def word_WORD_ACCESS(self, stack):
         """Set access mode for current peripheral"""
         if self.bits is None:
             raise SymbolError('only possible within REGISTER definition')
-        self.bits['__width__'] = 16
+        self.register_width = 16
 
     @rpn.word('END-REGISTER')
     def word_END_REGISTER(self, stack):
         """Terminate current REGISTER definition"""
         if self.bits is None:
             raise SymbolError('currently not within REGISTER defintion')
+        for name, address in self.named:
+            register = {}
+            register['__name__'] = name
+            register['__address__'] = address
+            register['__bits__'] = self.bits
+            register['__values__'] = self.values
+            if self.register_width is not None:
+                register['__width__'] = self.register_width
+            self.registers_by_name[name] = register
+            self.registers_by_address[address] = register
+            self.peripheral[name] = register
         self.bits = None
+        self.values = None
+        self.register_width = None
+        self.named = None
 
     @rpn.word('PERIPHERAL')
     def word_PERIPHERAL(self, stack):

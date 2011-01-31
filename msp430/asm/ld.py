@@ -556,8 +556,8 @@ def to_TI_Text(segments):
 if __name__ == '__main__':
     import os
     from optparse import OptionParser
-    parser = OptionParser(usage="""
-usage: %prog [options] [FILE...]|-]
+    parser = OptionParser(usage="""\
+%prog [options] [FILE...]|-]
 
 If no input files are specified data is read from stdin.
 Output is in "TI-Text" format."""

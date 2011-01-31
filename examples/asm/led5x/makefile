@@ -11,7 +11,7 @@ export PYTHONPATH
 
 # set the assembler
 AS = python -m msp430.asm.as
-ASFLAGS = -x -v --debug
+ASFLAGS = -x -v
 
 # set up the linker
 LD = python -m msp430.asm.ld

@@ -1,0 +1,585 @@
+===========
+ Assembler
+===========
+
+The module ``msp430.asm`` provides an assembler for MSP430 and MSP430X CPUs.
+There is also a disassembler and definitions for memory and peripheral maps.
+
+Additionally a (almost C compatible) preprocessor is provided.
+
+
+For users
+=========
+
+The assembler ``msp430.asm.as`` reads source files (``*.S``) and creates object
+files (``*.o4``). Multiple object files are then linked together and a binary
+is created that can be downloaded to the MCU.
+
+For example, ``led.S``::
+
+    ; Test program for msp430.asm.as and msp430.asm.ld
+    ;
+    ; This one toggles the pin P1.1. This is like the LED flashing example that
+    ; comes preprogrammed on some of the eval boards from TI.
+
+    .text
+            ; entry point after device reset
+    RESET:  mov     #0x5a80, &0x120         ; disable WDT
+            bis.b   #1, &0x22               ; set pin to output
+
+            ; loop toggling the pin and then doing a delay
+    .L1:    xor.b   #1, &0x21               ; toggle pin
+            mov     #0xc350, R15            ; init delay loop
+    .L2:    dec     R15                     ; count down
+            jnz     .L2                     ; jump while counter is not zero
+            jmp     .L1                     ; loop the toggling part
+
+
+    ; set the reset vector (and all the others) to the program start
+    .section .vectors
+            .word  RESET, RESET, RESET, RESET, RESET, RESET, RESET, RESET
+            .word  RESET, RESET, RESET, RESET, RESET, RESET, RESET
+            .word  RESET                    ; reset vector
+
+Assemble, link, download::
+
+    python -m msp430.asm.as led.S -o led.o4
+    python -m msp430.asm.ld --mcu MSP430F1121 led.o4 -o led.titext
+
+    python -m msp430.bsl.target -e led.titext
+
+The preprocessor ``cpp`` can be used to read the MSP430 header files and use the
+definitions of the peripherals. It also supports ``#define``, ``#if`` etc.
+
+
+``msp43.asm.as``
+----------------
+An assembler for MSP430(X).
+
+.. warning:: This tool is currently in an experimental stage. Is has been used
+             to successfully create simple programs but it is not broadly
+             tested.
+
+Command line
+~~~~~~~~~~~~
+Usage: as.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -x, --msp430x         Enable MSP430X instruction set
+  -o FILE, --outfile=FILE
+                        name of the object file
+  --filename=FILE       Use this filename for input (useful when source is
+                        passed on stdin)
+  -v, --verbose         print status messages to stdout
+  -D, --debug           print debug messages to stdout
+  -i, --instructions    Show list of supported instructions and exit (see also
+                        -x)
+
+Supported directives
+~~~~~~~~~~~~~~~~~~~~
+The instruction set as documented in the MSP430 family guides is supported as
+well as the following pseudo instructions:
+
+- ``.ASCII``   Insert the given text as bytes
+- ``.ASCIIZ``  Insert the given text as bytes, append null byte
+- ``.BSS``     Select ``.bss`` section for output
+- ``.BYTE``    Insert the given 8 bit values
+- ``.DATA``    Select ``.data`` section for output
+- ``.EVEN``    Align address pointer to an even address
+- ``.LONG``    Insert the given 32 bit values
+- ``.SECTION`` Select named section for output
+- ``.SET``     Define a symbol with a value (can be used at link time)
+- ``.SKIP``    Skip the given amount of bytes
+- ``.TEXT``    Select ``.text`` section for output
+- ``.WORD``    Insert the given 16 bit values
+
+
+``msp430.asm.ld``
+-----------------
+The linker processes one or multiple ``.o4`` files (the output from ``as``)
+and creates a binary file that can be downloaded to a target.
+
+Command line
+~~~~~~~~~~~~
+Usage: ld.py [options] [FILE...]|-]
+
+If no input files are specified data is read from stdin.
+Output is in "TI-Text" format.
+
+Options:
+  -h, --help            show this help message and exit
+  -o FILE, --outfile=FILE
+                        name of the resulting binary (TI-Text)
+  -T FILE, --segmentfile=FILE
+                        linker definition file
+  -m MCU, --mcu=MCU     name of the MCU (used to load memory map)
+  --mapfile=FILE        write map file
+  -v, --verbose         print status messages
+  -D, --debug           print debug messages
+
+
+``msp430.asm.cpp``
+------------------
+This is an (almost C compatible) preprocessor. It can work with macros
+(``#define``) and evaluate arithmetic expressions.
+
+Supported directives are:
+
+- ``#define``   Define a value or function like macro
+- ``#include``  Read and insert given file
+- ``#if``       Conditional compilation is predicate is true. ``defined`` is also supported.
+- ``#ifdef``    Conditional compilation if given symbol is defined
+- ``#ifndef``   Conditional compilation if given symbol is not defined
+- ``#else``     For the inverse of ``#if``/``#ifdef``/``#ifndef``
+- ``#endif``    Finish ``#if``/``#ifdef``/``#ifndef`` / ``#else``
+- ``#undef``    Forget about the definition of a macro
+
+
+Command line
+~~~~~~~~~~~~
+Usage: cpp.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -o FILE, --outfile=FILE
+                        name of the object file
+  -p FILE, --preload=FILE
+                        process this file first. its output is discarded but
+                        definitions are kept.
+  -v, --verbose         print status messages
+  --debug               print debug messages to stdout
+  -D SYMVALUE, --define=SYMVALUE
+                        define symbol
+  -I PATH, --include-path=PATH
+                        Add directory to the search path list for includes
+
+To define symbols, use ``-D SYMBOL=VALUE`` respectively ``--define SYMBOL=VALUE``
+
+
+``msp430.asm.disassemble``
+--------------------------
+This is a disassembler for MSP430(X) code. It outputs an annotated listing.
+Each jump target is assigned an automatic label and a newline is inserted after
+each non conditional jump to make reading the source easier.
+
+The disassembler currently has no knowledge about the memory map or usage of
+memory. Therefore it disassembles just anything, even if it is not code.
+
+Provided with a symbol file, it can insert the names and named bits of accessed
+peripherals (for details see ``msp430/asm/definitions/F1xx.txt``).
+
+.. warning:: This tool is currently in an experimental stage. It is not fully
+             tested and especially the cycle counts are not verified.
+
+Command line
+~~~~~~~~~~~~
+Usage: disassemble.py [options] [SOURCE...]
+
+MSP430(X) disassembler.
+
+
+Options:
+  -h, --help            show this help message and exit
+  -o DESTINATION, --output=DESTINATION
+                        write result to given file
+  --debug               print debug messages
+  -v, --verbose         print more details
+  -i TYPE, --input-format=TYPE
+                        input format name (titext, ihex, bin, hex, elf)
+  -x, --msp430x         Enable MSP430X instruction set
+  --source              omit hex dump, just output assembler source
+  --symbols=NAME        read register names for given architecture (e.g. F1xx)
+
+
+For developers
+==============
+This section is about the internals of the ``msp430.asm`` module. It may be
+interesting for developers that work on this module or who are interested in
+using the functions the module provides in their own code.
+
+Object file format
+------------------
+The file format of ``.o4`` files is a bit unusual. It actually contains
+something that could be labeled as (specialized) Forth code. So the linker is
+some sort of Forth interpreter. This has the advantage that the object files
+can be debugged without any special tools, just a text editor. It also makes
+the format quite universal; it could produce binaries for all sorts of CPUs
+(single special case: the directive ``JMP`` is MSP430 specific).
+
+For more details about the file format, take a look at the sources of ``ld.py``.
+
+Modules
+-------
+.. module:: msp430.asm
+
+``msp430.asm.as``
+~~~~~~~~~~~~~~~~~
+.. module:: msp430.asm.as
+
+This module implements the MSP430(X) assembler. When the module is executed
+(e.g. using ``python -m msp430.asm.as``), it acts as a command line tool.
+
+.. class:: MSP430Assembler
+
+    .. method:: __init__(msp430x=False, debug=False)
+
+        :param msp430x: Set to true to enable MSP430X instruction set.
+        :param debug: When set to true dump some internal data so sys.stderr while compiling.
+
+        Create an instance of the assembler.
+
+    .. method:: assemble(f, filename=None, output=sys.stdout)
+
+        :param f: A file like object that supports iterating over lines.
+        :param filename: An optional string that is used in error messages.
+        :param output: File like object used to write the object code to.
+
+        This method takes assembler source and transforms it to object code
+        that can be forwarded to the linker.
+
+.. exception:: AssemblerError
+
+    This instances of this class are raised by the ``MSP430Assembler`` in case
+    of errors in the source. It may be annotated with the source filename
+    and line number where the error occurred.
+
+    .. attribute:: filename
+    .. attribute:: line
+
+
+``msp430.asm.ld``
+~~~~~~~~~~~~~~~~~
+.. module:: msp430.asm.ld
+
+This module implements the linker. When the module is executed
+(e.g. using ``python -m msp430.asm.ld``), it acts as a command line tool.
+
+.. class:: Linker
+
+    .. method:: __init__(instructions)
+
+        :param instructions: list of directives for the linker
+
+        Initialize a linker instance. The given instructions are essentially
+        what is read from a ``.o4`` file as sequence of words.
+
+    .. method:: segments_from_definition(segment_definitions)
+
+        :param segment_definitions: dictionary describing the memory map
+
+        This sets the memory map used for linking. See 
+        :class:`mcu_definition_parser` for a way to load this description.
+
+    .. method:: update_mirrored_segments()
+
+        Called before writing the final output. In case the memory map contains
+        segments that mirror the contents of other segments, they are updated.
+        This is typically used for ``.data_init`` which contains the initial
+        values that are copied by startup code to the ``.data`` segment in RAM.
+
+    .. method:: pass_one()
+
+        Run the linkers 1st pass. It iterates through the instructions and
+        places the data into segments.
+
+    .. method:: pass_two()
+
+        Run the linkers 2nd pass. It iterates through the instructions and
+        finds all the labels and saves their position.
+
+    .. method:: pass_three()
+
+        Run the linkers 3rd pass. It iterates through the instructions and
+        creates the final binary with all known labels set to their target
+        address.
+
+.. exception:: LinkError
+
+    Exception object raised when errors during linking occur. May be annotated
+    with the location of the line within the original source file causing the
+    error.
+
+    .. attribute:: filename
+    .. attribute:: lineno
+    .. attribute:: column
+
+
+``msp430.asm.cpp``
+~~~~~~~~~~~~~~~~~~
+.. module:: msp430.asm.cpp
+
+This module implements the preprocessor. When the module is executed
+(e.g. using ``python -m msp430.asm.cpp``), it acts as a command line tool.
+
+.. function:: line_joiner(next_line)
+
+    Given an iterator for lines, yield lines. It joins consecutive lines with
+    the continuation marker (``\\``) to a single line.
+
+.. class:: AnnoatatedLineWriter
+
+    This object is used by the preprocessor to write out the preprocessed text.
+    It adds notes in the form ``#line <line> "<filename>"``. These notes are
+    used by the assembler to know where a source line originally came from (as
+    preprocessed text may contain additional lines etc.)
+
+    .. method:: __init__(output, filename)
+
+        :param output: file like object to write to
+        :param filename: the filename used in the notes
+
+    .. method:: write(lineno, text)
+
+        :param linno: line number being written
+        :param text: the actual contents of the line
+
+.. class:: Preprocessor
+
+    .. method:: preprocess(infile, outfile, filename)
+
+        :param infile: file like object to read from
+        :param outfile: file like object to write to
+        :param filename: original file name of the input (infile)
+
+        This runs the preprocessor over the given input.
+
+.. exception:: PreprocessorError
+
+    Exception object raised when errors during preprocessing occur.
+
+
+``msp430.asm.disassemble``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. module:: msp430.asm.disassemble
+
+This module implements the disassembler. When the module is executed (e.g.
+using ``python -m msp430.asm.disassemble``), it acts as a command line tool.
+
+.. class:: MSP430Disassembler
+
+    .. method:: __init__(memory, msp430x=False, named_symbols=None)
+
+        :param memory: A msp43.memory.Memory instance containing the binary.
+        :param msp430x: Set to true to enable MSP430X instruction set.
+        :param named_symbols: An (optional) instance of :class:`NamedSymbols` which is used to label peripherals and bits.
+
+        Initialize the disassembler with data.
+
+    .. method:: disassemble(output, source_only=False)
+
+        :param output: A file like object used for the resulting text.
+        :param source_only: When set to true, the address and data columns are omitted from the output.
+
+        Run the disassembler, result is written to output.
+
+
+``msp430.asm.rpn``
+~~~~~~~~~~~~~~~~~~
+.. module:: msp430.asm.rpn
+
+This module implements the an RPN calculator. The calculator can be tested by
+executing the module (e.g.  using ``python -m msp430.asm.rpn``).
+
+.. class:: Word(unicode)
+
+    This class is used to wrap words so that their source location can be
+    tracked. This is useful for error messages.
+
+    .. method:: __new__(cls, word, filename, lineno, text)
+
+        :param cls: Class for __new__
+        :param word: The word (unicode)
+        :param filename: Filename where the word was read from.
+        :param lineno: Line number within the file.
+        :param text: The complete line (or context).
+        :type filename: unicode or None
+        :type lineno: int or None
+        :type text: unicode or None
+
+        Create new instance with a word that was read from given location.
+
+.. class:: RPN
+
+    An RPN calculator. It provides a data stack and implements a number of
+    basic operations (arithmetical and stack)
+
+    .. method:: interpret(next_word)
+
+        :param next_word: A function return the next word from input when called.
+
+        Interpret a sequence of words given by the iterator next_word.
+
+.. function:: annotated_words(sequence, filename=None, lineno=None, offset=None, text=None)
+
+    Create an generator for :class:`Word`, all annotated with the given
+    information.
+
+.. function:: words_in_string(data, name='<string>')
+
+    :param data: String with (lines) of text.
+    :param name: Optional name, used in error messages.
+
+    Create a generator for annotated :class:`Word` in string (``splitlines()``
+    is used).
+
+.. function:: words_in_file(filename)
+
+    :param filename: Name of a file to read from.
+
+    Create a generator for annotated :class:`Word` read from file given by name.
+
+.. function:: rpn_function(code)
+
+    :param code: A string in RPN notation
+    :return: A Python function.
+
+    Return a wrapper - a function that evaluates the given RPN code when
+    called.  This can be used to insert functions implemented as RPN into the
+    name space.
+
+.. function:: word(name)
+
+    Function decorator used to tag methods that will be visible in the RPN
+    built-in name space.
+
+.. function:: val(words, stack=[], namespace={})
+
+    :param words: Sequence of words.
+    :param stack: Optional initial stack.
+    :param namespace: Optional namespace.
+    :return: The top element from the stack
+
+    Evaluate sequence of words.
+
+.. function:: python_function(code, namespace={})
+
+    :param code: RPN code to execute.
+    :param namespace: Optional namespace.
+    :return: A python function that executes ``code`` when called.
+
+    Create a Python function that will execute given code when called. All
+    parameters given to the Python function will be placed on the stack and the
+    top of stack will be returned.
+
+.. function:: interpreter_loop(namespace={}, debug=False)
+
+    Run an interactive loop. Can be used as calculator.
+
+.. exception:: RPNError
+
+    Exception type used for errors when parsing or executing RPN code.
+    It may be annotated with the source position where the word causing the
+    error came from.
+
+    .. attribute:: filename
+    .. attribute:: lineno
+    .. attribute:: offset
+    .. attribute:: text
+
+
+``msp430.asm.peripherals``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. module:: msp430.asm.peripherals
+
+This module implements a parser for a file format describing the peripherals
+and their bits of a MCU.  The module can be executed (e.g. using ``python -m
+msp430.asm.peripherals``) to test definition files.
+
+.. class:: SymbolDefinitions(msp430.asm.rpn.RPN)
+
+    This class implements the parser and keeps the result. It inherits from :class:`RPN`.
+
+.. function:: load_symbols(filename)
+
+    :param filename: Load symbols from a file named like this.
+    :return: instance of :class:`SymbolDefinitions`
+
+    Load definitions from a file of given name.
+
+.. function:: load_internal(name)
+
+    :param name: Name of an internal file.
+    :return: instance of :class:`SymbolDefinitions`
+
+    This tries to load internal data (using ``pkgutil``).
+
+.. exception:: SymbolError
+
+    Exception object used for errors in the definition file.
+
+
+``msp430.asm.mcu_definition_parser``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. module:: msp430.asm.mcu_definition_parser
+
+This module implements the a parser for files describing the memory map of a
+CPU.  The module can be executed (e.g. using ``python -m
+msp430.asm.mcu_definition_parser``) to test definition files.
+
+.. class:: MCUDefintitions(msp430.asm.rpn.RPN)
+
+    This class implements the parser and keeps the result. It inherits from :class:`msp430.asm.rpn.RPN`.
+    Loaded definitions may contain the memory maps of many MCUs and also
+    partial maps (that may depend on each other).
+
+.. function:: load_from_file(filename)
+
+    :param filename: Load definitions from file of given name.
+    :return: instance of :class:`MCUDefintitions`
+
+.. function:: load_internal()
+
+    :return: instance of :class:`MCUDefintitions`
+
+    Load internal list.  The default list is included in
+    ``msp430/asm/definitions/msp430-mcu-list.txt``
+
+.. function:: expand_definition(memory_maps, name)
+
+    :param memory_maps: Memory map descriptions.
+    :param name: Name of an MCU that should be extracted
+    :type memory_maps: MCUDefintitions
+    :return: Dictionary with recursively expanded memory map.
+
+    Return the memory map of a specific MCU. If the definition depends on
+    others its expanded so that a single, complete description is returned.
+
+
+``msp430.asm.infix2postfix``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. module:: msp430.asm.infix2postfix
+
+This module implements a converter that can translate infix (arithmetical)
+notation to postfix notation (RPN). It is used by the preprocessor and
+assembler when evaluating expressions.
+
+.. function:: infix2postfix(expression, variable_prefix='', scanner=Scanner, precedence=default_precedence)
+
+    :param expression: Input string in infix notation.
+    :param variable_prefix: A string that is prepended to symbols found in the expression.
+    :param scanner: The class that is used to parse the expression.
+    :param precedence: A dictionary returning the priority given an operator as key.
+    :return: A string with the expression in postfix notation.
+
+.. function:: convert_precedence_list(precedence_list)
+
+    :param precedence_list: A list of lists that defines operator priorities.
+    :return: A dictionary mapping operators to priorities.
+
+    Input will look like this::
+
+        default_precedence_list = [
+                # lowest precedence
+                ['or'],
+                ['and'],
+                ['not'],
+                ['<', '<=', '>', '>=', '==', '!='],
+                ['|', '^', '&'],
+                ['<<', '>>'],
+                ['+', '-'],
+                ['*', '/', '%'],
+                ['~', 'neg', '0 +'],
+                ['(', ')'],
+                # highest precedence
+            ]

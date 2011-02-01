@@ -310,7 +310,7 @@ def load_internal():
     data = pkgutil.get_data('msp430.asm', 'definitions/msp430-mcu-list.txt')
     return parse_words(rpn.words_in_string(data).next)
 
-def load_from_file(mcu_name, filename):
+def load_from_file(filename):
     """\
     Load configuration file and only return a single, expanded memory map for
     given mcu_name.

@@ -1,4 +1,4 @@
-; Test program for msp430.asm.cpp, msp430.asm.as and msp430.asm.ld
+; Test program for msp430.asm.as and msp430.asm.ld
 ;
 ; This one toggles the pin P1.1. This is like the LED flashing example that
 ; comes preprogrammed on some of the eval boards from TI.

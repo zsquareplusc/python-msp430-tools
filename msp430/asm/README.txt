@@ -2,7 +2,7 @@
  MSP430[X] Assembler
 =====================
 
-(C) 2001-2006, 2010 Chris Liechti <cliechti@gmx.net>
+(C) 2001-2006, 2010-2011 Chris Liechti <cliechti@gmx.net>
 
 Released under the Simplified BSD license.
 
@@ -13,9 +13,11 @@ Overview
 This is an experimental assembler and linker for the TI MSP430 processor.
 It is implemented in Python (get it from www.python.org).
 
-The assembler (as.py) produces a file in a proprietary object format which
-can be read by the linker (ld.py). The linker writes TI-Text format files
+The assembler (``as.py``) produces a file in a proprietary object format which
+can be read by the linker (``ld.py``). The linker writes TI-Text format files
 which can be downloaded to the processor or run in the simulator.
+
+A disassembler (``disassemble.py``) is also provided.
 
 
 Features
@@ -41,7 +43,7 @@ Features
 
 Example
 -------
-(for use in a unix like shell, windows users can replace "./" by "python "
+(for use in a un*x like shell, windows users can replace "./" by "python "
 or the full path to the interpreter or use cygwin/bash)
 
     ./as.py led.S
@@ -76,4 +78,13 @@ different sections, when desired.
     Automatically created copy of .data but placed in Flash.
     The startup code would then copy the contents of this
     segment to the .data section in RAM.
+
+Symbols:
+_stack
+    The last address in RAM, used to initialized the stack pointer.
+
+.. note::
+
+    using ``_stack``, copying ``.data_init``, zeroing ``.bss`` needs to
+    be implemented in startup code which is not provided.
 

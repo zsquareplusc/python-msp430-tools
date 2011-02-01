@@ -49,7 +49,7 @@ class SymbolError(Exception):
     """for errors in de definition file"""
 
 
-class SymbolDefintitions(rpn.RPN):
+class SymbolDefinitions(rpn.RPN):
 
     def __init__(self):
         rpn.RPN.__init__(self)
@@ -167,7 +167,7 @@ def parse_words(next_word):
     """\
     Parse a configuration file/text using the given 'next_word' function.
     """
-    s = SymbolDefintitions()
+    s = SymbolDefinitions()
     s.interpret(next_word)
     return s
 

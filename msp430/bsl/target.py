@@ -203,7 +203,7 @@ class SerialBSL(bsl.BSL):
                 self.logger.debug('Data frame: %s' % data.encode('hex'))
                 return data
             else:
-                raise bsl.BSLException('checksum error in answer')
+                raise bsl.BSLError('checksum error in answer')
         else:
             self.logger.debug('unexpected answer %r' % (ans,))
             raise bsl.BSLError('unexpected answer: %r' % (ans,))

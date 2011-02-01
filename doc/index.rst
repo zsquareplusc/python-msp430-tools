@@ -12,6 +12,7 @@ Contents:
     :maxdepth: 2
 
     assembler
+    target
     commandline_tools
     license
 

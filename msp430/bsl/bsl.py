@@ -97,9 +97,6 @@ class BSL(object):
         answer = self.bsl(BSL_TXVERSION, "\0"*4)
         return answer
 
-    def BSL_RESET(self):
-        answer = self.bsl(BSL_RESET, "\0"*4, expect=0)
-
     # - - - - - - High level functions - - - - - -
 
     def __init__(self):

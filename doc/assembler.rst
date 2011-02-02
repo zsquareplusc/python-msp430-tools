@@ -532,7 +532,7 @@ msp430.asm.mcu_definition_parser``) to test definition files.
 
     :return: instance of :class:`MCUDefintitions`
 
-    Load internal list.  The default list is included in
+    Load internal list. The default list is included in
     ``msp430/asm/definitions/msp430-mcu-list.txt``
 
 .. function:: expand_definition(memory_maps, name)
@@ -543,7 +543,8 @@ msp430.asm.mcu_definition_parser``) to test definition files.
     :return: Dictionary with recursively expanded memory map.
 
     Return the memory map of a specific MCU. If the definition depends on
-    others its expanded so that a single, complete description is returned.
+    others, it is expanded so that a single, complete description is
+    returned.
 
 
 ``msp430.asm.infix2postfix``

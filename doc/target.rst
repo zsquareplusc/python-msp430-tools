@@ -1034,8 +1034,12 @@ msp430.jtag.profile``).
 
 GDB Target
 ==========
-Interface to GDB servers (msp430-gdbproxy, mspdebug). This can be used to up-
+Interface to GDB servers (`msp430-gdbproxy`_, mspdebug_). This can be used to up-
 and download data via the GDB servers. No debugging support is provided.
+
+.. _mspdebug: http://mspdebug.sf.net
+.. _`msp430-gdbproxy`: http://mspgcc.sf.net
+
 
 ``msp430.gdb.gdb``
 ------------------
@@ -1241,6 +1245,9 @@ and download data via the GDB servers. No debugging support is provided.
 .. module:: msp430.gdb.target
 
 Remote GDB programmer for the MSP430 embedded processor.
+
+This module can be executed as command line tool (``python -m
+msp430.gdb.target``).
 
 .. class:: GDBTarget(object)
 

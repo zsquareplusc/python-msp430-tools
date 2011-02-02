@@ -11,10 +11,11 @@ Contents:
 .. toctree::
     :maxdepth: 2
 
-    assembler
+    overview
     target
     commandline_tools
     utilities
+    assembler
     license
 
 Indices and tables

@@ -14,6 +14,7 @@ Contents:
     assembler
     target
     commandline_tools
+    utilities
     license
 
 Indices and tables

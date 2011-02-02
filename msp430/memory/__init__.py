@@ -90,7 +90,7 @@ def stream_merge(*streams):
 
 
 
-class Segment:
+class Segment(object):
     """Store a string or list with memory contents (bytes) along with its startaddress"""
     def __init__(self, startaddress = 0, data=None):
         if data is None:
@@ -112,7 +112,7 @@ class Segment:
         """Compare two segments. Implemented to support sorting a list of segments by address"""
         return cmp(self.startaddress, other.startaddress)
 
-class Memory:
+class Memory(object):
     """represent memory contents. with functions to load files"""
     def __init__(self, filename=None):
         self.segments = []

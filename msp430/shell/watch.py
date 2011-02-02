@@ -45,14 +45,14 @@ def watch(filenames, callback):
 if __name__ == '__main__':
     from optparse import OptionParser
 
-    parser = OptionParser(usage='%prog FILENAME --execute "some/program/ --"')
+    parser = OptionParser(usage='%prog FILENAME [FILENAME...] --execute "some/program/ --"')
 
     parser.add_option("-x", "--execute",
             action = "store",
             dest = "execute",
             default = None,
             metavar = "COMMAND",
-            help = "run this command when watched file changed, -- is replaced by FILENAME")
+            help = "run this command when watched file changed, -- is replaced by FILENAME(s)")
 
     (options, args) = parser.parse_args()
 

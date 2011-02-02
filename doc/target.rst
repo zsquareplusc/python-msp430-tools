@@ -918,7 +918,7 @@ Constants used to identify backend implementations:
 
 
 ``msp430.jtag.target``
---------------------
+----------------------
 .. module:: msp430.jtag.target
 
 This module can be executed as command line tool (``python -m
@@ -998,7 +998,7 @@ msp430.jtag.dco``).
 
 ``msp430.jtag.profile``
 -----------------------
-.. modeule:: msp430.jtag.profile
+.. module:: msp430.jtag.profile
 
 Statistical profiler for the MSP430.
 
@@ -1013,7 +1013,7 @@ msp430.jtag.profile``).
 
 .. note:: This module is currently only supported with parallel port JTAG adapters and MSP430mspgcc.dll/so
 
-.. fucntion:: main()
+.. function:: main()
 
     Command line frontend. It connects to a target using JTAG. It then samples the
     address bus as fast as possible (which is still much slower that the
@@ -1165,6 +1165,7 @@ and download data via the GDB servers. No debugging support is provided.
         Read memory.
 
     .. method:: write_memory(startaddress, data)
+
         :param startaddress: Address on target.
         :param data: Byte string with memory contents
 

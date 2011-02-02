@@ -17,6 +17,7 @@ USAGE: generate.py -l size_in_bytes
 from msp430 import memory
 import sys
 import struct
+import random
 
 from optparse import OptionParser
 
@@ -64,6 +65,12 @@ def main():
             default=0x3fff, # JMP $
             type="int")
 
+    parser.add_option("--random",
+            dest="random",
+            help="fill with random numbers",
+            action="store_true",
+            default=False)
+            
     (options, args) = parser.parse_args()
 
     if options.output_format not in memory.save_formats:
@@ -86,9 +93,15 @@ def main():
     if options.start_address is None:
         options.start_address = 0x10000 - options.size
 
+    if options.random and options.count:
+        parser.error('conflicting options --count and --random')
+
     # create data
     if options.count:
         data = ''.join([struct.pack("<H", x & 0xffff) 
+                for x in xrange(options.start_address, options.start_address + options.size, 2)])
+    elif options.random:
+        data = ''.join([struct.pack("<H", random.getrandbits(16)) 
                 for x in xrange(options.start_address, options.start_address + options.size, 2)])
     else:
         data = ''.join([struct.pack("<H", options.const) 

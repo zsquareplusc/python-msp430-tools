@@ -38,7 +38,7 @@ scripts.
 
 (run as ``python -m msp430.memory.compare``)
 
-Usage: compare.py [options] FILE FILE
+Usage: compare.py [options] FILE1 FILE2
 
 Compare tool.
 
@@ -82,6 +82,7 @@ Options:
                         start address of data generated
   -c, --count           use address as data
   --const=CONST         use given 16 bit number as data (default=0x3fff)
+  --random              fill with random numbers
 
 
 ``msp430.memory.hexdump``
@@ -116,7 +117,8 @@ File format handlers
 
 Overview
 --------
-The file format handler modules each provides a load and/or save function.
+The file format handler modules each provides a load and/or save function on
+module level.
 
 .. function:: load(filelike)
 
@@ -259,9 +261,9 @@ API
 
     .. method:: get_range(fromadr, toadr, fill='\xff')
 
-        :param fromadr: Start address (including)
-        :param toadr: End address (including)
-        :param fill: Fill value (a byte)
+        :param fromadr: Start address (including).
+        :param toadr: End address (including).
+        :param fill: Fill value (a byte).
         :return: A byte string covering the given memory range.
 
         Get a range of bytes from the memory. Unavailable values are filled
@@ -269,29 +271,30 @@ API
 
     .. method:: get(address, size)
 
-        :param address: Start address of block to read
-        :param size: Size of the of block to read
+        :param address: Start address of block to read.
+        :param size: Size of the of block to read.
         :return: A byte string covering the given memory range.
-        :exception ValueError: unavailable addresses are tried to read
+        :exception ValueError: unavailable addresses are tried to read.
 
         Get a range of bytes from the memory.
 
      .. method:: set(address, contents)
 
-        :param address: Start address of block to read
-        :param contents: Bytes to write to the memory
-        :exception ValueError: Writing to an undefined memory location
+        :param address: Start address of block to read.
+        :param contents: Bytes to write to the memory.
+        :exception ValueError: Writing to an undefined memory location.
 
         Write a range of bytes to the memory. A segment covering the address
-        range to be written has to be existent. A ValueError is raised if not
-        all data could be written (attention: a part of the data may have been
-        written!). The contents may span multiple (existing) segments.
+        range to be written has to be existent. A :exc:`ValueError` is raised
+        if not all data could be written (attention: a part of the data may
+        have been written!). The contents may span multiple (existing)
+        segments.
 
     .. method:: merge(other)
 
         :param other: A Memory instance, its contents is copied to this instance.
 
-        Merge an other Memory object into this one. The data is merged in case
+        Merge an other memory object into this one. The data is merged: in case
         of overlapping, the data from ``other`` is used. The segments are
         recreated so that consecutive blocks of bytes are each in one segment.
 
@@ -301,7 +304,7 @@ API
     :param filename: Name of the file to open
     :param fileobj: None to let this function open the file or an open, seekable file object (typically opened in binary mode).
     :param format: File format name, ``None`` for auto detection.
-    :return: Memory object
+    :return: Memory object.
 
     Return a Memory object with the contents of a file.
     File type is determined from extension and/or inspection of content.

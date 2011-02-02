@@ -53,7 +53,7 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, html=False):
 def inner_main():
     from optparse import OptionParser
     parser = OptionParser(usage="""\
-%prog [options] FILE FILE
+%prog [options] FILE1 FILE2
 
 Compare tool.
 

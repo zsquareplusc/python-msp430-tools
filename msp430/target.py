@@ -58,7 +58,7 @@ DEVICEIDS = {
     (0xf46f, None): F4x,      # FG46xx
 }
 
-def idetify_device(device_id, bsl_version):
+def identify_device(device_id, bsl_version):
     try:
         try:
             return DEVICEIDS[device_id, bsl_version]
@@ -191,7 +191,7 @@ class Target(object):
 
     def get_mcu_family(self):
         device_id, bsl_version = struct.unpack(">H8xH4x", self.version())
-        family = idetify_device(device_id, bsl_version)
+        family = identify_device(device_id, bsl_version)
         if self.verbose > 2:
             sys.stderr.write("MCU: %s (%04x)\n" % (family, device_id))
         return family

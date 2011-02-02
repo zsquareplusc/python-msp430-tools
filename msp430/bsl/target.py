@@ -248,7 +248,7 @@ class SerialBSL(bsl.BSL):
         """\
         Change the BSL baud rate on the target and switch the serial port.
         """
-        family = msp430.target.idetify_device(self.device_id, self.bsl_version)
+        family = msp430.target.identify_device(self.device_id, self.bsl_version)
         if family == msp430.target.F1x:
             table = F1x_baudrate_args
         elif family == msp430.target.F2x:
@@ -434,7 +434,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         self.check_extended()
 
         if self.options.replace_bsl:
-            family = msp430.target.idetify_device(self.device_id, self.bsl_version)
+            family = msp430.target.identify_device(self.device_id, self.bsl_version)
             if family == msp430.target.F1x:
                 bsl_name = 'BL_150S_14x.txt'
                 #~ bsl_name = 'BS_150S_14x.txt'

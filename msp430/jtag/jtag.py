@@ -6,7 +6,7 @@
 # Simplified BSD License (see LICENSE.txt for full text)
 
 """\
-JTAG programmer for the MSP430 embedded proccessor.
+JTAG programmer for the MSP430 embedded processor.
 
 Requires Python 2+ and the binary extension _parjtag or ctypes
 and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
@@ -69,7 +69,6 @@ CTYPES_TI = "ctypes/TI or 3rd party"
 # exceptions
 class JTAGException(Exception): pass
 
-# create a wrapper class with ctypes, that has the same API as _parjtag
 def locate_library(libname, paths=sys.path, loader=None):
     if loader is None: loader=ctypes.windll
     for path in paths:
@@ -83,6 +82,7 @@ def locate_library(libname, paths=sys.path, loader=None):
     else:
         raise IOError('%s not found' % libname)
 
+# create a wrapper class with ctypes, that has the same API as _parjtag
 backend = None
 backend_info = None
 def init_backend(force=None):

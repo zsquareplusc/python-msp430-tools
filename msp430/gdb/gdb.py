@@ -86,7 +86,7 @@ class ClientSocketConnector(threading.Thread):
 
     def run(self):
         """\
-        Implement an efficient read loop for sockets port.
+        Implement an efficient read loop for sockets.
         """
         while self._alive:
             try:
@@ -275,15 +275,15 @@ class GDBClient(ClientSocketConnector):
         expected answer 'OK' or 'Enn'"""
         return self._remote_command('P%x=%s' % (regnum, encodeRegister(value)))
 
-    def query(self, querry, nowait=False):
+    def query(self, query, nowait=False):
         """query -- general query
         expected answer 'OK' or 'Enn' or ''"""
-        return self._remote_command('q%s' % (querry,), nowait=nowait)
+        return self._remote_command('q%s' % (query,), nowait=nowait)
 
-    def set(self, querry, value):
+    def set(self, name, value):
         """Qvar=val -- general set
         expected answer 'OK' or 'Enn' or ''"""
-        return self._remote_command('Q%s=%s' % (querry, value))
+        return self._remote_command('Q%s=%s' % (name, value))
 
     #~ def gdbRemoteRestart(self):
         #~ """RXX -- remote restart
@@ -308,7 +308,7 @@ class GDBClient(ClientSocketConnector):
         )
 
     def write_memory_binary(self, startaddress, data):
-        """maddr,length -- read memory
+        """maddr,data -- write memory
         expected answer 'OK' or 'Enn'"""
         def escape(s):
             res = []

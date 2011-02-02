@@ -90,7 +90,7 @@ if sys.platform == 'win32':
         HID support for running on Windows.
         """
 
-        def open(self, device):
+        def open(self, device=None):
             if device is None:
                 filter = hid.HidDeviceFilter(vendor_id = 0x2047, product_id = 0x0200)
                 all_devices = filter.get_devices()
@@ -134,7 +134,7 @@ else:
         HID support for running on Linux (systems with /dev/hidraw*).
         """
 
-        def open(self, device):
+        def open(self, device=None):
             if device is None:
                 # try to auto detect device
                 self.logger.debug('HID device auto detection using sysfs')

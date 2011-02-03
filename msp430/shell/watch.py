@@ -52,7 +52,7 @@ if __name__ == '__main__':
             dest = "execute",
             default = None,
             metavar = "COMMAND",
-            help = "run this command when watched file changed, -- is replaced by FILENAME(s)")
+            help = "run this command when watched file(s) changed, -- is replaced by FILENAME(s)")
 
     (options, args) = parser.parse_args()
 

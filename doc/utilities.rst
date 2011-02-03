@@ -7,8 +7,8 @@ Tools
 ``msp430.memory.convert``
 -------------------------
 
-This is a command line tool that can load multiple binaries, combine them and
-output a binary of the same or different file type.
+This is a command line tool that can load multiple hex files, combine them and
+output a hex file of the same or different file type.
 (run as ``python -m msp430.memory.convert``)
 
 Usage: convert.py [options] [INPUT...]
@@ -31,9 +31,9 @@ Options:
 
 ``msp430.memory.compare``
 -------------------------
-Compare two binaries. The files are loaded and a hex dump is compared. The diff
-between the hex dumps is output (unless the ``--html`` option is used). The
-tool also sets the shell exit code so that it could be used in shell/bat
+Compare two hex files. The files are loaded and a hex dump is compared. The
+diff between the hex dumps is output (unless the ``--html`` option is used).
+The tool also sets the shell exit code so that it could be used in shell/bat
 scripts.
 
 (run as ``python -m msp430.memory.compare``)
@@ -58,8 +58,8 @@ Options:
 
 ``msp430.memory.generate``
 --------------------------
-Generate binary files filled with some pattern. The pattern can be a counter or
-a useful MSP430 instruction such as ``JMP $``.
+Generate hex files filled with some pattern. The pattern can be a counter or
+a useful MSP430 instruction such as ``JMP $`` (0x3fff).
 
 (run as ``python -m msp430.memory.generate``)
 

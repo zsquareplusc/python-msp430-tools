@@ -15,6 +15,7 @@ Contents:
     target
     commandline_tools
     utilities
+    shell
     assembler
     license
 

@@ -30,4 +30,7 @@ doc-pdf:
 doc-clean:
 	cd doc; $(MAKE) clean
 
+doc-auto:
+	python -m msp430.shell.watch doc/*.rst -x "make doc-html"
+
 .PHONY: FORCE

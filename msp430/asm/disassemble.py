@@ -16,9 +16,9 @@ import msp430.asm.peripherals
 
 INSN_WIDTH = 7          # instruction width in chars (args follow)
 
-regnames = ['PC', 'SP', 'SR', 'CG2',
-            'R4', 'R5', 'R6', 'R7',
-            'R8', 'R9', 'R10', 'R11',
+regnames = ['PC',  'SP',  'SR',  'R3',
+            'R4',  'R5',  'R6',  'R7',
+            'R8',  'R9',  'R10', 'R11',
             'R12', 'R13', 'R14', 'R15']
 
 
@@ -27,7 +27,7 @@ def addressMode(bytemode, asrc = None, ad = None, src = None, dest = None):
     c = 0
     # source first
     if asrc is not None:
-        if src == 2 and asrc > 1: # CG2
+        if src == 2 and asrc > 1: # R3/CG2
             x = "#%d" % (None,None,4,8)[asrc]
         elif src == 3:  # CG3
             if asrc == 3:
@@ -225,7 +225,7 @@ class Instruction:
         elif self.name in ('mov', 'movx'):
             ex = 'x' if (self.name[-1] == 'x') else ''
             if self.src == '#0':
-                if self.dst == 'CG2':
+                if self.dst == 'R3':
                     new_name = 'nop'
                     self.dst = None
                 else:

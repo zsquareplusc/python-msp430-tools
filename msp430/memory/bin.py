@@ -21,4 +21,4 @@ def save(memory, filelike):
     """output binary to given file object"""
     for segment in sorted(memory.segments):
         # XXX would it be better to fill the gaps between segments?
-        filelike.write(segment.data)
+        filelike.write(bytes(segment.data))

@@ -100,7 +100,7 @@ the differences between the files.
 
     output = sys.stdout
     if options.output:
-        output = open(options.output, 'w')
+        output = open(options.output, 'wb')
 
     if len(args) != 2:
         parser.error('expected exactly two arguments (files)')
@@ -134,7 +134,7 @@ def main():
         #~ if debug: raise                         # show full trace in debug mode
         sys.stderr.write("User abort.\n")       # short messy in user mode
         sys.exit(1)                             # set error level for script usage
-    except Exception, msg:                      # every Exception is caught and displayed
+    except Exception as msg:                    # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
         sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
         sys.exit(1)                             # set error level for script usage

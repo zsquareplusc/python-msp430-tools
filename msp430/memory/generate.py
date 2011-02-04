@@ -70,7 +70,7 @@ def main():
             help="fill with random numbers",
             action="store_true",
             default=False)
-            
+
     (options, args) = parser.parse_args()
 
     if options.output_format not in memory.save_formats:
@@ -83,7 +83,7 @@ def main():
     if options.output is None:
         out = sys.stdout
     else:
-        out = file(options.output, 'wb')
+        out = open(options.output, 'wb')
 
     # get input
     mem = memory.Memory()          # prepare downloaded data
@@ -97,15 +97,13 @@ def main():
         parser.error('conflicting options --count and --random')
 
     # create data
+    adresses = xrange(options.start_address, options.start_address + options.size, 2)
     if options.count:
-        data = ''.join([struct.pack("<H", x & 0xffff) 
-                for x in xrange(options.start_address, options.start_address + options.size, 2)])
+        data = b''.join(struct.pack("<H", x & 0xffff) for x in adresses)
     elif options.random:
-        data = ''.join([struct.pack("<H", random.getrandbits(16)) 
-                for x in xrange(options.start_address, options.start_address + options.size, 2)])
+        data = b''.join(struct.pack("<H", random.getrandbits(16)) for x in adresses)
     else:
-        data = ''.join([struct.pack("<H", options.const) 
-                for x in xrange(options.start_address, options.start_address + options.size, 2)])
+        data = b''.join(struct.pack("<H", options.const) for x in adresses)
 
     mem.append(memory.Segment(options.start_address, data))
 

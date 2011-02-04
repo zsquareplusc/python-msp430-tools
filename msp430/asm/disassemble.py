@@ -831,7 +831,7 @@ MSP430(X) disassembler.
 
     output = sys.stdout
     if options.output:
-        output = open(options.output, 'w')
+        output = open(options.output, 'wb')
 
     for filename in args:
         if filename == '-':                 # get data from stdin
@@ -857,7 +857,7 @@ def main():
         if debug: raise                         # show full trace in debug mode
         sys.stderr.write("User abort.\n")       # short messy in user mode
         sys.exit(1)                             # set error level for script usage
-    except Exception, msg:                      # every Exception is caught and displayed
+    except Exception as msg:                    # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
         sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
         sys.exit(1)                             # set error level for script usage

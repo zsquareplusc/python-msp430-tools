@@ -10,13 +10,7 @@ Manage a set of addressed binary strings (Segments) in a Memory object.
 This type of data is used to represent memory contents of teh MCU.
 """
 
-import titext
-import elf
-import intelhex
-import bin
-import hexdump
-import error
-
+from msp430.memory import titext, elf, intelhex, bin, hexdump, error
 
 class DataStream(object):
     """\
@@ -112,12 +106,16 @@ class Segment(object):
         """Compare two segments. Implemented to support sorting a list of segments by address"""
         return cmp(self.startaddress, other.startaddress)
 
+    def __lt__(self, other):
+        """Compare two segments. Implemented to support sorting a list of segments by address"""
+        return self.startaddress < other.startaddress
+
 class Memory(object):
     """represent memory contents. with functions to load files"""
     def __init__(self, filename=None):
         self.segments = []
         if filename:
-            load(self, filename)
+            load(self, filename)    # XXX
 
     def append(self, seg):
         self.segments.append(seg)

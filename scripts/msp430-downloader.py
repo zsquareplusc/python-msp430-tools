@@ -128,7 +128,7 @@ if options.filename.endswith('.m43'):
             import webbrowser
             webbrowser.open(options.readme)
         else:
-            EasyDialogs.Message(file(options.readme).read())
+            EasyDialogs.Message(open(options.readme).read())
 elif options.filename.endswith('.z43'):
     # a zip file containing the manifest file and the binary and a readme
     config_filename = options.filename
@@ -154,7 +154,7 @@ elif options.filename.endswith('.z43'):
             import tempfile
             import atexit
             tmp_name = tempfile.mktemp(options.readme)
-            tmp = file(tmp_name, 'wb')
+            tmp = open(tmp_name, 'wb')
             tmp.write(readme_text)
             tmp.close()
             #ensure that the readme is deleted at the end

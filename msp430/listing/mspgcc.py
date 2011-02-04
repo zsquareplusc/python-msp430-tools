@@ -20,7 +20,7 @@ def label_address_map(filename):
     """
     labels = {}
 
-    for line in file(filename):
+    for line in open(filename):
         # don't read the entire file, just the symbol table at the beginning
         if line.startswith("Disassembly"): break
         # match labels

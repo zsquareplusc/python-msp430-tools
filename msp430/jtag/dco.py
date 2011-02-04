@@ -336,7 +336,7 @@ Use it at your own risk. No guarantee that the values are correct.""")
     if options.output is None or options.output == '-':
         out = sys.stdout
     else:
-        out = file(options.output, 'w')
+        out = open(options.output, 'w')
 
     # connect to the target and do the work
     jtag.init_backend(jtag.CTYPES_MSPGCC)   # doesn't currently work with 3'rd party libs

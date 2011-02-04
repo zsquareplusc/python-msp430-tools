@@ -72,16 +72,23 @@ merged output.
 
     # prepare output
     if options.output is None:
-        out = sys.stdout
+        try:
+            out = sys.stdout.buffer #detach()
+        except AttributeError:
+            out = sys.stdout
     else:
-        out = file(options.output, 'wb')
+        out = open(options.output, 'wb')
 
     # get input
     data = memory.Memory()          # prepare downloaded data
 
     for filename in args:
         if filename == '-':
-            data.merge(memory.load('<stdin>', sys.stdin, format=options.input_format))
+            try:
+                fileobj = sys.stdin.detach()
+            except AttributeError:
+                fileobj = sys.stdin
+            data.merge(memory.load('<stdin>', fileobj, format=options.input_format))
         else:
             data.merge(memory.load(filename, format=options.input_format))
 
@@ -98,7 +105,7 @@ def main():
         if debug: raise                         # show full trace in debug mode
         sys.stderr.write("User abort.\n")       # short messy in user mode
         sys.exit(1)                             # set error level for script usage
-    except Exception, msg:                      # every Exception is caught and displayed
+    except Exception as msg:                    # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
         sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
         sys.exit(1)                             # set error level for script usage

@@ -29,16 +29,17 @@ def sixteen(address, sequence):
 
 
 
-def hexdump((adr, memstr), output=sys.stdout):
+def hexdump(adr_data_tuple, output=sys.stdout):
     """\
     Print a hex dump.
     :param adr: address
     :param memstr: memory contents (bytes/string)
     :param output: file like object to write to
     """
+    adr, memstr = adr_data_tuple
     for address, row in sixteen(adr, memstr):
-        values = ' '.join("%02x" % ord(x) for x in row)
-        ascii  = ''.join((32 <= ord(x) < 128) and x or '.' for x in row)
+        values = ' '.join("%02x" % x for x in row)
+        ascii  = ''.join(chr(x) if (32 <= x < 128) else '.' for x in row)
         # pad width
         values += ' '*(47 - len(values))
         ascii += ' '*(16 - len(values))
@@ -65,21 +66,21 @@ def load(filelike):
           decoding but is itself not decoded.
     """
     memory = msp430.memory.Memory()
-    segmentdata = []
+    segmentdata = bytearray()
     segment_address = 0
     last_address = 0
     for n, line in enumerate(filelike):
         if not line.strip(): continue  # skip empty lines
-        if line.startswith('...'): continue  # skip marker lines
+        if line.startswith(b'...'): continue  # skip marker lines
         try:
-            adr, dump = line.split(':', 1)
+            adr, dump = line.split(b':', 1)
             address = int(adr, 16)
             if address != last_address:
                 if segmentdata:
-                    memory.segments.append(msp430.memory.Segment(segment_address, ''.join(segmentdata)))
+                    memory.segments.append(msp430.memory.Segment(segment_address, segmentdata))
                 last_address = address
                 segment_address = address
-                segmentdata = []
+                segmentdata = bytearray()
             # We remove any whitespace and count the total number of chars to
             # find out how many digits there are. The ASCII dump is counted
             # too. The advantage of this method is that the gaps in the dump
@@ -87,20 +88,20 @@ def load(filelike):
             # drawback is that the ASCII dump needs to be present.
 
             # remove white space
-            hex_data = dump.replace(' ', '')
+            hex_data = dump.replace(b' ', b'')
             # find out how many digits are relevant
-            digits = 2 * len(hex_data) / 3
+            digits = int(2 * len(hex_data) / 3)
             # take these and decode the hex data
-            segmentdata.append(hex_data[:digits].decode('hex'))
+            segmentdata.extend(int(hex_data[x:x+1], 16) for x in range(0, digits, 2))
             # update address
             last_address += digits / 2
-        except Exception, e:
+        except Exception as e:
             raise msp430.memory.error.FileFormatError(
                     "line not valid hex dump (%s) : %r" % (e, line,),
                     filename = getattr(filelike, "name", "<unknown>"),
                     lineno = n+1)
     if segmentdata:
-        memory.segments.append(msp430.memory.Segment(segment_address, ''.join(segmentdata)))
+        memory.segments.append(msp430.memory.Segment(segment_address, segmentdata))
     return memory
 
 
@@ -161,7 +162,10 @@ What is dumped?
 
     for filename in args:
         if filename == '-':                 # get data from stdin
-            fileobj = sys.stdin
+            try:
+                fileobj = sys.stdin.detach()
+            except AttributeError:
+                fileobj = sys.stdin
             filename = '<stdin>'
         else:
             fileobj = open(filename, "rb")  # or from a file
@@ -182,7 +186,7 @@ def main():
         if debug: raise                         # show full trace in debug mode
         sys.stderr.write("User abort.\n")       # short messy in user mode
         sys.exit(1)                             # set error level for script usage
-    except Exception, msg:                      # every Exception is caught and displayed
+    except Exception as msg:                    # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
         sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
         sys.exit(1)                             # set error level for script usage

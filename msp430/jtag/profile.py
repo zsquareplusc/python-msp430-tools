@@ -42,7 +42,7 @@ if __name__ == '__main__':
     if options.output is None:
         output = sys.stdout
     else:
-        output = file(options.output, 'w')
+        output = open(options.output, 'w')
 
     jtag.init_backend(jtag.CTYPES_MSPGCC)   # doesn't currently work with 3'rd party libs
     samples = [0] * 2**16

@@ -626,7 +626,7 @@ Multiple --upload options are allowed.
                 import os, msvcrt
                 msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
         else:
-            self.output = file(self.options.output, 'wb')
+            self.output = open(self.options.output, 'wb')
 
         # prepare data to download / load files
         self.download_data = memory.Memory()                  # prepare downloaded data

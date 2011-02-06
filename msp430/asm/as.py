@@ -1041,7 +1041,7 @@ if __name__ == '__main__':
             default = False,
             help = "print status messages to stdout")
     parser.add_option(
-            "-D", "--debug",
+            "--debug",
             action = "store_true",
             dest = "debug",
             default = False,

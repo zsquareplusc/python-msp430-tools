@@ -72,7 +72,7 @@ Options:
   --filename=FILE       Use this filename for input (useful when source is
                         passed on stdin)
   -v, --verbose         print status messages to stdout
-  -D, --debug           print debug messages to stdout
+  --debug               print debug messages to stdout
   -i, --instructions    Show list of supported instructions and exit (see also
                         -x)
 
@@ -116,7 +116,7 @@ Options:
   -m MCU, --mcu=MCU     name of the MCU (used to load memory map)
   --mapfile=FILE        write map file
   -v, --verbose         print status messages
-  -D, --debug           print debug messages
+  --debug               print debug messages
 
 
 ``msp430.asm.cpp``
@@ -254,6 +254,73 @@ This module implements the MSP430(X) assembler. When the module is executed
 
 This module implements the linker. When the module is executed
 (e.g. using ``python -m msp430.asm.ld``), it acts as a command line tool.
+
+.. class:: Segment
+
+    .. method:: __init__(name, start_address=None, end_address=None, align=True, programmable=False, little_endian=True, parent=None, mirror_of=None)
+
+    .. method:: __getitem__(segment_name)
+
+        :param segment_name: name of an sub segment.
+        :raises KeyError: when no segment with given name is found
+
+        Easy access to subsegment by name.
+
+    .. method:: sort_subsegments(by_address=False)
+
+        :param by_address: Sort by address if true, otherwise sort by name.
+
+        Sort list of subsegments either by order of definition or by order of
+        start address.
+
+    .. method:: clear()
+
+        Clear data. Recursively with all subsegments. Segments are not removed,
+        just their data.
+
+    .. method:: __len__()
+
+        Get the number of data bytes contained in the segment.
+
+    .. method:: __cmp__(other)
+
+        Compare function that allows to sort segments by their start_address.
+
+    .. method:: __lt__(other)
+
+        Compare function that allows to sort segments by their start_address.
+
+    .. method:: print_tree(output, indent='', hide_empty=False)
+
+        :param output: a file like object (supporting ``write``)
+        :param indent: a prefix put before each line.
+        :param hide_empty: when set to true omit empty segments (no data) in output.
+
+        Output segment and subsegments.
+
+    .. method:: shrink_to_fit(address=None)
+
+        Modify start- and end_address of segment to fit the data that it
+        contains.  Recursively applied to the tree of segments. Typically
+        called with ``address=None``.
+
+    .. method:: write_8bit(value)
+
+        :param value: an integer (8 significant bits)
+
+        Write one byte.
+
+    .. method:: write_16bit(value)
+
+        :param value: an integer (16 significant bits)
+
+        Write two bytes. Order in memory depends on endianness of segment.
+
+    .. method:: write_32bit(value)
+
+        :param value: an integer (32 significant bits)
+
+        Write four bytes. Order in memory depends on endianness of segment.
 
 .. class:: Linker
 

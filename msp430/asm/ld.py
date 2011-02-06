@@ -81,6 +81,10 @@ class Segment:
         """Get the number of bytes contained in the segment."""
         return len(self.data)
 
+    def __lt__(self, other):
+        """Compare function that allows to sort segments by their start_address."""
+        return self.start_address < other.start_address
+
     def __cmp__(self, other):
         """Compare function that allows to sort segments by their start_address."""
         return cmp(self.start_address, other.start_address)
@@ -592,7 +596,7 @@ Output is in "TI-Text" format."""
             default=False,
             help="print status messages")
     parser.add_option(
-            "-D", "--debug",
+            "--debug",
             action="store_true",
             dest="debug",
             default=False,

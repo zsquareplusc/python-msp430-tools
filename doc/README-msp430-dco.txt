@@ -33,7 +33,7 @@ The program can be started by typing ``msp430-dco`` when installed correctly
 If it's used from the source directory use ``python -m msp430.jtag.dco``.
 
 
-Usage: dco.py [options] frequency
+Usage: msp430.jtag.dco [options] frequency
 
 MSP430 clock calibration utility V1.1
 

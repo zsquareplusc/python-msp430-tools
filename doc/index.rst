@@ -12,8 +12,8 @@ Contents:
     :maxdepth: 2
 
     overview
-    target
     commandline_tools
+    target
     utilities
     shell
     assembler

@@ -1,7 +1,7 @@
-msp430-bsl
-==========
+msp430-bsl5
+===========
 
-MSP430 Boot Strap Loader software for F1xx, F2xx, F4xx.
+MSP430 Boot Strap Loader software for F5xx, F6xx.
 
 Features
 --------
@@ -16,34 +16,47 @@ Features
 - Upload a memory block MSP->PC (output as binary data or hex dump).
 - Written in Python, runs on Win32, Linux, BSD (and others).
 - Use on command line, or in a Python script.
-- Downloadable BSL for larger devices (integrated).
-- Baud rate change for newer MSP430-BSLs.
-- Test and reset lines can be inverted or exchanged for non standard BSL
-  hardware. Test singal on TX line is also possible.
+- USB-HID BSL version:
+
+  - Automatic detection of HID device.
+
+- UART BSL version:
+
+  - Baud rate change
+  - Test and reset lines can be inverted and/or exchanged for non standard BSL
+    hardware. Test singal on TX line is also possible.
 
 
 Requirements
 ------------
 - Linux, BSD, Un*x or Windows PC
-- Python 2.5 or newer
+
+- Python 2.6 or newer
+
+- USB support requires:
+
+  - "pywinusb" library on Windows
+  - "rawhid" kernel driver on Linux
+  - other platforms are currently not supported
+
 - pySerial (2.4 or newer recommended)
-- BSL hardware with an MSP430 device connected to a serial port
+
+- MSP430 F5x / F6x with UART BSL connected to a serial port or a USB capable
+  device connected to USB.
 
 
 Short introduction
 ------------------
-First the MSP430 BSL hardware is needed. An example schematics can be found
-in the application note "slaa96b" from TI (see references). Then this
-program can be used to communicate between the PC and the MSP430 device.
+There are separate command line fontends for the USB and UART version:
 
-The program can be started by typing "msp430-bsl" in a console.
-To run it in the source directory, use "python msp430-bsl.py"
+- ``python -m msp430.bsl5.uart``  - UART version
+- ``python -m msp430.bsl5.hid``   - USB version
 
-Usage: msp430.bsl.target [OPTIONS] [FILE [FILE...]]
+Usage: hid.py [OPTIONS] [FILE [FILE...]]
 
 Options:
   -h, --help            show this help message and exit
-  -d, --debug           print debug messages and tracebacks (development mode)
+  --debug               print debug messages and tracebacks (development mode)
   -v, --verbose         show more messages (can be given multiple times)
   -q, --quiet           suppress all messages
   --time                measure time
@@ -119,6 +132,18 @@ Options:
     --no-close          do not close port on exit
 
   Communication settings:
+    -d DEVICE, --device=DEVICE
+                        device name (default: auto detection)
+
+  BSL settings:
+    --password=FILE     transmit password before doing anything else, password
+                        is given in given (TI-Text/ihex/etc) file
+
+
+The UART version only differs in the options controlling the "Communication"
+and "BSL" settings:
+
+  Communication settings:
     -p PORT, --port=PORT
                         Use com-port
     --invert-test       invert RTS line
@@ -135,79 +160,64 @@ Options:
     --ignore-answer     do not wait for answer to BSL commands
     --control-delay=CONTROL_DELAY
                         set delay in seconds (float) for BSL start pattern
-    --replace-bsl       download replacement BSL (V1.50) for F1x and F4x
-                        devices with 2k RAM
-    --erase-cycles=EXTRA_ERASE_CYCLES
-                        configure extra erase cycles (e.g. very old F149 chips
-                        require this for --main-erase)
-
-
-
-If it says ``command failed (DATA_NAK)`` it's probably because no or a wrong
-password was specified, while a ``ERROR:BSL:Sync failed, aborting...`` is
-typical when the BSL could not be started at all.
-
 
 Examples
 --------
 ``led.txt`` in the following examples is a place holder for some sort of binary
 for the MSP430. A ``led.txt`` that contains an example in TI-Text format can be
-built from the code in ``examples/asm/led``.
+built from the code in ``examples/asm/led5x``.
 
-``msp430-bsl -e``
+``python -m msp430.bsl5.hid -e``
         Only erase flash.
 
-``msp430-bsl -eErw led.txt``
+``python -m msp430.bsl5.uart -eErw led.txt``
         Erase flash, erase check, download an executable, run it (reset)
         and wait.
 
-        Old F149 devices need additional erase cycles! Use the
-        ``--erase-cycles`` option in this case (``--erase-cycles 20`` will be
-        OK is most cases)
-
-``msp430-bsl led.txt``
+``python -m msp430.bsl5.hid led.txt``
         Download of an executable to en empty (new or erased) device.
         (Note that in new devices, some of the first bytes in the
         information memory are random data. If data should be
         downloaded there, specify -e.)
 
 
-``msp430-bsl --upload 0x0c00/1024 --password led.txt``
-        Get a memory dump in HEX, from the bootstrap loader (on a device
+``python -m msp430.bsl5.hid --upload 0xf000/1024 --password led.txt``
+        Get a memory dump in HEX, from a part of the memory (on a device
         that was previously programmed with led.txt and therefore needs
         a specific password):
 
-``msp430-bsl -rw``
+`python -m msp430.bsl5.uart -rw``
         Just start the user program (with a reset) and wait.
 
 
-``cat led.txt|msp430-bsl -e -``
+``cat led.txt|python -m msp430.bsl5.uart -e -``
         Pipe the data from "cat" to the BSL to erase and program the
         flash. (un*x example, don't forget the dash at the end of the
         line)
 
-``msp430-bsl --replace-bsl -e -s 38400 led.txt``
-        First download the internal replacement BSL and then use it
-        to program at 38400 baud. Only works with targets with more
-        than 1kB of RAM. Newer devices with already know this command, in that
-        case omit the ``--replace-bsl``
+``python -m msp430.bsl5.uart -e -s 38400 led.txt``
+        Change to faster baud rate for download.
+
+
+Tips & Tricks
+-------------
+USB-HID Linux permissions
+    The USB HID device simply works when plugged in under Linux and the tool can use
+    the device when the "rawhid" kernel module is present. It will create
+    ``/dev/rawhid*`` devices. However, those devices are usually only writeable by
+    root. To automatically change the permissions of the device, the following udev
+    rule can be applied.
+
+    Create a file, e.g. ``/etc/udev/rules.d/20-msp430-hid.rules`` with the
+    following contents::
+
+        SUBSYSTEM=="hidraw", ATTRS{idVendor}=="2047", ATTRS{idProduct}=="0200" , MODE="0666"
 
 
 History
 -------
-V1.4
-    uses improved serial library,
-    support for BSL download to MSP,
-    support for higher baudrates (up to 38400)
-
-V1.5
-    ELF file support,
-    replacement BSLs are now internal
-
-V2.0
-    New implementation. Some command line options have been renamed or
-    replaced.
-
+V1.0
+    New tool.
 
 References
 ----------
@@ -216,11 +226,11 @@ References
 - pySerial: Serial port extension for Python
   http://pypi.python.org/pypi/pyserial
 
-- slaa89.pdf: "Features of the MSP430 Bootstrap Loader in the
-  MSP430F1121", TI, http://www.ti.com/msp430
+- pywinusb: USB HID library
+  http://pypi.python.org/pypi/pywinusb/
 
-- slaa96b.pdf: "Application of Bootstrap Loader in MSP430 With Flash
-  Hardware and Software Proposal", TI
+- slau319a.pdf: "MSP430 Programming Via the Bootstrap Loader"
+  http://www.ti.com/msp430
 
 - Texas Instruments MSP430 Homepage, links to data sheets and application
   notes: http://www.ti.com/msp430

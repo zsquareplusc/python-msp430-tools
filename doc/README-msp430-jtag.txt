@@ -34,7 +34,7 @@ to use USB programmers.
 The program can be started by typing ``msp430-jtag`` when installed correctly
 If it's used from the source directory use "python -m msp430.jtag.target".
 
-Usage: target.py [OPTIONS] [FILE [FILE...]]
+Usage: msp430.jtag.target [OPTIONS] [FILE [FILE...]]
 
 Options:
   -h, --help            show this help message and exit
@@ -269,17 +269,17 @@ The windows installer already includes this library.
 
 To use the first available MSP-FET430UIF::
 
-    msp430-jtag -l TIUSB --upload=0x0ff0
+    msp430-jtag -p TIUSB --upload=0x0ff0
 
 The MSP-FET430UIF is registered as serial port. If more than one MSP-FET430UIF
 is connected, find out which COM port the desired adapter is using with the
 Device Manager. Then for example run::
 
-    msp430-jtag -l COM5 --upload=0x0ff0
+    msp430-jtag -p COM5 --upload=0x0ff0
 
 Linux users have to specify the serial port differently::
 
-    msp430-jtag -l /dev/ttyUSB0 --upload=0x0ff0
+    msp430-jtag -p /dev/ttyUSB0 --upload=0x0ff0
 
 
 History

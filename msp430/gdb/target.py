@@ -26,7 +26,7 @@ class GDBTarget(object):
 
     def memory_read(self, address, length):
         """Read from memory."""
-        return self.gdb.read_memory(address, length)
+        return bytearray(self.gdb.read_memory(address, length))
 
     def memory_write(self, address, data):
         """Write to memory."""

@@ -114,7 +114,7 @@ class BSL(object):
         Read from memory. It creates multiple BSL_RXBLK commands internally
         when the size is larger than the block size.
         """
-        data = []
+        data = bytearray()
         odd = bool(length & 1)
         if odd:
             length += 1
@@ -122,13 +122,12 @@ class BSL(object):
             size = min(self.MAXSIZE, length)
             if self.extended_address_mode:
                 self.BSL_SETMEMOFFSET(address >> 16)
-            data.append(self.BSL_RXBLK(address & 0xffff, size))
+            data.extend(self.BSL_RXBLK(address & 0xffff, size))
             address += size
             length -= size
         if odd and data:
-            return ''.join(data)[:-1]
-        else:
-            return ''.join(data)
+            data.pop()  # remove the additional byte w've added on upload
+        return data
 
     def memory_write(self, address, data):
         """\

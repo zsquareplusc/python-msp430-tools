@@ -57,7 +57,8 @@ class HIDBSL5Base(bsl5.BSL5):
         +------+-----+-----------+
         """
         # first synchronize with slave
-        self.logger.debug('Command 0x%02x %s (%d bytes)' % (cmd, message.encode('hex'), 1+len(message)))
+        self.logger.debug('Command 0x%02x (%d bytes)' % (cmd, 1+len(message)))
+        #~ self.logger.debug('Command 0x%02x %s (%d bytes)' % (cmd, message.encode('hex'), 1+len(message)))
         txdata = struct.pack('<BBB', 0x3f, 1+len(message), cmd) + message
         txdata += '\xac'*(64 - len(txdata)) # pad up to block size
         #~ self.logger.debug('Sending command: %r %d Bytes' % (txdata.encode('hex'), len(txdata)))

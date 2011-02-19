@@ -33,7 +33,7 @@ class JTAGTarget(object):
 
     def memory_read(self, address, length):
         """Read from memory."""
-        return self.jtagobj.uploadData(address, length)
+        return bytearray(self.jtagobj.uploadData(address, length))
 
     def memory_write(self, address, data):
         """Write to memory."""

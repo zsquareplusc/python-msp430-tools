@@ -143,19 +143,18 @@ class BSL5(object):
         internally when the size is larger than the block size.
         """
         if self.buffer_size is None: raise BSL5Error('block size!?')
-        data = []
+        data = bytearray()
         odd = bool(length & 1)
         if odd:
             length += 1
         while length:
             size = min(self.buffer_size, length)
-            data.append(self.BSL_TX_DATA_BLOCK(address, size))
+            data.extend(bytes(self.BSL_TX_DATA_BLOCK(address, size)))
             address += size
             length -= size
         if odd and data:
-            return ''.join(data)[:-1]
-        else:
-            return ''.join(data)
+            data.pop()  # remove the additional byte w've added on upload
+        return data
 
     def memory_write(self, address, data):
         """\

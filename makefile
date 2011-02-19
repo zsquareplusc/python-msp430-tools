@@ -2,7 +2,7 @@
 PREFIX := /usr/local/msp430/bin
 
 all:
-	@echo "Nothing to do. "make install" will install the tools."
+	@echo "Nothing to do. \"make install\" will install the tools."
 
 install:
 	python setup.py install

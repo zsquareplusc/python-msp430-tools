@@ -110,6 +110,7 @@ class Segment(object):
         """Compare two segments. Implemented to support sorting a list of segments by address"""
         return self.startaddress < other.startaddress
 
+
 class Memory(object):
     """represent memory contents. with functions to load files"""
     def __init__(self, filename=None):
@@ -256,6 +257,8 @@ def load(filename, fileobj=None, format=None):
             # first check extension
             try:
                 if filename[-4:].lower() == '.txt':
+                    return titext.load(fileobj)
+                elif filename[-6:].lower() == '.titxt':
                     return titext.load(fileobj)
                 elif filename[-4:].lower() in ('.a43', '.hex'):
                     return intelhex.load(fileobj)

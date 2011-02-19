@@ -124,10 +124,10 @@ def words(byte_stream):
     low = None
     for b in byte_stream:
         if low is not None:
-            yield low + (ord(b) << 8)
+            yield low + (b << 8)
             low = None
         else:
-            low = ord(b)
+            low = b
     if low is not None:
         yield low
 

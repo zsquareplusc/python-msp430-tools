@@ -40,7 +40,7 @@ merged output.
     parser.add_option("-i", "--input-format",
             dest="input_format",
             help="input format name (%s)" % (', '.join(memory.load_formats),),
-            default="titext",
+            default=None,
             metavar="TYPE")
 
     parser.add_option("-f", "--output-format",
@@ -57,7 +57,7 @@ merged output.
 
     (options, args) = parser.parse_args()
 
-    if options.input_format not in memory.load_formats:
+    if options.input_format is not None and options.input_format not in memory.load_formats:
         parser.error('Input format %s not supported.' % (options.input_format))
 
     if options.output_format not in memory.save_formats:
@@ -66,6 +66,9 @@ merged output.
     if not args:
         # if no files are given, read from stdin
         args = ['-']
+        # default to TI-Text if no format is given
+        if options.input_format is None:
+            options.input_format = 'titext'
 
     global debug
     debug = options.debug

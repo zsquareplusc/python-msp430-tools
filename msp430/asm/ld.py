@@ -14,7 +14,7 @@ Inputs are '.o4' files from 'as.py'
 import sys
 import codecs
 from msp430.asm import mcu_definition_parser
-from msp430.asm import rpn
+from msp430.asm import rpn, peripherals
 
 
 class LinkError(Exception):
@@ -572,29 +572,34 @@ Output is in "TI-Text" format."""
             help="name of the resulting binary (TI-Text)",
             metavar="FILE",
             default=None)
+
     parser.add_option(
             "-T", "--segmentfile",
             dest="segmentfile",
             help="linker definition file",
             metavar="FILE",
             default=None)
+
     parser.add_option(
             "-m", "--mcu",
             dest="mcu_name",
             help="name of the MCU (used to load memory map)",
             metavar="MCU",
             default='MSP430F1121')
+
     parser.add_option(
             "--mapfile",
             dest="mapfile",
             help="write map file",
             metavar="FILE")
+
     parser.add_option(
             "-v", "--verbose",
             action="store_true",
             dest="verbose",
             default=False,
             help="print status messages")
+
     parser.add_option(
             "--debug",
             action="store_true",
@@ -602,8 +607,14 @@ Output is in "TI-Text" format."""
             default=False,
             help="print debug messages")
 
+    parser.add_option("--symbols",
+            dest="symbols",
+            help="read register names for given architecture (e.g. F1xx)",
+            metavar="NAME")
+
     (options, args) = parser.parse_args()
 
+    # prepare output
     if options.outfile is not None:
         out = open(options.outfile, "wb")
     else:
@@ -626,6 +637,18 @@ Output is in "TI-Text" format."""
             instructions.extend(rpn.words_in_file(filename))
 
     linker = Linker(instructions)
+
+    # load symbols
+    if options.symbols is not None:
+        peripherals = peripherals.load_internal(options.symbols)
+        for peripheral in peripherals.peripherals.values():
+            for register in peripheral.values():
+                if '__address__' in register:
+                    linker.labels[register['__name__']] = register['__address__']
+                for value, name in register['__bits__'].items():
+                    linker.labels[name] = value
+                for value, name in register['__values__'].items():
+                    linker.labels[name] = value
 
     # ========= load MCU definition =========
 

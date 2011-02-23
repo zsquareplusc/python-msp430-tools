@@ -26,7 +26,7 @@ BIT <name>
 
 VALUE <name>
     Define multi-bit value name (value taken from stack). Only valid
-    within register definition.
+    within register or peripheral definition.
 
 SHORTCUT <name>
     Define shortcut for current register. When <name> is used within an
@@ -58,8 +58,20 @@ class SymbolDefinitions(rpn.RPN):
         self.peripherals = {}
         self.peripheral = None
         self.bits = None
-        self.values = None
+        self.register_values = None
         self.named = None
+        self.included_files = []
+
+    @rpn.word('INCLUDE')
+    def word_INCLUDE(self, stack):
+        """Include definitions from an other file."""
+        name = self.next_word()
+        if name not in self.included_files:
+            self.included_files.append(name)
+            #~ print "XXX including %r" % name
+            # XXX currently only internal imports are supported
+            data = pkgutil.get_data('msp430.asm', 'definitions/%s.peripheral' % (name,))
+            self.interpret(rpn.words_in_string(data, name='definitions/%s.peripheral' % (name,)).next)
 
     @rpn.word('BIT')
     def word_BIT(self, stack):
@@ -67,15 +79,24 @@ class SymbolDefinitions(rpn.RPN):
         if self.bits is None:
             raise SymbolError('BIT outside REGISTER definition not allowed')
         bit_name = self.next_word()
-        self.bits[1 << self.pop()] = bit_name
+        value = 1 << self.pop()
+        self.bits[value] = bit_name
+        self.namespace[bit_name.lower()] = value
 
     @rpn.word('VALUE')
     def word_VALUE(self, stack):
         """Define a value"""
-        if self.bits is None:
-            raise SymbolError('VALUE outside REGISTER definition not allowed')
         value_name = self.next_word()
-        self.values[self.pop()] = value_name
+        value = self.pop()
+        if self.register_values is not None:
+            self.register_values[value] = value_name
+        elif self.peripheral is not None:
+            if '__values__' not in self.peripheral:
+                self.peripheral['__values__'] = {}
+            self.peripheral['__values__'][value] = value_name
+        else:
+            raise SymbolError('VALUE outside REGISTER or PERIPHERAL definition not allowed')
+        self.namespace[value_name.lower()] = value
 
     @rpn.word('REGISTER')
     def word_REGISTER(self, stack):
@@ -85,7 +106,7 @@ class SymbolDefinitions(rpn.RPN):
         if self.peripheral is None:
             raise SymbolError('not within PERIPHERAL')
         self.bits = {}
-        self.values = {}
+        self.register_values = {}
         self.register_width = None
         self.named = []
 
@@ -107,6 +128,14 @@ class SymbolDefinitions(rpn.RPN):
         name = self.next_word()
         address = self.pop()
         self.named.append((name, address))
+
+    @rpn.word('VIRTUAL')
+    def word_VIRTUAL(self, stack):
+        """Set a name current register, not assigning it to an address"""
+        if self.bits is None:
+            raise SymbolError('only possible within REGISTER definition')
+        name = self.next_word()
+        self.named.append((name, None))
 
     @rpn.word('BYTE-ACCESS')
     def word_BYTE_ACCESS(self, stack):
@@ -130,16 +159,17 @@ class SymbolDefinitions(rpn.RPN):
         for name, address in self.named:
             register = {}
             register['__name__'] = name
-            register['__address__'] = address
+            if address is not None:
+                register['__address__'] = address
             register['__bits__'] = self.bits
-            register['__values__'] = self.values
+            register['__values__'] = self.register_values
             if self.register_width is not None:
                 register['__width__'] = self.register_width
             self.registers_by_name[name] = register
             self.registers_by_address[address] = register
             self.peripheral[name] = register
         self.bits = None
-        self.values = None
+        self.register_values = None
         self.register_width = None
         self.named = None
 
@@ -183,7 +213,7 @@ def load_internal(name):
     """\
     Load symbols from internal definition given name.
     """
-    data = pkgutil.get_data('msp430.asm', 'definitions/%s.txt' % (name,))
+    data = pkgutil.get_data('msp430.asm', 'definitions/%s.peripheral' % (name,))
     return parse_words(rpn.words_in_string(data).next)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -212,5 +242,6 @@ if __name__ == '__main__':
         for filename in args:
             symbols = load_symbols(filename)
             pprint(symbols.peripherals)
-    except rpn.RPNError, e:
+    except rpn.RPNError as e:
         print "%s:%s: %s" % (e.filename, e.lineno, e)
+        #~ raise

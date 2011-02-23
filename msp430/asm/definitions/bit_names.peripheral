@@ -1,0 +1,24 @@
+PERIPHERAL dummy_for_constants
+    REGISTER SHORTCUT 8bits
+        7 BIT BIT7
+        6 BIT BIT6
+        5 BIT BIT5
+        4 BIT BIT4
+        3 BIT BIT3
+        2 BIT BIT2
+        1 BIT BIT1
+        0 BIT BIT0
+    END-REGISTER
+
+    REGISTER SHORTCUT 16bits
+        15 BIT BITF
+        14 BIT BITE
+        13 BIT BITD
+        12 BIT BITC
+        11 BIT BITB
+        10 BIT BITA
+        9 BIT BIT9
+        8 BIT BIT8
+        8bits
+    END-REGISTER
+END-PERIPHERAL

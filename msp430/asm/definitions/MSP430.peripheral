@@ -1,0 +1,22 @@
+INCLUDE bit_names
+
+# status register
+PERIPHERAL MSP430_CORE
+    REGISTER VIRTUAL SR
+        8 BIT V
+        7 BIT SCG1
+        6 BIT SCG0
+        5 BIT OSCOFF
+        4 BIT CPUOFF
+        3 BIT GIE
+        2 BIT N
+        1 BIT Z
+        0 BIT C
+
+        CPUOFF                        VALUE LPM0
+        SCG0 CPUOFF +                 VALUE LPM1
+        SCG1 CPUOFF +                 VALUE LPM2
+        SCG1 SCG0 CPUOFF + +          VALUE LPM3
+        SCG1 SCG0 OSCOFF CPUOFF + + + VALUE LPM4
+    END-REGISTER
+END-PERIPHERAL

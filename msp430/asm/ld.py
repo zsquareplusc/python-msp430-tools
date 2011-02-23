@@ -642,12 +642,16 @@ Output is in "TI-Text" format."""
     if options.symbols is not None:
         peripherals = peripherals.load_internal(options.symbols)
         for peripheral in peripherals.peripherals.values():
-            for register in peripheral.values():
+            for reg_name, register in peripheral.items():
+                if reg_name.startswith('__'): continue
                 if '__address__' in register:
                     linker.labels[register['__name__']] = register['__address__']
                 for value, name in register['__bits__'].items():
                     linker.labels[name] = value
                 for value, name in register['__values__'].items():
+                    linker.labels[name] = value
+            if '__values__' in peripheral:
+                for value, name in peripheral['__values__'].items():
                     linker.labels[name] = value
 
     # ========= load MCU definition =========

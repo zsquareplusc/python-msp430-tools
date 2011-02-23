@@ -102,6 +102,7 @@ class RPN(list):
         list.__init__(self)
         self.clear()
         self.namespace = namespace
+        self.next_word = None
         self.builtins = {}
         # extend built-ins name space with all methods that were marked with
         # the @word decorator
@@ -119,6 +120,8 @@ class RPN(list):
         Interpret a sequence of words given a 'next' function that get the
         next word from the sequence.
         """
+        # keep old reference in case of nested calls
+        old_next_word = self.next_word
         # store function to make it available to called functions
         self.next_word = next_word
         word = None # in case next_word raises an exception
@@ -126,9 +129,12 @@ class RPN(list):
             while True:
                 word = next_word()
                 self.interpret_word(word)
-        except StopIteration, e:
-            pass
-        except Exception, e:
+        except StopIteration:
+            # restore state
+            self.next_word = old_next_word
+        except RPNError:
+            raise
+        except Exception as e:
             filename = getattr(word, 'filename', '<unknown>')
             lineno = getattr(word, 'lineno', None)
             offset = getattr(word, 'offset', None)

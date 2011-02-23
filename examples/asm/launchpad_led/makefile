@@ -22,16 +22,16 @@ LDFLAGS = -v --mcu MSP430G2231 --symbols MSP430G2231
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .PHONY: clean all
 
-all: clean led.titxt
-	cat led.titxt
+all: clean led.titext
+	cat led.titext
 
 
 led.o4: led.S
-led.titxt: led.o4
+led.titext: led.o4
 	${LD} ${LDFLAGS} -o $@ $^
 
 clean:
-	rm -f led.titxt led.o4
+	rm -f led.titext led.o4
 
 # pattern rule for the assembler
 %o4: %S
@@ -41,11 +41,11 @@ clean:
 # additional download rules
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .PHONY: download-jtag download-bsl download-gdb
-download-jtag: led.titxt
+download-jtag: led.titext
 	python -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
-download-bsl: led.titxt
+download-bsl: led.titext
 	python -m msp430.bsl.target -e $^
-download-gdb: led.titxt
+download-gdb: led.titext
 	python -m msp430.gdb.target -e $^
-download-mspdebug: led.titxt
+download-mspdebug: led.titext
 	mspdebug rf2500 "prog $^" exit

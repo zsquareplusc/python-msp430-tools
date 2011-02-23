@@ -5,4 +5,5 @@ doc/_static/*
 doc/_templates/*
 MANIFEST
 *.o4
+*.titext
 examples/asm/*/led.txt

@@ -10,4 +10,36 @@ PERIPHERAL WDT
         1 BIT WDTIS1
         0 BIT WDTIS0
     END-REGISTER
+
+    # Aliases
+    0x0000 VALUE WDTIS_0
+    0x0001 VALUE WDTIS_1
+    0x0002 VALUE WDTIS_2
+    0x0003 VALUE WDTIS_3
+
+    # WDT is clocked by fMCLK (assumed 1MHz)
+    WDTPW WDTTMSEL WDTCNTCL | |                             VALUE WDT_MDLY_32    # 32ms interval (default)
+    WDTPW WDTTMSEL WDTCNTCL WDTIS0 | | |                    VALUE WDT_MDLY_8     # 8ms
+    WDTPW WDTTMSEL WDTCNTCL WDTIS1 | | |                    VALUE WDT_MDLY_0_5   # 0.5ms
+    WDTPW WDTTMSEL WDTCNTCL WDTIS1 WDTIS0 | | | |           VALUE WDT_MDLY_0_064 # 0.064ms
+
+    # WDT is clocked by fACLK (assumed 32kHz)
+    WDTPW WDTTMSEL WDTCNTCL WDTSSEL | | |                   VALUE WDT_ADLY_1000  # 1000ms
+    WDTPW WDTTMSEL WDTCNTCL WDTSSEL WDTIS0 | | | |          VALUE WDT_ADLY_250   # 250ms
+    WDTPW WDTTMSEL WDTCNTCL WDTSSEL WDTIS1 | | | |          VALUE WDT_ADLY_16    # 16ms
+    WDTPW WDTTMSEL WDTCNTCL WDTSSEL WDTIS1 WDTIS0 | | | | | VALUE WDT_ADLY_1_9   # 1.9ms
+
+    # Watchdog mode -> reset after expired time
+    # WDT is clocked by fMCLK (assumed 1MHz)
+    WDTPW WDTCNTCL |                                        VALUE WDT_MRST_32    # 32ms interval (default)
+    WDTPW WDTCNTCL WDTIS0 | |                               VALUE WDT_MRST_8     # 8ms
+    WDTPW WDTCNTCL WDTIS1 | |                               VALUE WDT_MRST_0_5   # 0.5ms
+    WDTPW WDTCNTCL WDTIS1 WDTIS0 | | |                      VALUE WDT_MRST_0_064 # 0.064ms
+
+    # WDT is clocked by fACLK (assumed 32kHz)
+    WDTPW WDTCNTCL WDTSSEL | |                              VALUE WDT_ARST_1000 # 1000ms
+    WDTPW WDTCNTCL WDTSSEL WDTIS0 | | |                     VALUE WDT_ARST_250  # 250ms
+    WDTPW WDTCNTCL WDTSSEL WDTIS1 | | |                     VALUE WDT_ARST_16   # 16ms
+    WDTPW WDTCNTCL WDTSSEL WDTIS1 WDTIS0 | | | |            VALUE WDT_ARST_1_9  # 1.9ms
+
 END-PERIPHERAL

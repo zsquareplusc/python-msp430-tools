@@ -29,3 +29,14 @@ PERIPHERAL SFR
     REGISTER 0x0003 NAMED IFG2 BYTE-ACCESS
     END-REGISTER
 END-PERIPHERAL
+
+PERIPHERAL vectors
+    4  VALUE PORT1_VECTOR                 # 0xFFE4 Port 1
+    6  VALUE PORT2_VECTOR                 # 0xFFE6 Port 2
+    8  VALUE USI_VECTOR                   # 0xFFE8 USI
+    10 VALUE ADC10_VECTOR                 # 0xFFEA ADC10
+    16 VALUE TIMERA1_VECTOR               # 0xFFF0 Timer A CC1-2, TA
+    18 VALUE TIMERA0_VECTOR               # 0xFFF2 Timer A CC0
+    20 VALUE WDT_VECTOR                   # 0xFFF4 Watchdog Timer
+    28 VALUE NMI_VECTOR                   # 0xFFFC Non-maskable
+END-PERIPHERAL

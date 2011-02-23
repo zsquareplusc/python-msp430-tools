@@ -15,7 +15,7 @@ ASFLAGS = -v
 
 # set up the linker
 LD = python -m msp430.asm.ld
-LDFLAGS = -v --mcu MSP430G2121
+LDFLAGS = -v --mcu MSP430G2231 --symbols MSP430G2231
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # the rules used to build
@@ -47,3 +47,5 @@ download-bsl: led.titxt
 	python -m msp430.bsl.target -e $^
 download-gdb: led.titxt
 	python -m msp430.gdb.target -e $^
+download-mspdebug: led.titxt
+	mspdebug rf2500 "prog $^" exit

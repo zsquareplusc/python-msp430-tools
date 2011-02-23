@@ -1,24 +1,26 @@
-; Test program for msp430.asm.cpp, msp430.asm.as and msp430.asm.ld
+; Example for MSP430G2 Launchpad kit
 ;
-; This one toggles the pin P1.0. This is like the LED flashing example that
-; comes preprogrammed on some of the eval boards from TI.
-
+; This one toggles the pin P1.0.
+; Clock is initialized from calibration values
 
 .text
         ; entry point after device reset
-RESET:  mov     #0x5a80, &0x015c        ; disable WDT
-        bis.b   #1, &0x0204             ; set pin to output
-        bra     #.L1                    ; go to the main loop
+RESET:  mov     #WDTPW|WDTHOLD, &WDTCTL ; disable WDT
+        ; init clock to 1MHz from calibration values
+        mov.b   CALDCO_1MHZ, &DCOCTL
+        mov.b   CALBC1_1MHZ, &BCSCTL1
+        ; init ports
+        bis.b   #BIT0, &P1DIR           ; set pin to output
 
-; just for fun, place the main loop in the upper flash memory
-.section FLASH2
         ; loop toggling the pin and then doing a delay
-.L1:    xor.b   #1, &0x0202             ; toggle pin
+.L1:    xor.b   #BIT0, &P1OUT           ; toggle pin
         mov     #0xc350, R15            ; init delay loop
 .L2:    dec     R15                     ; count down
         jnz     .L2                     ; jump while counter is not zero
         jmp     .L1                     ; loop the toggling part
 
+        ; XXX test
+        bis     #LPM0, SR
 
 ; set the reset vector (and all the others) to the program start
 .section .vectors
@@ -39,3 +41,4 @@ RESET:  mov     #0x5a80, &0x015c        ; disable WDT
         .word  RESET
         .word  RESET                    ; reset vector
 
+; vim: set ft=msp430:

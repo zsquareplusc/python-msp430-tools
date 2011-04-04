@@ -224,10 +224,10 @@ def init_backend(force=None):
         MSP430_Erase.argtypes           = [ctypes.c_long, ctypes.c_long, ctypes.c_long]
         MSP430_Erase.restype            = ctypes.c_int
         MSP430_Memory                   = MSP430mspgcc.MSP430_Memory
-        MSP430_Memory.argtypes          = [ctypes.c_long, ctypes.POINTER(ctypes.c_char), ctypes.c_long, ctypes.c_long]
+        MSP430_Memory.argtypes          = [ctypes.c_long, ctypes.POINTER(ctypes.c_uint8), ctypes.c_long, ctypes.c_long]
         MSP430_Memory.restype           = ctypes.c_int
         MSP430_VerifyMem                = MSP430mspgcc.MSP430_VerifyMem
-        MSP430_VerifyMem.argtypes       = [ctypes.c_long, ctypes.c_long, ctypes.c_char_p]
+        MSP430_VerifyMem.argtypes       = [ctypes.c_long, ctypes.c_long, ctypes.POINTER(ctypes.c_uint8)]
         MSP430_VerifyMem.restype        = ctypes.c_int
         MSP430_EraseCheck               = MSP430mspgcc.MSP430_EraseCheck
         MSP430_EraseCheck.argtypes      = ctypes.c_long, ctypes.c_long
@@ -360,11 +360,11 @@ def init_backend(force=None):
                 The return value is a string with the (binary) data.
                 It is possible to read peripherals, RAM as well as Flash."""
                 if size < 0: raise ValueError("Size must not be negative")
-                buffer = (ctypes.c_char*size)();
+                buffer = (ctypes.c_uint8*size)();
 
                 status = MSP430_Memory(address, buffer, size, READ)
                 if status == STATUS_OK:
-                    return ''.join([str(x) for x in buffer])
+                    return bytearray([x for x in buffer])
                 else:
                     raise IOError("Could not read target memory: %s" % MSP430_Error_String(MSP430_Error_Number()))
 
@@ -378,7 +378,7 @@ def init_backend(force=None):
                     if status != STATUS_OK:
                         raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
                 size = len(buffer)
-                c_buffer = (ctypes.c_char*(size+2))();    # just to be sure + 2 (shouldn't be needed though)
+                c_buffer = (ctypes.c_uint8*(size+2))();    # just to be sure + 2 (shouldn't be needed though)
                 for i in range(size): c_buffer[i] = buffer[i]
                 status = MSP430_Memory(address, c_buffer, size, WRITE)
                 if status != STATUS_OK:
@@ -489,7 +489,7 @@ def init_backend(force=None):
             _parjtag.configure(DEBUG_OPTION, DEBUG)
 
 
-class JTAG:
+class JTAG(object):
     """wrap the _parjtag extension.
     The action* methods all do output messages on stderr and they take their
     settings and data from the object and not as parameters.
@@ -551,6 +551,7 @@ class JTAG:
             sys.stderr.write("Reset %sdevice...\n" % (release and 'and release ' or ''))
             sys.stderr.flush()
         _parjtag.reset(execute, release)
+        #~ _parjtag.reset(execute, release, PUC_RESET + RST_RESET)
 
     def getCPURegister(self, regnum):
         """Read CPU register."""

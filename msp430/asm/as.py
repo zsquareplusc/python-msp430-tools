@@ -1012,8 +1012,7 @@ class MSP430Assembler(object):
             raise e
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-if __name__ == '__main__':
+def main():
     from optparse import OptionParser
 
     parser = OptionParser()
@@ -1105,3 +1104,7 @@ if __name__ == '__main__':
 
     if options.debug:
         sys.stderr.write("%s\n" % (("END %s" % filename).center(70).replace(' ', '-')))
+
+
+if __name__ == '__main__':
+    main()

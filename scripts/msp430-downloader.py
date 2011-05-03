@@ -16,7 +16,7 @@ which itself can be bundled with a binary in a zip file (.z43).
 
 import os, sys
 import EasyDialogs
-import mspgcc.jtag, mspgcc.memory
+import msp430.jtag, msp430.memory
 from StringIO import StringIO
 import traceback
 import ConfigParser
@@ -83,11 +83,11 @@ def interpret_config(config, abspath=True):
     if config.has_option('modes', 'backend'):
         back_name = config.get('modes', 'backend')
         if back_name == 'ti':
-            options.backend = mspgcc.jtag.CTYPES_TI
+            options.backend = msp430.jtag.CTYPES_TI
         elif back_name == 'parjtag':
-            options.backend = mspgcc.jtag.PARJTAG
+            options.backend = msp430.jtag.PARJTAG
         elif back_name == 'mspgcc':
-            options.backend = mspgcc.jtag.CTYPES_MSPGCC
+            options.backend = msp430.jtag.CTYPES_MSPGCC
         else:
             abort_on_error('Unsupported backend in configuation file: %r' % back_name)
     
@@ -144,7 +144,7 @@ elif options.filename.endswith('.z43'):
             interpret_config(config, abspath=False)
     #get binary from zip file
     if options.filename:
-        binary = mspgcc.memory.Memory()   #prepare downloaded data
+        binary = msp430.memory.Memory()   #prepare downloaded data
         binary.loadFile(options.filename, fileobj = StringIO(archive.read(options.filename)))
     #get readme from zip file and display it
     if options.readme:
@@ -175,8 +175,7 @@ if binary is None:
     if not os.path.isabs(options.filename):
         options.filename = os.path.abspath(options.filename)
     if os.path.isfile(options.filename):
-        binary = mspgcc.memory.Memory()   #prepare downloaded data
-        binary.loadFile(options.filename) #autodetect filetype
+        binary = msp430.memory.load(options.filename) # format=options.input_format)
     else:
         abort_on_error("File not found:\n%s" % (options.filename,))
 
@@ -185,8 +184,8 @@ if options.loop:
     options.ask_start = True
 
 # init
-mspgcc.jtag.init_backend(options.backend)
-if mspgcc.jtag.backend == mspgcc.jtag.CTYPES_TI:
+msp430.jtag.init_backend(options.backend)
+if msp430.jtag.backend == msp430.jtag.CTYPES_TI:
     options.fake_progress = True
 
 # - - - - - - - - - - - - - - optional questions - - - - - - - - - - - - - - -
@@ -226,7 +225,7 @@ if options.debug:
 # capture console output
 sys.stdout = sys.stderr = StringIO()
 
-class ProgressJTAG(mspgcc.jtag.JTAG):
+class ProgressJTAG(msp430.jtag.JTAG):
     def progess_update(self, count, total):
         self.bar.set(100*count/total)
 

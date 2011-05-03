@@ -27,7 +27,7 @@ setup(
                     'modes.editingmodes', 'startup', 'Carbon', 'Carbon.Files'],
             'packages': ['msp430', 'msp430.asm', 'msp430.memory', 'msp430.shell',
                         'msp430.gdb', 'msp430.jtag', 'msp430.bsl', 'msp430.bsl5'],
-            'includes': ['pywinusb'],
+            'includes': ['pywinusb', 'EasyDialogs'],
             'dll_excludes': ['HIL.dll', 'MSP430mspgcc.dll'],
             'optimize': 2,
         }

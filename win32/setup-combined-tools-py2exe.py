@@ -17,27 +17,29 @@ setup(
     author_email="cliechti@gmx.net",
     url="http://launchpad.net/python-msp430-tools/",
     
-    version = '1.0',
+    version = '0.3',
     options = { "py2exe":
         {
             'dist_dir': 'bin',
-            'excludes': ['javax.comm', 'macpath', 'TERMIOS', 'FCNTL', 'os2emxpath', '_parjtag'],
+            'excludes': ['javax.comm', 'macpath', 'TERMIOS', 'FCNTL',
+                    'os2emxpath', '_parjtag',
+                    'IronPythonConsole', 'System', 'System.IO.Ports', 'System.Windows.Forms.Clipboard', 'clr',
+                    'modes.editingmodes', 'startup', 'Carbon', 'Carbon.Files'],
+            'packages': ['msp430', 'msp430.asm', 'msp430.memory', 'msp430.shell',
+                        'msp430.gdb', 'msp430.jtag', 'msp430.bsl', 'msp430.bsl5'],
+            'includes': ['pywinusb'],
             'dll_excludes': ['HIL.dll', 'MSP430mspgcc.dll'],
             'optimize': 2,
         }
     },
     console = [
-        "msp430-bsl.py",
-        "msp430-jtag.py",
-        "msp430-dco.py",
-        "msp430-ram-usage.py",
-        "msp430-hexdump.py",
-        "msp430-convert.py",
-        "msp430-generate.py",
+        "scripts/msp430-bsl.py",
+        "scripts/msp430-jtag.py",
+        "scripts/msp430-tool.py",
     ],
     windows = [
         {
-            'script': "msp430-downloader.py",
+            'script': "scripts/msp430-downloader.py",
             'icon_resources': [(0x0001, 'win32/downloader.ico')]
         },
     ],

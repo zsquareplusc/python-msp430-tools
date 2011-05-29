@@ -18,24 +18,32 @@ LD = python -m msp430.asm.ld
 LDFLAGS = -v --mcu MSP430G2121
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# commands
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+AS = python -m msp430.asm.as
+LD = python -m msp430.asm.ld
+RM = python -m msp430.shell.command rm -f
+CAT = python -m msp430.shell.command cat
+
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # the rules used to build
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .PHONY: clean all
 
 all: clean led.titext
-	cat led.titext
+	$(CAT) led.titext
 
 
 led.o4: led.S
 led.titext: led.o4
-	${LD} ${LDFLAGS} -o $@ $^
+	$(LD) $(LDFLAGS) -o $@ $^
 
 clean:
-	rm -f led.titext led.o4
+	$(RM) led.titext led.o4
 
 # pattern rule for the assembler
 %o4: %S
-	${AS} ${ASFLAGS} -o $@ $<
+	$(AS) $(ASFLAGS) -o $@ $<
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # additional download rules

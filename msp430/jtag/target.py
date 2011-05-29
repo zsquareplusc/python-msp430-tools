@@ -61,10 +61,16 @@ class JTAGTarget(object):
 
     def reset(self):
         """Reset the device."""
-        self.jtagobj.reset(1, 1)
+        if not self.release_done:
+            self.release_done = True
+            try:
+                self.jtagobj.reset(1, 1)
+            except IOError, e: # XXX currently getting EEM errors on launchpad
+                pass
 
     def close(self):
         if not self.release_done:
+            self.release_done = True
             self.jtagobj.reset(1, 1)             # reset and release target
         self.jtagobj.close()                     # release communication port
 

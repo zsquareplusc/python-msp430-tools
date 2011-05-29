@@ -20,8 +20,11 @@ import glob
 def expanded(paths):
     """expand each element of a list of paths with globbing patterns"""
     for path1 in paths:
-        for path in glob.glob(path1):
-            yield path
+        if '*' in path1 or '?' in path1 or '[' in path1:
+            for path in glob.iglob(path1):
+                yield path
+        else:
+            yield path1
 
 def mkdir(path, create_missing=False):
     """Create the given directory"""

@@ -385,7 +385,7 @@ class Discard(object):
         """dummy write"""
 
 
-if __name__ == '__main__':
+def main():
     import sys
     from optparse import OptionParser
     logging.basicConfig()
@@ -462,3 +462,7 @@ if __name__ == '__main__':
     if options.preload:
         cpp.preprocess(open(options.preload), Discard(), options.preload)
     cpp.preprocess(infile, outfile, infilename)
+
+
+if __name__ == '__main__':
+    main()

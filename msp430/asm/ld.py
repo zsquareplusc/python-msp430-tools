@@ -557,7 +557,7 @@ def to_TI_Text(segments):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-if __name__ == '__main__':
+def main():
     import os
     from optparse import OptionParser
     parser = OptionParser(usage="""\
@@ -730,3 +730,6 @@ Output is in "TI-Text" format."""
         linker.top_segment.sort_subsegments(by_address=True)
         linker.top_segment.print_tree(sys.stderr, hide_empty=True)
 
+
+if __name__ == '__main__':
+    main()

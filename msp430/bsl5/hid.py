@@ -59,8 +59,8 @@ class HIDBSL5Base(bsl5.BSL5):
         # first synchronize with slave
         self.logger.debug('Command 0x%02x (%d bytes)' % (cmd, 1+len(message)))
         #~ self.logger.debug('Command 0x%02x %s (%d bytes)' % (cmd, message.encode('hex'), 1+len(message)))
-        txdata = struct.pack('<BBB', 0x3f, 1+len(message), cmd) + message
-        txdata += '\xac'*(64 - len(txdata)) # pad up to block size
+        txdata = bytearray(struct.pack('<BBB', 0x3f, 1+len(message), cmd) + message)
+        txdata += b'\xac'*(64 - len(txdata)) # pad up to block size
         #~ self.logger.debug('Sending command: %r %d Bytes' % (txdata.encode('hex'), len(txdata)))
         # transmit command
         self.write_report(txdata)
@@ -124,7 +124,7 @@ if sys.platform == 'win32':
             while self.receiving_queue.qsize():
                 self.receiving_queue.get_nowait()
             # write report
-            self.hid_device.send_output_report([ctypes.c_ubyte(ord(x)) for x in data])
+            self.hid_device.send_output_report([ctypes.c_ubyte(x) for x in data])
 
         def read_report(self):
             return self.receiving_queue.get()

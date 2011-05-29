@@ -117,7 +117,7 @@ class MemMap:
             #modules.append(module)
         g = RE_ENTRY.search(l)
         if self.module and g:
-            self.module.labels.append((g.group(1),int(g.group(2), 16))
+            self.module.labels.append((g.group(1),int(g.group(2), 16)))
 
     def parseMODULEMAP(self, l):
         g = RE_MP_ENTRYMODNAME.search(l)

@@ -297,19 +297,19 @@ class Preprocessor(object):
                         my_if_was_not_hidden = False
                     continue
                 elif m.lastgroup == 'ELSE':
-                    self.log.debug("#else %s" % (if_name))
+                    self.log.debug("#else %s" % (if_name,))
                     if my_if_was_not_hidden:
                         process = not process
                     continue
                 elif m.lastgroup == 'ENDIF':
-                    self.log.debug("#endif %s" % (if_name))
+                    self.log.debug("#endif %s" % (if_name,))
                     (process, my_if_was_not_hidden, if_name) = hiddenstack.pop()
                     continue
                 elif not process:
                     continue
                 elif m.lastgroup == 'INCLUDE':
                     include_name = m.group('INC_NAME')
-                    self.log.debug('including "%s"' % include_name)
+                    self.log.debug('including "%s"' % (include_name,))
                     for location in self.include_path:
                         path = os.path.normpath(os.path.join(location, include_name))
                         if os.path.exists(path):
@@ -317,7 +317,7 @@ class Preprocessor(object):
                             writer.marker = None  # force marker output
                             break
                     else:
-                        raise PreprocessorError('include file %r not found' % (include_name))
+                        raise PreprocessorError('include file %r not found' % (include_name,))
                     continue
                 elif m.lastgroup == 'MACRO':
                     name = m.group('MACRO_NAME')
@@ -327,7 +327,7 @@ class Preprocessor(object):
                     else:
                         definition = ''
                     if self.macros.has_key(name):
-                        self.log.warn("%r redefinition ignored" % name)
+                        self.log.warn("%r redefinition ignored" % (name),)
                     else:
                         # prepare the macro value to be used as format string
                         # (python's % operator)
@@ -351,14 +351,14 @@ class Preprocessor(object):
                     else:
                         definition = ''
                     if self.namespace.defines.has_key(symbol):
-                        self.log.warn("%r redefinition ignored" % name)
+                        self.log.warn("%r redefinition ignored" % (symbol,))
                     else:
                         self.namespace.defines[symbol] = definition
                         self.log.debug("defined %r => %r" % (symbol, self.namespace.defines[symbol]))
                     continue
                 elif m.lastgroup == 'UNDEF':
                     symbol = m.group('UNDEF_NAME')
-                    self.log.debug("undefined %s" % symbol)
+                    self.log.debug("undefined %s" % (symbol,))
                     del self.namespace.defines[symbol]
                     continue
                 elif m.lastgroup == 'NONPREPROC':
@@ -374,10 +374,10 @@ class Preprocessor(object):
                     empty_lines = 0
                 writer.write(n+1, line)
         except:
-            self.log.info('error while processing "%s"' % line.strip())
+            self.log.info('error while processing "%s"' % (line.strip(),))
             raise
         else:
-            self.log.info('done "%s"' % filename)
+            self.log.info('done "%s"' % (filename),)
 
 class Discard(object):
     """File like target object that consumes and discards all data"""

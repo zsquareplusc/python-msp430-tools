@@ -640,8 +640,8 @@ Output is in "TI-Text" format."""
 
     # load symbols
     if options.symbols is not None:
-        peripherals = peripherals.load_internal(options.symbols)
-        for peripheral in peripherals.peripherals.values():
+        all_peripherals = peripherals.load_internal(options.symbols)
+        for peripheral in all_peripherals.peripherals.values():
             for reg_name, register in peripheral.items():
                 if reg_name.startswith('__'): continue
                 if '__address__' in register:

@@ -124,13 +124,13 @@ def decodeStopReplyPackets(message):
         raise GDBException("unknown Stop Reply Packet")
 
 def hex2registers(message):
-    return list(unpack('<HHHHHHHHHHHHHHHH', message.decode('hex')))
+    return list(unpack('<HHHHHHHHHHHHHHHH', bytes(message).decode('hex')))
 
 def decodeRegister(message):
-    return unpack('<H', message.decode('hex'))[0]
+    return unpack('<H', bytes(message).decode('hex'))[0]
 
 def encodeRegister(value):
-    return pack('<H', value).encode('hex')
+    return bytes(pack('<H', value).encode('hex'))
 
 
 class GDBClient(ClientSocketConnector):
@@ -263,7 +263,7 @@ class GDBClient(ClientSocketConnector):
     def write_memory(self, startaddress, data):
         """maddr,length -- read memory
         expected answer 'OK' or 'Enn'"""
-        return self._remote_command('M%x,%x:%s' % (startaddress, len(data), data.encode('hex')))
+        return self._remote_command('M%x,%x:%s' % (startaddress, len(data), bytes(data).encode('hex')))
 
     def read_register(self, regnum):
         """pn... -- read reg (reserved)
@@ -333,7 +333,7 @@ class GDBClient(ClientSocketConnector):
     def monitor(self, command, nowait=False):
         """pass commands to the target interpreter
         expected answer 'OK' or 'Enn' or ''"""
-        return self.query('Rcmd,%s' % command.encode('hex'), nowait=nowait)
+        return self.query('Rcmd,%s' % bytes(command).encode('hex'), nowait=nowait)
 
 
     # ---

@@ -232,8 +232,10 @@ class Preprocessor(object):
         in_comment = False
         writer = AnnoatatedLineWriter(outfile, filename)
         line = ''
+        lineno = 0
         try:
-            for n, line in enumerate(line_joiner(iter(infile).next)):
+            for line in line_joiner(iter(infile).next):
+                lineno += 1
                 #~ print "|", line.rstrip()
                 line = self.re_inlinecomment.sub('', line) #.strip()
                 if in_comment:
@@ -372,12 +374,20 @@ class Preprocessor(object):
                         continue
                 else:
                     empty_lines = 0
-                writer.write(n+1, line)
+                writer.write(lineno, line)
+        except PreprocessorError, e:
+            # annotate exception with location in source file
+            e.line = lineno
+            e.filename = filename
+            e.text = line
+            self.log.info('error while processing "%s"' % (line.strip(),))
+            raise
         except:
             self.log.info('error while processing "%s"' % (line.strip(),))
             raise
         else:
             self.log.info('done "%s"' % (filename),)
+
 
 class Discard(object):
     """File like target object that consumes and discards all data"""
@@ -461,7 +471,15 @@ def main():
     # process files now
     if options.preload:
         cpp.preprocess(open(options.preload), Discard(), options.preload)
-    cpp.preprocess(infile, outfile, infilename)
+
+    try:
+        cpp.preprocess(infile, outfile, infilename)
+    except PreprocessorError, e:
+        sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
+        if options.debug:
+            if hasattr(e, 'text'):
+                sys.stderr.write('%s:%s: input line: %r\n' % (e.filename, e.line, e.text))
+        sys.exit(1)
 
 
 if __name__ == '__main__':

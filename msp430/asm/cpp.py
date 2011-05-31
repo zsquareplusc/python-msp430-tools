@@ -113,15 +113,18 @@ class Evaluator(rpn.RPN):
 
     def eval(self, expression):
         self.clear()
-        rpn_expr = infix2postfix.infix2postfix(
-                expression,
-                scanner=Scanner,
-                precedence = precedence,
-                variable_prefix='LOOKUP ')
+        try:
+            rpn_expr = infix2postfix.infix2postfix(
+                    expression,
+                    scanner=Scanner,
+                    precedence = precedence,
+                    variable_prefix='LOOKUP ')
+        except ValueError, e:
+            raise PreprocessorError('error in expression: %r' % (expression,))
         #~ print >>sys.stderr, "RPN: ", rpn_expr # XXX debug
         self.interpret_sequence(rpn_expr.split(' '))
         if len(self) != 1:
-            raise ValueError('error in expression: %r stack: %s' % (expression, self))
+            raise PreprocessorError('error in expression: %r stack: %s' % (expression, self))
         return self.pop()
 
 
@@ -375,6 +378,10 @@ class Preprocessor(object):
                 else:
                     empty_lines = 0
                 writer.write(lineno, line)
+            # at the end of the loop, check if there were unbalanced #if's
+            if hiddenstack:
+                raise PreprocessorError('missing #endif')
+
         except PreprocessorError, e:
             # annotate exception with location in source file
             e.line = lineno

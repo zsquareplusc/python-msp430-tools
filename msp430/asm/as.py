@@ -157,10 +157,12 @@ class MSP430Assembler(object):
 
     def argument(self, value):
         """\
-        Prepare a parameter for the linker. Numbers (nnn, 0xnnn) are supported
-        as well as labels.
+        Prepare a parameter for the linker. Expressions are evaluated.
         """
-        return infix2postfix(value, variable_prefix=u'GET-SYMBOL ')
+        try:
+            return infix2postfix(value, variable_prefix=u'GET-SYMBOL ')
+        except ValueError, e:
+            raise AssemblerError('invalid expression: %r' % (value,))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

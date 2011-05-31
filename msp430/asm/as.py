@@ -1009,6 +1009,7 @@ class MSP430Assembler(object):
             # annotate exception with location in source file
             e.line = lineno
             e.filename = filename
+            e.text = line
             raise e
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1099,6 +1100,9 @@ def main():
             f.close()
     except AssemblerError, e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
+        if options.debug:
+            if hasattr(e, 'text'):
+                sys.stderr.write('%s:%s: input line: %r\n' % (e.filename, e.line, e.text))
         sys.exit(1)
 
 

@@ -36,7 +36,7 @@ class Scanner:
                 return None, None
             m = self.scannerRE.match(self.source, self.pos)
             if m is None:
-                raise Exception('invalid token')
+                raise Exception('invalid token: %r...' % (self.source[self.pos:self.pos+10],))
             self.pos = m.end()
             token_type = m.lastgroup
             if token_type != 'SPACE':

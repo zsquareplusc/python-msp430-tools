@@ -1097,9 +1097,13 @@ def main():
                     options.input_filename,
                     output=out)
         else:
-            f = codecs.open(filename, 'r', 'utf-8')
-            assembler.assemble(f, options.input_filename, output=out)
-            f.close()
+            try:
+                f = codecs.open(filename, 'r', 'utf-8')
+                assembler.assemble(f, options.input_filename, output=out)
+                f.close()
+            except IOError, e:
+                sys.stderr.write('as: %s: File not found\n' % (filename,))
+                sys.exit(1)
     except AssemblerError, e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
         if options.debug:

@@ -462,8 +462,12 @@ def main():
         infilename = '<stdin>'
         infile = codecs.getreader("utf-8")(sys.stdin)
     else:
-        infilename = args[0]
-        infile = codecs.open(infilename, 'r', 'utf-8')
+        try:
+            infilename = args[0]
+            infile = codecs.open(infilename, 'r', 'utf-8')
+        except IOError, e:
+            sys.stderr.write('cpp: %s: File not found\n' % (infilename,))
+            sys.exit(1)
 
     cpp = Preprocessor()
     # extend include search path

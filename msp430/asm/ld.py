@@ -634,7 +634,11 @@ Output is in "TI-Text" format."""
             if options.verbose:
                 sys.stderr.write(u'reading file "%s"...\n'% filename)
             instructions.append('reset')
-            instructions.extend(rpn.words_in_file(filename))
+            try:
+                instructions.extend(rpn.words_in_file(filename))
+            except IOError, e:
+                sys.stderr.write('ld: %s: File not found\n' % (filename,))
+                sys.exit(1)
 
     linker = Linker(instructions)
 

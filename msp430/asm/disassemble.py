@@ -838,7 +838,11 @@ MSP430(X) disassembler.
             fileobj = sys.stdin
             filename = '<stdin>'
         else:
-            fileobj = open(filename, "rb")  # or from a file
+            try:
+                fileobj = open(filename, "rb")  # or from a file
+            except IOError, e:
+                sys.stderr.write('disassemble: %s: File not found\n' % (filename,))
+                sys.exit(1)
         mem = msp430.memory.load(filename, fileobj, options.input_format)
 
         if options.verbose:

@@ -224,7 +224,7 @@ class Preprocessor(object):
         #~ print "expand -> %r" % (res)          #DEBUG
         return line.replace('##', '')
 
-    def preprocess(self, infile, outfile, filename):
+    def preprocess(self, infile, outfile, filename, include_callback=None):
         """Scan lines and process preprocessor directives"""
         self.log.info("processing %s" % filename)
         empty_lines = 0
@@ -318,7 +318,9 @@ class Preprocessor(object):
                     for location in self.include_path:
                         path = os.path.normpath(os.path.join(location, include_name))
                         if os.path.exists(path):
-                            self.preprocess(codecs.open(path, 'r', 'utf-8'), outfile, path)
+                            if include_callback is not None:
+                                include_callback(path)
+                            self.preprocess(codecs.open(path, 'r', 'utf-8'), outfile, path, include_callback)
                             writer.marker = None  # force marker output
                             break
                     else:
@@ -438,6 +440,11 @@ def main():
                       metavar = "PATH",
                       default = [],
                       help="Add directory to the search path list for includes")
+    parser.add_option("--dependency-scan",
+                      action = "store_true",
+                      dest = "dependency_scan_only",
+                      default = False,
+                      help = "just print names of includes, not actual content")
 
     (options, args) = parser.parse_args()
 
@@ -483,8 +490,17 @@ def main():
     if options.preload:
         cpp.preprocess(open(options.preload), Discard(), options.preload)
 
+    if options.dependency_scan_only:
+        # add a callback that writes out filenames of includes
+        # remember outfile as we're changing it below
+        def print_include(path, outfile=outfile):
+            outfile.write('%s\n' % (path,))
+        outfile = Discard() # discard following output
+    else:
+        print_include = None
+
     try:
-        cpp.preprocess(infile, outfile, infilename)
+        cpp.preprocess(infile, outfile, infilename, print_include)
     except PreprocessorError, e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
         if options.debug:

@@ -97,12 +97,15 @@ def word(name):
 
 
 class RPN(list):
-    """simple, extensible RPN calculator"""
-    def __init__(self, namespace={}):
+    """\
+    Simple, extensible RPN calculator.
+    It inherits from list which is used as stack.
+    """
+    def __init__(self, namespace=None):
         list.__init__(self)
         self.clear()
-        self.namespace = namespace
-        self.next_word = None
+        self.namespace = namespace if namespace is not None else {}
+        self._iterator = None
         self.builtins = {}
         # extend built-ins name space with all methods that were marked with
         # the @word decorator
@@ -113,25 +116,24 @@ class RPN(list):
 
     def interpret_sequence(self, sequence, filename=None):
         """interpret a sequence of words"""
-        self.interpret(annotated_words(sequence, filename).next)
+        self.interpret(annotated_words(sequence, filename))
 
-    def interpret(self, next_word):
+    def interpret(self, iterator):
         """\
         Interpret a sequence of words given a 'next' function that get the
         next word from the sequence.
         """
         # keep old reference in case of nested calls
-        old_next_word = self.next_word
+        old_iterator = self._iterator
         # store function to make it available to called functions
-        self.next_word = next_word
+        self._iterator = iterator
         word = None # in case next_word raises an exception
         try:
             while True:
-                word = next_word()
+                word = iterator.next()
                 self.interpret_word(word)
         except StopIteration:
-            # restore state
-            self.next_word = old_next_word
+            pass
         except RPNError:
             raise
         except Exception as e:
@@ -139,13 +141,14 @@ class RPN(list):
             lineno = getattr(word, 'lineno', None)
             offset = getattr(word, 'offset', None)
             text = getattr(word, 'text', None)
-            raise RPNError("Error in word %s: %s" % (word, e), filename, lineno, offset, text)
+            raise RPNError('Error in word "%s": %s' % (word, e), filename, lineno, offset, text)
+            # XXX consider showing the full traceback of the original exception
+        finally:
+            # restore state
+            self._iterator = old_iterator
 
-    def interpret_word(self, word):
-        """\
-        Interpret a single word. It may call self.next_word, so this has to
-        be set up.
-        """
+    def look_up(self, word):
+        """Find the word in one of the namespaces and return the value"""
         lowercased_word = word.lower() # case insensitive
         for namespace in (self.namespace, self.builtins):
             try:
@@ -153,11 +156,24 @@ class RPN(list):
             except KeyError:
                 pass
             else:
-                if callable(element):
-                    element(self)
-                else:
-                    self.push(element)
-                return
+                return element
+        raise KeyError('%r not in any namespace' % (word,))
+
+    def interpret_word(self, word):
+        """\
+        Interpret a single word. It may call self.next_word, so this has to
+        be set up.
+        """
+        try:
+            element = self.look_up(word)
+        except KeyError:
+            pass
+        else:
+            if callable(element):
+                element(self)
+            else:
+                self.push(element)
+            return
         # if it's not a symbol it might be a number
         try:
             try:
@@ -390,7 +406,7 @@ def eval(words, stack=[], namespace={}):
     if stack is not None:
         for element in stack:
             rpn.push(element)
-    rpn.interpret(iter(words).next)
+    rpn.interpret(iter(words))
     return rpn.pop()
 
 
@@ -401,9 +417,9 @@ def python_function(code, namespace={}):
     return wrapper
 
 
-def interpreter_loop(namespace={}, debug=False):
+def interpreter_loop(namespace={}, debug=False, rpn_class=RPN):
     """run an interactive session"""
-    rpn = RPN(namespace)
+    rpn = rpn_class(namespace)
     while True:
         try:
             print

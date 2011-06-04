@@ -420,15 +420,16 @@ def python_function(code, namespace={}):
     return wrapper
 
 
-def interpreter_loop(namespace={}, debug=False, rpn_class=RPN):
+def interpreter_loop(namespace={}, debug=False, rpn_class=RPN, rpn_instance=None):
     """run an interactive session"""
-    rpn = rpn_class(namespace)
+    if rpn_instance is None:
+        rpn_instance = rpn_class(namespace)
     while True:
         try:
             print
-            print rpn
+            print rpn_instance
             words = raw_input('> ')
-            rpn.interpret_sequence(words.split(), filename='<stdin>')
+            rpn_instance.interpret_sequence(words.split(), filename='<stdin>')
         except KeyboardInterrupt:
             print
             break

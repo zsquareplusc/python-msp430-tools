@@ -595,10 +595,10 @@ Output is in "TI-Text" format."""
 
     parser.add_option(
             "-v", "--verbose",
-            action="store_true",
+            action="count",
             dest="verbose",
-            default=False,
-            help="print status messages")
+            default=0,
+            help="print status messages, gan be given multiple times to increase messages")
 
     parser.add_option(
             "--debug",
@@ -626,12 +626,12 @@ Output is in "TI-Text" format."""
     instructions = []
     for filename in args:
         if filename == '-':
-            if options.verbose:
+            if options.verbose > 2:
                 sys.stderr.write(u'reading stdin...\n')
             instructions.append('reset')
             instructions.extend(sys.stdin.read().split())
         else:
-            if options.verbose:
+            if options.verbose > 2:
                 sys.stderr.write(u'reading file "%s"...\n'% filename)
             instructions.append('reset')
             try:
@@ -660,7 +660,7 @@ Output is in "TI-Text" format."""
 
     # ========= load MCU definition =========
 
-    if options.verbose:
+    if options.verbose > 1:
         sys.stderr.write("Step 1: load segment descriptions.\n")
 
     # load the file and get the desired MCU description
@@ -676,23 +676,23 @@ Output is in "TI-Text" format."""
 
     linker.segments_from_definition(segment_definitions)
 
-    if options.verbose:
+    if options.verbose > 2:
         sys.stderr.write('Segments available:\n')
         linker.top_segment.print_tree(sys.stderr)
 
     # ========= Do the actual linking =========
 
     try:
-        if options.verbose:
+        if options.verbose > 1:
             sys.stderr.write("Step 2: generate machine code\n")
             sys.stderr.write("        Pass 1: determinate segment sizes.\n")
         linker.pass_one()
 
-        if options.verbose:
+        if options.verbose > 1:
             sys.stderr.write("        Pass 2: calculate labels.\n")
         linker.pass_two()
 
-        if options.verbose:
+        if options.verbose > 1:
             sys.stderr.write("        Pass 3: final output.\n")
         linker.pass_three()
     except rpn.RPNError, e:
@@ -709,12 +709,12 @@ Output is in "TI-Text" format."""
 
     # ========= Output final result =========
 
-    if options.verbose:
+    if options.verbose > 1:
         sys.stderr.write("Step 3: write machine code to file.\n")
 
     out.write(to_TI_Text(linker.segments))
 
-    if options.verbose:
+    if options.verbose > 1:
         sys.stderr.write("Labels:\n")
         labels = linker.labels.keys()
         labels.sort()

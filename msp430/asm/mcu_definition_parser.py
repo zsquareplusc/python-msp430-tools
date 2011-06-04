@@ -186,7 +186,7 @@ class MCUDefintitions(rpn.RPN):
                 t = template
                 for k, v in zip(template_variables, template_row):
                     t = t.replace(k, v)
-                self.memory_maps.update(parse_words(iter(t.split()).next))
+                self.memory_maps.update(parse_words(iter(t.split())))
                 template_row = []
 
 
@@ -276,12 +276,12 @@ class MCUDefintitions(rpn.RPN):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-def parse_words(next_word):
+def parse_words(iterable):
     """\
-    Parse a configuration file/text using the given 'next_word' function.
+    Parse a configuration file/text using the given iterable.
     """
     p = MCUDefintitions()
-    p.interpret(next_word)
+    p.interpret(iterable)
     return p.memory_maps
 
 
@@ -308,14 +308,14 @@ def load_internal():
     given mcu_name.
     """
     data = pkgutil.get_data('msp430.asm', 'definitions/msp430-mcu-list.txt')
-    return parse_words(rpn.words_in_string(data).next)
+    return parse_words(rpn.words_in_string(data))
 
 def load_from_file(filename):
     """\
     Load configuration file and only return a single, expanded memory map for
     given mcu_name.
     """
-    return parse_words(rpn.words_in_file(filename).next)
+    return parse_words(rpn.words_in_file(filename))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

@@ -159,6 +159,9 @@ class RPN(list):
                 return element
         raise KeyError('%r not in any namespace' % (word,))
 
+    def next_word(self):
+        return self._iterator.next()
+
     def interpret_word(self, word):
         """\
         Interpret a single word. It may call self.next_word, so this has to

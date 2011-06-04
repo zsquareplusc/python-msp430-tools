@@ -71,7 +71,7 @@ class SymbolDefinitions(rpn.RPN):
             #~ print "XXX including %r" % name
             # XXX currently only internal imports are supported
             data = pkgutil.get_data('msp430.asm', 'definitions/%s.peripheral' % (name,))
-            self.interpret(rpn.words_in_string(data, name='definitions/%s.peripheral' % (name,)).next)
+            self.interpret(rpn.words_in_string(data, name='definitions/%s.peripheral' % (name,)))
 
     @rpn.word('BIT')
     def word_BIT(self, stack):
@@ -193,12 +193,12 @@ class SymbolDefinitions(rpn.RPN):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-def parse_words(next_word):
+def parse_words(iterable):
     """\
-    Parse a configuration file/text using the given 'next_word' function.
+    Parse a configuration file/text using the given iterable.
     """
     s = SymbolDefinitions()
-    s.interpret(next_word)
+    s.interpret(iterable)
     return s
 
 
@@ -206,7 +206,7 @@ def load_symbols(filename):
     """\
     Load symbols from given filename.
     """
-    return parse_words(rpn.words_in_file(filename).next)
+    return parse_words(rpn.words_in_file(filename))
 
 
 def load_internal(name):
@@ -214,7 +214,7 @@ def load_internal(name):
     Load symbols from internal definition given name.
     """
     data = pkgutil.get_data('msp430.asm', 'definitions/%s.peripheral' % (name,))
-    return parse_words(rpn.words_in_string(data).next)
+    return parse_words(rpn.words_in_string(data))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

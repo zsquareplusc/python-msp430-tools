@@ -141,7 +141,7 @@ class AnnoatatedLineWriter(object):
     def write(self, lineno, text):
         """
         Write line. It is expected to be called with lines only (ending in
-        '\n') otherwise will the markers be missplaced.
+        '\n') otherwise will the markers be misplaced.
         """
         # emit line number and file hints for the next stage
         if self.marker != lineno:
@@ -278,9 +278,9 @@ class Preprocessor(object):
                         my_if_was_not_hidden = False
                     continue
                 elif m.lastgroup == 'IFDEF':
-                    symbol = m.group('IFDEF_NAME')
+                    symbol = m.group('IFDEF_NAME').strip()
                     value = self.namespace.defines.has_key(symbol)
-                    self.log.debug("#ifdef %s -> %r" % (symbol, value))
+                    self.log.debug("#ifdef %r -> %r" % (symbol, value))
                     hiddenstack.append((process, my_if_was_not_hidden, if_name))
                     if_name = symbol
                     if process:
@@ -290,9 +290,9 @@ class Preprocessor(object):
                         my_if_was_not_hidden = False
                     continue
                 elif m.lastgroup == 'IFNDEF':
-                    symbol = m.group('IFNDEF_NAME')
+                    symbol = m.group('IFNDEF_NAME').strip()
                     value = not self.namespace.defines.has_key(symbol)
-                    self.log.debug("#ifndef %s -> %r" % (symbol, value))
+                    self.log.debug("#ifndef %r -> %r" % (symbol, value))
                     hiddenstack.append((process, my_if_was_not_hidden, if_name))
                     if_name = symbol
                     if process:
@@ -302,12 +302,12 @@ class Preprocessor(object):
                         my_if_was_not_hidden = False
                     continue
                 elif m.lastgroup == 'ELSE':
-                    self.log.debug("#else %s" % (if_name,))
+                    self.log.debug("#else %r" % (if_name,))
                     if my_if_was_not_hidden:
                         process = not process
                     continue
                 elif m.lastgroup == 'ENDIF':
-                    self.log.debug("#endif %s" % (if_name,))
+                    self.log.debug("#endif %r" % (if_name,))
                     (process, my_if_was_not_hidden, if_name) = hiddenstack.pop()
                     continue
                 elif not process:
@@ -364,7 +364,7 @@ class Preprocessor(object):
                         self.log.debug("defined %r => %r" % (symbol, self.namespace.defines[symbol]))
                     continue
                 elif m.lastgroup == 'UNDEF':
-                    symbol = m.group('UNDEF_NAME')
+                    symbol = m.group('UNDEF_NAME').strip()
                     self.log.debug("undefined %s" % (symbol,))
                     del self.namespace.defines[symbol]
                     continue
@@ -486,6 +486,7 @@ def main():
         else:
             symbol, value = definition, '1'
         cpp.namespace.defines[symbol] = value
+
     # process files now
     if options.preload:
         cpp.preprocess(open(options.preload), Discard(), options.preload)

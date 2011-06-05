@@ -281,7 +281,7 @@ class MSP430Assembler(object):
         asrc, src, op1, rel1 = self._buildArg(insn, source)
         adst, dst, op2, rel2 = self._buildArg(insn, destination, constreg=False)
         if adst > 1: raise AssemblerError('%s (%r) is not possible as destination.' % (
-                self._name_address_mode(adst,dst), destination))
+                self._name_address_mode(adst,dst), destination[1]))
         out = [u'0x%04x 16bit' % self._buildDoubleOperand(insn, bw, asrc, src, adst, dst)]
         if op1:
             if rel1: out.append(u'%s PC - 16bit' % self.argument(op1))
@@ -299,7 +299,7 @@ class MSP430Assembler(object):
         asrc, src, op1, rel1 = self._buildArg(insn, source)
         adst, dst, op2, rel2 = self._buildArg(insn, destination, constreg=False)
         if adst > 1: raise AssemblerError('%s (%r) is not possible as destination.' % (
-                self._name_address_mode(adst,dst), destination))
+                self._name_address_mode(adst,dst), destination[1]))
         out = []
         # the core instruction
         opcode = self._buildDoubleOperand(insn[:-1], bw, asrc, src, adst, dst)
@@ -479,7 +479,7 @@ class MSP430Assembler(object):
 
         if adst != 0:
             raise AssemblerError(u'%s (%r) is not possible as destination.' % (
-                    self._name_address_mode(adst, dst), destination))
+                    self._name_address_mode(adst, dst), destination[1]))
 
         out = []
         if asrc == 0:       # register mode
@@ -492,7 +492,7 @@ class MSP430Assembler(object):
             return u' '.join(out)
         else:
             raise AssemblerError(u'%s (%r) is not possible as source.' % (
-                self._name_address_mode(asrc, src), source))
+                self._name_address_mode(asrc, src), source[1]))
 
     def insnx_ADDA_2(self, insn, mode, source, destination):
         """Add 20-bit source to a 20-bit destination register"""
@@ -521,7 +521,7 @@ class MSP430Assembler(object):
 
         if adst != 0:
             raise AssemblerError('%s (%r) is not possible as destination.' % (
-                    self._name_address_mode(adst, dst), destination))
+                    self._name_address_mode(adst, dst), destination[1]))
 
         out = []
         if asrc == 3:       # immediate/post_inc mods - register mode
@@ -536,7 +536,7 @@ class MSP430Assembler(object):
                           'RRUM': 0x0340,
                         }[insn] | (option << 4) | (count<<10) | dst)
         raise AssemblerError(u'%s (%r) is not possible as count.' % (
-                self._name_address_mode(asrc, src), source))
+                self._name_address_mode(asrc, src), source[1]))
 
 
     def insnx_CALLA_1(self, insn, mode, target):
@@ -584,7 +584,7 @@ class MSP430Assembler(object):
 
         if adst != 0:
             raise AssemblerError(u'%s (%r) is not possible as destination.' % (
-                    self._name_address_mode(adst, dst), destination))
+                    self._name_address_mode(adst, dst), destination[1]))
 
         out = []
         if asrc == 3:       # immediate/post_inc mods - register mode

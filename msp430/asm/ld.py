@@ -690,6 +690,7 @@ Output is in "TI-Text" format."""
             mem_maps = mcu_definition_parser.load_from_file(options.segmentfile)
         else:
             mem_maps = mcu_definition_parser.load_internal()
+        options.mcu_name = options.mcu_name.upper() # XXX hack
         segment_definitions = mcu_definition_parser.expand_definition(mem_maps, options.mcu_name)
     except Exception, msg:
         sys.stderr.write('ERROR loading segment descriptions: %s\n' % (msg,))

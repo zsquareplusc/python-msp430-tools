@@ -161,7 +161,12 @@ class Forth(rpn.RPN):
             try:
                 number = float(word)
             except ValueError:
-                raise rpn.RPNError("neither known symbol nor number: %r" % (word,))
+                filename = getattr(word, 'filename', '<unknown>')
+                lineno = getattr(word, 'lineno', None)
+                column = getattr(word, 'column', None)
+                offset = getattr(word, 'offset', None)
+                text = getattr(word, 'text', None)
+                raise ForthError("neither known symbol nor number: %r" % (word,), filename, lineno, column, offset, text)
         if self.compiling:
             self.frame.append(self.instruction_literal)
             self.frame.append(number)
@@ -531,6 +536,13 @@ If no input files are specified data is read from stdin."""
             default=False,
             help="interactive mode is started")
 
+    parser.add_option("-D", "--define",
+                      action = "append",
+                      dest = "defines",
+                      metavar = "SYM[=VALUE]",
+                      default = [],
+                      help="define symbol")
+
     (options, args) = parser.parse_args()
 
     if options.debug:
@@ -564,10 +576,19 @@ If no input files are specified data is read from stdin."""
                 sys.stderr.write('forth: %s: File not found\n' % (filename,))
                 sys.exit(1)
 
+    forth = Forth()
+    forth.output = out
+
+    # insert defined symbols
+    for definition in options.defines:
+        if '=' in definition:
+            symbol, value = definition.split('=', 1)
+        else:
+            symbol, value = definition, '1'
+        forth.namespace[symbol.lower()] = value # XXX inserted as string only
+
     try:
-        forth = Forth()
-        forth.output = out
-        forth.interpret_sequence(iter(instructions))
+        forth.interpret(iter(instructions))
     except rpn.RPNError as e:
         sys.stderr.write(u"%s:%s: %s\n" % (e.filename, e.lineno, e))
         if options.debug and e.text:

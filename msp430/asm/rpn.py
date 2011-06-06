@@ -33,7 +33,7 @@ class Word(unicode):
     #~ def __repr__(self):
         #~ return "%s(%s, %s, %s)" % (
                 #~ self.__class__.__name__,
-                #~ str.__repr__(self),
+                #~ unicode.__repr__(self),
                 #~ self.filename,
                 #~ self.lineno)
 
@@ -188,7 +188,12 @@ class RPN(list):
             except ValueError:
                 self.push(float(word))
         except ValueError:
-            raise RPNError("neither known symbol nor number: %r" % (word,))
+            filename = getattr(word, 'filename', '<unknown>')
+            lineno = getattr(word, 'lineno', None)
+            column = getattr(word, 'column', None)
+            offset = getattr(word, 'offset', None)
+            text = getattr(word, 'text', None)
+            raise RPNError("neither known symbol nor number: %r" % (word,), filename, lineno, column, offset, text)
 
     def push(self, obj):
         """Push an element on the stack"""

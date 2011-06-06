@@ -68,10 +68,11 @@ def words_in_file(filename):
 
 class RPNError(Exception):
     """interpreter error"""
-    def __init__(self, message, filename=None, lineno=None, offset=None, text=None):
+    def __init__(self, message, filename=None, lineno=None, column=None, offset=None, text=None):
         Exception.__init__(self, message)
         self.filename = filename or '<unknown>'
         self.lineno = lineno
+        self.column = column
         self.offset = offset
         self.text = text
 
@@ -140,10 +141,11 @@ class RPN(list):
         except Exception as e:
             filename = getattr(word, 'filename', '<unknown>')
             lineno = getattr(word, 'lineno', None)
+            column = getattr(word, 'column', None)
             offset = getattr(word, 'offset', None)
             text = getattr(word, 'text', None)
             logging.getLogger('rpn').exception('%s:%s: Error in word "%s": %s' % (filename, lineno, word, e))
-            raise RPNError('Error in word "%s": %s' % (word, e), filename, lineno, offset, text)
+            raise RPNError('Error in word "%s": %s' % (word, e), filename, lineno, column, offset, text)
             # XXX consider showing the full traceback of the original exception
         finally:
             # restore state

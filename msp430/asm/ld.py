@@ -17,16 +17,11 @@ from msp430.asm import mcu_definition_parser
 from msp430.asm import rpn, peripherals
 
 
-class LinkError(Exception):
+class LinkError(rpn.RPNError):
     """\
     Exception class for errors that can occur during linking. The exception can
     be annotated with the location in the source file.
     """
-    def __init__(self, message, filename=None, lineno=None, column=0):
-        Exception.__init__(self, message)
-        self.filename = filename
-        self.lineno = lineno
-        self.column = column
 
 
 # a segment has a valid range of addresses that is set by
@@ -202,6 +197,8 @@ class Linker(rpn.RPN):
         # the linking will require multiple passes, a flag controls
         # if errors are fatal or ignored
         self.errors_are_fatal = True
+        # to check labels for duplicate definition
+        self.check_labels = None
         # The link instructions
         self.instructions = instructions
         # information about the input
@@ -329,14 +326,26 @@ class Linker(rpn.RPN):
         if name in self.labels:
             if self.labels[name] != value:
                 raise LinkError('redefinition of symbol with different value (previous: %r, new: %r)' % (
-                    self.labels[name],
-                    value))
+                            self.labels[name],
+                            value),
+                        self.source_filename,
+                        self.source_line,
+                        self.source_column)
         self.labels[name] = value
 
     @rpn.word('CREATE-SYMBOL')
     def _create_symbol(self, rpn):
         """Mark current location with symbol"""
         name = self.name_symbol(self.next_word())
+        #~ # this simple check does not work as we're doing multiple passes
+        if self.check_labels is not None:
+            if name in self.check_labels:
+                raise LinkError(
+                        'Label %r redefined (old value: %r)' % (name, self.labels[name]),
+                        self.source_filename,
+                        self.source_line,
+                        self.source_column)
+            self.check_labels[name] = self.address
         self.labels[name] = self.address
 
     @rpn.word('GET-SYMBOL')
@@ -483,7 +492,9 @@ class Linker(rpn.RPN):
         This run is used to find all labels at their final locations.
         """
         self.top_segment.clear()
+        self.check_labels = {}
         self.interpret_sequence(self.instructions)
+        self.check_labels = None
         # create automatic labels for all segments (start/end)
         for segment in self.segments.values():
             name = segment.name.replace('.', '')    # remove dots in names
@@ -559,7 +570,10 @@ def to_TI_Text(segments):
 
 def main():
     import os
+    import logging
     from optparse import OptionParser
+    logging.basicConfig()
+
     parser = OptionParser(usage="""\
 %prog [options] [FILE...]|-]
 
@@ -613,6 +627,13 @@ Output is in "TI-Text" format."""
             metavar="NAME")
 
     (options, args) = parser.parse_args()
+
+    if options.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+    elif options.verbose:
+        logging.getLogger().setLevel(logging.INFO)
+    else:
+        logging.getLogger().setLevel(logging.WARN)
 
     # prepare output
     if options.outfile is not None:
@@ -695,12 +716,12 @@ Output is in "TI-Text" format."""
         if options.verbose > 1:
             sys.stderr.write("        Pass 3: final output.\n")
         linker.pass_three()
-    except rpn.RPNError, e:
+    except rpn.RPNError as e:
         sys.stderr.write(u"%s:%s: %s\n" % (e.filename, e.lineno, e))
         if options.debug and e.text:
             sys.stderr.write(u"%s:%s: input line was: %r\n" % (e.filename, e.lineno, e.text))
         sys.exit(1)
-    except LinkError, msg:
+    except LinkError as msg:
         if msg.filename and msg.lineno is not None:
             sys.stderr.write(u'%s:%s: %s\n' % (msg.filename, msg.lineno, msg))
         else:

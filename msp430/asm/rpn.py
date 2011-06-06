@@ -15,6 +15,7 @@ import sys
 import pprint
 import codecs
 import re
+import logging
 
 m_comment = re.compile('(#.*$)', re.UNICODE)    # regexp to remove line comments
 
@@ -141,6 +142,7 @@ class RPN(list):
             lineno = getattr(word, 'lineno', None)
             offset = getattr(word, 'offset', None)
             text = getattr(word, 'text', None)
+            logging.getLogger('rpn').exception('%s:%s: Error in word "%s": %s' % (filename, lineno, word, e))
             raise RPNError('Error in word "%s": %s' % (word, e), filename, lineno, offset, text)
             # XXX consider showing the full traceback of the original exception
         finally:

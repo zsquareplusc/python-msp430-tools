@@ -16,6 +16,7 @@ XXX Currently under development - not all useful words are yet defined!
 """
 
 import sys
+import os
 import codecs
 import pkgutil
 import logging
@@ -108,6 +109,7 @@ class Forth(rpn.RPN):
         self.compiling = False
         self.output = sys.stdout
         self.frame = None
+        self.include_path = []
         self.included_files = []
         self.compiled_words = set()
         self.not_yet_compiled_words = set()
@@ -478,13 +480,25 @@ class Forth(rpn.RPN):
         """Include definitions from an other file."""
         name = self.next_word()
         if name not in self.included_files:
-            self.included_files.append(name)
-            self.logger.info('processing include %s' % (name,))
-            #~ # XXX currently only internal imports are supported
-            #~ data = pkgutil.get_data('msp430.asm', 'definitions/%s.peripheral' % (name,))
-            #~ self.interpret(rpn.words_in_string(data, name='definitions/%s.peripheral' % (name,)))
-            self.interpret(rpn.words_in_file(name))
-            self.logger.info('done include %s' % (name,))
+            for prefix in self.include_path:
+                path = os.path.join(prefix, name)
+                if os.path.exists(path):
+                    self.logger.info('processing include %s' % (name,))
+                    self.interpret(rpn.words_in_file(name))
+                    self.logger.info('done include %s' % (name,))
+                    self.included_files.append(name)
+                    break
+            else:
+                # as fallback, check internal library too
+                try:
+                    data = pkgutil.get_data('msp430.asm', 'forth/%s' % (name,))
+                except IOError:
+                    raise ValueError('file not found: %s' % (name,))
+                else:
+                    self.logger.info('processing include %s' % (name,))
+                    self.interpret(rpn.words_in_string(data, name='forth/%s' % (name,)))
+                    self.logger.info('done include %s' % (name,))
+                    self.included_files.append(name)
 
     @rpn.word('SHOW')
     def word_SHOW(self, stack):
@@ -499,7 +513,6 @@ class Forth(rpn.RPN):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def main():
-    import os
     from optparse import OptionParser
     logging.basicConfig(level=logging.ERROR)
 
@@ -543,6 +556,13 @@ If no input files are specified data is read from stdin."""
                       default = [],
                       help="define symbol")
 
+    parser.add_option("-I", "--include-path",
+                      action = "append",
+                      dest = "include_paths",
+                      metavar = "PATH",
+                      default = [],
+                      help="Add directory to the search path list for includes")
+
     (options, args) = parser.parse_args()
 
     if options.debug:
@@ -562,11 +582,13 @@ If no input files are specified data is read from stdin."""
     sys.stderr = codecs.getwriter("utf-8")(sys.stderr)
 
     instructions = []
+    include_paths = []
     for filename in args:
         if filename == '-':
             if options.verbose:
                 sys.stderr.write(u'reading stdin...\n')
             instructions.extend(sys.stdin.read().split())
+            include_paths.append('.')
         else:
             if options.verbose:
                 sys.stderr.write(u'reading file "%s"...\n'% filename)
@@ -575,9 +597,14 @@ If no input files are specified data is read from stdin."""
             except IOError as e:
                 sys.stderr.write('forth: %s: File not found\n' % (filename,))
                 sys.exit(1)
+            include_paths.append(os.path.dirname(os.path.abspath(filename)))
 
     forth = Forth()
     forth.output = out
+    # default to source directory as include path
+    forth.include_path = include_paths
+    # extend include search path
+    forth.include_path.extend(options.include_paths)
 
     # insert defined symbols
     for definition in options.defines:

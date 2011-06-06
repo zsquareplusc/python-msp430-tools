@@ -262,14 +262,14 @@ class MCUDefintitions(rpn.RPN):
 
     @rpn.word('NAME')
     def word_NAME(self, stack):
-        """Set name of current memory map defintion."""
+        """Set name of current memory map definition."""
         if self.memory_map is None:
             raise MCUDefintitionError('NAME outside memory map definition not allowed')
         self.memory_map['__name__'] = self.next_word()
 
     @rpn.word('BASED-ON')
     def word_BASED_ON(self, stack):
-        """Set name of base map for current memory map defintion."""
+        """Set name of base map for current memory map definition."""
         if self.memory_map is None:
             raise MCUDefintitionError('BASED-ON outside memory map definition not allowed')
         self.memory_map['__based_on__'] = self.next_word()

@@ -83,6 +83,7 @@ precedence = infix2postfix.convert_precedence_list(cpp_precedence_list)
 class Undefined(object):
     def __int__(self): return 0
     def __str__(self): return ''
+    def __repr__(self): return '<UNDEFINED>'
 undefined = Undefined()
 
 
@@ -91,6 +92,8 @@ class Evaluator(rpn.RPN):
     An RPN calculator with infix to postfix converter, so that expressions for
     #if can be evaluated.
     """
+    re_defined_translation = re.compile(r'LOOKUP (\w+?) defined')
+
     def __init__(self):
         rpn.RPN.__init__(self)
         self.defines = {}
@@ -99,17 +102,30 @@ class Evaluator(rpn.RPN):
         self.builtins['&&'] = self.builtins['and']
         self.builtins['||'] = self.builtins['or']
 
+    def _translate_defined(self, match):
+        return u'DEFINED %s' % match.group(1)
+
     @rpn.word('LOOKUP')
     def word_LOOKUP(self, stack):
         key = self.next_word()
+        #~ print "LOOKUP", key
         if key in self.defines:
-            self.push(self.defines[key])
+            try:
+                backup = self[:]
+                value = self.eval(self.defines[key])
+                self[:] = backup # XXX better way to do this
+                self.push(value)
+            except Exception as e:
+                #~ print "RPN eval failed using directly: %r %r %s" % (key, self.defines[key], e) # XXX debug
+                self.push(self.defines[key])
         else:
             self.push(undefined)
+        #~ print "LOOKUP %r %r" % (key, self[-1])
 
     @rpn.word('DEFINED')
     def word_DEFINED(self, stack):
-        self.push(self.pop() is not undefined)  #XXX
+        key = self.next_word()
+        self.push(key in self.defines)
 
     def eval(self, expression):
         self.clear()
@@ -121,7 +137,9 @@ class Evaluator(rpn.RPN):
                     variable_prefix='LOOKUP ')
         except ValueError, e:
             raise PreprocessorError('error in expression: %r' % (expression,))
-        #~ print >>sys.stderr, "RPN: ", rpn_expr # XXX debug
+        #~ print "RPN: %r" % (rpn_expr,) # XXX debug
+        # hack: replace "LOOKUP <word> DEFINED" with "DEFINED <word>"
+        rpn_expr = self.re_defined_translation.sub(self._translate_defined, rpn_expr)
         self.interpret_sequence(rpn_expr.split(' '))
         if len(self) != 1:
             raise PreprocessorError('error in expression: %r stack: %s' % (expression, self))

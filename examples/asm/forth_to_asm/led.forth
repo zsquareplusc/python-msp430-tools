@@ -1,24 +1,11 @@
 ( LED flashing example
-  Hardware: Lauchpad
+  Hardware: Launchpad
 
   vi:ft=forth
 )
 
 INCLUDE msp430.forth
 INCLUDE core.forth
-
-CODE @B
-    TOS->R15
-    ." \t mov.b @R15, 0(TOS) " NL
-    NEXT
-END-CODE
-
-CODE !B
-    TOS->R14
-    TOS->R15
-    ." \t mov.b R14, 0(R15) " NL
-    NEXT
-END-CODE
 
 CODE BIT_CLEAR_BYTE
     TOS->R14
@@ -34,22 +21,6 @@ CODE BIT_SET_BYTE
     NEXT
 END-CODE
 
-: INIT
-    P1DIR [ BIT0 BIT6 + LITERAL ] !B
-    P1OUT 0 !B
-(    10 12 >
-    IF 10 ELSE 20 ENDIF
-    DROP
-)
-;
-
-CODE DELAY
-    TOS->R15
-    ." .loop: \t dec R15 \n "
-    ." \t jnz .loop \n "
-    NEXT
-END-CODE
-
 ( Control the LEDs on the Launchpad )
 : RED_ON    P1OUT BIT0 BIT_SET_BYTE ;
 : RED_OFF   P1OUT BIT0 BIT_CLEAR_BYTE ;
@@ -58,6 +29,26 @@ END-CODE
 
 ( Read in the button on the Launchpad )
 : S2        P1IN  @B BIT3 & NOT ;
+
+
+CODE DELAY
+    TOS->R15
+    ." .loop: \t dec R15 \n "
+    ." \t jnz .loop \n "
+    NEXT
+END-CODE
+
+: INIT
+    P1DIR [ BIT0 BIT6 + LITERAL ] !B
+    P1OUT 0 !B
+    GREEN_ON
+    0xffff DELAY 0xffff DELAY
+    GREEN_OFF
+(    10 12 >
+    IF 10 ELSE 20 ENDIF
+    DROP
+)
+;
 
 : MAIN
     BEGIN

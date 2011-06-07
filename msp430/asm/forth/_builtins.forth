@@ -14,11 +14,10 @@ END-CODE-INTERNAL
 
 CODE BRANCH0
     ." \t mov @IP+, W ; get offset \n "
-    ." \t tst 0(TOS)  ; check TOS at previous position\n "
+    ." \t tst 0(TOS)  ; check TOS \n "
     ." \t jnz .Lnjmp  ; skip next if non zero \n "
     ." \t add W, IP   ; adjust IP \n "
 ." .Lnjmp: "
-    ." \t incd TOS    ; DROP \n "
     DROP-ASM
     NEXT
 END-CODE-INTERNAL

@@ -206,25 +206,27 @@ class MSP430Assembler(object):
                         return (3, 3, None, 0)
             return (3, 0, match_obj.group('IMM_VAL'), 0)
 
-        if mode == 'ABSOLUTE':
-            return (1, 2, match_obj.group('ABS_VAL'), 0)
+        try:
+            if mode == 'ABSOLUTE':
+                return (1, 2, match_obj.group('ABS_VAL'), 0)
 
-        if mode == 'INDEXED':
-            return (1, regnumbers[match_obj.group('IDX_REG')], match_obj.group('IDX_VALUE'), 0)
+            if mode == 'INDEXED':
+                return (1, regnumbers[match_obj.group('IDX_REG')], match_obj.group('IDX_VALUE'), 0)
 
-        if mode == 'POST_INC':
-            return (3, regnumbers[match_obj.group('PI_REG')], None, 0)
+            if mode == 'POST_INC':
+                return (3, regnumbers[match_obj.group('PI_REG')], None, 0)
 
-        if mode == 'INDIRECT':
-            return (2, regnumbers[match_obj.group('IND_REG')], None, 0)
+            if mode == 'INDIRECT':
+                return (2, regnumbers[match_obj.group('IND_REG')], None, 0)
 
-        if mode == 'REGISTER':
-            if value.upper() in regnumbers:         # register mode
-                return (0, regnumbers[value.upper()], None, 0)
+            if mode == 'REGISTER':
+                if value.upper() in regnumbers:         # register mode
+                    return (0, regnumbers[value.upper()], None, 0)
 
-        if mode == 'SYMBOLIC':
-            return (1, 0, value, 1)         # symbolic mode
-
+            if mode == 'SYMBOLIC':
+                return (1, 0, value, 1)         # symbolic mode
+        except KeyError as e:
+            raise AssemblerError('Register name invalid: %s' % e)
         raise AssemblerError('Bad argument type: %s %s' % (mode, value))
 
 
@@ -1007,7 +1009,7 @@ class MSP430Assembler(object):
                                         output.write('\n')
                         else:
                             raise AssemblerError(u'Syntax Error: unknown instruction %r' % (insn,))
-        except AssemblerError, e:
+        except AssemblerError as e:
             # annotate exception with location in source file
             e.line = lineno
             e.filename = filename
@@ -1101,10 +1103,10 @@ def main():
                 f = codecs.open(filename, 'r', 'utf-8')
                 assembler.assemble(f, options.input_filename, output=out)
                 f.close()
-            except IOError, e:
+            except IOError as e:
                 sys.stderr.write('as: %s: File not found\n' % (filename,))
                 sys.exit(1)
-    except AssemblerError, e:
+    except AssemblerError as e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
         if options.debug:
             if hasattr(e, 'text'):

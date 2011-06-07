@@ -204,7 +204,7 @@ class RPN(list):
         try:
             return list.pop(self)
         except IndexError:
-            raise RPNError("pop called on empty stack")
+            raise IndexError("pop called on empty stack")
 
     def pop2(self):
         """Get two elements from the stack"""

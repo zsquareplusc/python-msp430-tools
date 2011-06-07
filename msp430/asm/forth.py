@@ -106,6 +106,7 @@ class Forth(rpn.RPN):
     """
     def __init__(self, namespace=None):
         rpn.RPN.__init__(self, namespace)
+        self.target_namespace = {}  # an other namespace for target only objects
         self.compiling = False
         self.output = sys.stdout
         self.frame = None
@@ -129,9 +130,16 @@ class Forth(rpn.RPN):
                 ('\\', '_backslash_'),
                 ('|', '_or_'),
                 ('&', '_and_'),
+                ('@', '_at_'),
                 ('[', '_open_bracket_'),
                 (']', '_close_bracket_'),
                 ('!', '_excl_'),
+                ('<', '_less_'),
+                ('>', '_bigger_'),
+                ('=', '_eq_'),
+                ('NOT', '_NOT_'),
+                #~ ('AND', '_AND_'),
+                #~ ('OR', '_OR_'),
         ):
             name = name.replace(t_in, t_out)
         return name
@@ -210,8 +218,23 @@ class Forth(rpn.RPN):
     def word_end_code(self, stack):
         """End definition of a native code function"""
         if self.frame is None: raise ForthError('not in colon definition')
-        #~ print "defined", self.frame.name, self.frame     # XXX DEBUG
+        #~ print "defined code", self.frame.name, self.frame     # XXX DEBUG
         self.namespace[self.frame.name.lower()] = self.frame
+        self.frame = None
+        self.compiling = False
+
+    @immediate
+    @rpn.word('END-CODE-INTERNAL')
+    def word_end_code_internal(self, stack):
+        """\
+        End definition of a native code function. The name is stored in an
+        internal name space. This is used to implement words that are built-in /
+        native code on the host, which can not be cross compiled and which
+        should not be shadowed be definitions that only work for the target.
+        """
+        if self.frame is None: raise ForthError('not in colon definition')
+        #~ print "defined code internal", self.frame.name, self.frame     # XXX DEBUG
+        self.target_namespace[self.frame.name.lower()] = self.frame
         self.frame = None
         self.compiling = False
 
@@ -237,7 +260,7 @@ class Forth(rpn.RPN):
 
 
     def instruction_literal(self, stack):
-        """lowlevel instruction to get a literal and push it on the stack"""
+        """low level instruction to get a literal and push it on the stack"""
         stack.push(stack._iterator.next())
 
     def instruction_seek(self, stack):
@@ -255,7 +278,7 @@ class Forth(rpn.RPN):
     @rpn.word('IF')
     def word_if(self, stack):
         if self.frame is None: raise ForthError('not in colon definition')
-        # put conditional branch operation in sequence, remeber position of offset on stack
+        # put conditional branch operation in sequence, remember position of offset on stack
         self.frame.append(self.instruction_branch_if_false)
         self.push(len(self.frame))
         self.frame.append(0)
@@ -266,7 +289,7 @@ class Forth(rpn.RPN):
         if self.frame is None: raise ForthError('not in colon definition')
         # get old offset from stack
         offset = self.pop()
-        # put unconditional branch operation in sequence, remeber position of offset on stack
+        # put unconditional branch operation in sequence, remember position of offset on stack
         self.frame.append(self.instruction_seek)
         self.push(len(self.frame))
         self.frame.append(0)
@@ -286,7 +309,7 @@ class Forth(rpn.RPN):
     @rpn.word('BEGIN')
     def word_begin(self, stack):
         if self.frame is None: raise ForthError('not in colon definition')
-        # remeber this position on stack
+        # remember this position on stack
         self.push(len(self.frame))
 
     @immediate
@@ -378,6 +401,24 @@ class Forth(rpn.RPN):
         else:
             self.output.write(text)
 
+    @immediate
+    @rpn.word('DEPENDS-ON')
+    def word_depends_on(self, stack):
+        """Mark word as used so that it is included in cross compilation."""
+        if self.compiling:
+            word = self.next_word()
+            self.frame.append(self.word_depends_on)
+            self.frame.append(word)
+        else:
+            word = stack._iterator.next()
+            self._compile_remember(word)
+
+    def _compile_remember(self, word):
+        """Remember words used but yet compiled"""
+        # track what is not yet done
+        word = word.lower()
+        if word not in self.compiled_words:
+            self.not_yet_compiled_words.add(word)
 
     def _compile_frame(self, frame):
         """\
@@ -395,11 +436,9 @@ class Forth(rpn.RPN):
             while True:
                 entry = next()
                 if callable(entry):
-                    if hasattr(entry, 'rpn_word'):
-                        self.output.write('\t.word %s\n' % self.create_asm_label(entry.rpn_word))
-                        # track what is not yet done
-                        if entry.name not in self.compiled_words:
-                            self.not_yet_compiled_words.add(entry.name)
+                    if hasattr(entry, 'rpn_name'):
+                        self.output.write('\t.word %s\n' % self.create_asm_label(entry.rpn_name.upper()))
+                        self._compile_remember(entry.rpn_name)
                     elif entry == self.instruction_output_text:
                         text = next()
                         self.output.write(text)
@@ -407,23 +446,22 @@ class Forth(rpn.RPN):
                     elif entry == self.instruction_literal:
                         value = next()
                         self.output.write('\t.word LIT, %s\n' % value)
+                        self._compile_remember('LIT')
                     elif entry == self.instruction_seek:
                         offset = next()
                         self.output.write('\t.word BRANCH, %s\n' % (offset*2,))
+                        self._compile_remember('BRANCH')
                     elif entry == self.instruction_branch_if_false:
                         offset = next()
                         self.output.write('\t.word BRANCH0, %s\n' % (offset*2,))
+                        self._compile_remember('BRANCH0')
                     elif isinstance(entry, (Frame, NativeFrame)):
                         self.output.write('\t.word %s\n' % self.create_asm_label(entry.name))
-                        # track what is not yet done
-                        if entry.name not in self.compiled_words:
-                            self.not_yet_compiled_words.add(entry.name)
+                        self._compile_remember(entry.name)
                     else:
-                        # builtins - XXX must be provided by user
-                        #~ self.output.write('\t.word %s\n' % entry.name)
-                        self.output.write('; error1: %s\n' % entry)
+                        raise ValueError('Cross compilation undefined for %r' % entry)
                 else:
-                    self.output.write('; error2: %s\n' % entry)
+                    raise ValueError('Cross compilation undefined for %r' % entry)
         except StopIteration:
             pass
         self.output.write('\t.word EXIT\n\n')
@@ -455,14 +493,18 @@ class Forth(rpn.RPN):
             self.compiled_words.add(word)
             if word in self.not_yet_compiled_words:
                 self.not_yet_compiled_words.remove(word)
-            # get the frame and compile it
-            item = self.look_up(word)
+            # get the frame and compile it - prefer target_namespace
+            if word in self.target_namespace:
+                item = self.target_namespace[word]
+            else:
+                item = self.look_up(word)
+            # translate, depending on type
             if isinstance(item, Frame):
                 self._compile_frame(item)
             elif isinstance(item, NativeFrame):
                 self._compile_native_frame(item)
             else:
-                raise ValueError('don\'t know how to compile word %r: %r' % (word, frame))
+                raise ValueError('don\'t know how to compile word %r' % (word,))
 
     @rpn.word('CROSS-COMPILE-MISSING')
     def word_cross_compile_missing(self, stack):

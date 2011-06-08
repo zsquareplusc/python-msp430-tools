@@ -658,7 +658,6 @@ class Forth(rpn.RPN):
     def word_cross_compile(self, stack):
         """Output cross compiled version of function."""
         word = self.next_word()
-        print "XXXX", word
         if self.compiling:
             # when compiling add call to self and the word
             self.frame.append(self.instruction_cross_compile)

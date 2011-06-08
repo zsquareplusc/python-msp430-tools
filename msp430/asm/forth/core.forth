@@ -1,13 +1,10 @@
-( vi:ft=forth )
+( Core definitions for the cross compiler
+  for Forth -> MSP430 assembler.
 
-: SPACE 32 EMIT ;
-: HASH 35 EMIT ;
-: NL 10 EMIT ;
+  vi:ft=forth 
+)
 
-: DEFINE HASH ." define " SPACE ;
-: NEXT ." \t mov @IP+, PC ; NEXT \n " ;
-: TOS->R15 ." \t mov @TOS+, R15 \n " ;
-: TOS->R14 ." \t mov @TOS+, R14 \n " ;
+INCLUDE _asm_snippets.forth
 
 CODE ABORT
     ." \t mov \x23 .param_stack_end, TOS \n "
@@ -16,53 +13,24 @@ CODE ABORT
     NEXT
 END-CODE
 
-CODE LIT
-    ." \t decd TOS \n
-    \t mov @IP+, 0(TOS) \n "
-    NEXT
-END-CODE
-
 CODE DOCOL
-    ." \t decd RTOS \n
-    \t mov IP, 0(RTOS) \n
-    \t mov -2(IP), IP \n
-    \t incd IP \n "
+    ." \t decd RTOS       ; prepare to push on return stack \n "
+    ." \t mov IP, 0(RTOS) ; save IP on return stack \n "
+    ." \t mov -2(IP), IP  ; get where we are now \n "
+    ." \t incd IP         ; jump over 'jmp DOCOL' \n "
     NEXT
 END-CODE
 
 CODE EXIT
-    ." \t mov @RTOS+, IP \n "
+    ." \t mov @RTOS+, IP  ; get last position from return stack \n "
     NEXT
 END-CODE
 
-CODE BRANCH
-    ." \t add @IP+, IP \n "
-    NEXT
-END-CODE
+( Get additional library functions )
+INCLUDE _builtins.forth
+INCLUDE _memory.forth
+INCLUDE _helpers.forth
 
-CODE BRANCH0
-    ." \t mov @IP+, W \n
-    \t tst 0(TOS) \n
-    \t incd TOS \n
-    \t jnz .Lnjmp \n
-    \t add W, IP \n "
-." .Lnjmp: "
-    ." \t incd TOS \n "
-    NEXT
-END-CODE
-
-
-( Generate a simple line for headers )
-: LINE ( - )
-    ." ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - " NL
-;
-
-( Generate a header in the assembler file )
-: HEADER ( s - )
-    ." ;============================================================================ " NL
-    ." ; " SPACE . NL ( print value from stack )
-    ." ;============================================================================ " NL
-;
 
 ( Generate init code for forth runtime and core words )
 : CROSS-COMPILE-CORE ( - )
@@ -101,11 +69,7 @@ END-CODE
 
     ( output important runtime core parts )
     CROSS-COMPILE ABORT
-    CROSS-COMPILE LIT
     CROSS-COMPILE DOCOL
     CROSS-COMPILE EXIT
-    CROSS-COMPILE BRANCH
-    CROSS-COMPILE BRANCH0
 ;
 
-( SHOW HEADER )

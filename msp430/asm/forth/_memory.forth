@@ -3,15 +3,15 @@
   vi:ft=forth
 )
 
-CODE @B ( adr - n )
+CODE C@ ( adr - n )
     ." \t mov @TOS, R15 " NL
     ." \t mov.b @R15, 0(TOS) " NL
     NEXT
 END-CODE
 
-CODE !B ( adr n - )
-    TOS->R14
+CODE C! ( n adr - )
     TOS->R15
+    TOS->R14
     ." \t mov.b R14, 0(R15) " NL
     NEXT
 END-CODE
@@ -22,9 +22,9 @@ CODE @ ( adr - n )
     NEXT
 END-CODE
 
-CODE ! ( adr n - )
-    TOS->R14
+CODE ! ( n adr - )
     TOS->R15
+    TOS->R14
     ." \t mov R14, 0(R15) " NL
     NEXT
 END-CODE

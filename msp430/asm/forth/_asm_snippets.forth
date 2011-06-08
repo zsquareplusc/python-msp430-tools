@@ -13,5 +13,5 @@
 : TOS->R14 ." \t mov @TOS+, R14 \n " ;
 : R15->TOS ." \t mov R15, 0(TOS) \n\t decd TOS \n " ;
 
-: DROP-ASM ." \t incd TOS " NL ;
+: DROP-ASM ." \t incd TOS ; DROP " NL ;
 

@@ -7,15 +7,23 @@
 
 ( ----- low level supporting functions ----- )
 
+CODE LIT
+    ." \t decd TOS         ; prepare push on stack \n "
+    ." \t mov @IP+, 0(TOS) ; copy value from thread to stack \n "
+    NEXT
+END-CODE
+
 CODE BRANCH
     ." \t add @IP+, IP \n "
+    ." \t decd IP \n "
     NEXT
 END-CODE-INTERNAL
 
-CODE BRANCH0
+CODE 0BRANCH
     ." \t mov @IP+, W ; get offset \n "
     ." \t tst 0(TOS)  ; check TOS \n "
     ." \t jnz .Lnjmp  ; skip next if non zero \n "
+    ." \t decd IP     ; offset is relative to position of offset, correct \n "
     ." \t add W, IP   ; adjust IP \n "
 ." .Lnjmp: "
     DROP-ASM
@@ -124,17 +132,29 @@ END-CODE-INTERNAL
     "OR"
 )
 ( ----- Compare ----- )
+CODE cmp_set_true   ( n - n )
+    ." \t mov \x23 1, 0(TOS) " NL   ( replace argument w/ result )
+    NEXT
+END-CODE
+
+CODE cmp_set_false
+    ." \t mov \x23 0, 0(TOS) " NL   ( replace argument w/ result )
+    NEXT
+END-CODE
+
+
 CODE cmp_true
     DROP-ASM                        ( remove 1nd argument )
-    ." \t mov \x23 1, 0(TOS) " NL       ( replace 2nd argument w/ result )
+    ." \t mov \x23 1, 0(TOS) " NL   ( replace 2nd argument w/ result )
     NEXT
 END-CODE
 
 CODE cmp_false
     DROP-ASM                        ( remove 1nd argument )
-    ." \t mov \x23 0, 0(TOS) " NL       ( replace 2nd argument w/ result )
+    ." \t mov \x23 0, 0(TOS) " NL   ( replace 2nd argument w/ result )
     NEXT
 END-CODE
+
 
 CODE <
     DEPENDS-ON cmp_true
@@ -176,6 +196,15 @@ CODE ==
     ." \t jmp cmp_false " NL
 END-CODE-INTERNAL
 
+( XXX alias for == )
+CODE ==
+    DEPENDS-ON cmp_true
+    DEPENDS-ON cmp_false
+    ." \t cmp 0(TOS), 2(TOS) " NL
+    ." \t jeq cmp_true " NL
+    ." \t jmp cmp_false " NL
+END-CODE-INTERNAL
+
 CODE !=
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
@@ -184,3 +213,19 @@ CODE !=
     ." \t jmp cmp_false " NL
 END-CODE-INTERNAL
 
+
+CODE 0=
+    DEPENDS-ON cmp_set_true
+    DEPENDS-ON cmp_set_false
+    ." \t tst 0(TOS) " NL
+    ." \t jz  cmp_set_true " NL
+    ." \t jmp cmp_set_false " NL
+END-CODE-INTERNAL
+
+CODE 0>
+    DEPENDS-ON cmp_set_true
+    DEPENDS-ON cmp_set_false
+    ." \t tst 0(TOS) " NL
+    ." \t jn  cmp_set_false " NL
+    ." \t jmp cmp_set_true " NL
+END-CODE-INTERNAL

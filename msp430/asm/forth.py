@@ -458,13 +458,6 @@ class Forth(rpn.RPN):
         self.push(len(self.frame))
         self.frame.append(0)
 
-    @immediate
-    @rpn.word('LITERAL')
-    def word_literal(self, stack):
-        if self.frame is None: raise ValueError('not in colon definition')
-        # add literal to compiled word
-        self.frame.append(self.instruction_literal)
-        self.frame.append(self.pop())
 
     @rpn.word('WORD')
     def word_word(self, stack):

@@ -38,34 +38,34 @@ CODE DELAY
     NEXT
 END-CODE
 
+: SHORT-DELAY 0x4fff DELAY ;
+: LONG-DELAY 0xffff DELAY ;
+: VERY-LONG-DELAY LONG-DELAY LONG-DELAY ;
+
 : INIT
     [ BIT0 BIT6 + ] LITERAL P1DIR C!
     0 P1OUT C!
     GREEN_ON
-    0xffff DELAY 0xffff DELAY
+    VERY-LONG-DELAY
     GREEN_OFF
-    0xffff DELAY 0xffff DELAY
-    0xffff DELAY 0xffff DELAY
-(    10 12 >
-    IF 10 ELSE 20 ENDIF
-    DROP
-)
+    VERY-LONG-DELAY
+    VERY-LONG-DELAY
 ;
 
 : MAIN
     BEGIN
         ( Red flashing )
         RED_ON
-        0xffff DELAY
+        LONG-DELAY
         RED_OFF
-        0xffff DELAY
+        LONG-DELAY
 
         ( Green flashing if button is pressed )
         S2 IF
             GREEN_ON
-            0x4fff DELAY
+            SHORT-DELAY
             GREEN_OFF
-            0x4fff DELAY
+            SHORT-DELAY
         ENDIF
     AGAIN
 ;

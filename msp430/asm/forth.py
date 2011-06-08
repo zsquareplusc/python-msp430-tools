@@ -441,7 +441,7 @@ class Forth(rpn.RPN):
         difference = stack._frame_iterator.next()
         stack._frame_iterator.seek(difference - 1)
 
-    @rpn.word('0BRANCH')
+    @rpn.word('BRANCH0')
     def instruction_branch_if_false(self, stack):
         """Get offset from sequence and a boolean from stack. Jump if boolean was false."""
         difference = stack._frame_iterator.next()
@@ -605,8 +605,8 @@ class Forth(rpn.RPN):
                         self._compile_remember('BRANCH')
                     elif entry == self.instruction_branch_if_false:
                         offset = next()
-                        self.output.write('\t.word 0BRANCH, %s\n' % (offset*2,))
-                        self._compile_remember('0BRANCH')
+                        self.output.write('\t.word BRANCH0, %s\n' % (offset*2,))
+                        self._compile_remember('BRANCH0')
                     elif hasattr(entry, 'rpn_name'):
                         self.output.write('\t.word %s\n' % self.create_asm_label(entry.rpn_name.upper()))
                         self._compile_remember(entry.rpn_name)

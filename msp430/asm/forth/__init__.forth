@@ -94,7 +94,7 @@
  off the stack, calculate the offset, and back-fill the offset.
 )
 : IF IMMEDIATE
-        ' 0BRANCH ,     ( compile 0BRANCH )
+        ' BRANCH0 ,     ( compile 0BRANCH )
         HERE @          ( save location of the offset on the stack )
         0 ,             ( compile a dummy offset )
 ;
@@ -132,7 +132,7 @@
 ;
 
 : UNTIL IMMEDIATE
-        ' 0BRANCH ,     ( compile 0BRANCH )
+        ' BRANCH0 ,     ( compile 0BRANCH )
         HERE @ -        ( calculate the offset from the address saved on the stack )
         ,               ( compile the offset here )
 ;
@@ -155,7 +155,7 @@
   So this is like a while (condition) { loop-part } loop in the C language
 )
 : WHILE IMMEDIATE
-        ' 0BRANCH ,     ( compile 0BRANCH )
+        ' BRANCH0 ,     ( compile 0BRANCH )
         HERE @          ( save location of the offset2 on the stack )
         0 ,             ( compile a dummy offset2 )
 ;

@@ -19,7 +19,7 @@ CODE BRANCH
     NEXT
 END-CODE-INTERNAL
 
-CODE 0BRANCH
+CODE BRANCH0
     ." \t mov @IP+, W ; get offset \n "
     ." \t tst 0(TOS)  ; check TOS \n "
     ." \t jnz .Lnjmp  ; skip next if non zero \n "

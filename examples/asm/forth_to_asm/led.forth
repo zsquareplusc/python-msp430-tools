@@ -8,27 +8,27 @@ INCLUDE msp430.forth
 INCLUDE core.forth
 
 CODE BIT_CLEAR_BYTE
-    TOS->R14
     TOS->R15
+    TOS->R14
     ." \t bic.b R14, 0(R15) " NL
     NEXT
 END-CODE
 
 CODE BIT_SET_BYTE
-    TOS->R14
     TOS->R15
+    TOS->R14
     ." \t bis.b R14, 0(R15) " NL
     NEXT
 END-CODE
 
 ( Control the LEDs on the Launchpad )
-: RED_ON    P1OUT BIT0 BIT_SET_BYTE ;
-: RED_OFF   P1OUT BIT0 BIT_CLEAR_BYTE ;
-: GREEN_ON  P1OUT BIT6 BIT_SET_BYTE ;
-: GREEN_OFF P1OUT BIT6 BIT_CLEAR_BYTE ;
+: RED_ON    BIT0 P1OUT BIT_SET_BYTE ;
+: RED_OFF   BIT0 P1OUT BIT_CLEAR_BYTE ;
+: GREEN_ON  BIT6 P1OUT BIT_SET_BYTE ;
+: GREEN_OFF BIT6 P1OUT BIT_CLEAR_BYTE ;
 
 ( Read in the button on the Launchpad )
-: S2        P1IN  @B BIT3 & NOT ;
+: S2        P1IN  C@ BIT3 & NOT ;
 
 
 CODE DELAY
@@ -39,11 +39,13 @@ CODE DELAY
 END-CODE
 
 : INIT
-    P1DIR [ BIT0 BIT6 + LITERAL ] !B
-    P1OUT 0 !B
+    [ BIT0 BIT6 + ] LITERAL P1DIR C!
+    0 P1OUT C!
     GREEN_ON
     0xffff DELAY 0xffff DELAY
     GREEN_OFF
+    0xffff DELAY 0xffff DELAY
+    0xffff DELAY 0xffff DELAY
 (    10 12 >
     IF 10 ELSE 20 ENDIF
     DROP
@@ -65,7 +67,7 @@ END-CODE
             GREEN_OFF
             0x4fff DELAY
         ENDIF
-    LOOP
+    AGAIN
 ;
 
 ( ========================================================================= )
@@ -78,6 +80,7 @@ CROSS-COMPILE-CORE
 
 ( cross compile application )
 " Application " HEADER
+CROSS-COMPILE-VARIABLES
 CROSS-COMPILE INIT
 CROSS-COMPILE MAIN
 CROSS-COMPILE-MISSING

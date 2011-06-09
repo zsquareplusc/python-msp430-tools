@@ -38,25 +38,26 @@ DIS = python -m msp430.asm.disassemble
 .PHONY: clean all
 
 all: clean led.titext
-	$(CAT) led.titext
+#	$(CAT) led.titext
 
 clean:
-	$(RM) led.titext led.o4 led.s-cpp led.S
-	$(RM) startup.o4 startup.s-cp intvec.o4 intvec.s-cpp msp430.forth
+	$(RM) led.titext led.o4 led.s-cpp led.S \
+	      startup.o4 startup.s-cp \
+	      intvec.o4 intvec.s-cpp msp430.forth
 
-
-msp430.forth: $(MSP430_HEADERS)/$(MCU).h
-	$(H2FORTH) $(H2FORTHFLAGS) -o $@ $<
-
-led.o4: led.S
-led.S: led.forth
+# dependencies
 led.forth: msp430.forth
 
+# linking final program
 led.titext: startup.o4 led.o4 intvec.o4
 	$(LD) $(LDFLAGS) -o $@ $^
 
-startup.S:
-	$(LIB) asm/startup.S -o $@
+# files generated from templates / other files
+startup.s-cpp:
+	$(LIB) -o $@ asm/startup.S
+
+msp430.forth: $(MSP430_HEADERS)/$(MCU).h
+	$(H2FORTH) $(H2FORTHFLAGS) -o $@ $<
 
 # pattern rules for the assembler
 %o4: %s-cpp
@@ -67,7 +68,7 @@ startup.S:
 
 %S: %forth
 	${FORTH} ${FORTHFLAGS} -o $@ $<
-	$(CAT) $@
+#	$(CAT) $@
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # additional download rules

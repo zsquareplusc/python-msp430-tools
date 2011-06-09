@@ -160,40 +160,40 @@ CODE <
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(TOS), 2(TOS) " NL
-    ." \t jl  cmp_true " NL
-    ." \t jmp cmp_false " NL
+    ." \t jl  _cmp_true " NL
+    ." \t jmp _cmp_false " NL
 END-CODE-INTERNAL
 
 CODE >
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(TOS), 2(TOS) " NL
-    ." \t jl  cmp_false " NL
-    ." \t jmp cmp_true " NL
+    ." \t jl  _cmp_false " NL
+    ." \t jmp _cmp_true " NL
 END-CODE-INTERNAL
 
 CODE <=
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(TOS), 2(TOS) " NL
-    ." \t jge cmp_false " NL
-    ." \t jmp cmp_true " NL
+    ." \t jge _cmp_false " NL
+    ." \t jmp _cmp_true " NL
 END-CODE-INTERNAL
 
 CODE >=
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(TOS), 2(TOS) " NL
-    ." \t jge cmp_true " NL
-    ." \t jmp cmp_false " NL
+    ." \t jge _cmp_true " NL
+    ." \t jmp _cmp_false " NL
 END-CODE-INTERNAL
 
 CODE ==
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(TOS), 2(TOS) " NL
-    ." \t jeq cmp_true " NL
-    ." \t jmp cmp_false " NL
+    ." \t jeq _cmp_true " NL
+    ." \t jmp _cmp_false " NL
 END-CODE-INTERNAL
 
 ( XXX alias for == )
@@ -201,16 +201,16 @@ CODE ==
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(TOS), 2(TOS) " NL
-    ." \t jeq cmp_true " NL
-    ." \t jmp cmp_false " NL
+    ." \t jeq _cmp_true " NL
+    ." \t jmp _cmp_false " NL
 END-CODE-INTERNAL
 
 CODE !=
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(TOS), 2(TOS) " NL
-    ." \t jne cmp_true " NL
-    ." \t jmp cmp_false " NL
+    ." \t jne _cmp_true " NL
+    ." \t jmp _cmp_false " NL
 END-CODE-INTERNAL
 
 
@@ -218,14 +218,14 @@ CODE 0=
     DEPENDS-ON cmp_set_true
     DEPENDS-ON cmp_set_false
     ." \t tst 0(TOS) " NL
-    ." \t jz  cmp_set_true " NL
-    ." \t jmp cmp_set_false " NL
+    ." \t jz  _cmp_set_true " NL
+    ." \t jmp _cmp_set_false " NL
 END-CODE-INTERNAL
 
 CODE 0>
     DEPENDS-ON cmp_set_true
     DEPENDS-ON cmp_set_false
     ." \t tst 0(TOS) " NL
-    ." \t jn  cmp_set_false " NL
-    ." \t jmp cmp_set_true " NL
+    ." \t jn  _cmp_set_false " NL
+    ." \t jmp _cmp_set_true " NL
 END-CODE-INTERNAL

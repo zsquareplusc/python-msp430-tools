@@ -319,7 +319,7 @@ API
 
 
 ``msp430.listing``
------------------
+------------------
 .. module:: msp430.listing
 
 This module provides parser for listing/map files of the IAR and mspgcc C

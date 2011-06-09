@@ -111,7 +111,7 @@ END-CODE-INTERNAL
 CODE NOT
     ." \t tst 0(TOS) " NL
     ." \t jnz .not0 " NL
-    ." \t mov \x23 1, 0(TOS) " NL       ( replace TOS w/ result )
+    ." \t mov \x23 -1, 0(TOS) " NL       ( replace TOS w/ result )
     ." \t jmp .not2 " NL
     ." .not0: " NL
     ." \t mov \x23 0, 0(TOS) " NL       ( replace TOS w/ result )
@@ -133,7 +133,7 @@ END-CODE-INTERNAL
 )
 ( ----- Compare ----- )
 CODE cmp_set_true   ( n - n )
-    ." \t mov \x23 1, 0(TOS) " NL   ( replace argument w/ result )
+    ." \t mov \x23 -1, 0(TOS) " NL   ( replace argument w/ result )
     NEXT
 END-CODE
 
@@ -145,7 +145,7 @@ END-CODE
 
 CODE cmp_true
     DROP-ASM                        ( remove 1nd argument )
-    ." \t mov \x23 1, 0(TOS) " NL   ( replace 2nd argument w/ result )
+    ." \t mov \x23 -1, 0(TOS) " NL   ( replace 2nd argument w/ result )
     NEXT
 END-CODE
 

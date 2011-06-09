@@ -43,10 +43,10 @@ all: clean led.titext
 clean:
 	$(RM) led.titext led.o4 led.s-cpp led.S \
 	      startup.o4 startup.s-cp \
-	      intvec.o4 intvec.s-cpp msp430.forth
+	      intvec.o4 intvec.s-cpp io.forth
 
 # dependencies
-led.forth: msp430.forth
+led.forth: io.forth
 
 # linking final program
 led.titext: startup.o4 led.o4 intvec.o4
@@ -56,7 +56,7 @@ led.titext: startup.o4 led.o4 intvec.o4
 startup.s-cpp:
 	$(LIB) -o $@ asm/startup.S
 
-msp430.forth: $(MSP430_HEADERS)/$(MCU).h
+io.forth: $(MSP430_HEADERS)/$(MCU).h
 	$(H2FORTH) $(H2FORTHFLAGS) -o $@ $<
 
 # pattern rules for the assembler

@@ -17,7 +17,7 @@ INCLUDE io.forth
 : GREEN_OFF BIT6 P1OUT CRESET ;
 
 ( Read in the button on the Launchpad )
-: S2        P1IN  C@ BIT3 & NOT ;
+: S2        P1IN  C@ BIT3 AND NOT ;
 
 ( Delay functions )
 : SHORT-DELAY     0x4fff DELAY ;

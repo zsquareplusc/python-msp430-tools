@@ -8,10 +8,15 @@
 : NL 10 EMIT ;
 
 : DEFINE HASH ." define " SPACE ;
-: NEXT ." \t mov @IP+, PC ; NEXT \n " ;
-: TOS->R15 ." \t mov @TOS+, R15 \n " ;
-: TOS->R14 ." \t mov @TOS+, R14 \n " ;
-: R15->TOS ." \t mov R15, 0(TOS) \n\t decd TOS \n " ;
 
-: DROP-ASM ." \t incd TOS ; DROP " NL ;
+: ASM-NEXT ." \t mov @IP+, PC ; NEXT \n " ;
+: ASM-DROP ." \t incd SP ; DROP " NL ;
+
+: TOS->R15 ." \t pop  R15 \n " ;
+: TOS->R14 ." \t pop  R14 \n " ;
+: R15->TOS ." \t push R15 \n " ;
+
+: TOS->W ." \t pop  W \n " ;
+: W->TOS ." \t push W \n " ;
+
 

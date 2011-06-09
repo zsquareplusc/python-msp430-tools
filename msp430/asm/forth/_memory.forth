@@ -3,28 +3,31 @@
   vi:ft=forth
 )
 
+( fetch byte value )
 CODE C@ ( adr - n )
-    ." \t mov @TOS, R15 " NL
-    ." \t mov.b @R15, 0(TOS) " NL
-    NEXT
+    ." \t mov @SP, W " NL           ( copy address )
+    ." \t mov.b @W, 0(SP) " NL      ( replace TOS with value )
+    ASM-NEXT
 END-CODE
 
+( store byte value )
 CODE C! ( n adr - )
-    TOS->R15
-    TOS->R14
-    ." \t mov.b R14, 0(R15) " NL
-    NEXT
+    TOS->R15                        ( pop address )
+    TOS->R14                        ( pop value )
+    ." \t mov.b R14, 0(R15) " NL    ( write to address - separate instruction b/c byte mode )
+    ASM-NEXT
 END-CODE
 
+( fetch word value )
 CODE @ ( adr - n )
-    ." \t mov @TOS, R15 " NL
-    ." \t mov @R15, 0(TOS) " NL
-    NEXT
+    ." \t mov @SP, W " NL           ( copy address )
+    ." \t mov @W, 0(SP) " NL        ( replace TOS with value )
+    ASM-NEXT
 END-CODE
 
+( store word value )
 CODE ! ( n adr - )
-    TOS->R15
-    TOS->R14
-    ." \t mov R14, 0(R15) " NL
-    NEXT
+    TOS->W                          ( pop address )
+    ." \t mov @(SP)+, 0(W) " NL     ( pop value and write to address )
+    ASM-NEXT
 END-CODE

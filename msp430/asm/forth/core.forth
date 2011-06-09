@@ -7,10 +7,10 @@
 INCLUDE _asm_snippets.forth
 
 CODE ABORT
-    ." \t mov \x23 .param_stack_end, TOS \n "
+    ." \t mov \x23 _stack, SP \n "
     ." \t mov \x23 .return_stack_end, RTOS \n "
     ." \t mov \x23 thread, IP \n "
-    NEXT
+    ASM-NEXT
 END-CODE
 
 CODE DOCOL
@@ -18,12 +18,12 @@ CODE DOCOL
     ." \t mov IP, 0(RTOS) ; save IP on return stack \n "
     ." \t mov -2(IP), IP  ; get where we are now \n "
     ." \t incd IP         ; jump over 'jmp DOCOL' \n "
-    NEXT
+    ASM-NEXT
 END-CODE
 
 CODE EXIT
     ." \t mov @RTOS+, IP  ; get last position from return stack \n "
-    NEXT
+    ASM-NEXT
 END-CODE
 
 ( Get additional library functions )
@@ -39,16 +39,13 @@ INCLUDE _helpers.forth
     NL
     LINE
     ." ; Assign registers. \n "
-    DEFINE ." TOS R4 " NL
-    DEFINE ." RTOS  R5 " NL
-    DEFINE ." IP  R6 " NL
-    DEFINE ." W  R7 " NL
+    DEFINE ." RTOS  R4 " NL
+    DEFINE ." IP  R5 " NL
+    DEFINE ." W  R6 " NL
     NL
     LINE
-    ." ; Memory for the stacks. \n "
+    ." ; Memory for the return stack. \n "
     ." .bss \n "
-    ." param_stack: .skip 2*32 \n "
-    ." .param_stack_end:\n "
     ." return_stack: .skip 2*16 \n "
     ." .return_stack_end: \n "
     NL

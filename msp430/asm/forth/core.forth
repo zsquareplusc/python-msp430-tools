@@ -57,14 +57,14 @@ INCLUDE _helpers.forth
     ." .text \n "
     ." main: \n "
         ." \t mov \x23 WDTPW|WDTHOLD, &WDTCTL \n "
-        ." \t jmp ABORT \n "
+        ." \t jmp _ABORT \n "
     NL
     LINE
     ." ; Initial thread that is run. Hardcoded init-main-loop. \n "
     ." thread: \n "
-    ." \t .word INIT \n "
-    ." \t .word MAIN \n "
-    ." \t .word ABORT \n "
+    ." \t .word _INIT \n "
+    ." \t .word _MAIN \n "
+    ." \t .word _ABORT \n "
     NL
 
     ( output important runtime core parts )

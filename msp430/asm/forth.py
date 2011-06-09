@@ -191,7 +191,7 @@ class Forth(rpn.RPN):
                 #~ ('OR', '_OR_'),
         ):
             name = name.replace(t_in, t_out)
-        return name
+        return '_' + name
 
     def interpret_word(self, word):
         """Depending on mode a word is executed or compiled"""
@@ -587,7 +587,7 @@ class Forth(rpn.RPN):
         next = iter(frame).next
         try:
             self.output.write(u'%s:\n' % self.create_asm_label(frame.name))
-            self.output.write('\tjmp DOCOL\n')
+            self.output.write('\tjmp %s\n' % self.create_asm_label('DOCOL'))
             while True:
                 entry = next()
                 if callable(entry):
@@ -597,15 +597,15 @@ class Forth(rpn.RPN):
                         self.output.write('\n')
                     elif entry == self.instruction_literal:
                         value = next()
-                        self.output.write('\t.word LIT, %s\n' % value)
+                        self.output.write('\t.word %s, %s\n' % (self.create_asm_label('LIT'), value))
                         self._compile_remember('LIT')
                     elif entry == self.instruction_seek:
                         offset = next()
-                        self.output.write('\t.word BRANCH, %s\n' % (offset*2,))
+                        self.output.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH'), offset*2))
                         self._compile_remember('BRANCH')
                     elif entry == self.instruction_branch_if_false:
                         offset = next()
-                        self.output.write('\t.word BRANCH0, %s\n' % (offset*2,))
+                        self.output.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH0'), offset*2))
                         self._compile_remember('BRANCH0')
                     elif hasattr(entry, 'rpn_name'):
                         self.output.write('\t.word %s\n' % self.create_asm_label(entry.rpn_name.upper()))
@@ -619,7 +619,7 @@ class Forth(rpn.RPN):
                     raise ValueError('Cross compilation undefined for %r' % entry)
         except StopIteration:
             pass
-        self.output.write('\t.word EXIT\n\n')
+        self.output.write('\t.word %s\n\n' % self.create_asm_label('EXIT'))
 
     def _compile_native_frame(self, frame):
         """Compilation of native code function"""

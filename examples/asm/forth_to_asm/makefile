@@ -26,6 +26,7 @@ AS = python -m msp430.asm.as
 LD = python -m msp430.asm.ld
 FORTH = python -m msp430.asm.forth
 H2FORTH = python -m msp430.asm.h2forth
+LIB = python -m msp430.asm.lib
 
 RM = python -m msp430.shell.command rm -f
 CAT = python -m msp430.shell.command cat
@@ -53,6 +54,9 @@ led.forth: msp430.forth
 
 led.titext: startup.o4 led.o4 intvec.o4
 	$(LD) $(LDFLAGS) -o $@ $^
+
+startup.S:
+	$(LIB) asm/startup.S -o $@
 
 # pattern rules for the assembler
 %o4: %s-cpp

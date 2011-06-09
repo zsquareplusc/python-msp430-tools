@@ -6,4 +6,6 @@ doc/_templates/*
 MANIFEST
 *.o4
 *.titext
-examples/asm/*/led.txt
+examples/asm/*/led.titxt
+examples/asm/forth_to_asm/msp430.forth
+examples/asm/forth_to_asm/led.S

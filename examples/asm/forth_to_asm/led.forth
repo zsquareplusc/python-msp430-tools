@@ -17,7 +17,7 @@ INCLUDE io.forth
 : GREEN_OFF BIT6 P1OUT CRESET ;
 
 ( Read in the button on the Launchpad )
-: S2        P1IN  C@ BIT3 AND NOT ;
+: S2        P1IN C@ BIT3 AND NOT ;
 
 ( Delay functions )
 : SHORT-DELAY     0x4fff DELAY ;
@@ -26,14 +26,16 @@ INCLUDE io.forth
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( Initializations run after reset )
-: INIT
+: INIT ( - )
     ( Initialize pins )
     [ BIT0 BIT6 + ] LITERAL P1DIR C!
     0 P1OUT C!
+    ( Stop Watchdog module )
+    [ WDTPW WDTHOLD + ] LITERAL WDTCTL !
 
     ( Initialize clock from calibration values )
-    CALDCO_1MHZ C@ DCOCTL C!
-    CALBC1_1MHZ C@ BCSCTL1 C!
+    CALDCO_1MHZ DCOCTL  CM->M
+    CALBC1_1MHZ BCSCTL1 CM->M
 
     ( Indicate startup with LED )
     GREEN_ON
@@ -45,20 +47,20 @@ INCLUDE io.forth
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( Main application, run after INIT )
-: MAIN
+: MAIN ( - )
     BEGIN
-        ( Red flashing )
-        RED_ON
-        LONG-DELAY
-        RED_OFF
-        LONG-DELAY
-
-        ( Green flashing if button is pressed )
         S2 IF
+            ( Green flashing if button is pressed )
             GREEN_ON
             SHORT-DELAY
             GREEN_OFF
             SHORT-DELAY
+        ELSE
+            ( Red flashing )
+            RED_ON
+            LONG-DELAY
+            RED_OFF
+            LONG-DELAY
         ENDIF
     AGAIN
 ;

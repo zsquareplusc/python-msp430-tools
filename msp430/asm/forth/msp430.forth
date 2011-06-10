@@ -9,33 +9,33 @@
 CODE CRESET ( n adr - )
     TOS->R15
     TOS->R14
-    ." \t bic.b R14, 0(R15) " NL
+    ." \t bic.b R14, 0(R15) \n "
     ASM-NEXT
 END-CODE
 
 CODE CSET ( n adr - )
     TOS->R15
     TOS->R14
-    ." \t bis.b R14, 0(R15) " NL
+    ." \t bis.b R14, 0(R15) \n "
     ASM-NEXT
 END-CODE
 
 CODE CTOGGLE ( n adr - )
     TOS->R15
     TOS->R14
-    ." \t xor.b R14, 0(R15) " NL
+    ." \t xor.b R14, 0(R15) \n "
     ASM-NEXT
 END-CODE
 
 CODE CTESTBIT ( mask adr - bool )
     TOS->W
-    ." \t bit.b @W, 0(SP) " NL
-    ." \t jnz .cbit0 " NL
-    ." \t mov \x23 -1, 0(SP) " NL       ( replace TOS w/ result )
-    ." \t jmp .cbit2 " NL
-    ." .cbit0: " NL
-    ." \t mov \x23 0, 0(SP) " NL        ( replace TOS w/ result )
-    ." .cbit2: " NL
+    ." \t bit.b @W, 0(SP) \n "
+    ." \t jz  .cbit0 \n "
+    ." \t mov \x23 -1, 0(SP) \n "       ( replace TOS w/ result )
+    ." \t jmp .cbit2 \n "
+    ." .cbit0:\n "
+    ." \t mov \x23 0, 0(SP) \n "        ( replace TOS w/ result )
+    ." .cbit2:\n "
     ASM-NEXT
 END-CODE
 
@@ -44,64 +44,64 @@ END-CODE
 
 CODE RESET ( n adr - )
     TOS->W
-    ." \t bic @SP+, 0(W) " NL
+    ." \t bic @SP+, 0(W) \n "
     ASM-NEXT
 END-CODE
 
 CODE SET ( n adr - )
     TOS->W
-    ." \t bis @SP+, 0(W) " NL
+    ." \t bis @SP+, 0(W) \n "
     ASM-NEXT
 END-CODE
 
 CODE TOGGLE ( n adr - )
     TOS->W
-    ." \t xor @SP+, 0(W) " NL
+    ." \t xor @SP+, 0(W) \n "
     ASM-NEXT
 END-CODE
 
 CODE TESTBIT ( mask adr - bool )
     TOS->W
-    ." \t bit @W, 0(SP) " NL
-    ." \t jnz .bit0 " NL
-    ." \t mov \x23 -1, 0(SP) " NL       ( replace TOS w/ result )
-    ." \t jmp .bit2 " NL
-    ." .bit0: " NL
-    ." \t mov \x23 0, 0(SP) " NL        ( replace TOS w/ result )
-    ." .bit2: " NL
+    ." \t bit @W, 0(SP) \n "
+    ." \t jz  .bit0 \n "
+    ." \t mov \x23 -1, 0(SP) \n "       ( replace TOS w/ result )
+    ." \t jmp .bit2 \n "
+    ." .bit0:\n"
+    ." \t mov \x23 0, 0(SP) \n "        ( replace TOS w/ result )
+    ." .bit2:\n"
     ASM-NEXT
 END-CODE
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 
 CODE +1 ( n - n )
-    ." \t inc 0(SP) " NL
+    ." \t inc 0(SP) \n "
     ASM-NEXT
 END-CODE
 
 CODE +2 ( n - n )
-    ." \t incd 0(SP) " NL
+    ." \t incd 0(SP) \n "
     ASM-NEXT
 END-CODE
 
 CODE +4 ( n - n )
-    ." \t add \x23 4, 0(SP) " NL
+    ." \t add \x23 4, 0(SP) \n "
     ASM-NEXT
 END-CODE
 
 
 CODE -1 ( n - n )
-    ." \t dec 0(SP) " NL
+    ." \t dec 0(SP) \n "
     ASM-NEXT
 END-CODE
 
 CODE -2 ( n - n )
-    ." \t decd 0(SP) " NL
+    ." \t decd 0(SP) \n "
     ASM-NEXT
 END-CODE
 
 CODE -4 ( n - n )
-    ." \t sub \x23 4, 0(SP) " NL
+    ." \t sub \x23 4, 0(SP) \n "
     ASM-NEXT
 END-CODE
 
@@ -122,48 +122,48 @@ END-CODE
 
 ( Swap high/low byte )
 CODE SWPB ( n - n )
-    ." \t swpb 0(SP) " NL
+    ." \t swpb 0(SP) \n "
     ASM-NEXT
 END-CODE
 
 ( Sign extend )
 CODE SIGN-EXTEND ( n - n )
-    ." \t sxt 0(SP) " NL
+    ." \t sxt 0(SP) \n "
     ASM-NEXT
 END-CODE
 
 ( Move byte from memory to memory )
 CODE CM->M ( src-adr dst-adr - )
     TOS->R15                        ( pop destination address )
-    TOS->R14                        ( pop source address)
-    ." \t mov.b @(R14), 0(R15) " NL ( copy value from src to dst )
+    TOS->R14                        ( pop source address )
+    ." \t mov.b @R14, 0(R15) \n "   ( copy value from src to dst )
     ASM-NEXT
 END-CODE
 
 ( Move word from memory to memory )
 CODE M->M ( src-adr dst-adr - )
     TOS->R15                        ( pop destination address )
-    TOS->R14                        ( pop source address)
-    ." \t mov @(R14), 0(R15) " NL   ( copy value from src to dst )
+    TOS->R14                        ( pop source address )
+    ." \t mov @R14, 0(R15) \n "     ( copy value from src to dst )
     ASM-NEXT
 END-CODE
 
 
 ( NOP )
 CODE NOP ( - )
-    ." \t nop " NL
+    ." \t nop\n "
     ASM-NEXT
 END-CODE
 
 ( Enable interrupts )
 CODE EINT ( - )
-    ." \t eint " NL
+    ." \t eint\n "
     ASM-NEXT
 END-CODE
 
 ( Disable interrupts )
 CODE DINT ( - )
-    ." \t dint " NL
+    ." \t dint\n "
     ASM-NEXT
 END-CODE
 

@@ -597,7 +597,10 @@ class Forth(rpn.RPN):
                         self.output.write('\n')
                     elif entry == self.instruction_literal:
                         value = next()
-                        self.output.write('\t.word %s, %s\n' % (self.create_asm_label('LIT'), value))
+                        self.output.write('\t.word %s, %-6s ; 0x%04x\n' % (
+                                self.create_asm_label('LIT'),
+                                value,
+                                value))
                         self._compile_remember('LIT')
                     elif entry == self.instruction_seek:
                         offset = next()

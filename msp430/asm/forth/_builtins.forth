@@ -15,7 +15,7 @@ END-CODE
 CODE BRANCH
     ." \t add @IP, IP \n "
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 CODE BRANCH0
     ." \t mov @IP+, W \t; get offset \n "
@@ -26,24 +26,24 @@ CODE BRANCH0
 ." .Lnjmp: "
     ASM-DROP
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 ( ----- Stack ops ----- )
 
 CODE DROP
     ." \t incd SP " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 CODE DUP
     ." \t push 0(SP) " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 CODE OVER
     ." \t push 2(TOS) " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 ( Push a copy of the N'th element )
 CODE PICK ( n - n )
@@ -52,14 +52,14 @@ CODE PICK ( n - n )
     ." \t add SP, W " LF      ( calculate address on stack )
     ." \t push 0(W) " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 CODE SWAP ( y x - x y )
     ." \t mov 2(SP), W " LF
     ." \t mov 0(SP), 2(SP) " LF
     ." \t mov W, 0(SP) " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 ( ----- MATH ----- )
 
@@ -67,50 +67,50 @@ CODE +
     ." \t add 0(SP), 2(SP) \t; y = x + y " LF
     ASM-DROP
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 CODE -
     ." \t sub 0(SP), 2(SP) \t; y = y - x " LF
     ASM-DROP
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 ( ----- bit - ops ----- )
 CODE AND
     ." \t and 0(SP), 2(SP) \t; y = x & y " LF
     ASM-DROP
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 CODE OR
     ." \t bis 0(SP), 2(SP) \t; y = x | y " LF
     ASM-DROP
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 CODE XOR
     ." \t xor 0(SP), 2(SP) \t; y = x ^ y " LF
     ASM-DROP
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 CODE INVERT
     ." \t inv 0(SP) \t; x = ~x " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 
 ( Multiply by two (arithmetic left shift) )
 CODE 2* ( n -- n*2 )
     ." \t rla 0(SP) \t; x <<= 1 " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 ( Divide by two (arithmetic right shift) )
 CODE 2/ ( n -- n/2 )
     ." \t rra 0(SP) \t; x >>= 1 " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 
 ( Logical left shift by u bits )
@@ -121,7 +121,7 @@ CODE LSHIFT ( n u -- n*2^u )
     ." \t dec W " LF
     ." \t jnz .lsh W " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 ( Logical right shift by u bits )
 CODE RSHIFT ( n -- n/2^-u )
@@ -131,7 +131,7 @@ CODE RSHIFT ( n -- n/2^-u )
     ." \t dec W " LF
     ." \t jnz .rsh W " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 ( ----- Logic ops ----- )
 ( include normalize to boolean )
@@ -145,7 +145,7 @@ CODE NOT
     ." \t mov \x23 0, 0(SP) " LF       ( replace TOS w/ result )
     ." .not2: " LF
     ASM-NEXT
-END-CODE-INTERNAL
+END-CODE
 
 ( ---------------------------------------------------
     "MIN" """Leave the smaller of two values on the stack"""
@@ -184,7 +184,7 @@ CODE <
     ." \t cmp 0(SP), 2(SP) " LF
     ." \t jl  _cmp_true " LF
     ." \t jmp _cmp_false " LF
-END-CODE-INTERNAL
+END-CODE
 
 CODE >
     DEPENDS-ON cmp_true
@@ -192,7 +192,7 @@ CODE >
     ." \t cmp 0(SP), 2(SP) " LF
     ." \t jl  _cmp_false " LF
     ." \t jmp _cmp_true " LF
-END-CODE-INTERNAL
+END-CODE
 
 CODE <=
     DEPENDS-ON cmp_true
@@ -200,7 +200,7 @@ CODE <=
     ." \t cmp 0(SP), 2(SP) " LF
     ." \t jge _cmp_false " LF
     ." \t jmp _cmp_true " LF
-END-CODE-INTERNAL
+END-CODE
 
 CODE >=
     DEPENDS-ON cmp_true
@@ -208,7 +208,7 @@ CODE >=
     ." \t cmp 0(SP), 2(SP) " LF
     ." \t jge _cmp_true " LF
     ." \t jmp _cmp_false " LF
-END-CODE-INTERNAL
+END-CODE
 
 CODE ==
     DEPENDS-ON cmp_true
@@ -216,7 +216,7 @@ CODE ==
     ." \t cmp 0(SP), 2(SP) " LF
     ." \t jeq _cmp_true " LF
     ." \t jmp _cmp_false " LF
-END-CODE-INTERNAL
+END-CODE
 
 ( XXX alias for == )
 CODE =
@@ -225,7 +225,7 @@ CODE =
     ." \t cmp 0(SP), 2(SP) " LF
     ." \t jeq _cmp_true " LF
     ." \t jmp _cmp_false " LF
-END-CODE-INTERNAL
+END-CODE
 
 CODE !=
     DEPENDS-ON cmp_true
@@ -233,7 +233,7 @@ CODE !=
     ." \t cmp 0(SP), 2(SP) " LF
     ." \t jne _cmp_true " LF
     ." \t jmp _cmp_false " LF
-END-CODE-INTERNAL
+END-CODE
 
 
 CODE 0=
@@ -242,7 +242,7 @@ CODE 0=
     ." \t tst 0(SP) " LF
     ." \t jz  _cmp_set_true " LF
     ." \t jmp _cmp_set_false " LF
-END-CODE-INTERNAL
+END-CODE
 
 CODE 0>
     DEPENDS-ON cmp_set_true
@@ -250,4 +250,4 @@ CODE 0>
     ." \t tst 0(SP) " LF
     ." \t jn  _cmp_set_false " LF
     ." \t jmp _cmp_set_true " LF
-END-CODE-INTERNAL
+END-CODE

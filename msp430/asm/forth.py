@@ -165,6 +165,37 @@ class Forth(rpn.RPN):
         # load core language definitions from a forth file
         self._include('__init__.forth')
 
+
+    def look_up(self, word):
+        """Find the word in one of the namespaces for the host and return the value"""
+        # target words are included w/ least priority. they must be available
+        # so that compiling words on the host works
+        lowercased_word = word.lower() # case insensitive
+        for namespace in (self.namespace, self.builtins, self.target_namespace):
+            try:
+                element = namespace[lowercased_word]
+            except KeyError:
+                pass
+            else:
+                return element
+        raise KeyError('%r not in any namespace (host)' % (word,))
+
+    def look_up_target(self, word):
+        """Find the word in one of the namespaces for the target and return the value"""
+        # builtin namespace is not searched as it only includes words
+        # implemented in python. target name space has priority over normal
+        # space.
+        lowercased_word = word.lower() # case insensitive
+        for namespace in (self.target_namespace, self.namespace):
+            try:
+                element = namespace[lowercased_word]
+            except KeyError:
+                pass
+            else:
+                return element
+        raise KeyError('%r not in any namespace (target)' % (word,))
+
+
     def create_asm_label(self, name):
         """\
         There are a number of symbols that are not allowed in assembler
@@ -382,25 +413,9 @@ class Forth(rpn.RPN):
         """End definition of a native code function"""
         if self.frame is None: raise ValueError('not in colon definition')
         #~ print "defined code", self.frame.name, self.frame     # XXX DEBUG
-        self.namespace[self.frame.name.lower()] = self.frame
-        self.frame = None
-        self.compiling = False
-
-    @immediate
-    @rpn.word('END-CODE-INTERNAL')
-    def word_end_code_internal(self, stack):
-        """\
-        End definition of a native code function. The name is stored in an
-        internal name space. This is used to implement words that are built-in /
-        native code on the host, which can not be cross compiled and which
-        should not be shadowed be definitions that only work for the target.
-        """
-        if self.frame is None: raise ValueError('not in colon definition')
-        #~ print "defined code internal", self.frame.name, self.frame     # XXX DEBUG
         self.target_namespace[self.frame.name.lower()] = self.frame
         self.frame = None
         self.compiling = False
-
 
     @immediate
     @rpn.word('IMMEDIATE')
@@ -644,10 +659,10 @@ class Forth(rpn.RPN):
         if word in self.not_yet_compiled_words:
             self.not_yet_compiled_words.remove(word)
         # get the frame and compile it - prefer target_namespace
-        if word in self.target_namespace:
-            item = self.target_namespace[word]
-        else:
-            item = self.look_up(word)
+        try:
+            item = self.look_up_target(word)
+        except KeyError:
+            raise ValueError('word %r is not available on the target' % (word,))
         # translate, depending on type
         if isinstance(item, Frame):
             self._compile_frame(item)

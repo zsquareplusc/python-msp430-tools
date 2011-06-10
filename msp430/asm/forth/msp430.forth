@@ -4,7 +4,7 @@
 )
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
-( 8 bit operations )
+( 8 bit memory operations )
 
 CODE CRESET ( n adr - )
     TOS->R15
@@ -27,8 +27,20 @@ CODE CTOGGLE ( n adr - )
     ASM-NEXT
 END-CODE
 
+CODE CTESTBIT ( mask adr - bool )
+    TOS->W
+    ." \t bit.b @W, 0(SP) " NL
+    ." \t jnz .cbit0 " NL
+    ." \t mov \x23 -1, 0(SP) " NL       ( replace TOS w/ result )
+    ." \t jmp .cbit2 " NL
+    ." .cbit0: " NL
+    ." \t mov \x23 0, 0(SP) " NL        ( replace TOS w/ result )
+    ." .cbit2: " NL
+    ASM-NEXT
+END-CODE
+
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
-( 16 bit operations )
+( 16 bit memory operations )
 
 CODE RESET ( n adr - )
     TOS->W
@@ -48,6 +60,50 @@ CODE TOGGLE ( n adr - )
     ASM-NEXT
 END-CODE
 
+CODE TESTBIT ( mask adr - bool )
+    TOS->W
+    ." \t bit @W, 0(SP) " NL
+    ." \t jnz .bit0 " NL
+    ." \t mov \x23 -1, 0(SP) " NL       ( replace TOS w/ result )
+    ." \t jmp .bit2 " NL
+    ." .bit0: " NL
+    ." \t mov \x23 0, 0(SP) " NL        ( replace TOS w/ result )
+    ." .bit2: " NL
+    ASM-NEXT
+END-CODE
+
+( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
+
+CODE +1 ( n - n )
+    ." \t inc 0(SP) " NL
+    ASM-NEXT
+END-CODE
+
+CODE +2 ( n - n )
+    ." \t incd 0(SP) " NL
+    ASM-NEXT
+END-CODE
+
+CODE +4 ( n - n )
+    ." \t add \x23 4, 0(SP) " NL
+    ASM-NEXT
+END-CODE
+
+
+CODE -1 ( n - n )
+    ." \t dec 0(SP) " NL
+    ASM-NEXT
+END-CODE
+
+CODE -2 ( n - n )
+    ." \t decd 0(SP) " NL
+    ASM-NEXT
+END-CODE
+
+CODE -4 ( n - n )
+    ." \t sub \x23 4, 0(SP) " NL
+    ASM-NEXT
+END-CODE
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( Miscellaneous functions )
@@ -59,3 +115,55 @@ CODE DELAY ( n - )
     ." \t jnz .loop \n "
     ASM-NEXT
 END-CODE
+
+( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
+( custom extensions )
+
+
+( Swap high/low byte )
+CODE SWPB ( n - n )
+    ." \t swpb 0(SP) " NL
+    ASM-NEXT
+END-CODE
+
+( Sign extend )
+CODE SIGN-EXTEND ( n - n )
+    ." \t sxt 0(SP) " NL
+    ASM-NEXT
+END-CODE
+
+( Move byte from memory to memory )
+CODE CM->M ( src-adr dst-adr - )
+    TOS->R15                        ( pop destination address )
+    TOS->R14                        ( pop source address)
+    ." \t mov.b @(R14), 0(R15) " NL ( copy value from src to dst )
+    ASM-NEXT
+END-CODE
+
+( Move word from memory to memory )
+CODE M->M ( src-adr dst-adr - )
+    TOS->R15                        ( pop destination address )
+    TOS->R14                        ( pop source address)
+    ." \t mov @(R14), 0(R15) " NL   ( copy value from src to dst )
+    ASM-NEXT
+END-CODE
+
+
+( NOP )
+CODE NOP ( - )
+    ." \t nop " NL
+    ASM-NEXT
+END-CODE
+
+( Enable interrupts )
+CODE EINT ( - )
+    ." \t eint " NL
+    ASM-NEXT
+END-CODE
+
+( Disable interrupts )
+CODE DINT ( - )
+    ." \t dint " NL
+    ASM-NEXT
+END-CODE
+

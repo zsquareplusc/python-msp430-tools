@@ -31,3 +31,4 @@ CODE ! ( n adr - )
     ." \t mov @(SP)+, 0(W) " NL     ( pop value and write to address )
     ASM-NEXT
 END-CODE
+

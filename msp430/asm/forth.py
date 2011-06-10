@@ -143,13 +143,75 @@ def immediate(function):
     return function
 
 
-class Forth(rpn.RPN):
+class ForthBitOps(object):
+    """Forth specific words for bit operations"""
+
+    @rpn.word("OR")
+    def bitor(self, stack):
+        x, y = self.pop2()
+        self.push(y | x)
+
+    @rpn.word("AND")
+    def bitand(self, stack):
+        x, y = self.pop2()
+        self.push(y & x)
+
+    @rpn.word("XOR")
+    def bitxor(self, stack):
+        x, y = self.pop2()
+        self.push(y ^ x)
+
+    @rpn.word("LSHIFT")
+    def bit_shift_left(self, stack):
+        x, y = self.pop2()
+        self.push(y << x)
+
+    @rpn.word("RSHIFT")
+    def bit_shift_right(self, stack):
+        x, y = self.pop2()
+        self.push(y >> x)
+
+    @rpn.word("INVERT")
+    def bitnot(self, stack):
+        self.push(~self.pop())
+
+class ForthMiscOps(object):
+    """more Forth specific words"""
+
+    @rpn.word("NOT")
+    def word_NOT(self, stack):
+        self.push(not self.pop())
+
+    @rpn.word("=")
+    def equal2(self, stack):
+        x, y = self.pop2()
+        self.push(bool(y == x))
+
+    @rpn.word("2*")
+    def arithmetic_shift_left(self, stack):
+        self[-1] = self[-1]*2
+
+    @rpn.word("2/")
+    def arithmetic_shift_right(self, stack):
+        self[-1] = self[-1]/2
+
+    @rpn.word("0=")
+    def equals_zero(self, stack):
+        self[-1] = self[-1] == 0
+
+    @rpn.word("0>")
+    def positive_number(self, stack):
+        self[-1] = self[-1] > 0
+
+
+class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
+            rpn.RPNCompareOps, ForthBitOps, ForthMiscOps):
     """\
     Extension of the RPN calculator with Forth like language features.
     """
     def __init__(self, namespace=None):
-        rpn.RPN.__init__(self, namespace)
-        self.target_namespace = {}  # an other namespace for target only objects
+        rpn.RPNBase.__init__(self, namespace)
+        self.target_namespace = {}  # an other name space for target only objects
         self.compiling = False
         self.output = sys.stdout
         self.frame = None
@@ -167,7 +229,7 @@ class Forth(rpn.RPN):
 
 
     def look_up(self, word):
-        """Find the word in one of the namespaces for the host and return the value"""
+        """Find the word in one of the name spaces for the host and return the value"""
         # target words are included w/ least priority. they must be available
         # so that compiling words on the host works
         lowercased_word = word.lower() # case insensitive
@@ -720,6 +782,7 @@ class Forth(rpn.RPN):
         self._include(name)
 
     def _include(self, name):
+        """Include given filename. The Forth code is directly executed."""
         if name not in self.included_files:
             for prefix in self.include_path:
                 path = os.path.join(prefix, name)

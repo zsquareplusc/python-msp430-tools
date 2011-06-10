@@ -98,7 +98,7 @@ def word(name):
     return decorate_word
 
 
-class RPN(list):
+class RPNBase(list):
     """\
     Simple, extensible RPN calculator.
     It inherits from list which is used as stack.
@@ -210,12 +210,44 @@ class RPN(list):
         """Get two elements from the stack"""
         return self.pop(), self.pop()
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    def prettyprint(self, stack):
+        pprint.pprint(self.pop())
+
+    def __str__(self):
+        """return a string describing the topmost elements from the stack"""
+        if self:
+            N = min(4, len(self))
+            tops = ["%s:%s" % ("xyzt"[i], self.printer(self[-i-1])) for i in range(N)]
+            if len(self) > 4:
+                tops.append(' (%d more)' % (len(self)-4,))
+            return ' '.join(tops)
+        return "stack empty"
+
+    def printer(self, obj):
+        """convert object to string, for floating point numbers, use engineering format"""
+        t = type(obj)
+        if type(t) == float:
+            e = int(math.log10(abs(obj)))
+            e = int(e/3)*3
+            if e:
+                return "%ge%s" % ((obj/10**e), e)
+            else:
+                return "%g" % (obj)
+        else:
+            return repr(obj)
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+class RPNStackOps(object):
+    """Mix-in class with words for stack operations"""
+
     @word("CLEAR")
     def clear(self, stack=None):
         """Clear stack"""
         del self[:]
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @word("DUP")
     def dup(self, stack):
@@ -242,18 +274,8 @@ class RPN(list):
         """Push a copy of the N'th element"""
         self.push(self[-self.pop()])
 
-    @word("MIN")
-    def minimum(self, stack):
-        """Leave the smaller of two values on the stack"""
-        x, y = self.pop2()
-        self.push(min(y, x))
-
-    @word("MAX")
-    def maximum(self, stack):
-        """Leave the larger of two values on the stack"""
-        x, y = self.pop2()
-        self.push(max(y, x))
-
+class RPNSimpleMathOps(object):
+    """Mix-in class with words for simple math operations"""
 
     @word("+")
     def add(self, stack):
@@ -275,9 +297,39 @@ class RPN(list):
         x, y = self.pop2()
         self.push(y / x)
 
+
+class RPNMoreMathOps(object):
+    """Mix-in class with words for more math operations"""
+
+    @word("MIN")
+    def minimum(self, stack):
+        """Leave the smaller of two values on the stack"""
+        x, y = self.pop2()
+        self.push(min(y, x))
+
+    @word("MAX")
+    def maximum(self, stack):
+        """Leave the larger of two values on the stack"""
+        x, y = self.pop2()
+        self.push(max(y, x))
+
+
+    @word("INT")
+    def word_INT(self, stack):
+        """Convert TOS to an integer"""
+        self.push(int(self.pop()))
+
+    @word("FLOAT")
+    def word_FLOAT(self, stack):
+        """Convert TOS to a floating point number"""
+        self.push(float(self.pop()))
+
     @word("NEG")
     def negate(self, stack):
         self.push(-self.pop())
+
+class RPNBitOps(object):
+    """Mix-in class with words for bit operations"""
 
     @word("|")
     def bitor(self, stack):
@@ -308,6 +360,8 @@ class RPN(list):
     def bitnot(self, stack):
         self.push(~self.pop())
 
+class RPNLogicOps(object):
+    """Mix-in class with words for Logic operations"""
 
     @word("NOT")
     def word_NOT(self, stack):
@@ -335,6 +389,15 @@ class RPN(list):
             self.push(y)
         else:
             self.push(x)
+
+    @word("LIST")
+    def word_LIST(self, stack):
+        """testing only: print all knwon words to stdout"""
+        for namespace in (self.namespace, self.builtins):
+            pprint.pprint(namespace)
+
+class RPNCompareOps(object):
+    """Mix-in class with words for comarisons"""
 
     @word("<")
     def smaller(self, stack):
@@ -366,51 +429,14 @@ class RPN(list):
         x, y = self.pop2()
         self.push(bool(y != x))
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    @word("INT")
-    def word_INT(self, stack):
-        """Convert TOS to an integer"""
-        self.push(int(self.pop()))
+# create a class with a typical set of operations
+class RPN(RPNBase, RPNStackOps, RPNSimpleMathOps, RPNMoreMathOps,
+          RPNBitOps, RPNLogicOps, RPNCompareOps):
+    pass
 
-    @word("FLOAT")
-    def word_FLOAT(self, stack):
-        """Convert TOS to a floating point number"""
-        self.push(float(self.pop()))
-
-    @word("LIST")
-    def word_LIST(self, stack):
-        """testing only: print all knwon words to stdout"""
-        for namespace in (self.namespace, self.builtins):
-            pprint.pprint(namespace)
-
-    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    def prettyprint(self, stack):
-        pprint.pprint(self.pop())
-
-    def __str__(self):
-        """return a string describing the topmost elements from the stack"""
-        if self:
-            N = min(4, len(self))
-            tops = ["%s:%s" % ("xyzt"[i], self.printer(self[-i-1])) for i in range(N)]
-            if len(self) > 4:
-                tops.append(' (%d more)' % (len(self)-4,))
-            return ' '.join(tops)
-        return "stack empty"
-
-    def printer(self, obj):
-        """convert object to string, for floating point numbers, use engineering format"""
-        t = type(obj)
-        if type(t) == float:
-            e = int(math.log10(abs(obj)))
-            e = int(e/3)*3
-            if e:
-                return "%ge%s" % ((obj/10**e), e)
-            else:
-                return "%g" % (obj)
-        else:
-            return repr(obj)
-
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def eval(words, stack=[], namespace={}):
     """evaluate code with given stack and return the topmost object from the stack"""

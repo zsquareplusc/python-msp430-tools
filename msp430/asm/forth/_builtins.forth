@@ -148,8 +148,6 @@ CODE NOT
 END-CODE
 
 ( ---------------------------------------------------
-    "MIN" """Leave the smaller of two values on the stack"""
-    "MAX" """Leave the larger of two values on the stack"""
     "*"
     "/"
 )

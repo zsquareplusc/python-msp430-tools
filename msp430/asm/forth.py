@@ -27,7 +27,11 @@ class ForthError(rpn.RPNError):
 
 
 class SeekableIterator(object):
-    """An iterator with the additional functionality to seek back"""
+    """\
+    An iterator with the additional functionality to adjust the read pointer
+    while it is running. This is needed to implement jumps in
+    Frame/NativeFrame.
+    """
     def __init__(self, some_list):
         self.some_list = some_list
         self.position = 0
@@ -51,6 +55,7 @@ class SeekableIterator(object):
 
 class Frame(list):
     """Storage for function definitions"""
+
     def __init__(self, name):
         list.__init__(self)
         self.name = name
@@ -75,6 +80,7 @@ class Frame(list):
 
 class NativeFrame(list):
     """Storage for native function definitions"""
+
     def __init__(self, name):
         list.__init__(self)
         self.name = name
@@ -98,7 +104,13 @@ class NativeFrame(list):
 
 
 class Variable(object):
-    """This emulates what on a target would be an address"""
+    """This emulates what on a target would be an address."""
+    # typical variable usage: "HERE @". so the variable name would put the
+    # address of the variable on the stack. The value of HERE is then also used
+    # to write to (e.g. in the implementation of IF/ENDIF. As we don't not have
+    # linear address space but frames for each dictionary entry that start
+    # counting at zero, the value needs to remember the frame it belongs to.
+
     def __init__(self, frame, offset):
         self.frame = frame
         self.offset = offset
@@ -182,11 +194,6 @@ class ForthMiscOps(object):
     def word_NOT(self, stack):
         self.push(not self.pop())
 
-    @rpn.word("=")
-    def equal2(self, stack):
-        x, y = self.pop2()
-        self.push(bool(y == x))
-
     @rpn.word("2*")
     def arithmetic_shift_left(self, stack):
         self[-1] = self[-1]*2
@@ -195,13 +202,58 @@ class ForthMiscOps(object):
     def arithmetic_shift_right(self, stack):
         self[-1] = self[-1]/2
 
-    @rpn.word("0=")
-    def equals_zero(self, stack):
-        self[-1] = self[-1] == 0
+    @rpn.word('/MOD')
+    def word_divmod(self, stack):
+        a = stack.pop()
+        b = stack.pop()
+        d, m = divmod(a, b)
+        stack.push(d)
+        stack.push(m)
 
-    @rpn.word("0>")
-    def positive_number(self, stack):
-        self[-1] = self[-1] > 0
+    @rpn.word('=')
+    def word_equals1(self, stack):
+        """Compare two numbers for equality"""
+        a = stack.pop()
+        b = stack.pop()
+        stack.push(a == b)
+
+    @rpn.word('0=')
+    def word_is_zero(self, stack):
+        """Check if number is not zero"""
+        a = stack.pop()
+        stack.push(a == 0)
+
+    @rpn.word('0>')
+    def word_is_positive(self, stack):
+        """Check if number is positive"""
+        a = stack.pop()
+        stack.push(a > 0)
+
+    @rpn.word('?DUP')
+    def word_Qdup(self, stack):
+        """DUP top of stack but only if not zero."""
+        if stack[-1]:
+            stack.push[-1]
+
+    @rpn.word('ROT')
+    def word_is_rot(self, stack):
+        """Rotate 3 items on the stack. 3rd gets 1st."""
+        a = stack.pop()
+        b = stack.pop()
+        c = stack.pop()
+        stack.push(b)
+        stack.push(a)
+        stack.push(c)
+
+    @rpn.word('-ROT')
+    def word_is_nrot(self, stack):
+        """Rotate 3 items on the stack. 1st gets 3rd."""
+        a = stack.pop()
+        b = stack.pop()
+        c = stack.pop()
+        stack.push(a)
+        stack.push(c)
+        stack.push(b)
 
 
 class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
@@ -355,58 +407,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         stack.push(Variable(self.frame, len(self.frame)))
 
 
-    @rpn.word('/MOD')
-    def word_divmod(self, stack):
-        a = stack.pop()
-        b = stack.pop()
-        d, m = divmod(a, b)
-        stack.push(d)
-        stack.push(m)
-
-    @rpn.word('=')
-    def word_equals1(self, stack):
-        """Compare two numbers for equality"""
-        a = stack.pop()
-        b = stack.pop()
-        stack.push(a == b)
-
-    @rpn.word('0=')
-    def word_is_zero(self, stack):
-        """Check if number is not zero"""
-        a = stack.pop()
-        stack.push(a == 0)
-
-    @rpn.word('0>')
-    def word_is_positive(self, stack):
-        """Check if number is positive"""
-        a = stack.pop()
-        stack.push(a > 0)
-
-    @rpn.word('?DUP')
-    def word_Qdup(self, stack):
-        """DUP top of stack but only if not zero."""
-        if stack[-1]:
-            stack.push[-1]
-
-    @rpn.word('ROT')
-    def word_is_rot(self, stack):
-        """Rotate 3 items on the stack. 3rd gets 1st."""
-        a = stack.pop()
-        b = stack.pop()
-        c = stack.pop()
-        stack.push(b)
-        stack.push(a)
-        stack.push(c)
-
-    @rpn.word('-ROT')
-    def word_is_nrot(self, stack):
-        """Rotate 3 items on the stack. 1st gets 3rd."""
-        a = stack.pop()
-        b = stack.pop()
-        c = stack.pop()
-        stack.push(a)
-        stack.push(c)
-        stack.push(b)
 
     @immediate
     @rpn.word("'")
@@ -479,6 +479,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.frame = None
         self.compiling = False
 
+
     @immediate
     @rpn.word('IMMEDIATE')
     def word_immediate(self, stack):
@@ -493,6 +494,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         if self.frame is None: raise ValueError('not in colon definition')
         item = self.look_up(stack.next_word())
         self.frame.append(item)
+
 
     @immediate
     @rpn.word('[')
@@ -528,6 +530,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('RECURSE')
     def word_recurse(self, stack):
+        """Call currently defined word"""
         if not self.compiling: raise ValueError('not allowed in immediate mode')
         if self.frame is None: raise ValueError('not in colon definition')
         # put conditional branch operation in sequence, remember position of offset on stack
@@ -538,14 +541,17 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('WORD')
     def word_word(self, stack):
+        """Read next word from the source and put it on the stack."""
         stack.push(stack.next_word())
 
     @rpn.word('.')
     def word_dot(self, stack):
+        """Output element on stack"""
         self.output.write(unicode(stack.pop()))
 
     @rpn.word('EMIT')
     def word_emit(self, stack):
+        """Output number on stack as unicode character."""
         self.output.write(unichr(stack.pop()))
 
     @rpn.word('VARIABLE')
@@ -586,6 +592,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('CONSTANT')
     def word_constant(self, stack):
+        """Declare a constant. Assigned next word to value from stack."""
         value = stack.pop()
         name = stack.next_word()
         stack.namespace[name.lower()] = value
@@ -636,7 +643,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('DEPENDS-ON')
     def word_depends_on(self, stack):
-        """Mark word as used so that it is included in cross compilation."""
+        """\
+        Mark word as used so that it is included in cross compilation. Useful
+        when using other words within CODE definitions.
+        """
         if self.compiling:
             word = self.next_word()
             self.frame.append(self.word_depends_on)
@@ -646,7 +656,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             self._compile_remember(word)
 
     def _compile_remember(self, word):
-        """Remember words used but yet compiled"""
+        """\
+        Remember that a word used. This ensures that it is included in the list
+        of cross compiled words.
+        """
         # track what is not yet done
         word = word.lower()
         if word not in self.compiled_words:
@@ -680,14 +693,17 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                                 value))
                         self._compile_remember('LIT')
                     elif entry == self.instruction_seek:
+                        # branch needs special case as offset needs to be recalculated
                         offset = next()
                         self.output.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH'), offset*2))
                         self._compile_remember('BRANCH')
                     elif entry == self.instruction_branch_if_false:
+                        # branch needs special case as offset needs to be recalculated
                         offset = next()
                         self.output.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH0'), offset*2))
                         self._compile_remember('BRANCH0')
                     elif hasattr(entry, 'rpn_name'):
+                        # for built-ins just take the name of the function
                         self.output.write('\t.word %s\n' % self.create_asm_label(entry.rpn_name.upper()))
                         self._compile_remember(entry.rpn_name)
                     elif isinstance(entry, (Frame, NativeFrame)):
@@ -707,12 +723,17 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.output.write(u'; compilation of native word %s\n' % frame.name)
         self.output.write(u';%s\n' % ('-'*76))
         self.output.write(u'%s:\n' % self.create_asm_label(frame.name))
-        # native code blocks are executed to get the output
+        # native code blocks are executed. They are expected to print out
+        # assembler code
         frame(self)
-        self.output.write('\n')
+        self.output.write('\n') # get some space between this and next word
 
 
     def instruction_cross_compile(self, stack, word=None):
+        """\
+        Cross compile word. This function can be called directly (w/ word
+        parameter) or be part of a Frame.
+        """
         if word is None:
             word = self._frame_iterator.next()
         # when interpreting, execute the actual functionality
@@ -739,10 +760,11 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """Output cross compiled version of function."""
         word = self.next_word()
         if self.compiling:
-            # when compiling add call to self and the word
+            # when compiling add call to self and the word to the Frame
             self.frame.append(self.instruction_cross_compile)
             self.frame.append(word)
         else:
+            # in interpretation mode, compile it now
             self.instruction_cross_compile(stack, word)
 
     @rpn.word('CROSS-COMPILE-MISSING')
@@ -758,9 +780,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word('CROSS-COMPILE-VARIABLES')
     def word_cross_compile_variables(self, stack):
         """\
-        Compile all the words that are used by other compiled words but not
-        yet translated. While compiling words, new words can be found which are
-        then also compiled.
+        Output section with variables (values in RAM).
         """
         self.output.write(u';%s\n' % ('-'*76))
         self.output.write(u'; Variables\n')
@@ -806,7 +826,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('SHOW')
     def word_SHOW(self, stack):
-        """Show internals of given word"""
+        """Show internals of given word. Used to debug."""
         name = self.next_word()
         sys.stderr.write('SHOW %r\n' % name)
         try:

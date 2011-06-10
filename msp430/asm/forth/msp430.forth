@@ -167,3 +167,9 @@ CODE DINT ( - )
     ASM-NEXT
 END-CODE
 
+( Write Status register. Used to Set low-power modes. )
+CODE ->SR ( n - )
+    ." \t pop SR\n "
+    ASM-NEXT
+END-CODE
+

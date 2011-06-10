@@ -187,13 +187,6 @@ class ForthBitOps(object):
     def bitnot(self, stack):
         self.push(~self.pop())
 
-class ForthMiscOps(object):
-    """more Forth specific words"""
-
-    @rpn.word("NOT")
-    def word_NOT(self, stack):
-        self.push(not self.pop())
-
     @rpn.word("2*")
     def arithmetic_shift_left(self, stack):
         self[-1] = self[-1]*2
@@ -201,6 +194,39 @@ class ForthMiscOps(object):
     @rpn.word("2/")
     def arithmetic_shift_right(self, stack):
         self[-1] = self[-1]/2
+
+
+class ForthMiscOps(object):
+    """more Forth specific words"""
+
+    @rpn.word("NOT")
+    def word_NOT(self, stack):
+        self.push(not self.pop())
+
+    @rpn.word("+1")
+    def plus_1(self, stack):
+        self[-1] = self[-1] + 1
+
+    @rpn.word("+2")
+    def plus_2(self, stack):
+        self[-1] = self[-1] + 2
+
+    @rpn.word("+4")
+    def plus_2(self, stack):
+        self[-1] = self[-1] + 4
+
+    @rpn.word("-1")
+    def minus_1(self, stack):
+        self[-1] = self[-1] - 1
+
+    @rpn.word("-2")
+    def minus_2(self, stack):
+        self[-1] = self[-1] - 2
+
+    @rpn.word("-4")
+    def minus_2(self, stack):
+        self[-1] = self[-1] - 4
+
 
     @rpn.word('/MOD')
     def word_divmod(self, stack):

@@ -28,8 +28,8 @@ INCLUDE io.forth
 ( Initializations run after reset )
 : INIT ( - )
     ( Initialize pins )
-    [ BIT0 BIT6 + ] LITERAL P1DIR C!
     0 P1OUT C!
+    [ BIT0 BIT6 + ] LITERAL P1DIR C!
     ( Stop Watchdog module )
     [ WDTPW WDTHOLD + ] LITERAL WDTCTL !
 

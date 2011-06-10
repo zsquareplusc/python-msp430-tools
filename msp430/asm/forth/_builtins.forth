@@ -61,6 +61,28 @@ CODE SWAP ( y x - x y )
     ASM-NEXT
 END-CODE
 
+( ----- Return Stack ops ----- )
+
+( Move x to the return stack. )
+CODE >R ( x -- ) ( R: -- x )
+    ." \t decd RTOS \t; make room on the return stack\n "
+    ." \t pop 0(RTOS) \t; pop value and put it on return stack\n "
+    ASM-NEXT
+END-CODE
+
+( Move x from the return stack to the data stack. )
+CODE R> ( -- x ) ( R: x -- )
+    ." \t push @RTOS+ \t; pop from return stack, push to data stack\n "
+    ASM-NEXT
+END-CODE
+
+( Copy x from the return stack to the data stack. )
+CODE R@ ( -- x ) ( R: x -- x )
+    ." \t push @RTOS \t; push copy of RTOS to data stack\n "
+    ASM-NEXT
+END-CODE
+
+
 ( ----- MATH ----- )
 
 CODE +

@@ -34,8 +34,8 @@ INCLUDE io.forth
     [ WDTPW WDTHOLD + ] LITERAL WDTCTL !
 
     ( Initialize clock from calibration values )
-    CALDCO_1MHZ DCOCTL  CM->M
-    CALBC1_1MHZ BCSCTL1 CM->M
+    CALDCO_1MHZ DCOCTL  C@!
+    CALBC1_1MHZ BCSCTL1 C@!
 
     ( Indicate startup with LED )
     GREEN_ON

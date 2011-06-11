@@ -6,7 +6,8 @@
 ( fetch byte value )
 CODE C@ ( adr - n )
     ." \t mov @SP, W \n "           ( copy address )
-    ." \t mov.b @W, 0(SP) \n "      ( replace TOS with value )
+    ." \t mov.b @W, W \n "          ( execute read)
+    ." \t mov W, 0(SP) \n "         ( replace TOS with value )
     ASM-NEXT
 END-CODE
 

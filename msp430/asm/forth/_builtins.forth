@@ -209,9 +209,9 @@ END-CODE
 CODE >
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
-    ." \t cmp 0(SP), 2(SP) " LF
-    ." \t jl  _cmp_false " LF
-    ." \t jmp _cmp_true " LF
+    ." \t cmp 2(SP), 0(SP) " LF
+    ." \t jl  _cmp_true " LF
+    ." \t jmp _cmp_false " LF
 END-CODE
 
 CODE <=

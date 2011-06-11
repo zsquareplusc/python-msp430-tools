@@ -135,7 +135,7 @@ CODE SIGN-EXTEND ( n - n )
 END-CODE
 
 ( Move byte from memory to memory )
-CODE CM->M ( src-adr dst-adr - )
+CODE C@! ( src-adr dst-adr - )
     TOS->R15                        ( pop destination address )
     TOS->R14                        ( pop source address )
     ." \t mov.b @R14, 0(R15) \n "   ( copy value from src to dst )
@@ -143,7 +143,7 @@ CODE CM->M ( src-adr dst-adr - )
 END-CODE
 
 ( Move word from memory to memory )
-CODE M->M ( src-adr dst-adr - )
+CODE @! ( src-adr dst-adr - )
     TOS->R15                        ( pop destination address )
     TOS->R14                        ( pop source address )
     ." \t mov @R14, 0(R15) \n "     ( copy value from src to dst )

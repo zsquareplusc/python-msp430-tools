@@ -31,17 +31,21 @@ END-CODE
 ( ----- Stack ops ----- )
 
 CODE DROP
-    ." \t incd SP " LF
+    ." \t incd SP\n "
     ASM-NEXT
 END-CODE
 
 CODE DUP
-    ." \t push 0(SP) " LF
+(    ." \t push @SP\n " )
+    ." \t mov @SP, W\n "
+    ." \t push W\n "
     ASM-NEXT
 END-CODE
 
 CODE OVER
-    ." \t push 2(TOS) " LF
+(    ." \t push 2(TOS\n " )
+    ." \t mov 2(SP), W\n "
+    ." \t push W\n "
     ASM-NEXT
 END-CODE
 

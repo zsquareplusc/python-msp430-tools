@@ -359,10 +359,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 ('\\', '_backslash_'),
                 ('|', '_or_'),
                 ('&', '_and_'),
-                ('@', '_at_'),
+                ('@', '_fetch_'),
                 ('[', '_open_bracket_'),
                 (']', '_close_bracket_'),
-                ('!', '_excl_'),
+                ('!', '_store_'),
                 ('<', '_less_'),
                 ('>', '_bigger_'),
                 ('=', '_eq_'),
@@ -613,7 +613,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('VARIABLE')
     def word_variable(self, stack):
-        """Allocate a variable. Creates space in RAM and a address getter function."""
+        """\
+        Allocate a variable. Creates space in RAM and an address getter
+        function.
+        """
         name = stack.next_word()
         # allocate separate memory for the variable
         # (cross compiled to RAM)
@@ -624,10 +627,14 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         frame.append(self.instruction_literal)
         frame.append(self.variables[name])
         self.namespace[name.lower()] = frame
+        # XXX could also do a native impl with "push #adr;NEXT"
 
     @rpn.word('VALUE')
     def word_value(self, stack):
-        """Allocate a variable. Creates space in RAM and a value getter function."""
+        """\
+        Allocate a variable. Creates space in RAM and a value getter
+        function.
+        """
         name = stack.next_word()
         # allocate separate memory for the variable
         # (cross compiled to RAM)
@@ -649,7 +656,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('CONSTANT')
     def word_constant(self, stack):
-        """Declare a constant. Assigned next word to value from stack."""
+        """Declare a constant. Assign next word to value from stack."""
         value = stack.pop()
         name = stack.next_word()
         stack.namespace[name.lower()] = value

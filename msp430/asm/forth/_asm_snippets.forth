@@ -11,7 +11,7 @@
 
 : DEFINE HASH ." define " SPACE ;
 
-: ASM-NEXT ." \t mov @IP+, PC \t; NEXT \n " ;
+: ASM-NEXT ." \t br @IP+ \t; NEXT \n " ;
 : ASM-DROP ." \t incd SP \t; DROP \n " ;
 
 : TOS->R15 ." \t pop  R15 \n " ;

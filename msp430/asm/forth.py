@@ -77,6 +77,15 @@ class Frame(list):
     def __repr__(self):
         return '%s[%s]' % (self.__class__.__name__, self.name,)
 
+class InterruptFrame(Frame):
+    """\
+    Interrupt frames are like normal Frames in most aspects but need different
+    entry/exit code.
+    """
+    def __init__(self, name, vector):
+        Frame.__init__(self, name)
+        self.vector = vector
+
 
 class NativeFrame(list):
     """Storage for native function definitions"""
@@ -507,6 +516,28 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
 
     @immediate
+    @rpn.word('INTERRUPT')
+    def word_interrupt(self, stack):
+        """Begin defining an interrupt function"""
+        if self.frame is not None: raise ValueError('already in colon definition')
+        name = self.next_word()
+        vector = self.pop()
+        self.frame = InterruptFrame(name, vector)
+        self.compiling = True
+
+    @immediate
+    @rpn.word('END-INTERRUPT')
+    def word_end_interrupt(self, stack):
+        """End definition of a native code function"""
+        if self.frame is None: raise ValueError('not in colon definition')
+        #~ print "defined code", self.frame.name, self.frame     # XXX DEBUG
+        self.target_namespace[self.frame.name.lower()] = self.frame
+        self.frame = None
+        self.compiling = False
+
+
+
+    @immediate
     @rpn.word('IMMEDIATE')
     def word_immediate(self, stack):
         """Tag current function definition as immediate"""
@@ -586,13 +617,13 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         name = stack.next_word()
         # allocate separate memory for the variable
         # (cross compiled to RAM)
-        self.variables[name] = Frame()
+        self.variables[name] = Frame('var'+name)
         self.variables[name].append(0)
         # create a function that pushes the variables address
-        self.namespace[name] = frame
-        frame = Frame()
+        frame = Frame(name)
         frame.append(self.instruction_literal)
-        frame.append(self.look_up(name))
+        frame.append(self.variables[name])
+        self.namespace[name.lower()] = frame
 
     @rpn.word('VALUE')
     def word_value(self, stack):
@@ -600,21 +631,21 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         name = stack.next_word()
         # allocate separate memory for the variable
         # (cross compiled to RAM)
-        self.variables[name] = Frame()
+        self.variables[name] = Frame(name)
         self.variables[name].append(0)
         # create a function that pushes the variables address
-        self.namespace[name] = frame
-        frame = Frame()
+        frame = Frame(name)
         frame.append(self.instruction_literal)
-        frame.append(self.look_up(name))
+        frame.append(self.look_up(name)) # XXX
         frame.append(self.look_up('@'))
+        self.namespace[name.lower()] = frame
 
     @rpn.word('TO')
     def word_to(self, stack):
         """Write to a VALUE"""
         name = stack.next_word()
         value = stack.pop()
-        self.variables[name][0] = value
+        self.variables[name][0] = value # XXX
 
     @rpn.word('CONSTANT')
     def word_constant(self, stack):
@@ -700,10 +731,15 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.output.write(u';%s\n' % ('-'*76))
         self.output.write(u'; compilation of word %s\n' % frame.name)
         self.output.write(u';%s\n' % ('-'*76))
+        self.output.write(u'%s:\n' % self.create_asm_label(frame.name))
+        # compilation of the thread
+        self.output.write('\tjmp %s\n' % self.create_asm_label('DOCOL'))
+        self._compile_thread(frame)
+        self.output.write('\t.word %s\n\n' % self.create_asm_label('EXIT'))
+
+    def _compile_thread(self, frame):
         next = iter(frame).next
         try:
-            self.output.write(u'%s:\n' % self.create_asm_label(frame.name))
-            self.output.write('\tjmp %s\n' % self.create_asm_label('DOCOL'))
             while True:
                 entry = next()
                 if callable(entry):
@@ -713,10 +749,15 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                         self.output.write('\n')
                     elif entry == self.instruction_literal:
                         value = next()
-                        self.output.write('\t.word %s, %-6s ; 0x%04x\n' % (
-                                self.create_asm_label('LIT'),
-                                value,
-                                value))
+                        if isinstance(value, Frame):
+                            self.output.write('\t.word %s, %s\n' % (
+                                    self.create_asm_label('LIT'),
+                                    self.create_asm_label(value.name),))
+                        else:
+                            self.output.write('\t.word %s, %-6s ; 0x%04x\n' % (
+                                    self.create_asm_label('LIT'),
+                                    value,
+                                    value))
                         self._compile_remember('LIT')
                     elif entry == self.instruction_seek:
                         # branch needs special case as offset needs to be recalculated
@@ -741,7 +782,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     raise ValueError('Cross compilation undefined for %r' % entry)
         except StopIteration:
             pass
-        self.output.write('\t.word %s\n\n' % self.create_asm_label('EXIT'))
 
     def _compile_native_frame(self, frame):
         """Compilation of native code function"""
@@ -753,6 +793,26 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         # assembler code
         frame(self)
         self.output.write('\n') # get some space between this and next word
+
+    def _compile_interrupt_frame(self, frame):
+        """Compilation of interrupt function"""
+        self.output.write(u';%s\n' % ('-'*76))
+        self.output.write(u'; compilation of interrupt %s\n' % frame.name)
+        self.output.write(u';%s\n' % ('-'*76))
+
+        # interrupt entry code
+        self.output.write(u'vector_%s:\n' % (frame.vector))
+        self.output.write(u'\tsub #4, RTOS     ; prepare to push 2 values on return stack\n')
+        self.output.write(u'\tmov IP, 2(RTOS)  ; save IP on return stack\n')
+        self.output.write(u'\tmov SP, 0(RTOS)  ; save SP pointer on return stack it points to SR on stack\n')
+        self.output.write(u'\tmov #%s, IP      ; Move address of thread of interrupt handler in IP\n' % self.create_asm_label(frame.name))
+        self.output.write('\tjmp %s\n' % self.create_asm_label('DO-INTERRUPT'))
+        # the thread for the interrupt handler
+        self.output.write(u'%s:\n' % self.create_asm_label(frame.name))
+        self._compile_thread(frame)
+        self.output.write('\t.word %s\n\n' % self.create_asm_label('EXIT-INTERRUPT'))
+        self._compile_remember('DO-INTERRUPT')
+        self._compile_remember('EXIT-INTERRUPT')
 
 
     def instruction_cross_compile(self, stack, word=None):
@@ -773,7 +833,9 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         except KeyError:
             raise ValueError('word %r is not available on the target' % (word,))
         # translate, depending on type
-        if isinstance(item, Frame):
+        if isinstance(item, InterruptFrame):
+            self._compile_interrupt_frame(item)
+        elif isinstance(item, Frame):
             self._compile_frame(item)
         elif isinstance(item, NativeFrame):
             self._compile_native_frame(item)
@@ -812,7 +874,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.output.write(u'; Variables\n')
         self.output.write(u';%s\n' % ('-'*76))
         self.output.write(u'.bss\n')
-        for variable in self.variables:
+        for name, variable in sorted(self.variables.items()):
             variable.name
             self.output.write(u'%s:  .skip %d \n' % (
                     self.create_asm_label(variable.name),

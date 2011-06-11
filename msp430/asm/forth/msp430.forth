@@ -3,6 +3,8 @@
   vi:ft=forth
 )
 
+INCLUDE _interrupts.forth
+
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( 8 bit memory operations )
 
@@ -74,33 +76,33 @@ END-CODE
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 
-CODE +1 ( n - n )
+CODE 1+ ( n - n )
     ." \t inc 0(SP) \n "
     ASM-NEXT
 END-CODE
 
-CODE +2 ( n - n )
+CODE 2+ ( n - n )
     ." \t incd 0(SP) \n "
     ASM-NEXT
 END-CODE
 
-CODE +4 ( n - n )
+CODE 4+ ( n - n )
     ." \t add \x23 4, 0(SP) \n "
     ASM-NEXT
 END-CODE
 
 
-CODE -1 ( n - n )
+CODE 1- ( n - n )
     ." \t dec 0(SP) \n "
     ASM-NEXT
 END-CODE
 
-CODE -2 ( n - n )
+CODE 2- ( n - n )
     ." \t decd 0(SP) \n "
     ASM-NEXT
 END-CODE
 
-CODE -4 ( n - n )
+CODE 4- ( n - n )
     ." \t sub \x23 4, 0(SP) \n "
     ASM-NEXT
 END-CODE
@@ -167,9 +169,33 @@ CODE DINT ( - )
     ASM-NEXT
 END-CODE
 
-( Write Status register. Used to Set low-power modes. )
-CODE ->SR ( n - )
-    ." \t pop SR\n "
+( Enter low-power mode. )
+CODE ENTER-LPM0 ( n - )
+    ." \t bis \x23 LPM0, SR\n "
+    ASM-NEXT
+END-CODE
+
+( Enter low-power mode LPM1. )
+CODE ENTER-LPM1 ( n - )
+    ." \t bis \x23 LPM2, SR\n "
+    ASM-NEXT
+END-CODE
+
+( Enter low-power mode LMP2. )
+CODE ENTER-LPM2 ( n - )
+    ." \t bis \x23 LPM3, SR\n "
+    ASM-NEXT
+END-CODE
+
+( Enter low-power mode LPM3. )
+CODE ENTER-LPM3 ( n - )
+    ." \t bis \x23 LPM3, SR\n "
+    ASM-NEXT
+END-CODE
+
+( Enter low-power mode LPM4. )
+CODE ENTER-LPM4 ( n - )
+    ." \t bis \x23 LPM4, SR\n "
     ASM-NEXT
 END-CODE
 

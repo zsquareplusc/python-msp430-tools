@@ -102,10 +102,7 @@ def main():
             name = name[:-1]
         if definition:
             value = cpp.namespace.eval(definition)
-            if value:
-                outfile.write('%r CONSTANT %s\n' % (value, name))
-            else:
-                print "( XXX empty value %s )" % (name,)
+            outfile.write('%r CONSTANT %s\n' % (value, name))
         else:
             outfile.write('1 CONSTANT %s\n' % (name,))
 

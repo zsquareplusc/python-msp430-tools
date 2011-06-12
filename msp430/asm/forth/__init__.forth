@@ -36,8 +36,8 @@
 : NEGATE 0 SWAP - ;
 
 ( Standard words for booleans. )
-: TRUE  -1 ;
-: FALSE 0 ;
+-1 CONSTANT TRUE
+0 CONSTANT FALSE
 : NOT   0= ;
 
 ( LITERAL takes whatever is on the stack and compiles LIT <foo> )

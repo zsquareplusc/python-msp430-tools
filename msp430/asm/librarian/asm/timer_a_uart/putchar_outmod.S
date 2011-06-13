@@ -16,10 +16,16 @@
 ; The user has to ensure that the corresponding pins are configured
 ; for module function (DIR=1, SEL=1).
 ;
+; .. note:: The CCTL register should be initialized with OUT bit set.
+;           Otherwise the first character will not be transmitted
+;           correctly.
+;           e.g.: ``mov #OUT, &TACCTL0``
+;
+;
 ; Compared to the putchar version that directly accesses a GPIO has
 ; this version the advantage that it is more robust when other
 ; interrupts run in parallel. Its drawback is that the selection of
-; pins is restricted to pin connected to the timer.
+; pins is restricted to pins connected to the timer.
 ;
 ; Module configuration
 ; --------------------
@@ -85,27 +91,26 @@
 ;
 ; ---------------------------------------------------------------------------
 putchar:
-        mov     #10, R13                        ; ten bits: Start, 8 Data, Stop
         rla     R15                             ; shift in start bit (0)
 #ifdef TAUART_TX_DINT
         push    SR
         dint
 #endif // TAUART_TX_DINT
-        bis     #0x0600, R15                    ; set 10th bit (STOP) and the next to get a return value of 1
+        bis     #0x0200, R15                    ; set 10th bit (STOP)
         mov     &TAUART_TX_TxR, &TAUART_TX_CCR  ; copy current time
-.Lt1lp: rra     R15                             ; | shift data through carry
-        jc      .Lt1                            ; | test carry bit
-.Lt0:   mov     #OUTMOD_5, &TAUART_TX_CCTL      ; |
-        jmp     .Ltc                            ; |
-.Lt1:   mov     #OUTMOD_1, &TAUART_TX_CCTL      ; |
-        jmp     .Ltc                            ; |
-.Ltc:   add     #TAUART_BIT_TICKS, &TAUART_TX_CCR;| set up one bit delay
+.Lt1lp:
+        add     #TAUART_BIT_TICKS, &TAUART_TX_CCR;| set up one bit delay
+        mov     #OUTMOD0, &TAUART_TX_CCTL       ; | OUTMOD_1=set, clear CCIFG
+        rra     R15                             ; | shift data through carry
+        jc      .Ltcd                           ; | test carry bit
+        bis     #OUTMOD2, &TAUART_TX_CCTL       ; | modify to get OUTMOD_5=reset
 .Ltcd:  bit     #CCIFG, &TAUART_TX_CCTL         ; | \ time due?         ] delay
         jz      .Ltcd                           ; | / not yet -> loop   ]
-        dec     R13                             ; | decrement bit counter
+        tst     R15                             ; | bits left? as the stop bits is 1, this works
         jnz     .Lt1lp                          ; O loop until all bits are transmitted
 #ifdef TAUART_TX_DINT
         pop     SR
 #endif // TAUART_TX_DINT
+        mov     #1, R15                         ; return >= 0 to indicate success
         ret
 

@@ -1,7 +1,19 @@
+; -*- coding: utf-8 -*-
+; vi:ft=msp430
+;
+; DOC-SECTION
+;
+; Description
+; -----------
 ; Startup code. It initializes:
 ; - stack pointer
 ; - .data and .bss sections
-; vi:ft=msp430
+;
+; Copyright (c) 2001-2011 Chris Liechti <cliechti@gmx.net>
+; All Rights Reserved.
+; Simplified BSD License (see LICENSE.txt for full text)
+;
+; END-DOC-SECTION
 
 .text
 

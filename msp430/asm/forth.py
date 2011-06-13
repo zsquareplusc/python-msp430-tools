@@ -466,12 +466,20 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """Push ASCII code of next character"""
         name = stack.next_word()
         value = ord(name[0])
+        stack.push(value)
+
+    @immediate
+    @rpn.word('[CHAR]')
+    def word_compile_char(self, stack):
+        """Compile ASCII code of next character"""
+        name = stack.next_word()
+        value = ord(name[0])
         if self.compiling:
             if self.frame is None: raise ValueError('not in colon definition')
             self.frame.append(self.instruction_literal)
             self.frame.append(value)
         else:
-            stack.push(value)
+            raise ValueError('interpretation sematics undefined')
 
     @rpn.word(',')
     def word_coma(self, stack):

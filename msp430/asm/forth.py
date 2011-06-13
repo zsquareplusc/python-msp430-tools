@@ -375,6 +375,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 ('>', '_bigger_'),
                 ('=', '_eq_'),
                 ('NOT', '_NOT_'),
+                ("'", '_tick_'),
                 #~ ('AND', '_AND_'),
                 #~ ('OR', '_OR_'),
         ):

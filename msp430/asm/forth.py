@@ -275,7 +275,7 @@ class ForthMiscOps(object):
     def word_Qdup(self, stack):
         """DUP top of stack but only if not zero."""
         if stack[-1]:
-            stack.push[-1]
+            stack.push(stack[-1])
 
     @rpn.word('ROT')
     def word_is_rot(self, stack):

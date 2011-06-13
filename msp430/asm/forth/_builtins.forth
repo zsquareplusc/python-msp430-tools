@@ -275,3 +275,12 @@ CODE 0>
     ." \t jn  _cmp_set_false " LF
     ." \t jmp _cmp_set_true " LF
 END-CODE
+
+( --------------------------------------------------- )
+( helper for ." )
+CODE __write_text
+    ." \t mov @IP+, R15\n"
+    ." \t call \x23 write\n"
+    ASM-NEXT
+END-CODE
+

@@ -315,6 +315,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.compiled_words = set()
         self.not_yet_compiled_words = set()
         self._frame_iterator = None
+        self.label_id = 0
         self.logger = logging.getLogger('forth')
 
     def init(self):
@@ -351,6 +352,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 return element
         raise KeyError('%r not in any namespace (target)' % (word,))
 
+    def create_label(self):
+        """Create a new assembler label"""
+        self.label_id += 1
+        return '__lbl%s' % (self.label_id,)
 
     def create_asm_label(self, name):
         """\
@@ -437,7 +442,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         value = stack.pop()
         if isinstance(reference, Variable):
             if reference.frame != self.frame:
-                raise ValueError('!: Frame mismatch for variable %r != %r' % (reference.frmae, self.frame))
+                raise ValueError('!: Frame mismatch for variable %r != %r' % (reference.frame, self.frame))
             if isinstance(value, Variable):
                 reference.set(value.offset)
             else:
@@ -696,7 +701,11 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         words = []
         while True:
             word = self.next_word()
-            if word == '"': break
+            if word.endswith('"'):
+                # emulate character wise reading
+                if word != '"':
+                    words.append(word[:-1])
+                break
             words.append(word)
         text = codecs.escape_decode(u' '.join(words))[0]
         if self.compiling:
@@ -712,7 +721,11 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         words = []
         while True:
             word = self.next_word()
-            if word == '"': break
+            if word.endswith('"'):
+                # emulate character wise reading
+                if word != '"':
+                    words.append(word[:-1])
+                break
             words.append(word)
         text = codecs.escape_decode(u' '.join(words))[0]
         if self.compiling:
@@ -752,6 +765,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         remembered and can be output later, either manually with CROSS-COMPILE
         or automatically with CROSS-COMPILE-MISSING.
         """
+        self.output.write(u'.text\n.even\n')
         self.output.write(u';%s\n' % ('-'*76))
         self.output.write(u'; compilation of word %s\n' % frame.name)
         self.output.write(u';%s\n' % ('-'*76))
@@ -768,9 +782,18 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 entry = next()
                 if callable(entry):
                     if entry == self.instruction_output_text:
+                        label = self.create_label()
+                        self.output.write('\t.word %s, %s\n' % (
+                                self.create_asm_label('__write_text'),
+                                self.create_asm_label(label)))
+                        self._compile_remember('__write_text')
+                        # output the text separately
+                        frame = NativeFrame(label)
+                        self.target_namespace[label] = frame
+                        self._compile_remember(label)
                         text = next()
-                        self.output.write(text)
-                        self.output.write('\n')
+                        frame.append(self.instruction_output_text)
+                        frame.append('\t.asciiz "%s"\n' % (codecs.escape_encode(text)[0],))
                     elif entry == self.instruction_literal:
                         value = next()
                         if isinstance(value, Frame):
@@ -809,6 +832,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     def _compile_native_frame(self, frame):
         """Compilation of native code function"""
+        self.output.write(u'.text\n.even\n')
         self.output.write(u';%s\n' % ('-'*76))
         self.output.write(u'; compilation of native word %s\n' % frame.name)
         self.output.write(u';%s\n' % ('-'*76))
@@ -820,6 +844,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     def _compile_interrupt_frame(self, frame):
         """Compilation of interrupt function"""
+        self.output.write(u'.text\n.even\n')
         self.output.write(u';%s\n' % ('-'*76))
         self.output.write(u'; compilation of interrupt %s\n' % frame.name)
         self.output.write(u';%s\n' % ('-'*76))

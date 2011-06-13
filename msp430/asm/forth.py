@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2011 Chris Liechti <cliechti@gmx.net>
+# All Rights Reserved.
+# Simplified BSD License (see LICENSE.txt for full text)
+
 """\
 Minimalistic Forth like language interpreter.
 

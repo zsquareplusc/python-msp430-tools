@@ -12,8 +12,14 @@
 ; Returns: >= 0 on success
 ;
 ; Transmit characters in NRZ format, 8 bits, 1 stop bit, no parity.
-; Timing is done with Timer module, pins are accessed directly
-; (sending on any GPIO possible).
+; Timing is done with Timer module, signal is generated with OUTMOD.
+; The user has to ensure that the corresponding pins are configured
+; for module function (DIR=1, SEL=1).
+;
+; Compared to the putchar version that directly accesses a GPIO has
+; this version the advantage that it is more robust when other
+; interrupts run in parallel. Its drawback is that the selection of
+; pins is restricted to pin connected to the timer.
 ;
 ; Module configuration
 ; --------------------
@@ -34,12 +40,6 @@
 ;
 ; TAUART_TX_CCTL
 ;   The capture compare unit used, its control register.
-;
-; TAUART_TX_PORT
-;   Port register used to transmit.
-;
-; TAUART_TX_PIN
-;    Bit mask of pin used to send.
 ;
 ; TAUART_TX_DINT
 ;    If defined: lock interrupts during send. This ensures that
@@ -70,14 +70,6 @@
     #define TAUART_TX_CCTL     TACCTL0
 #endif // TAUART_TX_CCTL
 
-#ifndef TAUART_TX_PORT
-    #define TAUART_TX_PORT     P1OUT
-#endif // TAUART_TX_PORT
-
-#ifndef TAUART_RX_PIN
-    #define TAUART_TX_PIN      BIT1
-#endif // TAUART_TX_PIN
-
 .text
 ; ---------------------------------------------------------------------------
 ; Timer_A UART: send character
@@ -101,18 +93,17 @@ putchar:
 #endif // TAUART_TX_DINT
         bis     #0x0600, R15                    ; set 10th bit (STOP) and the next to get a return value of 1
         mov     &TAUART_TX_TxR, &TAUART_TX_CCR  ; copy current time
-.Lt1lp: rra     R15                             ;1 | shift data through carry
-        jc      .Lt1                            ;2 | test carry bit
-.Lt0:   bic.b   #TAUART_TX_PIN, &TAUART_TX_PORT ; 5|
-        jmp     .Ltc                            ; 2|
-.Lt1:   bis.b   #TAUART_TX_PIN, &TAUART_TX_PORT ;5 |
-        jmp     .Ltc                            ;2 |
-.Ltc:   add     #TAUART_BIT_TICKS, &TAUART_TX_CCR ;| set up one bit delay
-        clr     &TAUART_TX_CCTL                 ;4 |   clear CCIFG       ] one bit
-.Ltcd:  bit     #CCIFG, &TAUART_TX_CCTL         ;4 | \ time due?         ] delay
-        jz      .Ltcd                           ;2 | / not yet -> loop   ]
-        dec     R13                             ;1 | decrement bit counter
-        jnz     .Lt1lp                          ;2 O loop until all bits are transmitted
+.Lt1lp: rra     R15                             ; | shift data through carry
+        jc      .Lt1                            ; | test carry bit
+.Lt0:   mov     #OUTMOD_5, &TAUART_TX_CCTL      ; |
+        jmp     .Ltc                            ; |
+.Lt1:   mov     #OUTMOD_1, &TAUART_TX_CCTL      ; |
+        jmp     .Ltc                            ; |
+.Ltc:   add     #TAUART_BIT_TICKS, &TAUART_TX_CCR;| set up one bit delay
+.Ltcd:  bit     #CCIFG, &TAUART_TX_CCTL         ; | \ time due?         ] delay
+        jz      .Ltcd                           ; | / not yet -> loop   ]
+        dec     R13                             ; | decrement bit counter
+        jnz     .Lt1lp                          ; O loop until all bits are transmitted
 #ifdef TAUART_TX_DINT
         pop     SR
 #endif // TAUART_TX_DINT

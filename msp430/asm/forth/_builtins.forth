@@ -277,6 +277,20 @@ CODE 0>
 END-CODE
 
 ( --------------------------------------------------- )
+
+( XXX Forth name ERASE conflicts with FCTL bit name in MSP430 )
+( Erase memory area )
+CODE ZERO ( adr u - )
+    TOS->W      ( count )
+    TOS->R15    ( address )
+    ." .erase_loop: clr.b 0(R15)\n"
+    ." \t inc R15\n"
+    ." \t dec W\n"
+    ." \t jnz .erase_loop\n"
+    ASM-NEXT
+END-CODE
+
+( --------------------------------------------------- )
 ( helper for ." )
 CODE __write_text
     ." \t mov @IP+, R15\n"

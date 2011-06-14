@@ -66,6 +66,7 @@ class Frame(list):
     def __init__(self, name):
         list.__init__(self)
         self.name = name
+        self.use_ram = False
 
     def __call__(self, stack):
         """Execute code in frame"""
@@ -315,6 +316,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.compiled_words = set()
         self.not_yet_compiled_words = set()
         self._frame_iterator = None
+        self.use_ram = False
         self.label_id = 0
         self.logger = logging.getLogger('forth')
 
@@ -381,8 +383,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 ('=', '_eq_'),
                 ('NOT', '_NOT_'),
                 ("'", '_tick_'),
-                #~ ('AND', '_AND_'),
-                #~ ('OR', '_OR_'),
         ):
             name = name.replace(t_in, t_out)
         return '_' + name
@@ -501,7 +501,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word(':')
     def word_colon(self, stack):
         """Begin defining a function"""
-        if self.frame is not None: raise ValueError('already in colon definition')
         name = self.next_word()
         self.frame = Frame(name)
         self.compiling = True
@@ -521,7 +520,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word('CODE')
     def word_code(self, stack):
         """Begin defining a native code function"""
-        if self.frame is not None: raise ValueError('already in colon definition')
         name = self.next_word()
         self.frame = NativeFrame(name)
         self.compiling = True
@@ -541,7 +539,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word('INTERRUPT')
     def word_interrupt(self, stack):
         """Begin defining an interrupt function"""
-        if self.frame is not None: raise ValueError('already in colon definition')
         name = self.next_word()
         vector = self.pop()
         self.frame = InterruptFrame(name, vector)
@@ -657,24 +654,65 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         Allocate a variable. Creates space in RAM and a value getter
         function.
         """
+        value = stack.pop()
         name = stack.next_word()
         # allocate separate memory for the variable
         # (cross compiled to RAM)
-        self.variables[name] = Frame(name)
-        self.variables[name].append(0)
+        self.variables[name] = Frame('val'+name)
+        self.variables[name].append(value)
         # create a function that pushes the variables address
         frame = Frame(name)
         frame.append(self.instruction_literal)
-        frame.append(self.look_up(name)) # XXX
+        frame.append(self.variables[name])
         frame.append(self.look_up('@'))
         self.namespace[name.lower()] = frame
 
+    @immediate
     @rpn.word('TO')
     def word_to(self, stack):
         """Write to a VALUE"""
         name = stack.next_word()
-        value = stack.pop()
-        self.variables[name][0] = value # XXX
+        if self.compiling:
+            self.frame.append(self.instruction_literal)
+            self.frame.append(self.variables[name])
+            self.frame.append(self.look_up('!'))
+        else:
+            value = stack.pop()
+            self.variables[name][0] = value # XXX
+
+    @rpn.word('RAM')
+    def word_ram(self, stack):
+        """Select RAM as target for following CREATE calls"""
+        self.use_ram = True
+
+    @rpn.word('ROM')
+    def word_rom(self, stack):
+        """Select ROM/Flash as target for following CREATE calls"""
+        self.use_ram = False
+
+    @rpn.word('CREATE')
+    def word_create(self, stack):
+        name = stack.next_word()
+        # allocate separate memory
+        # (cross compiled to RAM)
+        self.variables[name] = Frame('cre'+name)
+        self.variables[name].use_ram = self.use_ram
+        self.frame = self.variables[name]
+        # create a function that pushes the variables address
+        frame = Frame(name)
+        frame.append(self.instruction_literal)
+        frame.append(self.variables[name])
+        self.namespace[name.lower()] = frame
+        # XXX could also do a native impl with "push #adr;NEXT"
+
+    @rpn.word('ALLOT')
+    def word_allot(self, stack):
+        count = stack.pop()
+        if count > 0:
+            if count & 1: raise ValueError('odd sizes currently not supported')
+            self.frame.extend([0]*(count/2))
+        else:
+            raise ValueError('negative ALLOT not supported')
 
     @rpn.word('CONSTANT')
     def word_constant(self, stack):
@@ -771,7 +809,8 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.output.write(u';%s\n' % ('-'*76))
         self.output.write(u'%s:\n' % self.create_asm_label(frame.name))
         # compilation of the thread
-        self.output.write('\tjmp %s\n' % self.create_asm_label('DOCOL'))
+        self.output.write('\tbr #%s\n' % self.create_asm_label('DOCOL'))
+        #~ self.output.write('\tjmp %s\n' % self.create_asm_label('DOCOL'))
         self._compile_thread(frame)
         self.output.write('\t.word %s\n\n' % self.create_asm_label('EXIT'))
 
@@ -826,7 +865,8 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     else:
                         raise ValueError('Cross compilation undefined for %r' % entry)
                 else:
-                    raise ValueError('Cross compilation undefined for %r' % entry)
+                    self.output.write('\t.word %r\n' % (entry,))
+                    #~ raise ValueError('Cross compilation undefined for %r' % entry)
         except StopIteration:
             pass
 
@@ -923,11 +963,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.output.write(u'; Variables\n')
         self.output.write(u';%s\n' % ('-'*76))
         self.output.write(u'.bss\n')
+        # XXX check .use_ram attribute
         for name, variable in sorted(self.variables.items()):
             variable.name
             self.output.write(u'%s:  .skip %d \n' % (
                     self.create_asm_label(variable.name),
-                    len(variable)))
+                    2*len(variable)))
             self.output.write('\n')
         self.output.write(u'.text\n')
 

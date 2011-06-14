@@ -18,7 +18,8 @@ CODE DOCOL
     ." \t decd RTOS       \t; prepare to push on return stack \n "
     ." \t mov IP, 0(RTOS) \t; save IP on return stack \n "
     ." \t mov -2(IP), IP  \t; get where we are now \n "
-    ." \t incd IP         \t; jump over 'jmp DOCOL' \n "
+   ( ." \t incd IP         \t; jump over 'jmp DOCOL' \n " )
+    ." \t add \x23 4, IP  \t; jump over 'br HASH DOCOL' \n "
     ASM-NEXT
 END-CODE
 

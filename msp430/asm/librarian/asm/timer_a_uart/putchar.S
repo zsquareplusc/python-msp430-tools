@@ -8,7 +8,7 @@
 ; Timer UART implementation of putchar.
 ;
 ; C prototype:  int putchar(int c);
-; Paramter c: Character to send (0..255)
+; Parameter c: Character to send (0..255)
 ; Returns: >= 0 on success
 ;
 ; Transmit characters in NRZ format, 8 bits, 1 stop bit, no parity.

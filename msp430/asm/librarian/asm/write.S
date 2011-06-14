@@ -8,7 +8,7 @@
 ; Write a null terminated string using putchar.
 ;
 ; C prototype:  void write(const char *s);
-; Paramter s: Null terminated message
+; Parameter s: Null terminated message
 ;
 ; Copyright (c) 2001-2011 Chris Liechti <cliechti@gmx.net>
 ; All Rights Reserved.

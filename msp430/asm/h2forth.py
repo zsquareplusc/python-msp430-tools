@@ -90,7 +90,9 @@ def main():
         cpp.namespace.defines[symbol] = value
 
     try:
-        cpp.preprocess(infile, msp430.asm.cpp.Discard(), infilename)
+        error_found = cpp.preprocess(infile, msp430.asm.cpp.Discard(), infilename)
+        if error_found:
+            sys.exit(1)
     except msp430.asm.cpp.PreprocessorError, e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
         if options.debug:

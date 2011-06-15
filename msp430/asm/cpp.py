@@ -14,6 +14,7 @@ ANSI C preprocessor, but it understands a helpful subset.
 # - stringify #
 # - it isn't fully compatible to a real cpp
 
+import sys
 import os
 import re
 import logging
@@ -181,12 +182,17 @@ class Preprocessor(object):
             (?P<MACRO>      ^[\t ]*\#[\t ]*define[\t ]+(?P<MACRO_NAME>\w+)\((?P<MACRO_ARGS>.*?)\)(?P<MACRO_DEF>[\t ]+(.+))? ) |
             (?P<DEFINE>     ^[\t ]*\#[\t ]*define[\t ]+(?P<DEF_NAME>\w+)([\t ]+)?(?P<DEF_VALUE>.+)?     ) |
             (?P<INCLUDE>    ^[\t ]*\#[\t ]*include[\t ]+[<"](?P<INC_NAME>[\w\\/\.]+)[">]  ) |
-            (?P<IF>         ^[\t ]*\#[\t ]*if[\t ]+(?P<IF_EXPR>.*)       ) |
-            (?P<IFDEF>      ^[\t ]*\#[\t ]*ifdef[\t ]+(?P<IFDEF_NAME>.*)    ) |
-            (?P<IFNDEF>     ^[\t ]*\#[\t ]*ifndef[\t ]+(?P<IFNDEF_NAME>.*)   ) |
-            (?P<ELSE>       ^[\t ]*\#[\t ]*else               ) |
-            (?P<ENDIF>      ^[\t ]*\#[\t ]*endif              ) |
-            (?P<UNDEF>      ^[\t ]*\#[\t ]*undef[\t ]+(?P<UNDEF_NAME>.*)    ) |
+            (?P<PRAGMA>     ^[\t ]*\#[\t ]*pragma($|[\t ]+.*)                   ) |
+            (?P<MESSAGE>    ^[\t ]*\#[\t ]*message($|[\t ]+.*)                  ) |
+            (?P<WARNING>    ^[\t ]*\#[\t ]*warning($|[\t ]+.*)                  ) |
+            (?P<ERROR>      ^[\t ]*\#[\t ]*error($|[\t ]+.*)                    ) |
+            (?P<IF>         ^[\t ]*\#[\t ]*if[\t ]+(?P<IF_EXPR>.*)              ) |
+            (?P<ELIF>       ^[\t ]*\#[\t ]*elif[\t ]+(?P<ELIF_EXPR>.*)          ) |
+            (?P<IFDEF>      ^[\t ]*\#[\t ]*ifdef[\t ]+(?P<IFDEF_NAME>.*)        ) |
+            (?P<IFNDEF>     ^[\t ]*\#[\t ]*ifndef[\t ]+(?P<IFNDEF_NAME>.*)      ) |
+            (?P<ELSE>       ^[\t ]*\#[\t ]*else                                 ) |
+            (?P<ENDIF>      ^[\t ]*\#[\t ]*endif                                ) |
+            (?P<UNDEF>      ^[\t ]*\#[\t ]*undef[\t ]+(?P<UNDEF_NAME>.*)        ) |
             (?P<NONPREPROC> ^[^\#].*         )
             ''', re.VERBOSE|re.UNICODE)
 
@@ -245,6 +251,7 @@ class Preprocessor(object):
     def preprocess(self, infile, outfile, filename, include_callback=None):
         """Scan lines and process preprocessor directives"""
         self.log.info("processing %s" % filename)
+        error_found = False
         empty_lines = 0
         process = True
         my_if_was_not_hidden = False
@@ -282,12 +289,29 @@ class Preprocessor(object):
 
                 m = self.re_scanner.match(line)
                 if m is None:
-                    raise PreprocessorError("no match, internal error: %r" % line)
+                    raise PreprocessorError("error: invalid preprocessing directive: %r" % line)
                 elif m.lastgroup == 'IF':
                     expression = m.group('IF_EXPR')
                     value = self.namespace.eval(expression)
                     self.log.debug("#if %s -> %r" % (expression, value))
-                    hiddenstack.append((process, my_if_was_not_hidden, if_name))
+                    hiddenstack.append((process, my_if_was_not_hidden, if_name, False))
+                    if_name = expression
+                    if process:
+                        process = value
+                        my_if_was_not_hidden = True
+                    else:
+                        my_if_was_not_hidden = False
+                    continue
+                elif m.lastgroup == 'ELIF':
+                    # do what #else would do
+                    if my_if_was_not_hidden:
+                        process = not process
+                    # then do what #if would do
+                    expression = m.group('ELIF_EXPR')
+                    value = self.namespace.eval(expression)
+                    self.log.debug("#elif %s -> %r" % (expression, value))
+                    # replace state on the stack
+                    hiddenstack.append((process, my_if_was_not_hidden, if_name, True))
                     if_name = expression
                     if process:
                         process = value
@@ -299,7 +323,7 @@ class Preprocessor(object):
                     symbol = m.group('IFDEF_NAME').strip()
                     value = self.namespace.defines.has_key(symbol)
                     self.log.debug("#ifdef %r -> %r" % (symbol, value))
-                    hiddenstack.append((process, my_if_was_not_hidden, if_name))
+                    hiddenstack.append((process, my_if_was_not_hidden, if_name, False))
                     if_name = symbol
                     if process:
                         process = value
@@ -311,7 +335,7 @@ class Preprocessor(object):
                     symbol = m.group('IFNDEF_NAME').strip()
                     value = not self.namespace.defines.has_key(symbol)
                     self.log.debug("#ifndef %r -> %r" % (symbol, value))
-                    hiddenstack.append((process, my_if_was_not_hidden, if_name))
+                    hiddenstack.append((process, my_if_was_not_hidden, if_name, False))
                     if_name = symbol
                     if process:
                         process = value
@@ -326,7 +350,9 @@ class Preprocessor(object):
                     continue
                 elif m.lastgroup == 'ENDIF':
                     self.log.debug("#endif %r" % (if_name,))
-                    (process, my_if_was_not_hidden, if_name) = hiddenstack.pop()
+                    while True:
+                        (process, my_if_was_not_hidden, if_name, implicit_endif) = hiddenstack.pop()
+                        if not implicit_endif: break
                     continue
                 elif not process:
                     continue
@@ -386,6 +412,27 @@ class Preprocessor(object):
                     self.log.debug("undefined %s" % (symbol,))
                     del self.namespace.defines[symbol]
                     continue
+                elif m.lastgroup == 'MESSAGE':
+                    sys.stderr.write(u'%s:%s: message: %s\n' % (
+                            filename,
+                            lineno,
+                            line.strip(),))
+                    continue
+                elif m.lastgroup == 'WARNING':
+                    sys.stderr.write(u'%s:%s: warning: %s\n' % (
+                            filename,
+                            lineno,
+                            line.strip(),))
+                    continue
+                elif m.lastgroup == 'ERROR':
+                    sys.stderr.write(u'%s:%s: error: %s\n' % (
+                            filename,
+                            lineno,
+                            line.strip(),))
+                    error_found = True
+                    continue
+                elif m.lastgroup == 'PRAGMA':
+                    pass #=> line will be output below
                 elif m.lastgroup == 'NONPREPROC':
                     line = self.expand(line)
                 else:
@@ -414,7 +461,7 @@ class Preprocessor(object):
             raise
         else:
             self.log.info('done "%s"' % (filename),)
-
+        return error_found
 
 class Discard(object):
     """File like target object that consumes and discards all data"""
@@ -519,7 +566,9 @@ def main():
         print_include = None
 
     try:
-        cpp.preprocess(infile, outfile, infilename, print_include)
+        error_found = cpp.preprocess(infile, outfile, infilename, print_include)
+        if error_found:
+            sys.exit(2)
     except PreprocessorError, e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
         if options.debug:

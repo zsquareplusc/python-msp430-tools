@@ -1,8 +1,13 @@
-( Implementations of builtins.
+( vi:ft=forth
+
+  Implementations of some builtins.
+
   These functions are provided for the host in the msp430.asm.forth module. The
   implementations here are for the target.
 
-  vi:ft=forth
+  Copyright [C] 2011 Chris Liechti <cliechti@gmx.net>
+  All Rights Reserved.
+  Simplified BSD License [see LICENSE.txt for full text]
 )
 
 ( ----- low level supporting functions ----- )
@@ -30,19 +35,19 @@ END-CODE
 
 ( ----- Stack ops ----- )
 
-CODE DROP
+CODE DROP ( x -- )
     ." \t incd SP\n "
     ASM-NEXT
 END-CODE
 
-CODE DUP
+CODE DUP ( x -- x x )
 (    ." \t push @SP\n " )
     ." \t mov @SP, W\n "
     ." \t push W\n "
     ASM-NEXT
 END-CODE
 
-CODE OVER
+CODE OVER ( y x -- y x y )
 (    ." \t push 2(TOS\n " )
     ." \t mov 2(SP), W\n "
     ." \t push W\n "
@@ -50,7 +55,7 @@ CODE OVER
 END-CODE
 
 ( Push a copy of the N'th element )
-CODE PICK ( n - n )
+CODE PICK ( n -- n )
     TOS->W                    ( get element number from stack )
     ." \t rla W " LF          ( multiply by 2 -> 2 byte / cell )
     ." \t add SP, W " LF      ( calculate address on stack )
@@ -58,7 +63,7 @@ CODE PICK ( n - n )
     ASM-NEXT
 END-CODE
 
-CODE SWAP ( y x - x y )
+CODE SWAP ( y x -- x y )
     ." \t mov 2(SP), W " LF
     ." \t mov 0(SP), 2(SP) " LF
     ." \t mov W, 0(SP) " LF
@@ -142,20 +147,20 @@ END-CODE
 ( Logical left shift by u bits )
 CODE LSHIFT ( n u -- n*2^u )
     TOS->W
-    ." .lsh:\t clrc " LF
-    ." \t rlc 0(SP) \t; x <<= 1 " LF
-    ." \t dec W " LF
-    ." \t jnz .lsh W " LF
+    ." .lsh:\t clrc\n"
+    ." \t rlc 0(SP) \t; x <<= 1\n"
+    ." \t dec W\n"
+    ." \t jnz .lsh\n"
     ASM-NEXT
 END-CODE
 
 ( Logical right shift by u bits )
-CODE RSHIFT ( n -- n/2^-u )
+CODE RSHIFT ( n u -- n/2^u )
     TOS->W
-    ." .rsh:\t clrc " LF
-    ." \t rrc 0(SP) \t; x >>= 1 " LF
-    ." \t dec W " LF
-    ." \t jnz .rsh W " LF
+    ." .rsh:\t clrc\n"
+    ." \t rrc 0(SP) \t; x >>= 1\n"
+    ." \t dec W\n"
+    ." \t jnz .rsh\n"
     ASM-NEXT
 END-CODE
 

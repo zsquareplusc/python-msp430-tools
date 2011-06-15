@@ -1,7 +1,11 @@
-( Core definitions for the cross compiler
+( vi:ft=forth
+
+  Core definitions for the cross compiler
   for Forth -> MSP430 assembler.
 
-  vi:ft=forth 
+  Copyright [C] 2011 Chris Liechti <cliechti@gmx.net>
+  All Rights Reserved.
+  Simplified BSD License [see LICENSE.txt for full text]
 )
 
 INCLUDE _asm_snippets.forth

@@ -1,6 +1,10 @@
-( Some assembler snippets that are commonly used.
+( vi:ft=forth
 
-  vi:ft=forth
+  Some assembler snippets that are commonly used.
+
+  Copyright [C] 2011 Chris Liechti <cliechti@gmx.net>
+  All Rights Reserved.
+  Simplified BSD License [see LICENSE.txt for full text]
 )
 
 : BS     8 EMIT ;

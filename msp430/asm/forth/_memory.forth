@@ -1,6 +1,10 @@
-( Forth functions to read and write memory.
+( vi:ft=forth
 
-  vi:ft=forth
+  Forth functions to read and write memory.
+
+  Copyright [C] 2011 Chris Liechti <cliechti@gmx.net>
+  All Rights Reserved.
+  Simplified BSD License [see LICENSE.txt for full text]
 )
 
 ( fetch byte value )

@@ -1,6 +1,10 @@
-( Words to work with interrupts.
+( vi:ft=forth
 
-  vi:ft=forth
+  Words to work with interrupts.
+
+  Copyright [C] 2011 Chris Liechti <cliechti@gmx.net>
+  All Rights Reserved.
+  Simplified BSD License [see LICENSE.txt for full text]
 )
 
 ( Example:
@@ -22,7 +26,7 @@
     mov IP, 2[RTOS]  ; save IP on return stack
     mov SP, 0[RTOS]  ; save SP pointer on return stack it points to SR on stack
     mov #XXX, IP     ; Move address of thread of interrupt handler in IP
-    mov @IP+, PC     ; NEXT
+    br  @IP+         ; NEXT
 )
 
 ( Entering an interrupt handler )

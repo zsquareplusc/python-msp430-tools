@@ -1,6 +1,10 @@
-( MSP430 specific low level operations
+( vi:ft=forth
 
-  vi:ft=forth
+  MSP430 specific low level operations.
+
+  Copyright [C] 2011 Chris Liechti <cliechti@gmx.net>
+  All Rights Reserved.
+  Simplified BSD License [see LICENSE.txt for full text]
 )
 
 INCLUDE _interrupts.forth

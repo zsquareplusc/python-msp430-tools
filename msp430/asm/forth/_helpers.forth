@@ -1,6 +1,10 @@
-( Helper function to generate text for the assembler.
+( vi:ft=forth
 
-  vi:ft=forth
+  Helper function to generate text for the assembler.
+
+  Copyright [C] 2011 Chris Liechti <cliechti@gmx.net>
+  All Rights Reserved.
+  Simplified BSD License [see LICENSE.txt for full text]
 )
 
 ( Generate a simple line for headers )

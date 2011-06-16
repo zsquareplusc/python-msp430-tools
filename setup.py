@@ -13,7 +13,7 @@ import sys
 setup(
     name="python-msp430-tools",
     description="Python MSP430 Tools",
-    version="0.4",
+    version="0.5",
     author="Chris Liechti",
     author_email="cliechti@gmx.net",
     url="http://launchpad.net/python-msp430-tools/",

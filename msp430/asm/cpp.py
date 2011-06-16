@@ -543,6 +543,11 @@ def main():
 
     cpp = Preprocessor()
     # extend include search path
+    # built in places for msp430.asm
+    d = os.path.join(os.path.dirname(sys.modules['msp430.asm'].__file__), 'include')
+    cpp.include_path.append(d)
+    cpp.include_path.append(os.path.join(d, 'upstream'))
+    # user provided directories (-I)
     cpp.include_path.extend(options.include_paths)
     # insert predefined symbols (XXX function like macros not yet supported)
     for definition in options.defines:

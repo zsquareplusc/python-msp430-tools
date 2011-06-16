@@ -17,6 +17,7 @@ import msp430.asm.cpp
 
 def main():
     import sys
+    import os
     from optparse import OptionParser
     logging.basicConfig()
 
@@ -67,19 +68,14 @@ def main():
     else:
         outfile = codecs.getwriter("utf-8")(sys.stdout)
 
-    if not args or args[0] == '-':
-        infilename = '<stdin>'
-        infile = codecs.getreader("utf-8")(sys.stdin)
-    else:
-        try:
-            infilename = args[0]
-            infile = codecs.open(infilename, 'r', 'utf-8')
-        except IOError, e:
-            sys.stderr.write('cpp: %s: File not found\n' % (infilename,))
-            sys.exit(1)
 
     cpp = msp430.asm.cpp.Preprocessor()
     # extend include search path
+    # built in places for msp430.asm
+    d = os.path.join(os.path.dirname(sys.modules['msp430.asm'].__file__), 'include')
+    cpp.include_path.append(d)
+    cpp.include_path.append(os.path.join(d, 'upstream'))
+    # user provided directories (-I)
     cpp.include_path.extend(options.include_paths)
     # insert predefined symbols (XXX function like macros not yet supported)
     for definition in options.defines:
@@ -88,6 +84,20 @@ def main():
         else:
             symbol, value = definition, '1'
         cpp.namespace.defines[symbol] = value
+
+    if not args or args[0] == '-':
+        infilename = '<stdin>'
+        infile = codecs.getreader("utf-8")(sys.stdin)
+    else:
+        # search include path for files
+        for path in cpp.include_path:
+            infilename = os.path.join(path, args[0])
+            if os.path.exists(infilename):
+                infile = codecs.open(infilename, 'r', 'utf-8')
+                break
+        else:
+            sys.stderr.write('h2forth: %s: File not found\n' % (infilename,))
+            sys.exit(1)
 
     try:
         error_found = cpp.preprocess(infile, msp430.asm.cpp.Discard(), infilename)

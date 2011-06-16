@@ -163,6 +163,23 @@ END-INTERRUPT
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 
+( Decode a hex digit, text -> number. supported input: 0123456789abcdefABCDEF )
+( This decoding does not check for invalid characters. It will simply return
+  garbage, however in the range of 0 ... 15 )
+: HEXDIGIT ( char - u )
+    DUP 'A' >= IF
+        [ 'A' 10 - ] LITERAL -
+    ENDIF
+    0xf AND
+;
+
+( Decode text, hex digits, at given address and return value )
+: HEX-DECODE ( adr -- u )
+    DUP
+    C@ HEXDIGIT 4 LSHIFT SWAP
+    1+ C@ HEXDIGIT OR
+;
+
 ( Output OK message )
 : XOK ( -- )  ." xOK\n" ;
 
@@ -257,15 +274,30 @@ END-INTERRUPT
                     XOK
                 ENDOF
 
-                [CHAR] m OF         ( memory dump )
-                    ( XXX read start address and range from command )
+                [CHAR] c OF         ( memory dump of calibration values )
                     ( hex dump of INFOMEM segment with calibration values )
                     0x10ff 0x10c0 HEXDUMP
                     XOK
                 ENDOF
 
+                [CHAR] m OF         ( memory dump of given address, 64B blocks )
+                    RX-BUFFER 1+ DUP HEX-DECODE 8 LSHIFT
+                    SWAP 2+ HEX-DECODE OR
+                    DUP 64 + SWAP HEXDUMP
+                    XOK
+                ENDOF
+
+                [CHAR] h OF         ( help )
+                    ." oCommands:\n"
+                    ." o 's' \t\tread switch\n"
+                    ." o 'oM..' \tEcho message\n"
+                    ." o 'c' \t\tDump calibration\n"
+                    ." o 'mHHHH' \thexdump of given address\n"
+                    XOK
+                ENDOF
+
                 ( default )
-                ." xERR unknown command: "
+                ." xERR (try 'h') unknown command: "
                 RX-BUFFER WRITE
             ENDCASE
             RX-BUFFER 8 ZERO            ( erase buffer for next round )

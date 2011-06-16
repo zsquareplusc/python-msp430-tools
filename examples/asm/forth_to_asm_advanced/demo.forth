@@ -292,7 +292,7 @@ END-INTERRUPT
                     ." o 's' \t\tread switch\n"
                     ." o 'oM..' \tEcho message\n"
                     ." o 'c' \t\tDump calibration\n"
-                    ." o 'mHHHH' \thexdump of given address\n"
+                    ." o 'mHHHH' \tHex dump of given address\n"
                     XOK
                 ENDOF
 

@@ -8,6 +8,7 @@
 )
 
 : 2DROP ( n n -- ) DROP DROP ;
+: 2DUP  ( y x -- y x y x ) OVER OVER ;
 
 ( The primitive word /MOD (DIVMOD) leaves both the quotient and the remainder
   on the stack.  Now we can define the / and MOD in terms of /MOD and a few

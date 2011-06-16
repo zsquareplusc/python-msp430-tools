@@ -111,8 +111,8 @@ if __name__ == '__main__':
     import sys
     import time
     import unittest
-    #~ x = XProtocol('/dev/ttyACM0', 2400)
-    x = XProtocol('/dev/ttyACM0', 9600)
+    x = XProtocol('/dev/ttyACM0', 2400)
+    #~ x = XProtocol('/dev/ttyACM0', 9600)
     x.open()
 
     class TestDecoder(unittest.TestCase):

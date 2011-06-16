@@ -16,25 +16,25 @@ INCLUDE io.forth
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 
-CODE WRITE
+CODE WRITE ( s -- )
     TOS->R15
     ." \t call \x23 write\n "
     ASM-NEXT
 END-CODE
 
-CODE EMIT
+CODE EMIT ( u -- )
     TOS->R15
     ." \t call \x23 putchar\n "
     ASM-NEXT
 END-CODE
 
-CODE TIMER_A_UART_INIT
+CODE TIMER_A_UART_INIT ( -- )
     ." \t call \x23 timer_uart_rx_setup\n "
     ASM-NEXT
 END-CODE
 
 
-CODE RX-CHAR
+CODE RX-CHAR ( -- u )
     ." \t mov.b timer_a_uart_rxd, W\n "
     ." \t push W\n "
     ASM-NEXT
@@ -42,18 +42,18 @@ END-CODE
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( Control the LEDs on the Launchpad )
-: RED_ON    BIT0 P1OUT CSET ;
-: RED_OFF   BIT0 P1OUT CRESET ;
-: GREEN_ON  BIT6 P1OUT CSET ;
-: GREEN_OFF BIT6 P1OUT CRESET ;
+: RED_ON    ( -- ) BIT0 P1OUT CSET ;
+: RED_OFF   ( -- ) BIT0 P1OUT CRESET ;
+: GREEN_ON  ( -- ) BIT6 P1OUT CSET ;
+: GREEN_OFF ( -- ) BIT6 P1OUT CRESET ;
 
 ( Read in the button on the Launchpad )
 : S2        P1IN C@ BIT3 AND NOT ;
 
 ( Delay functions )
-: SHORT-DELAY     0x4fff DELAY ;
-: LONG-DELAY      0xffff DELAY ;
-: VERY-LONG-DELAY LONG-DELAY LONG-DELAY ;
+: SHORT-DELAY     ( -- ) 0x4fff DELAY ;
+: LONG-DELAY      ( -- ) 0xffff DELAY ;
+: VERY-LONG-DELAY ( -- ) LONG-DELAY LONG-DELAY ;
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( Simple event handler. A bit field is used to keep track of events. )
 VARIABLE EVENTS
@@ -64,9 +64,9 @@ BIT2 CONSTANT RX-EVENT
 
 ( ------ Helper functions ------ )
 ( Start an event )
-: START EVENTS CSET ;
+: START ( u -- ) EVENTS CSET ;
 ( Test if event was started. Reset its flag anyway and return true when it was set. )
-: PENDING?
+: PENDING? ( -- b )
     DUP                 ( copy bit mask )
     EVENTS CTESTBIT IF  ( test if bit is set )
         EVENTS CRESET   ( it is, reset )
@@ -77,7 +77,7 @@ BIT2 CONSTANT RX-EVENT
     ENDIF
 ;
 ( Return true if no events are pending )
-: IDLE?
+: IDLE? ( -- b )
     EVENTS C@ 0=
 ;
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
@@ -98,7 +98,7 @@ VARIABLE SLOWDOWN
 
 ( Interrupt handler for Watchdog module in timer mode )
 WDT_VECTOR INTERRUPT WATCHDOG-TIMER-HANDLER
-    SLOWDOWN C@ 1 +     ( get and increment counter )
+    SLOWDOWN C@ 1+     ( get and increment counter )
     DUP 30 > IF         ( check value )
         TIMER-EVENT START ( set event flag for timer )
         WAKEUP          ( terminate LPM modes )
@@ -119,7 +119,7 @@ RAM CREATE RX-BUFFER 8 ALLOT
     RX-CHAR DUP             ( get the received character )
     RX-BUFFER RX-POS + C!   ( store character )
     RX-POS 7 < IF           ( increment write pos if there is space )
-        RX-POS 1 + TO RX-POS
+        RX-POS 1+ TO RX-POS
     ENDIF
     '\n' = IF               ( check for EOL )
         RX-EVENT START      ( set event flag for reception )
@@ -168,8 +168,14 @@ END-INTERRUPT
 
 
 ( Output one hex digit for the number on the stack )
-: .HEXDIGIT ( u - )
-    0xf AND DUP 10 >= IF [ 'A' 10 - ] LITERAL ELSE '0' ENDIF + EMIT
+: .HEXDIGIT ( u -- )
+    0xf AND
+    DUP 10 >= IF
+        [ 'A' 10 - ] LITERAL
+    ELSE
+        '0'
+    ENDIF
+    + EMIT
 ;
 
 ( Output two hex digits for the byte on the stack )
@@ -177,6 +183,46 @@ END-INTERRUPT
     DUP
     4 RSHIFT .HEXDIGIT
     .HEXDIGIT
+;
+
+( Output a line with 16 bytes as hex and ASCII dump. Includes newline. )
+: .HEXLINE ( adr -- )
+    [CHAR] h EMIT BL EMIT               ( write prefix )
+    OVER DUP 8 RSHIFT .HEX .HEX SPACE SPACE ( write address )
+    DUP 16 + SWAP       ( calculate end_adr start_adr )
+    ( output hex dump )
+    BEGIN
+        2DUP >          ( end address not yet reached )
+    WHILE
+        DUP C@ .HEX     ( hex dump of address )
+        SPACE
+        1+              ( next address )
+    REPEAT
+    ( reset address )
+    16 -
+    ( output ASCII dump )
+    SPACE
+    BEGIN
+        2DUP >          ( end address not yet reached )
+    WHILE
+        DUP C@          ( get byte )
+        DUP 32 < IF
+            DROP [CHAR] .
+        ENDIF
+        EMIT
+        1+              ( next address )
+    REPEAT
+    2DROP ." \n"        ( finish hex dump, drop address on stack )
+;
+
+( Print a hex dump of the given address range )
+: HEXDUMP ( adr_hi adr_low -- )
+    BEGIN
+        2DUP >
+    WHILE
+        DUP .HEXLINE
+        16 +
+    REPEAT
 ;
 
 
@@ -197,6 +243,7 @@ END-INTERRUPT
             GREEN_ON    ( Show activity )
             ( RX-CHAR EMIT ( send echo )
             RX-BUFFER C@ CASE
+
                 [CHAR] s OF         ( read switch command )
                     [CHAR] i EMIT
                     ( return state of button )
@@ -204,23 +251,19 @@ END-INTERRUPT
                     '\n' EMIT
                     XOK
                 ENDOF
-                [CHAR] o OF         ( output a message )
+
+                [CHAR] o OF         ( output a message / echo )
                     RX-BUFFER WRITE
                     XOK
                 ENDOF
+
                 [CHAR] m OF         ( memory dump )
-                    [CHAR] h EMIT
-                    0x10c0   ( XXX read start address and range from command )
+                    ( XXX read start address and range from command )
                     ( hex dump of INFOMEM segment with calibration values )
-                    BEGIN
-                        DUP 0x10ff <=   ( end address not yet reached )
-                    WHILE
-                        DUP C@ .HEX     ( hex dump of address )
-                        1+              ( next address )
-                    REPEAT
-                    DROP ." \n"         ( finish hex dump, drop address on stack )
+                    0x10ff 0x10c0 HEXDUMP
                     XOK
                 ENDOF
+
                 ( default )
                 ." xERR unknown command: "
                 RX-BUFFER WRITE

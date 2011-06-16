@@ -11,10 +11,9 @@ export PYTHONPATH
 
 # options
 MCU = msp430g2231
-MSP430_HEADERS = ~/mspgcc/uniarch/install/dev/msp430/include
 ASFLAGS =
 LDFLAGS = -v --mcu $(MCU)
-CPPFLAGS = -D_GNU_ASSEMBLER_ -D__ASSEMBLER__ -I $(MSP430_HEADERS)
+CPPFLAGS = 
 FORTHFLAGS = -DMCU=$(MCU)
 H2FORTHFLAGS = $(CPPFLAGS)
 
@@ -42,7 +41,7 @@ all: clean led.titext
 
 clean:
 	$(RM) led.titext led.o4 led.s-cpp led.S \
-	      startup.o4 startup.s-cp \
+	      startup.o4 startup.s-cpp \
 	      intvec.o4 intvec.s-cpp io.forth
 
 # dependencies
@@ -56,8 +55,8 @@ led.titext: startup.o4 led.o4 intvec.o4
 startup.s-cpp:
 	$(LIB) -o $@ asm/startup.S
 
-io.forth: $(MSP430_HEADERS)/$(MCU).h
-	$(H2FORTH) $(H2FORTHFLAGS) -o $@ $<
+io.forth:
+	$(H2FORTH) $(H2FORTHFLAGS) -o $@ $(MCU).h
 
 # pattern rules for the assembler
 %o4: %s-cpp

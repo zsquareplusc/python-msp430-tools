@@ -11,10 +11,9 @@ export PYTHONPATH
 
 # options
 MCU = msp430g2231
-MSP430_HEADERS = ~/mspgcc/uniarch/install/dev/msp430/include
 ASFLAGS =
 LDFLAGS = -v --mcu $(MCU)
-CPPFLAGS = -D_GNU_ASSEMBLER_ -D__ASSEMBLER__ -I $(MSP430_HEADERS)
+CPPFLAGS =
 FORTHFLAGS = -DMCU=$(MCU)
 H2FORTHFLAGS = $(CPPFLAGS)
 
@@ -65,8 +64,8 @@ timer_a_uart_rx.S:
 	$(LIB) -o $@ asm/timer_a_uart/receive_interrupt.S
 
 
-io.forth: $(MSP430_HEADERS)/$(MCU).h
-	$(H2FORTH) $(H2FORTHFLAGS) -o $@ $<
+io.forth:
+	$(H2FORTH) $(H2FORTHFLAGS) -o $@ $(MCU).h
 
 # pattern rules for the assembler
 %o4: %s-cpp

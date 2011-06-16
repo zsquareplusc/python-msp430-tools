@@ -3,6 +3,9 @@ dist
 doc/_build/*
 doc/_static/*
 doc/_templates/*
+msp430/asm/include/upstream
+msp430/asm/include/upstream.tar.gz
+msp430/asm/include/upstream.tar.bz2
 MANIFEST
 *.o4
 *.titext

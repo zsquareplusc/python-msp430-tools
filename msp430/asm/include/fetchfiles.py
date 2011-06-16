@@ -11,7 +11,9 @@ import os
 import sys
 import shutil
 
-URL = 'http://mspgcc.git.sourceforge.net/git/gitweb.cgi?p=mspgcc/msp430mcu;a=snapshot;h=0ae19e5a4b167b21f4b3a5ad65a7bcc63eebad6b;sf=tgz'
+# XXX method to get latest? currently a version is hardcoded.
+URL = 'http://sourceforge.net/projects/mspgcc/files/msp430mcu/msp430mcu-20110612.tar.bz2/download'
+ARCHIVE_NAME = 'upstream.tar.bz2'
 
 # set up environment
 if os.path.exists('upstream'):
@@ -20,23 +22,23 @@ if os.path.exists('upstream'):
 
 os.mkdir('upstream')
 
-if os.path.exists('upstream.tar.gz'):
-    print "upstream.tar.gz found on disk using it. To download latest data, rename or delete the file."
+if os.path.exists(ARCHIVE_NAME):
+    print "%s found on disk using it. To download latest data, rename or delete the file." % (ARCHIVE_NAME)
 else:
     # download archive from MSPGCC (git web interface)
-    print "Downloading archive from sf.net (~7MB). This may take a few minutes..."
+    print "Downloading archive from sf.net (~3MB). This may take a few minutes..."
     archive = urllib2.urlopen(URL)
-    archfile = open('upstream.tar.gz', 'wb')
+    archfile = open(ARCHIVE_NAME, 'wb')
     archfile.write(archive.read())
     archfile.close()
     print "Download complete."
 
 
 print "Extracting the archive contents..."
-tar = tarfile.open('upstream.tar.gz', 'r:gz')
+tar = tarfile.open(ARCHIVE_NAME, 'r')
 for tarinfo in tar:
     #~ print tarinfo.name, "is", tarinfo.size, "bytes in size and is",
-    if tarinfo.isreg():
+    if tarinfo.isreg() and 'upstream' in tarinfo.name:
         filename = os.path.basename(tarinfo.name)
         target_name = os.path.join('upstream', filename)
         shutil.copyfileobj(

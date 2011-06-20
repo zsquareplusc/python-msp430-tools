@@ -6,6 +6,12 @@
 python-msp430-tools documentation
 =================================
 
+This page's online home is at: http://packages.python.org/python-msp430-tools/
+
+Package home (PyPI): http://pypi.python.org/pypi/python-msp430-tools
+
+Developement / Project page: https://launchpad.net/python-msp430-tools
+
 Contents:
 
 .. toctree::

@@ -19,8 +19,6 @@ RESET:  mov     #WDTPW|WDTHOLD, &WDTCTL ; disable WDT
         jnz     .L2                     ; jump while counter is not zero
         jmp     .L1                     ; loop the toggling part
 
-        ; XXX test
-        bis     #LPM0, SR
 
 ; set the reset vector (and all the others) to the program start
 .section .vectors

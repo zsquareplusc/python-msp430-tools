@@ -390,6 +390,9 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     def interpret_word(self, word):
         """Depending on mode a word is executed or compiled"""
         #~ print "XXX", word
+        # newlines are in the steam to support \ comments, they are otehrwise ignored
+        if word == '\n':
+            return
         try:
             element = self.look_up(word)
         except KeyError:
@@ -722,11 +725,27 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         stack.namespace[name.lower()] = value
 
     @immediate
+    @rpn.word('\\')
+    def word_line_comment_start(self, stack):
+        """Start a line comment and read to its end."""
+        while True:
+            word = self.next_word()
+            if '\n' in word:
+                break
+        if not word.endswith('\n'):
+            raise ValueError('limitation, line comment end "\\n" floowed by data: %r' % (word,))
+
+    @immediate
     @rpn.word('(')
     def word_comment_start(self, stack):
         """Start a comment and read to its end."""
-        while self.next_word() != ')':
-            pass
+        while True:
+            word = self.next_word()
+            if ')' in word:
+                break
+        if not word.endswith(')'):
+            raise ValueError('limitation, comment end ")" floowed by data: %r' % (word,))
+
 
     def instruction_output_text(self, stack):
         words = stack._frame_iterator.next()
@@ -998,7 +1017,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     raise ValueError('file not found: %s' % (name,))
                 else:
                     self.logger.info('processing include %s' % (name,))
-                    self.interpret(rpn.words_in_string(data, name='forth/%s' % (name,)))
+                    self.interpret(rpn.words_in_string(data, name='forth/%s' % (name,), include_newline=True))
                     self.logger.info('done include %s' % (name,))
                     self.included_files.append(name)
 
@@ -1093,13 +1112,13 @@ If no input files are specified data is read from stdin."""
         if filename == '-':
             if options.verbose:
                 sys.stderr.write(u'reading stdin...\n')
-            instructions.extend(sys.stdin.read().split())
+            instructions.extend(rpn.words_in_file('<stdin>', fileobj=sys.stdin, include_newline=True))
             include_paths.append('.')
         else:
             if options.verbose:
                 sys.stderr.write(u'reading file "%s"...\n'% filename)
             try:
-                instructions.extend(rpn.words_in_file(filename))
+                instructions.extend(rpn.words_in_file(filename, include_newline=True))
             except IOError as e:
                 sys.stderr.write('forth: %s: File not found\n' % (filename,))
                 sys.exit(1)

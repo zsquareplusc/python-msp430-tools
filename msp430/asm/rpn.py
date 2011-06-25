@@ -47,7 +47,7 @@ def annotated_words(sequence, filename=None, lineno=None, offset=None, text=None
             yield Word(word, filename, lineno, text)
 
 
-def words_in_string(data, name='<string>'):
+def words_in_string(data, name='<string>', include_newline=False):
     """\
     Yield word for word of a string, with comments removed. Words are annotated
     with position in source string.
@@ -55,15 +55,21 @@ def words_in_string(data, name='<string>'):
     for n, line in enumerate(data.splitlines()):
         for word in m_comment.sub('', line).split():
             yield Word(word, name, n+1, line)
+        if include_newline:
+            yield Word('\n', name, n+1, line)
 
-def words_in_file(filename):
+def words_in_file(filename, fileobj=None, include_newline=False):
     """\
     Yield word for word of a file, with comments removed. Words are annotated
     with position in source file.
     """
-    for n, line in enumerate(codecs.open(filename, 'r', 'utf-8')):
+    if fileobj is None:
+        fileobj = codecs.open(filename, 'r', 'utf-8')
+    for n, line in enumerate(fileobj):
         for word in m_comment.sub('', line).split():
             yield Word(word, filename, n+1, line)
+        if include_newline:
+            yield Word('\n', filename, n+1, line)
 
 
 class RPNError(Exception):

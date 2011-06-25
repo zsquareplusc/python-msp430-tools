@@ -131,13 +131,13 @@ CODE INVERT
 END-CODE
 
 
-( Multiply by two (arithmetic left shift) )
+\ Multiply by two (arithmetic left shift)
 CODE 2* ( n -- n*2 )
     ." \t rla 0(SP) \t; x <<= 1 " LF
     ASM-NEXT
 END-CODE
 
-( Divide by two (arithmetic right shift) )
+\ Divide by two (arithmetic right shift)
 CODE 2/ ( n -- n/2 )
     ." \t rra 0(SP) \t; x >>= 1 " LF
     ASM-NEXT

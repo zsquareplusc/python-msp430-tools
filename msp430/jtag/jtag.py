@@ -33,7 +33,7 @@ FLASH_CALLBACK    = 3   # Set a callback for progress report during flash write 
 EMULATION_MODE  = 1
 CLK_CNTRL_MODE  = 2
 MCLK_CNTRL_MODE = 3
-FLASH_TEST_MODE = 4
+FLASH_TEST_MODE = 4     # Flash Marginal Read Test.
 LOCKED_FLASH_ACCESS = 5 # Allows Locked Info Mem Segment A access (if set to '1')
 FLASH_SWOP = 6
 EDT_TRACE_MODE = 7
@@ -45,6 +45,12 @@ RAM_PRESERVE_MODE = 10  # Configure whether RAM content should be preserved/rest
 JTAG_IF = 0
 SPYBIWIRE_IF = 1
 SPYBIWIREJTAG_IF = 2
+AUTOMATIC_IF = 3
+
+# FLASH_TEST_MODE
+FLASH_MARGINAL_READ_OFF = 0
+FLASH_MARGINAL_READ_0 = 1
+FLASH_MARGINAL_READ_1 = 2
 
 # reset methods
 PUC_RESET = 1 << 0      # Power up clear (i.e., a "soft") reset.
@@ -310,9 +316,13 @@ def init_backend(force=None):
                         if status != STATUS_OK:
                             raise IOError("Could not configure the library: %s (device not spi-bi-wire capable?)" % MSP430_Error_String(MSP430_Error_Number()))
                     else:
-                        status = MSP430_Configure(INTERFACE_MODE, JTAG_IF)
+                        # try to use auto detection
+                        status = MSP430_Configure(INTERFACE_MODE, AUTOMATIC_IF)
                         if status != STATUS_OK:
-                            raise IOError("Could not configure the library: %s (spy-bi-wire device/connection?)" % MSP430_Error_String(MSP430_Error_Number()))
+                            # fallback to 4 wire mode
+                            status = MSP430_Configure(INTERFACE_MODE, JTAG_IF)
+                            if status != STATUS_OK:
+                                raise IOError("Could not configure the library: %s (spy-bi-wire device/connection?)" % MSP430_Error_String(MSP430_Error_Number()))
                 else:
                     if interface != 'JTAG':
                         raise ValueError("interface != 'JTAG' is not supported with this backend")

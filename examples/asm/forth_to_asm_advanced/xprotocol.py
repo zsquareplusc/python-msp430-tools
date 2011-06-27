@@ -98,6 +98,8 @@ class XProtocol(object):
                 pass
             elif line[0] == 'i':
                 result.append(int(line[1:], 0))
+            elif line[0] == 'h':
+                result.append(line[1:].decode('hex'))
             elif line[0] == 's':
                 result.append(codecs.escape_decode(line[1:])[0])
             elif line[0] == 'o':

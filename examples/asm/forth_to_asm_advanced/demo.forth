@@ -1,13 +1,25 @@
-( vi:ft=forth
+\ vi:ft=forth
+\
+\ Serial input output [X-Protocol] Example.
+\ Hardware: Launchpad
+\ Serial Port Settings: 2400,8,N,1
+\
+\ Notes
+\ -----
+\ The RED LED is blinking periodically. Its timing is made with the
+\ Watchdog module configured as timer.
+\
+\ The RED LED is configured as ADC input when it is not active. This allows
+\ to show the photo-sensitivity of the LED (compare ADC measurements of
+\ channel 0 with bright and low ambient light).
+\
+\ Due to issues with the CDC-ACM driver under Linux are no messages sent
+\ by the MSP430 on its own. All commands are initiated by the PC.
+\
+\ Copyright (C) 2011 Chris Liechti <cliechti@gmx.net>
+\ All Rights Reserved.
+\ Simplified BSD License (see LICENSE.txt for full text)
 
-  Serial input output [X-Protocol] Example.
-  Hardware: Launchpad
-  Serial Port Settings: 2400,8,N,1
-
-  Copyright [C] 2011 Chris Liechti <cliechti@gmx.net>
-  All Rights Reserved.
-  Simplified BSD License [see LICENSE.txt for full text]
-)
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 INCLUDE core.forth
@@ -16,34 +28,46 @@ INCLUDE io.forth
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 
+( Write null terminated string using TimerA UART )
 CODE WRITE ( s -- )
     TOS->R15
     ." \t call \x23 write\n "
     ASM-NEXT
 END-CODE
 
+( Output character using the TimerA UART )
 CODE EMIT ( u -- )
     TOS->R15
     ." \t call \x23 putchar\n "
     ASM-NEXT
 END-CODE
 
+( Initialize TimerA UART for reception )
 CODE TIMER_A_UART_INIT ( -- )
     ." \t call \x23 timer_uart_rx_setup\n "
     ASM-NEXT
 END-CODE
 
-
+( Fetch received character from TimerA UART )
 CODE RX-CHAR ( -- u )
     ." \t mov.b timer_a_uart_rxd, W\n "
     ." \t push W\n "
     ASM-NEXT
 END-CODE
 
+( Perform a single ADC10 measurement )
+CODE ADC10 ( u -- u )
+    TOS->R15
+    ." \t call \x23 single_adc10\n "
+    R15->TOS
+    ASM-NEXT
+END-CODE
+
+
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( Control the LEDs on the Launchpad )
-: RED_ON    ( -- ) BIT0 P1OUT CSET ;
-: RED_OFF   ( -- ) BIT0 P1OUT CRESET ;
+: RED_ON    ( -- ) BIT0 P1DIR CSET   BIT0 ADC10AE0 CRESET ;
+: RED_OFF   ( -- ) BIT0 P1DIR CRESET BIT0 ADC10AE0 CSET ;
 : GREEN_ON  ( -- ) BIT6 P1OUT CSET ;
 : GREEN_OFF ( -- ) BIT6 P1OUT CRESET ;
 
@@ -98,7 +122,7 @@ VARIABLE SLOWDOWN
 
 ( Interrupt handler for Watchdog module in timer mode )
 WDT_VECTOR INTERRUPT WATCHDOG-TIMER-HANDLER
-    SLOWDOWN C@ 1+     ( get and increment counter )
+    SLOWDOWN C@ 1+      ( get and increment counter )
     DUP 30 > IF         ( check value )
         TIMER-EVENT START ( set event flag for timer )
         WAKEUP          ( terminate LPM modes )
@@ -133,9 +157,9 @@ END-INTERRUPT
 : INIT ( -- )
     ( Initialize pins )
     OUT TACCTL0 !       ( Init Timer A CCTL before pin is activated DIR, SEL)
-    BIT1 P1OUT C!       ( TXD )
+    [ BIT0 BIT1 + ] LITERAL P1OUT C! ( RED TXD )
     [ BIT1 BIT2 + ] LITERAL P1SEL C! ( TXD RXD )
-    [ BIT0 BIT1 + BIT6 + ] LITERAL P1DIR C!
+    [ BIT1 BIT6 + ] LITERAL P1DIR C! ( GREEN TXD )
     BIT3 P1IES C!       ( select neg edge )
     0 P1IFG C!          ( reset flags )
     BIT3 P1IE C!        ( enable interrupts for S2 )
@@ -152,6 +176,9 @@ END-INTERRUPT
     [ TASSEL1 MC1 + ] LITERAL TACTL !
     TIMER_A_UART_INIT
 
+    ( Enable ADC10 inputs )
+    [ BIT0 BIT4 BIT5 BIT7 + + + ] LITERAL ADC10AE0 C!
+
     ( Indicate startup with LED )
     GREEN_ON
     VERY-LONG-DELAY
@@ -163,8 +190,8 @@ END-INTERRUPT
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 
-( Decode a hex digit, text -> number. supported input: 0123456789abcdefABCDEF )
-( This decoding does not check for invalid characters. It will simply return
+( Decode a hex digit, text -> number. supported input: 0123456789abcdefABCDEF
+  This decoding does not check for invalid characters. It will simply return
   garbage, however in the range of 0 ... 15 )
 : HEXDIGIT ( char - u )
     DUP 'A' >= IF
@@ -173,15 +200,18 @@ END-INTERRUPT
     0xf AND
 ;
 
-( Decode text, hex digits, at given address and return value )
+( Decode text, 2 hex digits, at given address and return value )
 : HEX-DECODE ( adr -- u )
     DUP
     C@ HEXDIGIT 4 LSHIFT SWAP
     1+ C@ HEXDIGIT OR
 ;
 
-( Output OK message )
-: XOK ( -- )  ." xOK\n" ;
+( Decode text, 4 hex digits, big endian order, at given address and return value )
+: HEX-DECODE-WORD-BE ( adr -- u )
+    DUP HEX-DECODE 8 LSHIFT
+    SWAP 2 + HEX-DECODE OR
+;
 
 
 ( Output one hex digit for the number on the stack )
@@ -196,22 +226,29 @@ END-INTERRUPT
 ;
 
 ( Output two hex digits for the byte on the stack )
-: .HEX ( u -- )
+: .CHEX ( u -- )
     DUP
     4 RSHIFT .HEXDIGIT
     .HEXDIGIT
 ;
 
+( Output four hex digits for the word on the stack, big endian)
+: .HEX ( u -- )
+    DUP
+    8 RSHIFT .CHEX
+    .CHEX
+;
+
 ( Output a line with 16 bytes as hex and ASCII dump. Includes newline. )
 : .HEXLINE ( adr -- )
-    [CHAR] h EMIT BL EMIT               ( write prefix )
-    OVER DUP 8 RSHIFT .HEX .HEX SPACE SPACE ( write address )
+    [CHAR] h EMIT SPACE         ( write prefix )
+    OVER .HEX SPACE SPACE       ( write address )
     DUP 16 + SWAP       ( calculate end_adr start_adr )
     ( output hex dump )
     BEGIN
         2DUP >          ( end address not yet reached )
     WHILE
-        DUP C@ .HEX     ( hex dump of address )
+        DUP C@ .CHEX    ( hex dump of address )
         SPACE
         1+              ( next address )
     REPEAT
@@ -233,14 +270,23 @@ END-INTERRUPT
 ;
 
 ( Print a hex dump of the given address range )
-: HEXDUMP ( adr_hi adr_low -- )
+: HEXDUMP ( adr_low adr_hi -- )
+    SWAP
     BEGIN
         2DUP >
     WHILE
         DUP .HEXLINE
         16 +
     REPEAT
+    2DROP
 ;
+
+
+( Output an integer )
+: .INT ( -- )  ." i0x" .HEX '\n' EMIT ;
+
+( Output OK message )
+: .XOK ( -- )  ." xOK\n" ;
 
 
 ( Main application, run after INIT )
@@ -261,43 +307,47 @@ END-INTERRUPT
             ( RX-CHAR EMIT ( send echo )
             RX-BUFFER C@ CASE
 
-                [CHAR] s OF         ( read switch command )
-                    [CHAR] i EMIT
-                    ( return state of button )
-                    S2 IF [CHAR] 1 ELSE [CHAR] 0 ENDIF EMIT
-                    '\n' EMIT
-                    XOK
+                ( read switch command )
+                ( 's' Read switch )
+                [CHAR] s OF
+                    S2 .INT                 ( return state of button )
+                    .XOK
                 ENDOF
 
-                [CHAR] o OF         ( output a message / echo )
+                ( make ADC10 measurement )
+                ( 'aCC' ADC measurement if given channel in hex )
+                [CHAR] a OF
+                    RX-BUFFER 1+ HEX-DECODE ( get channel from parameter )
+                    12 LSHIFT               ( prepare channel argument )
+                    ADC10DIV_3 OR
+                    ADC10 .INT              ( measure and output)
+                    .XOK
+                ENDOF
+
+                ( output a message / echo )
+                ( 'oM..' Echo message )
+                [CHAR] o OF
                     RX-BUFFER WRITE
-                    XOK
+                    .XOK
                 ENDOF
 
-                [CHAR] c OF         ( memory dump of calibration values )
-                    ( hex dump of INFOMEM segment with calibration values )
-                    0x10ff 0x10c0 HEXDUMP
-                    XOK
+                ( memory dump of INFOMEM segment with calibration values )
+                ( 'c' Dump calibration values )
+                [CHAR] c OF
+                    0x10c0 0x10ff HEXDUMP
+                    .XOK
                 ENDOF
 
-                [CHAR] m OF         ( memory dump of given address, 64B blocks )
-                    RX-BUFFER 1+ DUP HEX-DECODE 8 LSHIFT
-                    SWAP 2+ HEX-DECODE OR
-                    DUP 64 + SWAP HEXDUMP
-                    XOK
-                ENDOF
-
-                [CHAR] h OF         ( help )
-                    ." oCommands:\n"
-                    ." o 's' \t\tread switch\n"
-                    ." o 'oM..' \tEcho message\n"
-                    ." o 'c' \t\tDump calibration\n"
-                    ." o 'mHHHH' \tHex dump of given address\n"
-                    XOK
+                ( memory dump of given address, 64B blocks )
+                ( 'mHHHH' Hex dump of given address )
+                [CHAR] m OF
+                    RX-BUFFER 1+ HEX-DECODE-WORD-BE
+                    DUP 64 + HEXDUMP
+                    .XOK
                 ENDOF
 
                 ( default )
-                ." xERR (try 'h') unknown command: "
+                ." xERR cmd?:"
                 RX-BUFFER WRITE
             ENDCASE
             RX-BUFFER 8 ZERO            ( erase buffer for next round )
@@ -317,10 +367,6 @@ END-INTERRUPT
             SHORT-DELAY
             RED_OFF
         ENDIF
-(        S2 IF
-        ELSE
-        ENDIF
-)
     AGAIN
 ;
 

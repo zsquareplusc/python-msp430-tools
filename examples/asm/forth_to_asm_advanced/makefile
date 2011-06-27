@@ -43,13 +43,13 @@ clean:
 	$(RM) demo.titext *.o4 demo.s-cpp demo.S \
 	      startup.s-cpp \
 	      intvec.s-cpp io.forth \
-	      write.s-cpp putchar.S timer_a_uart_rx.S
+	      write.s-cpp putchar.S timer_a_uart_rx.S adc10.S adc10.s-cpp
 
 # dependencies
 demo.forth: io.forth
 
 # linking final program
-demo.titext: startup.o4 demo.o4 intvec.o4 write.o4 putchar.o4 timer_a_uart_rx.o4
+demo.titext: startup.o4 demo.o4 intvec.o4 write.o4 putchar.o4 timer_a_uart_rx.o4 adc10.o4
 	$(LD) $(LDFLAGS) -o $@ $^
 
 
@@ -62,6 +62,8 @@ putchar.S:
 	$(LIB) -o $@ asm/timer_a_uart/putchar_outmod.S
 timer_a_uart_rx.S:
 	$(LIB) -o $@ asm/timer_a_uart/receive_interrupt.S
+adc10.S:
+	$(LIB) -o $@ asm/adc10.S
 
 
 io.forth:

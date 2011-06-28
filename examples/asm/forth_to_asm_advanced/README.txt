@@ -152,9 +152,9 @@ Or the CPU identification ``m0ff0`` (only 1st line is relevant)::
 
 Reading the switch twice with ``s``::
 
-    i0
+    i0x0000
     xOK
-    i1
+    i0xffff
     xOK
 
 Errors are of course reported too (input: ``fail``)::

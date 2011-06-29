@@ -11,7 +11,7 @@ export PYTHONPATH
 
 # options
 ASFLAGS = 
-LDFLAGS = --mcu MSP430G2231
+LDFLAGS = -v --mcu MSP430G2231
 #~ LDFLAGS = -v --mcu MSP430G2231 --symbols MSP430G2231
 CPPFLAGS = -D_GNU_ASSEMBLER_ -D__ASSEMBLER__ -D__MSP430G2132__
 
@@ -54,7 +54,7 @@ calibrate.titext: calibrate.o4
 .PHONY: download-jtag download-bsl download-gdb
 
 download-jtag: calibrate.titext
-	python -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
+	python -m msp430.jtag.target -p TIUSB -e  $^ --spy-bi-wire
 
 download-bsl: calibrate.titext
 	python -m msp430.bsl.target -e $^
@@ -64,3 +64,5 @@ download-gdb: calibrate.titext
 
 download-mspdebug: calibrate.titext
 	mspdebug rf2500 "prog $^" exit
+
+download: download-jtag

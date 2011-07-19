@@ -20,6 +20,7 @@ import msp430.jtag, msp430.memory
 from StringIO import StringIO
 import traceback
 import ConfigParser
+from msp430.jtag import jtag
 
 name = 'msp430-downloader' #os.path.basename(os.path.splitext(sys.argv[0])[0])
 
@@ -83,11 +84,11 @@ def interpret_config(config, abspath=True):
     if config.has_option('modes', 'backend'):
         back_name = config.get('modes', 'backend')
         if back_name == 'ti':
-            options.backend = msp430.jtag.CTYPES_TI
+            options.backend = jtag.CTYPES_TI
         elif back_name == 'parjtag':
-            options.backend = msp430.jtag.PARJTAG
+            options.backend = jtag.PARJTAG
         elif back_name == 'mspgcc':
-            options.backend = msp430.jtag.CTYPES_MSPGCC
+            options.backend = jtag.CTYPES_MSPGCC
         else:
             abort_on_error('Unsupported backend in configuation file: %r' % back_name)
     
@@ -184,8 +185,8 @@ if options.loop:
     options.ask_start = True
 
 # init
-msp430.jtag.init_backend(options.backend)
-if msp430.jtag.backend == msp430.jtag.CTYPES_TI:
+jtag.init_backend(options.backend)
+if jtag.backend == jtag.CTYPES_TI:
     options.fake_progress = True
 
 # - - - - - - - - - - - - - - optional questions - - - - - - - - - - - - - - -
@@ -225,7 +226,7 @@ if options.debug:
 # capture console output
 sys.stdout = sys.stderr = StringIO()
 
-class ProgressJTAG(msp430.jtag.JTAG):
+class ProgressJTAG(jtag.JTAG):
     def progess_update(self, count, total):
         self.bar.set(100*count/total)
 

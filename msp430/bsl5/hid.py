@@ -95,7 +95,10 @@ if sys.platform == 'win32':
             if device is None:
                 filter = hid.HidDeviceFilter(vendor_id = 0x2047, product_id = 0x0200)
                 all_devices = filter.get_devices()
-                self.hid_device = all_devices[0]
+                try:
+                    self.hid_device = all_devices[0]
+                except IndexError:
+                    raise ValueError('USB VID:PID 2047:0200 not found (not in BSL mode? or try --device)')
             else:
                 #~ ... by serial number?
                 raise ValueError("don't (yet) know how to handle --device")

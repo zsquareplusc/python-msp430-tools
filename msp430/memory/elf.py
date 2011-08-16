@@ -207,11 +207,15 @@ class ELFObject:
         """read all relevant data from fileobj.
         the file must be seekable"""
         #get file header
-        (self.e_ident, self.e_type, self.e_machine, self.e_version,
-        self.e_entry, self.e_phoff, self.e_shoff,
-        self.e_flags, self.e_ehsize, self.e_phentsize, self.e_phnum,
-        self.e_shentsize, self.e_shnum, self.e_shstrndx) = struct.unpack(
-            self.Elf32_Ehdr, fileobj.read(struct.calcsize(self.Elf32_Ehdr)))
+        try:
+            (self.e_ident, self.e_type, self.e_machine, self.e_version,
+            self.e_entry, self.e_phoff, self.e_shoff,
+            self.e_flags, self.e_ehsize, self.e_phentsize, self.e_phnum,
+            self.e_shentsize, self.e_shnum, self.e_shstrndx) = struct.unpack(
+                self.Elf32_Ehdr, fileobj.read(struct.calcsize(self.Elf32_Ehdr)))
+        except struct.error:
+            # e.g. if file was too short struct size wont match
+            raise ELFException("Not a valid ELF file")
         #verify if its a known format and realy an ELF file
         if self.e_ident[0:4]             != '\x7fELF' and\
            self.e_ident[self.EI_CLASS]   != self.ELFCLASS32 and\

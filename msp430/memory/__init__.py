@@ -258,7 +258,7 @@ def load(filename, fileobj=None, format=None):
             try:
                 if filename[-4:].lower() == '.txt':
                     return titext.load(fileobj)
-                elif filename[-6:].lower() == '.titxt':
+                elif filename[-6:].lower() == '.titxt' or filename[-7:].lower() == '.titext':
                     return titext.load(fileobj)
                 elif filename[-4:].lower() in ('.a43', '.hex'):
                     return intelhex.load(fileobj)

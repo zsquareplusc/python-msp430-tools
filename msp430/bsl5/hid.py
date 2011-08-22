@@ -108,7 +108,7 @@ if sys.platform == 'win32':
             self.receiving_queue = Queue.Queue()
 
         def close(self):
-            """Close serial port"""
+            """Close port"""
             if self.hid_device is not None:
                 self.logger.info('closing HID device')
                 try:
@@ -157,7 +157,7 @@ else:
             self.hid_device = os.open(device, os.O_RDWR)
 
         def close(self):
-            """Close serial port"""
+            """Close port"""
             if self.hid_device is not None:
                 self.logger.info('closing HID device')
                 try:

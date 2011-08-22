@@ -661,37 +661,28 @@ Multiple --upload options are allowed.
                 sys.stderr.write("   <no actions>\n")
             sys.stderr.flush()
 
-        abort_due_to_error = True
         self.open_connection()
-        try:
-            # work through action list
-            for f, args, kwargs in self.action_list:
-                f(*args, **kwargs)
+        # work through action list
+        for f, args, kwargs in self.action_list:
+            f(*args, **kwargs)
 
-            # output uploaded data
-            if self.upload_data is not None:
-                memory.save(self.upload_data, self.output, self.options.output_format)
+        # output uploaded data
+        if self.upload_data is not None:
+            memory.save(self.upload_data, self.output, self.options.output_format)
 
-            if self.options.do_wait:                        # wait at the end if desired
-                if self.verbose:
-                    sys.stderr.write("Press <ENTER> ...\n") # display a prompt
-                    sys.stderr.flush()
-                raw_input()                                 # wait for newline
+        if self.options.do_wait:                        # wait at the end if desired
+            if self.verbose:
+                sys.stderr.write("Press <ENTER> ...\n") # display a prompt
+                sys.stderr.flush()
+            raw_input()                                 # wait for newline
 
-            abort_due_to_error = False
-        finally:
-            if abort_due_to_error:
-                sys.stderr.write("Cleaning up after error...\n")
-            if not self.options.no_close:
-                self.close_connection()                     # release communication port
-            elif self.verbose:
-                sys.stderr.write("WARNING: port is left open (--no-close)\n")
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def main(self):
         """Main command line entry"""
         start_time = None
+        abort_due_to_error = True
         try:
             self.create_option_parser()
             self.add_extra_options()
@@ -700,6 +691,7 @@ Multiple --upload options are allowed.
             if self.options.time:
                 start_time = time.time()
             self.do_the_work()
+            abort_due_to_error = False
         except SystemExit:
             raise                                           # let pass exit() calls
         except KeyboardInterrupt:
@@ -711,6 +703,12 @@ Multiple --upload options are allowed.
             sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short message in user mode
             sys.exit(1)                                     # set error level for script usage
         finally:
+            if abort_due_to_error:
+                sys.stderr.write("Cleaning up after error...\n")
+            if not self.options.no_close:
+                self.close_connection()                     # release communication port
+            elif self.verbose:
+                sys.stderr.write("WARNING: port is left open (--no-close)\n")
             if start_time is not None:
                 end_time = time.time()
                 sys.stderr.write("Time: %.1f s\n" % (end_time - start_time))

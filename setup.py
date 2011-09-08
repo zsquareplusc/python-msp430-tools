@@ -20,7 +20,6 @@ setup(
     packages=['msp430'],
     package_dir={'msp430': 'msp430'},
     package_data={'msp430': [
-            'msp430/asm/definitions/F1xx.txt',
             'msp430/asm/definitions/msp430-mcu-list.txt',
             'msp430/bsl/BL_150S_14x.txt',
             'msp430/bsl/BL_150S_44x.txt',

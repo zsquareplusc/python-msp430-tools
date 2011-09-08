@@ -229,11 +229,11 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             sys.exit()
 
         if self.options.backend is not None:
-            if options.backend == 'mspgcc':
+            if self.options.backend == 'mspgcc':
                 backend = jtag.CTYPES_MSPGCC
-            elif options.backend == 'parjtag':
+            elif self.options.backend == 'parjtag':
                 backend = jtag.PARJTAG
-            elif options.backend == 'ti':
+            elif self.options.backend == 'ti':
                 backend = jtag.CTYPES_TI
             else:
                 raise parser.error("no such backend: %r" % self.options.backend)

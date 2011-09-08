@@ -91,6 +91,8 @@ def locate_library(libname, paths=sys.path, loader=None):
 # create a wrapper class with ctypes, that has the same API as _parjtag
 backend = None
 backend_info = None
+_parjtag = None
+
 def init_backend(force=None):
     global backend
     global backend_info
@@ -526,7 +528,8 @@ class JTAG(object):
 
     def close(self):
         """Release device from JTAG."""
-        _parjtag.release()
+        if _parjtag is not None:
+            _parjtag.release()
 
     def setDebugLevel(self, level):
         """Set level of debugging messages."""
@@ -560,7 +563,8 @@ class JTAG(object):
         if self.verbose:
             sys.stderr.write("Reset %sdevice...\n" % (release and 'and release ' or ''))
             sys.stderr.flush()
-        _parjtag.reset(execute, release)
+        if _parjtag is not None:
+            _parjtag.reset(execute, release)
         #~ _parjtag.reset(execute, release, PUC_RESET + RST_RESET)
 
     def getCPURegister(self, regnum):

@@ -16,12 +16,12 @@ COMMANDS = {
     'compare': 'msp430.memory.compare',
     'convert': 'msp430.memory.convert',
     'generate': 'msp430.memory.generate',
-    'commands': 'msp430.shell.command',
+    'cmd': 'msp430.shell.command',
     'watch': 'msp430.shell.watch',
     'as': 'msp430.asm.as',
     'ld': 'msp430.asm.ld',
     'cpp': 'msp430.asm.cpp',
-    'disassemble': 'msp430.asm.disassemble',
+    'dis': 'msp430.asm.disassemble',
 }
 
 def usage_error():

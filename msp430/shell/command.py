@@ -244,8 +244,7 @@ COMMANDS = {
         'list': (command_list,   'This text.',                     '%prog'),
         }
 
-
-if __name__ == '__main__':
+def main():
     debug = False
     if len(sys.argv) > 1 and sys.argv[1] == '--debug':
         del sys.argv[1]
@@ -274,3 +273,7 @@ if __name__ == '__main__':
         sys.stderr.write('ERROR: %s\n' % (e,))
         sys.exit(1)
     parser.error('Expected command name, try "list".')
+
+if __name__ == '__main__':
+    main()
+

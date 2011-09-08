@@ -42,19 +42,22 @@ def watch(filenames, callback):
         time.sleep(2)
 
 
-if __name__ == '__main__':
+def main():
     from optparse import OptionParser
 
-    parser = OptionParser(usage='%prog FILENAME [FILENAME...] --execute "some/program/ --"')
+    parser = OptionParser(usage='%prog FILENAME [FILENAME...] --execute "some_program --"')
 
     parser.add_option("-x", "--execute",
             action = "store",
             dest = "execute",
             default = None,
             metavar = "COMMAND",
-            help = "run this command when watched file(s) changed, -- is replaced by FILENAME(s)")
+            help = "run this command when watched file(s) changed, -- is replaced by first FILENAME")
 
     (options, args) = parser.parse_args()
+
+    if not args:
+        parser.error('at least one filename is required')
 
     if options.execute:
         cmd = options.execute.replace('--', args[0])
@@ -69,3 +72,6 @@ if __name__ == '__main__':
             subprocess.call(cmd, shell=True)
 
     watch(args, callback=execute)
+
+if __name__ == '__main__':
+    main()

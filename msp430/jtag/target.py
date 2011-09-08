@@ -247,6 +247,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
         if self.options.do_secure:
             self.add_action(self.jtagobj.actionSecure)
 
+        self.jtagobj.verbose = self.verbose
         internal_level = max(self.verbose - 2, 0)
         try:
             self.jtagobj.setDebugLevel(internal_level)

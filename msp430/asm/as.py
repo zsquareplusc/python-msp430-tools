@@ -1020,7 +1020,7 @@ class MSP430Assembler(object):
 def main():
     from optparse import OptionParser
 
-    parser = OptionParser()
+    parser = OptionParser(usage = '%prog [options] source.S')
     parser.add_option(
             "-x", "--msp430x",
             action = "store_true",
@@ -1073,9 +1073,10 @@ def main():
                     n_pseudo, n_real, options.msp430x and 'X' or ''))
         sys.exit(1)
 
-    if len(args) != 1:
-        sys.stderr.write("Only one file at a time allowed.\n")
-        sys.exit(1)
+    if not args:
+        parser.error("Missing filename.")
+    if len(args) > 1:
+        parser.error("Only one file at a time allowed.")
 
     filename = args[0]
     if options.input_filename is None:

@@ -240,7 +240,7 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
         bsl_version_expected = (0x00, 0x05, 0x04, 0x34)
         full_bsl_txt = pkgutil.get_data('msp430.bsl5', 'RAM_BSL.00.05.04.34.txt')
         full_bsl = msp430.memory.load('BSL', StringIO(full_bsl_txt), format='titext')
-        self.program_file(full_bsl)
+        self.program_file(full_bsl, quiet=True)
         self.BSL_LOAD_PC(0x2504)
 
         # must re-initialize communication, BSL or USB system needs some time

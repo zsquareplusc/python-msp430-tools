@@ -239,19 +239,23 @@ class Target(object):
         if self.verbose:
             sys.stderr.write('Upload by file: done\n')
 
-    def program_file(self, download_data=None):
-        """download data from self.download_data or the optional parameter"""
+    def program_file(self, download_data=None, quiet=False):
+        """\
+        download data from self.download_data or the optional parameter.
+        status messages on stderr are printed unless the quiet parameter is
+        true (this can e.g. used to download helper code)
+        """
         if download_data is None:
             download_data = self.download_data
         for segment in download_data:
-            if self.verbose > 1:
+            if self.verbose > 1 and not quiet:
                 sys.stderr.write("Write segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
             data = segment.data
             # pad length if odd number of bytes
             if len(data) & 1:
                 data += '\xff'
             self.memory_write(segment.startaddress, data)
-        if self.verbose:
+        if self.verbose and not quiet:
             sys.stderr.write('Programming: OK\n')
 
     def verify_by_file(self):

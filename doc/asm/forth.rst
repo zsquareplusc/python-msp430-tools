@@ -71,7 +71,7 @@ Cross compilation of ``CODE`` words
     word simply outputs assembler code. Forth_ words must include the code
     for ``NEXT``.
 
-    This allows that ``CODE`` word definitions cam also be used to generate
+    This allows that ``CODE`` word definitions can also be used to generate
     helper functions for other assembler parts.
 
 Cross compilation of ``INTERRUPT`` words

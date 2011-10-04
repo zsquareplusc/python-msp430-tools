@@ -37,7 +37,7 @@ For example, ``led.S``::
 Assemble, link::
 
     python -m msp430.asm.as led.S -o led.o4
-    python -m msp430.asm.ld --mcu MSP430F1121 led.o4 -o led.titext
+    python -m msp430.asm.ld --mcu MSP430G2211 led.o4 -o led.titext
 
 Download
 --------
@@ -50,9 +50,13 @@ Boot Strap Loader (BSL), Serial
 
     Not all devices support BSL (e.g. the smaller value line (G2) and F2 devices)
 
-    Command example::
+    Command example (F1x, F2x, F4x)::
 
         python -m msp430.bsl.target -e led.titext
+
+    Command example (F5x, F6x)::
+
+        python -m msp430.bsl5.uart -e led.titext
 
 Boot Strap Loader (BSL), USB HID
     Some MSP430 have a built in USB controller and they also support downloading
@@ -72,7 +76,7 @@ JTAG, 4-wire
 
     Command example::
 
-        python -m msp430.jtag.target --spy-bi-wire -e led.titext
+        python -m msp430.jtag.target -e led.titext
 
 JTAG, spy-bi-wire
     This is a variation of the JTAG interface that only requires two pins and

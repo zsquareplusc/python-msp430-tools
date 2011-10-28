@@ -128,11 +128,19 @@ def init_backend(force=None):
             search_path.insert(0, os.environ['LIBMSPGCC_PATH'])
         except KeyError:
             if DEBUG > 4: sys.stderr.write('LIBMSPGCC_PATH is not set\n')
-            # as fallback, append PATH
-            try:
-                search_path.extend(os.environ['PATH'].split(os.pathsep))
-            except KeyError:
-                pass
+            if sys.platform == 'win32':
+                search_path.insert(0, os.path.abspath('.'))
+                # as fallback, append PATH
+                try:
+                    search_path.extend(os.environ['PATH'].split(os.pathsep))
+                except KeyError:
+                    pass
+            else:
+                # as fallback, append PATH
+                try:
+                    search_path.extend(os.environ['LD_LIBRARY_PATH'].split(os.pathsep))
+                except KeyError:
+                    pass
         #~ print search_path
 
         STATUS_OK    = 0

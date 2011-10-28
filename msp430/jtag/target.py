@@ -317,9 +317,13 @@ def main():
             os.environ['LD_LIBRARY_PATH'] = library_path
             os.environ['LIBMSPGCC_PATH'] = library_path
         # start a new process
-        # XXX this does only work if module is in pythons search path..
-        os.execve(sys.executable, [sys.executable, '-m', 'msp430.jtag.target'] + sys.argv[1:], os.environ)
-        #~ os.execve(sys.executable, [sys.executable, __file__] + sys.argv, os.environ)
+        if hasattr(sys, "frozen"):      # py2exe
+            sys.exit(os.spawnve(os.P_WAIT, sys.executable, [sys.executable] + sys.argv[1:], os.environ))
+        else:
+            # XXX this does only work if module is in pythons search path..
+            os.execve(sys.executable, [sys.executable, '-m', 'msp430.jtag.target'] + sys.argv[1:], os.environ)
+            #~ os.execve(sys.executable, [sys.executable, __file__] + sys.argv, os.environ)
+        return
 
     # run the main application
     jtag_target = JTAG()

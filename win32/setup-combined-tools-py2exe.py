@@ -25,7 +25,7 @@ setup(
             'excludes': ['javax.comm', 'macpath', 'TERMIOS', 'FCNTL',
                     'os2emxpath', '_parjtag',
                     'IronPythonConsole', 'System', 'System.IO.Ports', 'System.Windows.Forms.Clipboard', 'clr',
-                    'modes.editingmodes', 'startup', 'Carbon', 'Carbon.Files'],
+                    'modes.editingmodes', 'startup', 'Carbon', 'Carbon.Files', 'wx'],
             'packages': ['msp430', 'msp430.asm', 'msp430.memory', 'msp430.shell',
                         'msp430.gdb', 'msp430.jtag', 'msp430.bsl', 'msp430.bsl5'],
             'includes': ['pywinusb', 'EasyDialogs'],

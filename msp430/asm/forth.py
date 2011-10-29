@@ -29,6 +29,55 @@ import pkgutil
 import logging
 from msp430.asm import rpn
 
+
+class DocumentTree(object):
+    """\
+    Maintain a list of chapters where each contains a list of sections.
+    Track current section to write to. Data is buffered and sorted
+    alphabetically when output.
+    """
+
+    def __init__(self):
+        self._state = []
+        # output is buffered in memory first. this allows to group commands and
+        # to output in alphabetical order
+        self.chapter_name = None
+        self.chapters = {}
+        self.current_chapter = None
+        self.current_section = None
+        self.chapter()    # create default chapter
+
+    def chapter(self, name=' DEFAULT '):
+        """Select chapter to put text sections in"""
+        self.chapter_name = name
+        self.current_chapter = self.chapters.setdefault(name, {})
+        self.section(' TOPLEVEL ')
+
+    def section(self, name):
+        """Select name of text section to append output"""
+        self.current_section = self.current_chapter.setdefault(name, [])
+
+    def write(self, text):
+        self.current_section.append(text)
+
+    def push_state(self):
+        self._state.append((self.chapter_name, self.current_chapter, self.current_section))
+
+    def pop_state(self):
+        self.chapter_name, self.current_chapter, self.current_section = self._state.pop()
+
+    def render(self, output):
+        """Write sorted list of text sections"""
+        # XXX document tree as info
+        for chapter_name, sections in sorted(self.chapters.items()):
+            print '"%s"' % chapter_name
+            for section_name, text in sorted(sections.items()):
+                print '    "%s"' % section_name
+        for name, sections in sorted(self.chapters.items()):
+            for name, text in sorted(sections.items()):
+                output.write(u''.join(text))
+
+
 class ForthError(rpn.RPNError):
     pass
 
@@ -308,7 +357,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         rpn.RPNBase.__init__(self, namespace)
         self.target_namespace = {}  # an other name space for target only objects
         self.compiling = False
-        self.output = sys.stdout
         self.frame = None
         self.variables = {}
         self.include_path = []
@@ -319,6 +367,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.use_ram = False
         self.label_id = 0
         self.logger = logging.getLogger('forth')
+        self.doctree = DocumentTree()
 
     def init(self):
         # load core language definitions from a forth file
@@ -506,6 +555,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """Begin defining a function"""
         name = self.next_word()
         self.frame = Frame(name)
+        self.frame.chapter = self.doctree.chapter_name
         self.compiling = True
 
     @immediate
@@ -525,6 +575,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """Begin defining a native code function"""
         name = self.next_word()
         self.frame = NativeFrame(name)
+        self.frame.chapter = self.doctree.chapter_name
         self.compiling = True
 
     @immediate
@@ -626,12 +677,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word('.')
     def word_dot(self, stack):
         """Output element on stack"""
-        self.output.write(unicode(stack.pop()))
+        self.doctree.write(unicode(stack.pop()))
 
     @rpn.word('EMIT')
     def word_emit(self, stack):
         """Output number on stack as unicode character."""
-        self.output.write(unichr(stack.pop()))
+        self.doctree.write(unichr(stack.pop()))
 
     @rpn.word('VARIABLE')
     def word_variable(self, stack):
@@ -646,6 +697,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.variables[name].append(0)
         # create a function that pushes the variables address
         frame = Frame(name)
+        frame.chapter = self.doctree.chapter_name
         frame.append(self.instruction_literal)
         frame.append(self.variables[name])
         self.namespace[name.lower()] = frame
@@ -665,6 +717,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.variables[name].append(value)
         # create a function that pushes the variables address
         frame = Frame(name)
+        frame.chapter = self.doctree.chapter_name
         frame.append(self.instruction_literal)
         frame.append(self.variables[name])
         frame.append(self.look_up('@'))
@@ -703,6 +756,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.frame = self.variables[name]
         # create a function that pushes the variables address
         frame = Frame(name)
+        frame.chapter = self.doctree.chapter_name
         frame.append(self.instruction_literal)
         frame.append(self.variables[name])
         self.namespace[name.lower()] = frame
@@ -749,7 +803,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     def instruction_output_text(self, stack):
         words = stack._frame_iterator.next()
-        stack.output.write(words)
+        self.doctree.write(words)
 
     @immediate
     @rpn.word('"')
@@ -789,7 +843,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             self.frame.append(self.instruction_output_text)
             self.frame.append(text)
         else:
-            self.output.write(text)
+            self.doctree.write(text)
 
     @immediate
     @rpn.word('DEPENDS-ON')
@@ -822,16 +876,18 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         remembered and can be output later, either manually with CROSS-COMPILE
         or automatically with CROSS-COMPILE-MISSING.
         """
-        self.output.write(u'.text\n.even\n')
-        self.output.write(u';%s\n' % ('-'*76))
-        self.output.write(u'; compilation of word %s\n' % frame.name)
-        self.output.write(u';%s\n' % ('-'*76))
-        self.output.write(u'%s:\n' % self.create_asm_label(frame.name))
+        self.doctree.chapter(frame.chapter)
+        self.doctree.section(frame.name)
+        self.doctree.write(u'.text\n.even\n')
+        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u'; compilation of word %s\n' % frame.name)
+        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u'%s:\n' % self.create_asm_label(frame.name))
         # compilation of the thread
-        self.output.write('\tbr #%s\n' % self.create_asm_label('DOCOL'))
-        #~ self.output.write('\tjmp %s\n' % self.create_asm_label('DOCOL'))
+        self.doctree.write('\tbr #%s\n' % self.create_asm_label('DOCOL'))
+        #~ self.doctree.write('\tjmp %s\n' % self.create_asm_label('DOCOL'))
         self._compile_thread(frame)
-        self.output.write('\t.word %s\n\n' % self.create_asm_label('EXIT'))
+        self.doctree.write('\t.word %s\n\n' % self.create_asm_label('EXIT'))
 
     def _compile_thread(self, frame):
         next = iter(frame).next
@@ -841,12 +897,13 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 if callable(entry):
                     if entry == self.instruction_output_text:
                         label = self.create_label()
-                        self.output.write('\t.word %s, %s\n' % (
+                        self.doctree.write('\t.word %s, %s\n' % (
                                 self.create_asm_label('__write_text'),
                                 self.create_asm_label(label)))
                         self._compile_remember('__write_text')
                         # output the text separately
                         frame = NativeFrame(label)
+                        frame.chapter = self.doctree.chapter_name
                         self.target_namespace[label] = frame
                         self._compile_remember(label)
                         text = next()
@@ -855,11 +912,11 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     elif entry == self.instruction_literal:
                         value = next()
                         if isinstance(value, Frame):
-                            self.output.write('\t.word %s, %s\n' % (
+                            self.doctree.write('\t.word %s, %s\n' % (
                                     self.create_asm_label('LIT'),
                                     self.create_asm_label(value.name),))
                         else:
-                            self.output.write('\t.word %s, %-6s ; 0x%04x\n' % (
+                            self.doctree.write('\t.word %s, %-6s ; 0x%04x\n' % (
                                     self.create_asm_label('LIT'),
                                     value,
                                     value))
@@ -867,58 +924,62 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     elif entry == self.instruction_seek:
                         # branch needs special case as offset needs to be recalculated
                         offset = next()
-                        self.output.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH'), offset*2))
+                        self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH'), offset*2))
                         self._compile_remember('BRANCH')
                     elif entry == self.instruction_branch_if_false:
                         # branch needs special case as offset needs to be recalculated
                         offset = next()
-                        self.output.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH0'), offset*2))
+                        self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH0'), offset*2))
                         self._compile_remember('BRANCH0')
                     elif hasattr(entry, 'rpn_name'):
                         # for built-ins just take the name of the function
-                        self.output.write('\t.word %s\n' % self.create_asm_label(entry.rpn_name.upper()))
+                        self.doctree.write('\t.word %s\n' % self.create_asm_label(entry.rpn_name.upper()))
                         self._compile_remember(entry.rpn_name)
                     elif isinstance(entry, (Frame, NativeFrame)):
-                        self.output.write('\t.word %s\n' % self.create_asm_label(entry.name))
+                        self.doctree.write('\t.word %s\n' % self.create_asm_label(entry.name))
                         self._compile_remember(entry.name)
                     else:
                         raise ValueError('Cross compilation undefined for %r' % entry)
                 else:
-                    self.output.write('\t.word %r\n' % (entry,))
+                    self.doctree.write('\t.word %r\n' % (entry,))
                     #~ raise ValueError('Cross compilation undefined for %r' % entry)
         except StopIteration:
             pass
 
     def _compile_native_frame(self, frame):
         """Compilation of native code function"""
-        self.output.write(u'.text\n.even\n')
-        self.output.write(u';%s\n' % ('-'*76))
-        self.output.write(u'; compilation of native word %s\n' % frame.name)
-        self.output.write(u';%s\n' % ('-'*76))
-        self.output.write(u'%s:\n' % self.create_asm_label(frame.name))
+        self.doctree.chapter(frame.chapter)
+        self.doctree.section(frame.name)
+        self.doctree.write(u'.text\n.even\n')
+        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u'; compilation of native word %s\n' % frame.name)
+        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u'%s:\n' % self.create_asm_label(frame.name))
         # native code blocks are executed. They are expected to print out
         # assembler code
         frame(self)
-        self.output.write('\n') # get some space between this and next word
+        self.doctree.write('\n') # get some space between this and next word
 
     def _compile_interrupt_frame(self, frame):
         """Compilation of interrupt function"""
-        self.output.write(u'.text\n.even\n')
-        self.output.write(u';%s\n' % ('-'*76))
-        self.output.write(u'; compilation of interrupt %s\n' % frame.name)
-        self.output.write(u';%s\n' % ('-'*76))
+        self.doctree.chapter('_interrupts.forth') # locate in same section as support code
+        self.doctree.section(frame.name)
+        self.doctree.write(u'.text\n.even\n')
+        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u'; compilation of interrupt %s\n' % frame.name)
+        self.doctree.write(u';%s\n' % ('-'*76))
 
         # interrupt entry code
-        self.output.write(u'vector_%s:\n' % (frame.vector))
-        self.output.write(u'\tsub #4, RTOS     ; prepare to push 2 values on return stack\n')
-        self.output.write(u'\tmov IP, 2(RTOS)  ; save IP on return stack\n')
-        self.output.write(u'\tmov SP, 0(RTOS)  ; save SP pointer on return stack it points to SR on stack\n')
-        self.output.write(u'\tmov #%s, IP      ; Move address of thread of interrupt handler in IP\n' % self.create_asm_label(frame.name))
-        self.output.write('\tjmp %s\n' % self.create_asm_label('DO-INTERRUPT'))
+        self.doctree.write(u'vector_%s:\n' % (frame.vector))
+        self.doctree.write(u'\tsub #4, RTOS     ; prepare to push 2 values on return stack\n')
+        self.doctree.write(u'\tmov IP, 2(RTOS)  ; save IP on return stack\n')
+        self.doctree.write(u'\tmov SP, 0(RTOS)  ; save SP pointer on return stack it points to SR on stack\n')
+        self.doctree.write(u'\tmov #%s, IP      ; Move address of thread of interrupt handler in IP\n' % self.create_asm_label(frame.name))
+        self.doctree.write('\tjmp %s\n' % self.create_asm_label('DO-INTERRUPT'))
         # the thread for the interrupt handler
-        self.output.write(u'%s:\n' % self.create_asm_label(frame.name))
+        self.doctree.write(u'%s:\n' % self.create_asm_label(frame.name))
         self._compile_thread(frame)
-        self.output.write('\t.word %s\n\n' % self.create_asm_label('EXIT-INTERRUPT'))
+        self.doctree.write('\t.word %s\n\n' % self.create_asm_label('EXIT-INTERRUPT'))
         self._compile_remember('DO-INTERRUPT')
         self._compile_remember('EXIT-INTERRUPT')
 
@@ -978,18 +1039,20 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """\
         Output section with variables (values in RAM).
         """
-        self.output.write(u';%s\n' % ('-'*76))
-        self.output.write(u'; Variables\n')
-        self.output.write(u';%s\n' % ('-'*76))
-        self.output.write(u'.bss\n')
+        self.doctree.push_state()
+        self.doctree.chapter('__VARIABLES__')
+        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u'; Variables\n')
+        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u'.bss\n')
         # XXX check .use_ram attribute
         for name, variable in sorted(self.variables.items()):
             variable.name
-            self.output.write(u'%s:  .skip %d \n' % (
+            self.doctree.write(u'%s:  .skip %d \n' % (
                     self.create_asm_label(variable.name),
                     2*len(variable)))
-            self.output.write('\n')
-        self.output.write(u'.text\n')
+            self.doctree.write('\n')
+        self.doctree.pop_state()
 
 
     @rpn.word('INCLUDE')
@@ -1000,6 +1063,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     def _include(self, name):
         """Include given filename. The Forth code is directly executed."""
+        # put all data from include in one chapter. remember previous chapter
+        # at restore it at the end
+        self.doctree.push_state()
+        self.doctree.chapter(name)
         if name not in self.included_files:
             for prefix in self.include_path:
                 path = os.path.join(prefix, name)
@@ -1020,6 +1087,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     self.interpret(rpn.words_in_string(data, name='forth/%s' % (name,), include_newline=True))
                     self.logger.info('done include %s' % (name,))
                     self.included_files.append(name)
+        self.doctree.pop_state() # restore previous chapter and section
 
     @rpn.word('SHOW')
     def word_SHOW(self, stack):
@@ -1127,7 +1195,6 @@ If no input files are specified data is read from stdin."""
     try:
         forth = Forth()
         forth.init()
-        forth.output = out
         # default to source directory as include path
         forth.include_path = include_paths
         # extend include search path
@@ -1141,7 +1208,9 @@ If no input files are specified data is read from stdin."""
                 symbol, value = definition, '1'
             forth.namespace[symbol.lower()] = value # XXX inserted as string only
 
+        #~ forth.doctree.chapter(filename)
         forth.interpret(iter(instructions))
+        forth.doctree.render(out)
     except rpn.RPNError as e:
         sys.stderr.write(u"%s:%s: %s\n" % (e.filename, e.lineno, e))
         if options.debug and e.text:

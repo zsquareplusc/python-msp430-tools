@@ -165,17 +165,17 @@ CODE RSHIFT ( n u -- n/2^u )
 END-CODE
 
 ( ----- Logic ops ----- )
+(  0 - false
+  -1 - true
+)
 ( include normalize to boolean )
 
-CODE NOT
+CODE NOT ( b - b )  ( XXX alias 0= )
+    DEPENDS-ON cmp_set_true
+    DEPENDS-ON cmp_set_false
     ." \t tst 0(SP) " LF
-    ." \t jnz .not0 " LF
-    ." \t mov \x23 -1, 0(SP) " LF       ( replace TOS w/ result )
-    ." \t jmp .not2 " LF
-    ." .not0: " LF
-    ." \t mov \x23 0, 0(SP) " LF       ( replace TOS w/ result )
-    ." .not2: " LF
-    ASM-NEXT
+    ." \t jz  _cmp_set_true " LF
+    ." \t jmp _cmp_set_false " LF
 END-CODE
 
 ( ---------------------------------------------------
@@ -195,13 +195,13 @@ END-CODE
 
 
 CODE cmp_true
-    ASM-DROP                        ( remove 1nd argument )
+    ASM-DROP                        ( remove 1st argument )
     ." \t mov \x23 -1, 0(SP) " LF   ( replace 2nd argument w/ result )
     ASM-NEXT
 END-CODE
 
 CODE cmp_false
-    ASM-DROP                        ( remove 1nd argument )
+    ASM-DROP                        ( remove 1st argument )
     ." \t mov \x23 0, 0(SP) " LF    ( replace 2nd argument w/ result )
     ASM-NEXT
 END-CODE

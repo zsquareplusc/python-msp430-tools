@@ -375,11 +375,9 @@ END-INTERRUPT
 " Advanced demo " HEADER
 
 ( output important runtime core parts )
-" Core " HEADER
 CROSS-COMPILE-CORE
 
 ( cross compile application )
-" Application " HEADER
 CROSS-COMPILE-VARIABLES
 CROSS-COMPILE INIT
 CROSS-COMPILE MAIN

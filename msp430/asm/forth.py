@@ -68,11 +68,11 @@ class DocumentTree(object):
 
     def render(self, output):
         """Write sorted list of text sections"""
-        # XXX document tree as info
-        for chapter_name, sections in sorted(self.chapters.items()):
-            print '"%s"' % chapter_name
-            for section_name, text in sorted(sections.items()):
-                print '    "%s"' % section_name
+        #~ # XXX document tree as info
+        #~ for chapter_name, sections in sorted(self.chapters.items()):
+            #~ print '"%s"' % chapter_name
+            #~ for section_name, text in sorted(sections.items()):
+                #~ print '    "%s"' % section_name
         for name, sections in sorted(self.chapters.items()):
             for name, text in sorted(sections.items()):
                 output.write(u''.join(text))

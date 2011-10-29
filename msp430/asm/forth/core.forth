@@ -10,6 +10,8 @@
 
 INCLUDE _asm_snippets.forth
 
+( Terminate program and restart from the beginning.
+  The implementation is is also providing the 'main' entry point. )
 CODE ABORT
     ." main: \t; also the main entry point.\n "
     ." \t mov \x23 _stack, SP \n "
@@ -18,6 +20,7 @@ CODE ABORT
     ASM-NEXT
 END-CODE
 
+( Internal helper to execute a thread of forth instructions. )
 CODE DOCOL
     ." \t decd RTOS       \t; prepare to push on return stack \n "
     ." \t mov IP, 0(RTOS) \t; save IP on return stack \n "
@@ -27,6 +30,7 @@ CODE DOCOL
     ASM-NEXT
 END-CODE
 
+( a.k.a Return from subrouine )
 CODE EXIT
     ." \t mov @RTOS+, IP  \t; get last position from return stack \n "
     ASM-NEXT
@@ -38,7 +42,7 @@ INCLUDE _memory.forth
 INCLUDE _helpers.forth
 
 
-( Generate init code for forth runtime and core words )
+( Generate init code for forth runtime and core words. )
 : CROSS-COMPILE-CORE ( - )
     LINE
     HASH ." include < " MCU . ." .h> " LF

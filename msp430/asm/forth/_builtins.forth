@@ -12,20 +12,23 @@
 
 ( ----- low level supporting functions ----- )
 
+( Put a literal [next element within thread] on the stack. )
 CODE LIT
     ." \t push @IP+   \t; copy value from thread to stack \n "
     ASM-NEXT
 END-CODE
 
+( Realtive jump within a thread )
 CODE BRANCH
     ." \t add @IP, IP \n "
     ASM-NEXT
 END-CODE
 
+( Realtive jump within a thread. But only jump if value on stack is false. )
 CODE BRANCH0
     ." \t mov @IP+, W \t; get offset \n "
     ." \t tst 0(SP)   \t; check TOS \n "
-    ." \t jnz .Lnjmp  \t; skip next if non zero \n "
+    ." \t jnz .Lnjmp  \t; do not adjust IP if non zero \n "
     ." \t decd IP     \t; offset is relative to position of offset, correct \n "
     ." \t add W, IP   \t; adjust IP \n "
 ." .Lnjmp: "
@@ -35,11 +38,13 @@ END-CODE
 
 ( ----- Stack ops ----- )
 
+( Remove value from top of stack )
 CODE DROP ( x -- )
     ." \t incd SP\n "
     ASM-NEXT
 END-CODE
 
+( Duplicate value on top of stack )
 CODE DUP ( x -- x x )
 (    ." \t push @SP\n " )
     ." \t mov @SP, W\n "
@@ -47,6 +52,7 @@ CODE DUP ( x -- x x )
     ASM-NEXT
 END-CODE
 
+( Push a copy of the second element on the stack )
 CODE OVER ( y x -- y x y )
 (    ." \t push 2(TOS\n " )
     ." \t mov 2(SP), W\n "
@@ -63,6 +69,7 @@ CODE PICK ( n -- n )
     ASM-NEXT
 END-CODE
 
+( Exchange the two topmost values on the stack )
 CODE SWAP ( y x -- x y )
     ." \t mov 2(SP), W " LF
     ." \t mov 0(SP), 2(SP) " LF
@@ -94,38 +101,40 @@ END-CODE
 
 ( ----- MATH ----- )
 
-CODE +
+( Add two values )
+CODE + ( n n -- n )
     ." \t add 0(SP), 2(SP) \t; y = x + y " LF
     ASM-DROP
     ASM-NEXT
 END-CODE
 
-CODE -
+( Subtract two values )
+CODE - ( n n -- n )
     ." \t sub 0(SP), 2(SP) \t; y = y - x " LF
     ASM-DROP
     ASM-NEXT
 END-CODE
 
 ( ----- bit - ops ----- )
-CODE AND
+CODE AND ( n n -- n )
     ." \t and 0(SP), 2(SP) \t; y = x & y " LF
     ASM-DROP
     ASM-NEXT
 END-CODE
 
-CODE OR
+CODE OR ( n n -- n )
     ." \t bis 0(SP), 2(SP) \t; y = x | y " LF
     ASM-DROP
     ASM-NEXT
 END-CODE
 
-CODE XOR
+CODE XOR ( n n -- n )
     ." \t xor 0(SP), 2(SP) \t; y = x ^ y " LF
     ASM-DROP
     ASM-NEXT
 END-CODE
 
-CODE INVERT
+CODE INVERT ( n -- n )
     ." \t inv 0(SP) \t; x = ~x " LF
     ASM-NEXT
 END-CODE
@@ -183,31 +192,31 @@ END-CODE
     "/"
 )
 ( ----- Compare ----- )
-CODE cmp_set_true   ( n - n )
+CODE cmp_set_true ( n -- b )
     ." \t mov \x23 -1, 0(SP) " LF   ( replace argument w/ result )
     ASM-NEXT
 END-CODE
 
-CODE cmp_set_false
-    ." \t mov \x23 0, 0(SP) " LF   ( replace argument w/ result )
+CODE cmp_set_false ( n -- b )
+    ." \t mov \x23 0, 0(SP) " LF    ( replace argument w/ result )
     ASM-NEXT
 END-CODE
 
 
-CODE cmp_true
+CODE cmp_true ( x y -- b )
     ASM-DROP                        ( remove 1st argument )
     ." \t mov \x23 -1, 0(SP) " LF   ( replace 2nd argument w/ result )
     ASM-NEXT
 END-CODE
 
-CODE cmp_false
+CODE cmp_false ( x y -- b )
     ASM-DROP                        ( remove 1st argument )
     ." \t mov \x23 0, 0(SP) " LF    ( replace 2nd argument w/ result )
     ASM-NEXT
 END-CODE
 
 
-CODE <
+CODE < ( x y -- b )
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(SP), 2(SP) " LF
@@ -215,7 +224,7 @@ CODE <
     ." \t jmp _cmp_false " LF
 END-CODE
 
-CODE >
+CODE > ( x y -- b )
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 2(SP), 0(SP) " LF
@@ -223,7 +232,7 @@ CODE >
     ." \t jmp _cmp_false " LF
 END-CODE
 
-CODE <=
+CODE <= ( x y -- b )
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(SP), 2(SP) " LF
@@ -231,7 +240,7 @@ CODE <=
     ." \t jmp _cmp_true " LF
 END-CODE
 
-CODE >=
+CODE >= ( x y -- b )
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(SP), 2(SP) " LF
@@ -239,7 +248,7 @@ CODE >=
     ." \t jmp _cmp_false " LF
 END-CODE
 
-CODE ==
+CODE == ( x y -- b )
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(SP), 2(SP) " LF
@@ -248,7 +257,7 @@ CODE ==
 END-CODE
 
 ( XXX alias for == )
-CODE =
+CODE = ( x y -- b )
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(SP), 2(SP) " LF
@@ -256,7 +265,7 @@ CODE =
     ." \t jmp _cmp_false " LF
 END-CODE
 
-CODE !=
+CODE != ( x y -- b )
     DEPENDS-ON cmp_true
     DEPENDS-ON cmp_false
     ." \t cmp 0(SP), 2(SP) " LF
@@ -265,7 +274,7 @@ CODE !=
 END-CODE
 
 
-CODE 0=
+CODE 0= ( x -- b )
     DEPENDS-ON cmp_set_true
     DEPENDS-ON cmp_set_false
     ." \t tst 0(SP) " LF
@@ -273,7 +282,7 @@ CODE 0=
     ." \t jmp _cmp_set_false " LF
 END-CODE
 
-CODE 0>
+CODE 0> ( x -- b )
     DEPENDS-ON cmp_set_true
     DEPENDS-ON cmp_set_false
     ." \t tst 0(SP) " LF
@@ -285,7 +294,7 @@ END-CODE
 
 ( XXX Forth name ERASE conflicts with FCTL bit name in MSP430 )
 ( Erase memory area )
-CODE ZERO ( adr u - )
+CODE ZERO ( adr u -- )
     TOS->W      ( count )
     TOS->R15    ( address )
     ." .erase_loop: clr.b 0(R15)\n"
@@ -297,7 +306,7 @@ END-CODE
 
 ( --------------------------------------------------- )
 ( helper for ." )
-CODE __write_text
+CODE __write_text ( -- )
     ." \t mov @IP+, R15\n"
     ." \t call \x23 write\n"
     ASM-NEXT

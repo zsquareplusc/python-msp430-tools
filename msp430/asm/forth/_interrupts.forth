@@ -22,6 +22,9 @@
 )
 
 ( The word INTERRUPT generates an entry code block specific for each interrupt.
+  SP and IP are remebered on the return stack. However, the user should not
+  work with them directly so we call it 'int-sys' in the docs below.
+
     sub \x23 4, RTOS ; prepare to push 2 values on return stack
     mov IP, 2[RTOS]  ; save IP on return stack
     mov SP, 0[RTOS]  ; save SP pointer on return stack it points to SR on stack
@@ -46,7 +49,7 @@ CODE DO-INTERRUPT ( R: - int-sys )
 END-CODE
 
 ( Restore state at exit of interrupt handler )
-CODE EXIT-INTERRUPT ( R: int-sys - )
+CODE EXIT-INTERRUPT ( R: int-sys -- )
     ." \t ; restore registers\n "
     ." \t pop R15\n "
     ." \t pop R14\n "
@@ -66,12 +69,13 @@ END-CODE
 ( Patch the saved status register so that LPM modes are exit after the
   interrupt handler is finished.
 
-  Only allowed in INTERRUPT definition. Not in called functions.
+  Only allowed directly in INTERRUPT definition. Not in called functions.
+
   May be called multiple times.
 )
-CODE WAKEUP ( R: int-sys - int-sys )
-    ." \t mov @RTOS, W        \t; read pointer to SR\n "
-    ." \t bic \x23 LPM4, 0(W) \t; patch SR on stack\n "
+CODE WAKEUP ( R: int-sys -- int-sys )
+    ." \t mov @RTOS, W        \t; get pointer to SR into W\n "
+    ." \t bic \x23 LPM4, 0(W) \t; patch SR on [HW] stack\n "
     ASM-NEXT
 END-CODE
 

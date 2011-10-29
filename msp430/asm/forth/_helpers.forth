@@ -8,12 +8,12 @@
 )
 
 ( Generate a simple line for headers )
-: LINE ( - )
+: LINE ( -- )
     ." ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n "
 ;
 
 ( Generate a header in the assembler file )
-: HEADER ( str - )
+: HEADER ( str -- )
     ." ;============================================================================\n "
     ." ; " SPACE . LF ( print value from stack )
     ." ;============================================================================\n "

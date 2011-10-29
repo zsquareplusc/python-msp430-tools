@@ -29,7 +29,10 @@ help:
 clean:
 	-rm -rf _build/*
 
-html:
+forthwords:
+	cd asm; python forth_wordlist.py ../../msp430/asm/forth/*
+
+html:   forthwords
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) _build/html
 	@echo
 	@echo "Build finished. The HTML pages are in _build/html."

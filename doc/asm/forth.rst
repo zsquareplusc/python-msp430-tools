@@ -1,6 +1,11 @@
 Forth Cross Compiler
 ====================
 
+.. toctree::
+    :maxdepth: 1
+
+    forth_words
+
 The package also includes a limited Forth_ like language cross compiler.
 
 .. warning:: This feature is under development.
@@ -33,7 +38,7 @@ assembler file for the MSP430.
 msp430.asm.h2forth
 ~~~~~~~~~~~~~~~~~~
 This tool can be used to convert C header to a Forth_ file. Each ``#define``
-will be turned into a ``CONSTANT``. It's main purpose is the get access to the
+will be turned into a ``CONSTANT``. It's main purpose is to get access to the
 peripheral an bit definitions from the TI header files.
 
 

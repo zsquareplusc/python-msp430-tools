@@ -1,5 +1,6 @@
 build
 dist
+doc/asm/forth_words.rst
 doc/_build/*
 doc/_static/*
 doc/_templates/*

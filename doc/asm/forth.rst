@@ -1,11 +1,6 @@
 Forth Cross Compiler
 ====================
 
-.. toctree::
-    :maxdepth: 1
-
-    forth_words
-
 The package also includes a limited Forth_ like language cross compiler.
 
 .. warning:: This feature is under development.
@@ -25,6 +20,23 @@ assembler (or C modules etc.) can be combined in one program.
     led.forth -> led.S -> led.o4     --+--> led.titext
               intvec.S -> intvec.o4  --/
              startup.S -> startup.o4 --/
+
+Available Words
+---------------
+
+A list of supported words is available here:
+
+.. toctree::
+    :maxdepth: 1
+
+    forth_words
+
+Availability of words depends on their definition. There are words that can
+only be executed on the host. These words can not be used within definitions
+that are cross compiled. In contrast, ``CODE`` words are only allowed within
+definitions that are cross compiled. Normal definitions using ``:`` can run on
+host and target, unless they depend on words described before. In that case the
+restrictions of that type applies.
 
 
 

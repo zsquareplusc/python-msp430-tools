@@ -11,6 +11,8 @@ re_word = re.compile(r'^(?P<type>CODE|:)\s+(?P<name>\S+)\s+(?P<balance>\(.*?--.*
 re_doc_comment = re.compile(r'^\( > ?(.*?)\)?$')
 
 wordlist = {}
+
+# scan the forth source files. this will yield words for host and target
 for filename in sys.argv[1:]:
     print "scanning", filename
     last_comment = []
@@ -22,8 +24,8 @@ for filename in sys.argv[1:]:
         m = re_word.match(line)
         if m:
             #~ print m.groups()
-            info = wordlist.setdefault(m.group('name'), {'doc':''})
-            info['deftype'] = m.group('type')
+            info = wordlist.setdefault(m.group('name').upper(), {'doc':'', 'deftype':set()})
+            info['deftype'].add(m.group('type'))
             info['stack'] = m.group('balance') or 'n/a'
             info.setdefault('locations', []).append(u'%s:%s' % (filename, n+1))
             if last_comment and info['doc']:
@@ -32,18 +34,38 @@ for filename in sys.argv[1:]:
                 info['doc'] = u'\n'.join(last_comment)
             last_comment = []
 
+# also include all builtin words on the host.
+sys.path.append('../..')
+import msp430.asm.forth
+f = msp430.asm.forth.Forth()
+for word, func in f.builtins.items():
+    info = wordlist.setdefault(word.upper(), {'doc':'', 'deftype':set()})
+    info['deftype'].add('python')
+    #~ info['stack'] = m.group('balance') or 'n/a'
+    info.setdefault('locations', []).append(u'forth.py')
+    if func.__doc__ is not None:
+        if info['doc']:
+            print "WARNING: multiple definitions of %r, skipping docs in forth.py" % (word,)
+        else:
+            info['doc'] = u'%s\n' % (func.__doc__,)
+
+# write output in reST format
 output = open('forth_words.rst', 'w')
 output.write("""\
 =================
  Forth Word List
 =================
-.. contents::
+.. .. contents::
 """)
 for word, info in sorted(wordlist.items()):
     output.write('\n``%s``\n' % word)
     output.write('%s\n' % ('-'*(4+len(word))))
     output.write('%s\n' % info['doc'])
-    output.write('\n- stack: ``%s``\n' % info['stack'])
+    if 'stack' in info: output.write('\n- stack: ``%s``\n' % info['stack'])
     output.write('- defined in file(s): %s\n' % ' and '.join('``%s``' % f for f in info['locations']))
-    #~ if deftype == 'CODE':
-        #~ output.write('- target only\n')
+    available = []
+    if set([':', 'CODE']) & info['deftype']: # runs_on_target
+        available.append('target')
+    if set([':', 'python']) & info['deftype']: # runs_on_host
+        available.append('host')
+    output.write('- availability: %s\n' % ' and '.join(available))

@@ -12,19 +12,19 @@
 
 ( ----- low level supporting functions ----- )
 
-( Put a literal [next element within thread] on the stack. )
+( > Put a literal [next element within thread] on the stack. )
 CODE LIT
     ." \t push @IP+   \t; copy value from thread to stack \n "
     ASM-NEXT
 END-CODE
 
-( Realtive jump within a thread )
+( > Relative jump within a thread )
 CODE BRANCH
     ." \t add @IP, IP \n "
     ASM-NEXT
 END-CODE
 
-( Realtive jump within a thread. But only jump if value on stack is false. )
+( > Realtive jump within a thread. But only jump if value on stack is false. )
 CODE BRANCH0
     ." \t mov @IP+, W \t; get offset \n "
     ." \t tst 0(SP)   \t; check TOS \n "
@@ -38,13 +38,13 @@ END-CODE
 
 ( ----- Stack ops ----- )
 
-( Remove value from top of stack )
+( > Remove value from top of stack. )
 CODE DROP ( x -- )
     ." \t incd SP\n "
     ASM-NEXT
 END-CODE
 
-( Duplicate value on top of stack )
+( > Duplicate value on top of stack. )
 CODE DUP ( x -- x x )
 (    ." \t push @SP\n " )
     ." \t mov @SP, W\n "
@@ -52,7 +52,7 @@ CODE DUP ( x -- x x )
     ASM-NEXT
 END-CODE
 
-( Push a copy of the second element on the stack )
+( > Push a copy of the second element on the stack. )
 CODE OVER ( y x -- y x y )
 (    ." \t push 2(TOS\n " )
     ." \t mov 2(SP), W\n "
@@ -60,7 +60,7 @@ CODE OVER ( y x -- y x y )
     ASM-NEXT
 END-CODE
 
-( Push a copy of the N'th element )
+( > Push a copy of the N'th element. )
 CODE PICK ( n -- n )
     TOS->W                    ( get element number from stack )
     ." \t rla W " LF          ( multiply by 2 -> 2 byte / cell )
@@ -69,7 +69,7 @@ CODE PICK ( n -- n )
     ASM-NEXT
 END-CODE
 
-( Exchange the two topmost values on the stack )
+( > Exchange the two topmost values on the stack. )
 CODE SWAP ( y x -- x y )
     ." \t mov 2(SP), W " LF
     ." \t mov 0(SP), 2(SP) " LF
@@ -79,20 +79,20 @@ END-CODE
 
 ( ----- Return Stack ops ----- )
 
-( Move x to the return stack. )
+( > Move x to the return stack. )
 CODE >R ( x -- ) ( R: -- x )
     ." \t decd RTOS \t; make room on the return stack\n "
     ." \t pop 0(RTOS) \t; pop value and put it on return stack\n "
     ASM-NEXT
 END-CODE
 
-( Move x from the return stack to the data stack. )
+( > Move x from the return stack to the data stack. )
 CODE R> ( -- x ) ( R: x -- )
     ." \t push @RTOS+ \t; pop from return stack, push to data stack\n "
     ASM-NEXT
 END-CODE
 
-( Copy x from the return stack to the data stack. )
+( > Copy x from the return stack to the data stack. )
 CODE R@ ( -- x ) ( R: x -- x )
     ." \t push @RTOS \t; push copy of RTOS to data stack\n "
     ASM-NEXT
@@ -101,14 +101,14 @@ END-CODE
 
 ( ----- MATH ----- )
 
-( Add two values )
+( > Add two 16 bit values. )
 CODE + ( n n -- n )
     ." \t add 0(SP), 2(SP) \t; y = x + y " LF
     ASM-DROP
     ASM-NEXT
 END-CODE
 
-( Subtract two values )
+( > Subtract two 16 bit values. )
 CODE - ( n n -- n )
     ." \t sub 0(SP), 2(SP) \t; y = y - x " LF
     ASM-DROP
@@ -116,44 +116,48 @@ CODE - ( n n -- n )
 END-CODE
 
 ( ----- bit - ops ----- )
+( > Bitwise AND. )
 CODE AND ( n n -- n )
     ." \t and 0(SP), 2(SP) \t; y = x & y " LF
     ASM-DROP
     ASM-NEXT
 END-CODE
 
+( > Bitwise OR. )
 CODE OR ( n n -- n )
     ." \t bis 0(SP), 2(SP) \t; y = x | y " LF
     ASM-DROP
     ASM-NEXT
 END-CODE
 
+( > Bitwise XOR. )
 CODE XOR ( n n -- n )
     ." \t xor 0(SP), 2(SP) \t; y = x ^ y " LF
     ASM-DROP
     ASM-NEXT
 END-CODE
 
+( > Bitwise invert. )
 CODE INVERT ( n -- n )
     ." \t inv 0(SP) \t; x = ~x " LF
     ASM-NEXT
 END-CODE
 
 
-\ Multiply by two (arithmetic left shift)
+( > Multiply by two [arithmetic left shift]. )
 CODE 2* ( n -- n*2 )
     ." \t rla 0(SP) \t; x <<= 1 " LF
     ASM-NEXT
 END-CODE
 
-\ Divide by two (arithmetic right shift)
+( > Divide by two [arithmetic right shift]. )
 CODE 2/ ( n -- n/2 )
     ." \t rra 0(SP) \t; x >>= 1 " LF
     ASM-NEXT
 END-CODE
 
 
-( Logical left shift by u bits )
+( > Logical left shift by u bits. )
 CODE LSHIFT ( n u -- n*2^u )
     TOS->W
     ." .lsh:\t clrc\n"
@@ -163,7 +167,7 @@ CODE LSHIFT ( n u -- n*2^u )
     ASM-NEXT
 END-CODE
 
-( Logical right shift by u bits )
+( > Logical right shift by u bits. )
 CODE RSHIFT ( n u -- n/2^u )
     TOS->W
     ." .rsh:\t clrc\n"
@@ -179,7 +183,8 @@ END-CODE
 )
 ( include normalize to boolean )
 
-CODE NOT ( b - b )  ( XXX alias 0= )
+( > Boolean invert. )
+CODE NOT ( b -- b )  ( XXX alias 0= )
     DEPENDS-ON cmp_set_true
     DEPENDS-ON cmp_set_false
     ." \t tst 0(SP) " LF
@@ -293,7 +298,7 @@ END-CODE
 ( --------------------------------------------------- )
 
 ( XXX Forth name ERASE conflicts with FCTL bit name in MSP430 )
-( Erase memory area )
+( > Erase memory area. )
 CODE ZERO ( adr u -- )
     TOS->W      ( count )
     TOS->R15    ( address )
@@ -305,7 +310,7 @@ CODE ZERO ( adr u -- )
 END-CODE
 
 ( --------------------------------------------------- )
-( helper for ." )
+( > internal helper for ." )
 CODE __write_text ( -- )
     ." \t mov @IP+, R15\n"
     ." \t call \x23 write\n"

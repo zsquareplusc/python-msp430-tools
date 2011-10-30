@@ -7,12 +7,12 @@
   Simplified BSD License [see LICENSE.txt for full text]
 )
 
-( Generate a simple line for headers )
+( > Generate a simple line for headers )
 : LINE ( -- )
     ." ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n "
 ;
 
-( Generate a header in the assembler file )
+( > Generate a header in the assembler file )
 : HEADER ( str -- )
     ." ;============================================================================\n "
     ." ; " SPACE . LF ( print value from stack )

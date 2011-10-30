@@ -32,7 +32,7 @@
     br  @IP+         ; NEXT
 )
 
-( Entering an interrupt handler )
+( > Entering an interrupt handler. For internal use only. )
 CODE DO-INTERRUPT ( R: - int-sys )
     ." \t ; save registers\n "
     ." \t push R6\n "
@@ -48,7 +48,7 @@ CODE DO-INTERRUPT ( R: - int-sys )
     ASM-NEXT
 END-CODE
 
-( Restore state at exit of interrupt handler )
+( > Restore state at exit of interrupt handler. For internal use only. )
 CODE EXIT-INTERRUPT ( R: int-sys -- )
     ." \t ; restore registers\n "
     ." \t pop R15\n "
@@ -66,13 +66,12 @@ CODE EXIT-INTERRUPT ( R: int-sys -- )
     ." \t reti\n "
 END-CODE
 
-( Patch the saved status register so that LPM modes are exit after the
-  interrupt handler is finished.
-
-  Only allowed directly in INTERRUPT definition. Not in called functions.
-
-  May be called multiple times.
-)
+( > Patch the saved status register so that LPM modes are exit after the
+( > interrupt handler is finished.
+( >
+( > Only allowed directly in INTERRUPT definition. Not in called functions.
+( >
+( > May be called multiple times. )
 CODE WAKEUP ( R: int-sys -- int-sys )
     ." \t mov @RTOS, W        \t; get pointer to SR into W\n "
     ." \t bic \x23 LPM4, 0(W) \t; patch SR on [HW] stack\n "

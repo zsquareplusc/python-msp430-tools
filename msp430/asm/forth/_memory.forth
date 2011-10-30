@@ -7,7 +7,7 @@
   Simplified BSD License [see LICENSE.txt for full text]
 )
 
-( Fetch byte value. )
+( > Fetch byte value. )
 CODE C@ ( adr -- n )
     ." \t mov @SP, W \n "           ( copy address )
     ." \t mov.b @W, W \n "          ( execute read )
@@ -15,7 +15,7 @@ CODE C@ ( adr -- n )
     ASM-NEXT
 END-CODE
 
-( Store byte value. )
+( > Store byte value. )
 CODE C! ( n adr -- )
     TOS->R15                        ( pop address )
     TOS->R14                        ( pop value )
@@ -23,14 +23,14 @@ CODE C! ( n adr -- )
     ASM-NEXT
 END-CODE
 
-( Fetch word value. )
+( > Fetch word value. )
 CODE @ ( adr -- n )
     ." \t mov @SP, W \n "           ( copy address )
     ." \t mov @W, 0(SP) \n "        ( replace TOS with value )
     ASM-NEXT
 END-CODE
 
-( Store word value. )
+( > Store word value. )
 CODE ! ( n adr -- )
     TOS->W                          ( pop address )
     ." \t mov @SP+, 0(W) \n "       ( pop value and write to address )

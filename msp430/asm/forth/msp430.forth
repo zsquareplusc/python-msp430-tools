@@ -12,6 +12,8 @@ INCLUDE _interrupts.forth
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( 8 bit memory operations )
 
+( > Bit clear operation, 8 bit. )
+( > Example: ``BIT0 P1OUT CRESET`` )
 CODE CRESET ( n adr -- )
     TOS->R15
     TOS->R14
@@ -19,6 +21,8 @@ CODE CRESET ( n adr -- )
     ASM-NEXT
 END-CODE
 
+( > Bit set operation, 8 bit. )
+( > Example: ``BIT0 P1OUT CSET`` )
 CODE CSET ( n adr -- )
     TOS->R15
     TOS->R14
@@ -26,6 +30,8 @@ CODE CSET ( n adr -- )
     ASM-NEXT
 END-CODE
 
+( > Bit toggle operation, 8 bit. )
+( > Example: ``BIT0 P1OUT CTOGGLE`` )
 CODE CTOGGLE ( n adr -- )
     TOS->R15
     TOS->R14
@@ -33,6 +39,8 @@ CODE CTOGGLE ( n adr -- )
     ASM-NEXT
 END-CODE
 
+( > Bit test operation, 8 bit. )
+( > Example: ``BIT0 P1OUT CTESTBIT IF 1 THEN 0 ENDIF`` )
 CODE CTESTBIT ( mask adr -- bool )
     TOS->W
     ." \t bit.b @W, 0(SP) \n "
@@ -48,24 +56,32 @@ END-CODE
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( 16 bit memory operations )
 
+( > Bit clear operation, 16 bit. )
+( > Example: ``CCIE TA0CCTL1 RESET`` )
 CODE RESET ( n adr -- )
     TOS->W
     ." \t bic @SP+, 0(W) \n "
     ASM-NEXT
 END-CODE
 
+( > Bit set operation, 16 bit. )
+( > Example: ``CCIE TA0CCTL1 SET`` )
 CODE SET ( n adr -- )
     TOS->W
     ." \t bis @SP+, 0(W) \n "
     ASM-NEXT
 END-CODE
 
+( > Bit toggle operation, 16 bit. )
+( > Example: ``CCIE TA0CCTL1 TOGGLE`` )
 CODE TOGGLE ( n adr -- )
     TOS->W
     ." \t xor @SP+, 0(W) \n "
     ASM-NEXT
 END-CODE
 
+( > Bit test operation, 16 bit. )
+( > Example: ``CCIFG TA0CCTL1 TESTBIT IF 1 THEN 0 ENDIF`` )
 CODE TESTBIT ( mask adr -- bool )
     TOS->W
     ." \t bit @W, 0(SP) \n "
@@ -80,32 +96,38 @@ END-CODE
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 
+( > Increment value on stack by one. )
 CODE 1+ ( n -- n )
     ." \t inc 0(SP) \n "
     ASM-NEXT
 END-CODE
 
+( > Increment value on stack by two. )
 CODE 2+ ( n -- n )
     ." \t incd 0(SP) \n "
     ASM-NEXT
 END-CODE
 
+( > Increment value on stack by four. )
 CODE 4+ ( n -- n )
     ." \t add \x23 4, 0(SP) \n "
     ASM-NEXT
 END-CODE
 
 
+( > Decrement value on stack by one. )
 CODE 1- ( n -- n )
     ." \t dec 0(SP) \n "
     ASM-NEXT
 END-CODE
 
+( > Decrement value on stack by two. )
 CODE 2- ( n -- n )
     ." \t decd 0(SP) \n "
     ASM-NEXT
 END-CODE
 
+( > Decrement value on stack by four. )
 CODE 4- ( n -- n )
     ." \t sub \x23 4, 0(SP) \n "
     ASM-NEXT
@@ -114,7 +136,8 @@ END-CODE
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( Miscellaneous functions )
 
-( Simple busy-wait type delay. 3 cycles/loop. )
+( > Simple busy-wait type delay. 3 cycles/loop. )
+( > Example: ``20 DELAY`` )
 CODE DELAY ( n -- )
     TOS->W
     ." .loop: \t dec W \n "
@@ -126,19 +149,19 @@ END-CODE
 ( custom extensions )
 
 
-( Swap high/low byte )
+( > Swap high/low byte. )
 CODE SWPB ( n -- n )
     ." \t swpb 0(SP) \n "
     ASM-NEXT
 END-CODE
 
-( Sign extend )
+( > Sign extend an 8 bit value on stack to 16 bits. )
 CODE SIGN-EXTEND ( n -- n )
     ." \t sxt 0(SP) \n "
     ASM-NEXT
 END-CODE
 
-( Move byte from memory to memory )
+( > Move byte from memory to memory, 8 bit. )
 CODE C@! ( src-adr dst-adr -- )
     TOS->R15                        ( pop destination address )
     TOS->R14                        ( pop source address )
@@ -146,7 +169,7 @@ CODE C@! ( src-adr dst-adr -- )
     ASM-NEXT
 END-CODE
 
-( Move word from memory to memory )
+( > Move word from memory to memory, 16 bit. )
 CODE @! ( src-adr dst-adr -- )
     TOS->R15                        ( pop destination address )
     TOS->R14                        ( pop source address )
@@ -155,49 +178,49 @@ CODE @! ( src-adr dst-adr -- )
 END-CODE
 
 
-( NOP - waste some small amount of CPU time )
+( > NOP - waste some small amount of CPU time. )
 CODE NOP ( -- )
     ." \t nop\n "
     ASM-NEXT
 END-CODE
 
-( Enable interrupts. )
+( > Enable interrupts. )
 CODE EINT ( -- )
     ." \t eint\n "
     ASM-NEXT
 END-CODE
 
-( Disable interrupts. )
+( > Disable interrupts. )
 CODE DINT ( -- )
     ." \t dint\n "
     ASM-NEXT
 END-CODE
 
-( Enter low-power mode LPM0. )
+( > Enter low-power mode LPM0. )
 CODE ENTER-LPM0 ( n -- )
     ." \t bis \x23 LPM0, SR\n "
     ASM-NEXT
 END-CODE
 
-( Enter low-power mode LPM1. )
+( > Enter low-power mode LPM1. )
 CODE ENTER-LPM1 ( n -- )
     ." \t bis \x23 LPM2, SR\n "
     ASM-NEXT
 END-CODE
 
-( Enter low-power mode LMP2. )
+( > Enter low-power mode LMP2. )
 CODE ENTER-LPM2 ( n -- )
     ." \t bis \x23 LPM3, SR\n "
     ASM-NEXT
 END-CODE
 
-( Enter low-power mode LPM3. )
+( > Enter low-power mode LPM3. )
 CODE ENTER-LPM3 ( n -- )
     ." \t bis \x23 LPM3, SR\n "
     ASM-NEXT
 END-CODE
 
-( Enter low-power mode LPM4. )
+( > Enter low-power mode LPM4. )
 CODE ENTER-LPM4 ( n -- )
     ." \t bis \x23 LPM4, SR\n "
     ASM-NEXT

@@ -296,6 +296,7 @@ class ForthMiscOps(object):
 
     @rpn.word('/MOD')
     def word_divmod(self, stack):
+        """Put quotient and reminder on stack."""
         a = stack.pop()
         b = stack.pop()
         d, m = divmod(a, b)
@@ -512,7 +513,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word("'")
     def word_tick(self, stack):
-        """Push reference to next word on stack"""
+        """Push reference to next word on stack."""
         if self.frame is None: raise ValueError('not in colon definition')
         name = stack.next_word()
         self.frame.append(self.instruction_literal)
@@ -521,7 +522,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('CHAR')
     def word_char(self, stack):
-        """Push ASCII code of next character"""
+        """Push ASCII code of next character."""
         name = stack.next_word()
         value = ord(name[0])
         stack.push(value)
@@ -529,7 +530,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('[CHAR]')
     def word_compile_char(self, stack):
-        """Compile ASCII code of next character"""
+        """Compile ASCII code of next character."""
         name = stack.next_word()
         value = ord(name[0])
         if self.compiling:
@@ -541,7 +542,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word(',')
     def word_coma(self, stack):
-        """Append value from stack to current definition"""
+        """Append value from stack to current definition."""
         if self.frame is None: raise ValueError('not in colon definition')
         value = stack.pop()
         if isinstance(value, Variable):
@@ -552,7 +553,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word(':')
     def word_colon(self, stack):
-        """Begin defining a function"""
+        """Begin defining a function. Example: ``: ADDONE 1 + ;``"""
         name = self.next_word()
         self.frame = Frame(name)
         self.frame.chapter = self.doctree.chapter_name
@@ -561,7 +562,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word(';')
     def word_semicolon(self, stack):
-        """End definition of function"""
+        """End definition of function. See `:`_"""
         if self.frame is None: raise ValueError('not in colon definition')
         #~ print "defined", self.frame.name, self.frame     # XXX DEBUG
         self.namespace[self.frame.name.lower()] = self.frame
@@ -572,7 +573,21 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('CODE')
     def word_code(self, stack):
-        """Begin defining a native code function"""
+        """\
+        Begin defining a native code function. CODE words are executed on the
+        host to get cross compiled. Therefore they have to output assembler
+        code for the target. Example::
+
+            ( > Increment value on stack by one. )
+            CODE 1+ ( n -- n )
+                ." \\t inc 0(SP) \\n "
+                ASM-NEXT
+            END-CODE
+
+        There is a number of supporting functions for outpoutting assembler.
+        E.g. `ASM-NEXT`_, `ASM-DROP`_, `TOS->R15`_, `R15->TOS`_, `TOS->W`_,
+        `W->TOS`_
+        """
         name = self.next_word()
         self.frame = NativeFrame(name)
         self.frame.chapter = self.doctree.chapter_name
@@ -581,7 +596,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('END-CODE')
     def word_end_code(self, stack):
-        """End definition of a native code function"""
+        """End definition of a native code function. See CODE_."""
         if self.frame is None: raise ValueError('not in colon definition')
         #~ print "defined code", self.frame.name, self.frame     # XXX DEBUG
         self.target_namespace[self.frame.name.lower()] = self.frame
@@ -592,7 +607,16 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('INTERRUPT')
     def word_interrupt(self, stack):
-        """Begin defining an interrupt function"""
+        """\
+        Begin defining an interrupt function. Example::
+
+            PORT1_VECTOR INTERRUPT handler_name
+                WAKEUP
+                0 P1IFG C!
+            END-INTERRUPT
+
+        Words defined with ``INTERRUPT`` must not be called from user code.
+        """
         name = self.next_word()
         vector = self.pop()
         self.frame = InterruptFrame(name, vector)
@@ -601,7 +625,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('END-INTERRUPT')
     def word_end_interrupt(self, stack):
-        """End definition of a native code function"""
+        """End definition of a native code function. See INTERRUPT_ for example."""
         if self.frame is None: raise ValueError('not in colon definition')
         #~ print "defined code", self.frame.name, self.frame     # XXX DEBUG
         self.target_namespace[self.frame.name.lower()] = self.frame
@@ -613,14 +637,14 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('IMMEDIATE')
     def word_immediate(self, stack):
-        """Tag current function definition as immediate"""
+        """Tag current function definition as immediate."""
         if self.frame is None: raise ValueError('not in colon definition')
         self.frame.forth_immediate = True
 
     @immediate
     @rpn.word('[COMPILE]')
     def word_BcompileB(self, stack):
-        """Get next word, look it up and add it to the current frame (not executing immediate functions)"""
+        """Get next word, look it up and add it to the current frame (not executing immediate functions)."""
         if self.frame is None: raise ValueError('not in colon definition')
         item = self.look_up(stack.next_word())
         self.frame.append(item)
@@ -641,7 +665,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('LIT')
     def instruction_literal(self, stack):
-        """low level instruction to get a literal and push it on the stack"""
+        """low level instruction to get a literal and push it on the stack."""
         stack.push(stack._frame_iterator.next())
 
     @rpn.word('BRANCH')
@@ -660,7 +684,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('RECURSE')
     def word_recurse(self, stack):
-        """Call currently defined word"""
+        """Call currently defined word."""
         if not self.compiling: raise ValueError('not allowed in immediate mode')
         if self.frame is None: raise ValueError('not in colon definition')
         # put conditional branch operation in sequence, remember position of offset on stack
@@ -676,7 +700,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('.')
     def word_dot(self, stack):
-        """Output element on stack"""
+        """Output element on stack."""
         self.doctree.write(unicode(stack.pop()))
 
     @rpn.word('EMIT')
@@ -708,6 +732,13 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """\
         Allocate a variable. Creates space in RAM and a value getter
         function.
+
+        Example::
+
+            0 VALUE X
+            X       \ -> puts 0 on stack
+            5 X TO
+            X       \ -> puts 5 on stack
         """
         value = stack.pop()
         name = stack.next_word()
@@ -726,7 +757,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('TO')
     def word_to(self, stack):
-        """Write to a VALUE"""
+        """Write to a VALUE_. Example: ``123 SOMEVALUE TO``"""
         name = stack.next_word()
         if self.compiling:
             self.frame.append(self.instruction_literal)
@@ -738,16 +769,17 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('RAM')
     def word_ram(self, stack):
-        """Select RAM as target for following CREATE calls"""
+        """Select RAM as target for following CREATE_ calls."""
         self.use_ram = True
 
     @rpn.word('ROM')
     def word_rom(self, stack):
-        """Select ROM/Flash as target for following CREATE calls"""
+        """Select ROM/Flash as target for following CREATE_ calls."""
         self.use_ram = False
 
     @rpn.word('CREATE')
     def word_create(self, stack):
+        """Create a frame, typicallly used for variables."""
         name = stack.next_word()
         # allocate separate memory
         # (cross compiled to RAM)
@@ -764,6 +796,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('ALLOT')
     def word_allot(self, stack):
+        """Allocate memory in RAM or ROM."""
         count = stack.pop()
         if count > 0:
             if count & 1: raise ValueError('odd sizes currently not supported')
@@ -773,7 +806,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('CONSTANT')
     def word_constant(self, stack):
-        """Declare a constant. Assign next word to value from stack."""
+        """\
+        Declare a constant. Assign next word to value from stack.
+        Example: ``0 CONSTANT NULL``
+        """
         value = stack.pop()
         name = stack.next_word()
         stack.namespace[name.lower()] = value
@@ -792,7 +828,13 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('(')
     def word_comment_start(self, stack):
-        """Start a comment and read to its end."""
+        """\
+        Start a comment and read to its end (``)``).
+
+        There is a special comment ``( > text... )`` which is recognized by the
+        documentation tool. All these type of comments are collected and
+        assigned to the next declaration.
+        """
         while True:
             word = self.next_word()
             if ')' in word:
@@ -808,7 +850,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('"')
     def word_string_literal(self, stack):
-        """Put a string on the stack"""
+        """Put a string on the stack."""
         words = []
         while True:
             word = self.next_word()
@@ -828,7 +870,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('."')
     def word_copy_words(self, stack):
-        """Output a string"""
+        """Output a string."""
         words = []
         while True:
             word = self.next_word()
@@ -850,7 +892,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     def word_depends_on(self, stack):
         """\
         Mark word as used so that it is included in cross compilation. Useful
-        when using other words within CODE definitions.
+        when using other words within CODE_ definitions.
         """
         if self.compiling:
             word = self.next_word()
@@ -873,8 +915,8 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     def _compile_frame(self, frame):
         """\
         Compilation of forth functions. Words referenced by this function are
-        remembered and can be output later, either manually with CROSS-COMPILE
-        or automatically with CROSS-COMPILE-MISSING.
+        remembered and can be output later, either manually with `CROSS-COMPILE`_
+        or automatically with `CROSS-COMPILE-MISSING`_.
         """
         self.doctree.chapter(frame.chapter)
         self.doctree.section(frame.name)
@@ -1057,7 +1099,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('INCLUDE')
     def word_INCLUDE(self, stack):
-        """Include definitions from an other file."""
+        """Include definitions from an other file. Example: ``INCLUDE helper.forth``"""
         name = self.next_word()
         self._include(name)
 

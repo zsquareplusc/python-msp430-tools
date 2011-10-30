@@ -13,12 +13,6 @@
 ( > Emit the line feed character. )
 : LF    10 EMIT ;
 
-( > Emit the carriage character. )
-: CR    13 EMIT ;
-
-( > Emit a blank. )
-: SPACE 32 EMIT ;
-
 ( > Emit the hash character. )
 : HASH  35 EMIT ;
 

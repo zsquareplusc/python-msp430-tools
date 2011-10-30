@@ -6,12 +6,14 @@ from '.forth' files and writing a '.rst' file
 
 import sys
 import re
+import inspect
 
 re_word = re.compile(r'^(?P<type>CODE|:)\s+(?P<name>\S+)\s+(?P<balance>\(.*?--.*?\))?')
 re_doc_comment = re.compile(r'^\( > ?(.*?)\)?$')
 
 wordlist = {}
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # scan the forth source files. this will yield words for host and target
 for filename in sys.argv[1:]:
     print "scanning", filename
@@ -34,6 +36,7 @@ for filename in sys.argv[1:]:
                 info['doc'] = u'\n'.join(last_comment)
             last_comment = []
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # also include all builtin words on the host.
 sys.path.append('../..')
 import msp430.asm.forth
@@ -47,8 +50,10 @@ for word, func in f.builtins.items():
         if info['doc']:
             print "WARNING: multiple definitions of %r, skipping docs in forth.py" % (word,)
         else:
-            info['doc'] = u'%s\n' % (func.__doc__,)
+            info['doc'] = u'%s\n' % inspect.getdoc(func)
+            # XXX cut prefixing whitespace
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # write output in reST format
 output = open('forth_words.rst', 'w')
 output.write("""\
@@ -69,3 +74,4 @@ for word, info in sorted(wordlist.items()):
     if set([':', 'python']) & info['deftype']: # runs_on_host
         available.append('host')
     output.write('- availability: %s\n' % ' and '.join(available))
+print "%d words" % len(wordlist)

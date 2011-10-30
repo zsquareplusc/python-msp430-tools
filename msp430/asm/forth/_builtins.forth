@@ -18,7 +18,7 @@ CODE LIT
     ASM-NEXT
 END-CODE
 
-( > Relative jump within a thread )
+( > Relative jump within a thread. )
 CODE BRANCH
     ." \t add @IP, IP \n "
     ASM-NEXT

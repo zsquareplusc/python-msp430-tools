@@ -69,7 +69,7 @@ END-CODE
 ( > Patch the saved status register so that LPM modes are exit after the
 ( > interrupt handler is finished.
 ( >
-( > Only allowed directly in INTERRUPT definition. Not in called functions.
+( > Only allowed directly in INTERRUPT_ definition. Not in called functions.
 ( >
 ( > May be called multiple times. )
 CODE WAKEUP ( R: int-sys -- int-sys )

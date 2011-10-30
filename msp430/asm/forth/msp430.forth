@@ -40,7 +40,7 @@ CODE CTOGGLE ( n adr -- )
 END-CODE
 
 ( > Bit test operation, 8 bit. )
-( > Example: ``BIT0 P1OUT CTESTBIT IF 1 THEN 0 ENDIF`` )
+( > Example: ``BIT0 P1IN CTESTBIT IF 1 THEN 0 ENDIF`` )
 CODE CTESTBIT ( mask adr -- bool )
     TOS->W
     ." \t bit.b @W, 0(SP) \n "
@@ -81,7 +81,7 @@ CODE TOGGLE ( n adr -- )
 END-CODE
 
 ( > Bit test operation, 16 bit. )
-( > Example: ``CCIFG TA0CCTL1 TESTBIT IF 1 THEN 0 ENDIF`` )
+( > Example: ``CCIFG TA0CCTL1 TESTBIT IF 1 ELSE 0 ENDIF`` )
 CODE TESTBIT ( mask adr -- bool )
     TOS->W
     ." \t bit @W, 0(SP) \n "

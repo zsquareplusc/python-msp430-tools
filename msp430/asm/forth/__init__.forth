@@ -22,16 +22,18 @@
 : 4- ( n -- n ) 4 - ;   ( decrement by four )
 
 ( Define some character constants )
+( > ASCII code for line feed. )
 : '\n' 10 ;
-: BL   32 ; ( BL [BLank] is a standard FORTH word for space. )
+( > BL [BLank] is a standard FORTH word for space. )
+: BL   32 ;
 
-( CR prints a carriage return )
+( > CR prints a carriage return. )
 : CR '\n' EMIT ;
 
-( SPACE prints a space )
+( > SPACE prints a space. )
 : SPACE BL EMIT ;
 
-( NEGATE leaves the negative of a number on the stack. )
+( > NEGATE leaves the negative of a number on the stack. )
 : NEGATE 0 SWAP - ;
 
 ( Standard words for booleans. )
@@ -80,10 +82,10 @@
 \ in immediate mode, then they won't work.  Making these work in immediate mode
 \ is left as an exercise for the reader.
 \
-\ condition IF true-part THEN rest
+( > Example: ``condition IF true-part THEN rest`` )
 \      -- compiles to: --> condition 0BRANCH OFFSET true-part rest
 \      where OFFSET is the offset of 'rest'
-\ condition IF true-part ELSE false-part THEN
+( > Example: `` condition IF true-part ELSE false-part THEN`` )
 \      -- compiles to: --> condition 0BRANCH OFFSET true-part BRANCH OFFSET2 false-part rest
 \      where OFFSET if the offset of false-part and OFFSET2 is the offset of rest
 \
@@ -97,18 +99,21 @@
         0 ,             \ compile a dummy offset
 ;
 
+( > See IF_. )
 : THEN IMMEDIATE
         DUP
         HERE @ SWAP -   \ calculate the offset from the address saved on the stack
         SWAP !          \ store the offset in the back-filled location
 ;
-( XXX alias )
+
+( > Alias for THEN_, See IF_. )
 : ENDIF IMMEDIATE
         DUP
         HERE @ SWAP -   \ calculate the offset from the address saved on the stack
         SWAP !          \ store the offset in the back-filled location
 ;
 
+( > See IF_. )
 : ELSE IMMEDIATE
         ' BRANCH ,      \ definite branch to just over the false-part
         HERE @          \ save location of the offset on the stack
@@ -120,7 +125,7 @@
 ;
 
 
-\ BEGIN loop-part condition UNTIL
+( > Example: ``BEGIN loop-part condition UNTIL`` )
 \      -- compiles to: --> loop-part condition 0BRANCH OFFSET
 \      where OFFSET points back to the loop-part
 \ This is like do { loop-part } while (condition) in the C language
@@ -128,13 +133,14 @@
         HERE @          \ save location on the stack
 ;
 
+( > See BEGIN_. )
 : UNTIL IMMEDIATE
         ' BRANCH0 ,     \ compile 0BRANCH
         HERE @ -        \ calculate the offset from the address saved on the stack
         ,               \ compile the offset here
 ;
 
-\ BEGIN loop-part AGAIN
+( > BEGIN loop-part AGAIN )
 \      -- compiles to: --> loop-part BRANCH OFFSET
 \      where OFFSET points back to the loop-part
 \ In other words, an infinite loop which can only be returned from with EXIT
@@ -144,7 +150,7 @@
         ,               \ compile the offset here
 ;
 
-\ BEGIN condition WHILE loop-part REPEAT
+( > Example: ``BEGIN condition WHILE loop-part REPEAT`` )
 \      -- compiles to: --> condition 0BRANCH OFFSET2 loop-part BRANCH OFFSET
 \      where OFFSET points back to condition (the beginning) and OFFSET2
 \      points to after the whole piece of code
@@ -155,6 +161,7 @@
         0 ,             \ compile a dummy offset2
 ;
 
+( > See WHILE_. )
 : REPEAT IMMEDIATE
         ' BRANCH ,      \ compile BRANCH )
         SWAP            \ get the original offset (from BEGIN)
@@ -164,8 +171,8 @@
         SWAP !          \ and back-fill it in the original location
 ;
 
-\ UNLESS is the same as IF but the test is reversed.
-\
+( > UNLESS is the same as IF_ but the test is reversed. )
+
 \ Note the use of [COMPILE]: Since IF is IMMEDIATE we don't want it to be
 \ executed while UNLESS is compiling, but while UNLESS is running (which happens
 \ to be when whatever word using UNLESS is being compiled -- whew!).  So we use
@@ -184,6 +191,7 @@
 : TUCK ( x y -- y x y ) SWAP OVER ;
 
 ( With the looping constructs, we can now write SPACES, which writes n spaces to stdout. )
+( > Write given number of spaces. Example:: ``20 SPACES``.)
 : SPACES        ( n -- )
         BEGIN
                 DUP 0>          \ while n > 0
@@ -196,11 +204,11 @@
 
 
 
-( ? fetches the integer at an address and prints it. )
+( > ? Fetches the integer at an address and prints it. )
 : ? ( addr -- ) @ . ;
 
-( c a b WITHIN returns true if a <= c and c < b )
-(  or define without ifs: OVER - >R - R>  U<  )
+( > ``c a b WITHIN`` returns true if a <= c and c < b )
+( > or define without ifs: ``OVER - >R - R>  U<``  )
 : WITHIN
         -ROT            ( b c a )
         OVER            ( b c a c )
@@ -222,15 +230,16 @@
 \       CASE...ENDCASE is how we do switch statements in FORTH.  There is no generally
 \       agreed syntax for this, so I've gone for the syntax mandated by the ISO standard
 \       FORTH (ANS-FORTH).
-\
-\               (some value on the stack)
-\               CASE
-\               test1 OF ... ENDOF
-\               test2 OF ... ENDOF
-\               testn OF ... ENDOF
-\               ... (default case)
-\               ENDCASE
-\
+( > ::
+( >
+( >               (some value on the stack)
+( >               CASE
+( >               test1 OF ... ENDOF
+( >               test2 OF ... ENDOF
+( >               testn OF ... ENDOF
+( >               ... (default case)
+( >               ENDCASE
+)
 \       The CASE statement tests the value on the stack by comparing it for equality with
 \       test1, test2, ..., testn and executes the matching piece of code within OF ... ENDOF.
 \       If none of the test values match then the default case is executed.  Inside the ... of
@@ -287,6 +296,7 @@
         0               \ push 0 to mark the bottom of the stack
 ;
 
+( > See CASE_. )
 : OF IMMEDIATE
         ' OVER ,        \ compile OVER
         ' = ,           \ compile =
@@ -294,10 +304,12 @@
         ' DROP ,        \ compile DROP
 ;
 
+( > See CASE_. )
 : ENDOF IMMEDIATE
         [COMPILE] ELSE  \ ENDOF is the same as ELSE
 ;
 
+( > See CASE_. )
 : ENDCASE IMMEDIATE
         ' DROP ,        \ compile DROP
 
@@ -305,12 +317,12 @@
         BEGIN
                 ?DUP
         WHILE
-                [COMPILE] THEN
+                [COMPILE] THEN \ aka ENDIF
         REPEAT
 ;
 
 
-
+( > Compile LIT_. )
 : ['] IMMEDIATE
         ' LIT ,         \ compile LIT
 ;

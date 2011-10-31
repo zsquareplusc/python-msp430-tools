@@ -144,29 +144,11 @@ class InterruptFrame(Frame):
         self.vector = vector
 
 
-class NativeFrame(list):
-    """Storage for native function definitions"""
-
-    def __init__(self, name):
-        list.__init__(self)
-        self.name = name
-
-    def __call__(self, stack):
-        """Execute code in frame"""
-        iterable = SeekableIterator(self)
-        old_iterator = stack._frame_iterator
-        stack._frame_iterator = iterable
-        try:
-            while True:
-                instruction = iterable.next()
-                instruction(stack)
-        except StopIteration:
-            pass
-        finally:
-            stack._frame_iterator = old_iterator
-
-    def __repr__(self):
-        return '%s[%s]' % (self.__class__.__name__, self.name,)
+class NativeFrame(Frame):
+    """\
+    Storage for native function definitions. It is a separate class so that
+    the objects can be identified.
+    """
 
 
 class Variable(object):
@@ -440,7 +422,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     def interpret_word(self, word):
         """Depending on mode a word is executed or compiled"""
         #~ print "XXX", word
-        # newlines are in the steam to support \ comments, they are otehrwise ignored
+        # newlines are in the steam to support \ comments, they are otherwise ignored
         if word == '\n':
             return
         try:
@@ -538,7 +520,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             self.frame.append(self.instruction_literal)
             self.frame.append(value)
         else:
-            raise ValueError('interpretation sematics undefined')
+            raise ValueError('interpretation semantics undefined')
 
     @rpn.word(',')
     def word_coma(self, stack):
@@ -584,9 +566,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 ASM-NEXT
             END-CODE
 
-        There is a number of supporting functions for outpoutting assembler.
+        There is a number of supporting functions for outputting assembler.
         E.g. `ASM-NEXT`_, `ASM-DROP`_, `ASM-TOS->R15`_, `ASM-R15->TOS`_,
         `ASM-TOS->W`_, `ASM-W->TOS`_
+
+        Note that the NEXT instruction is not automatically inserted and must be
+        added manually (see `ASM-NEXT`_ in example above).
         """
         name = self.next_word()
         self.frame = NativeFrame(name)
@@ -647,7 +632,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('[COMPILE]')
     def word_BcompileB(self, stack):
-        """Get next word, look it up and add it to the current frame (not executing immediate functions)."""
+        """\
+        Get next word, look it up and add it to the current frame (not
+        executing immediate functions).
+        """
         if self.frame is None: raise ValueError('not in colon definition')
         item = self.look_up(stack.next_word())
         self.frame.append(item)
@@ -668,7 +656,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('LIT')
     def instruction_literal(self, stack):
-        """low level instruction to get a literal and push it on the stack."""
+        """Low level instruction to get a literal and push it on the stack."""
         stack.push(stack._frame_iterator.next())
 
     @rpn.word('BRANCH')
@@ -679,7 +667,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('BRANCH0')
     def instruction_branch_if_false(self, stack):
-        """Get offset from sequence and a boolean from stack. Jump if boolean was false."""
+        """\
+        Get offset from sequence and a boolean from stack. Jump if boolean was
+        false.
+        """
         difference = stack._frame_iterator.next()
         if not stack.pop():
             stack._frame_iterator.seek(difference - 1)
@@ -710,7 +701,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('EMIT')
     def word_emit(self, stack):
-        """Output number on stack as unicode character."""
+        """Output number on stack as Unicode character."""
         self.doctree.write(unichr(stack.pop()))
 
     @rpn.word('VARIABLE')
@@ -784,7 +775,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('CREATE')
     def word_create(self, stack):
-        """Create a frame, typicallly used for variables."""
+        """Create a frame, typically used for variables."""
         name = stack.next_word()
         # allocate separate memory
         # (cross compiled to RAM)
@@ -828,7 +819,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             if '\n' in word:
                 break
         if not word.endswith('\n'):
-            raise ValueError('limitation, line comment end "\\n" floowed by data: %r' % (word,))
+            raise ValueError('limitation, line comment end "\\n" followed by data: %r' % (word,))
 
     @immediate
     @rpn.word('(')
@@ -845,7 +836,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             if ')' in word:
                 break
         if not word.endswith(')'):
-            raise ValueError('limitation, comment end ")" floowed by data: %r' % (word,))
+            raise ValueError('limitation, comment end ")" followed by data: %r' % (word,))
 
 
     def instruction_output_text(self, stack):
@@ -982,7 +973,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                         # for built-ins just take the name of the function
                         self.doctree.write('\t.word %s\n' % self.create_asm_label(entry.rpn_name.upper()))
                         self._compile_remember(entry.rpn_name)
-                    elif isinstance(entry, (Frame, NativeFrame)):
+                    elif isinstance(entry, Frame):
                         self.doctree.write('\t.word %s\n' % self.create_asm_label(entry.name))
                         self._compile_remember(entry.name)
                     else:
@@ -1048,19 +1039,19 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         except KeyError:
             raise ValueError('word %r is not available on the target' % (word,))
         # translate, depending on type
-        if isinstance(item, InterruptFrame):
+        if isinstance(item, NativeFrame):
+            self._compile_native_frame(item)
+        elif isinstance(item, InterruptFrame):
             self._compile_interrupt_frame(item)
         elif isinstance(item, Frame):
             self._compile_frame(item)
-        elif isinstance(item, NativeFrame):
-            self._compile_native_frame(item)
         else:
             raise ValueError('don\'t know how to compile word %r' % (word,))
 
     @immediate
     @rpn.word('CROSS-COMPILE')
     def word_cross_compile(self, stack):
-        """Output cross compiled version of function."""
+        """Output cross compiled version of function. Example:: ``CROSS-COMPILE DROP``"""
         word = self.next_word()
         if self.compiling:
             # when compiling add call to self and the word to the Frame
@@ -1073,7 +1064,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word('CROSS-COMPILE-MISSING')
     def word_cross_compile_missing(self, stack):
         """\
-        Compile all the words that are used by other compiled words but not
+        Compile all the words that are used by other compiled words but are not
         yet translated. While compiling words, new words can be found which are
         then also compiled.
         """
@@ -1103,7 +1094,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('INCLUDE')
     def word_INCLUDE(self, stack):
-        """Include and execute definitions from an other file. Example: ``INCLUDE helper.forth``"""
+        """\
+        Include and execute definitions from an other file. Example:
+        ``INCLUDE helper.forth``
+        """
         name = self.next_word()
         self._include(name)
 
@@ -1146,7 +1140,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             sys.stderr.write('    value -> <undefined>\n')
         else:
             sys.stderr.write('    value -> %r\n' % (value,))
-            if isinstance(value, (Frame, NativeFrame)):
+            if isinstance(value, Frame):
                 sys.stderr.write('    contents -> \n')
                 for item in value:
                     sys.stderr.write('        %r\n' % item)

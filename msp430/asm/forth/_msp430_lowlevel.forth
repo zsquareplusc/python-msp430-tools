@@ -95,6 +95,7 @@ CODE TESTBIT ( mask adr -- bool )
 END-CODE
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
+( some native implementations that are more compact than the provided Forth words )
 
 ( > Increment value on stack by one. )
 CODE 1+ ( n -- n )
@@ -130,6 +131,13 @@ END-CODE
 ( > Decrement value on stack by four. )
 CODE 4- ( n -- n )
     ." \t sub \x23 4, 0(SP) \n "
+    ASM-NEXT
+END-CODE
+
+( > Drop two items from the stack. )
+CODE 2DROP ( n n -- )
+    ASM-DROP
+    ASM-DROP
     ASM-NEXT
 END-CODE
 

@@ -30,7 +30,7 @@ clean:
 	-rm -rf _build/*
 
 forthwords:
-	cd asm; python forth_wordlist.py ../../msp430/asm/forth/*
+	cd asm; python forth_wordlist.py
 
 html:   forthwords
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) _build/html

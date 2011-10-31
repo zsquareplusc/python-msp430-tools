@@ -6,6 +6,7 @@ from '.forth' files and writing a '.rst' file
 
 import sys
 import re
+import glob
 import inspect
 
 re_word = re.compile(r'^(?P<type>CODE|:)\s+(?P<name>\S+)\s+(?P<balance>\(.*?--.*?\))?')
@@ -15,7 +16,7 @@ wordlist = {}
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # scan the forth source files. this will yield words for host and target
-for filename in sys.argv[1:]:
+for filename in glob.glob('../../msp430/asm/forth/*.forth'):
     print "scanning", filename
     last_comment = []
     for n, line in enumerate(open(filename)):
@@ -28,8 +29,9 @@ for filename in sys.argv[1:]:
             #~ print m.groups()
             info = wordlist.setdefault(m.group('name').upper(), {'doc':'', 'deftype':set()})
             info['deftype'].add(m.group('type'))
-            info['stack'] = m.group('balance') or 'n/a'
-            info.setdefault('locations', []).append(u'%s:%s' % (filename, n+1))
+            if m.group('balance'):
+                info['stack'] = m.group('balance')
+            info.setdefault('locations', []).append(u'%s:%s' % (filename[23:], n+1))
             if last_comment and info['doc']:
                 print "WARNING: multiple definitions of %r, skipping docs in %s" % (m.group('name'), filename)
             else:
@@ -66,12 +68,12 @@ for word, info in sorted(wordlist.items()):
     output.write('\n``%s``\n' % word)
     output.write('%s\n' % ('-'*(4+len(word))))
     output.write('%s\n' % info['doc'])
-    if 'stack' in info: output.write('\n- stack: ``%s``\n' % info['stack'])
-    output.write('- defined in file(s): %s\n' % ' and '.join('``%s``' % f for f in info['locations']))
+    if 'stack' in info: output.write('\nStack: ``%s``\n' % info['stack'])
     available = []
     if set([':', 'CODE']) & info['deftype']: # runs_on_target
         available.append('target')
     if set([':', 'python']) & info['deftype']: # runs_on_host
         available.append('host')
-    output.write('- availability: %s\n' % ' and '.join(available))
+    output.write('\nAvailability: %s\n' % ' and '.join(available))
+    output.write('\nDefined in file(s): %s\n' % ' and '.join('``%s``' % f for f in info['locations']))
 print "%d words" % len(wordlist)

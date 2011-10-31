@@ -31,34 +31,34 @@ INCLUDE io.forth
 ( Write null terminated string using TimerA UART )
 CODE WRITE ( s -- )
     TOS->R15
-    ." \t call \x23 write\n "
+    ASM-CALL write
     ASM-NEXT
 END-CODE
 
-( Output character using the TimerA UART )
+( Output single character using the TimerA UART )
 CODE EMIT ( u -- )
     TOS->R15
-    ." \t call \x23 putchar\n "
+    ASM-CALL putchar
     ASM-NEXT
 END-CODE
 
 ( Initialize TimerA UART for reception )
 CODE TIMER_A_UART_INIT ( -- )
-    ." \t call \x23 timer_uart_rx_setup\n "
+    ASM-CALL timer_uart_rx_setup
     ASM-NEXT
 END-CODE
 
 ( Fetch received character from TimerA UART )
 CODE RX-CHAR ( -- u )
     ." \t mov.b timer_a_uart_rxd, W\n "
-    ." \t push W\n "
+    W->TOS
     ASM-NEXT
 END-CODE
 
 ( Perform a single ADC10 measurement )
 CODE ADC10 ( u -- u )
     TOS->R15
-    ." \t call \x23 single_adc10\n "
+    ASM-CALL single_adc10
     R15->TOS
     ASM-NEXT
 END-CODE

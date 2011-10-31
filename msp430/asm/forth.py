@@ -1148,7 +1148,9 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         else:
             sys.stderr.write('    value -> %r\n' % (value,))
             if isinstance(value, (Frame, NativeFrame)):
-                sys.stderr.write('    contents -> %r\n' % list(repr(x) for x in value))
+                sys.stderr.write('    contents -> \n')
+                for item in value:
+                    sys.stderr.write('        %r\n' % item)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

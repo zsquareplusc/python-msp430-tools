@@ -40,4 +40,12 @@
 ( > Emit assembler to push register W on stack. )
 : W->TOS   ." \t push W \n " ;
 
-
+( > Helper to write a call in assembler. )
+( The function inserts commands in the currently compiling frame so that the
+  corresponding assembler snippet is output when that functionis called. ASM-CALL
+  itself is immediate [executed during compilation].)
+: ASM-CALL
+    ' LIT , " \t call \x23" , ' . ,     ( output string )
+    ' LIT , WORD , ' . ,                ( output saved word )
+    ' LF ,                              ( output newline )
+IMMEDIATE ;

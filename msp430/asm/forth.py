@@ -73,8 +73,15 @@ class DocumentTree(object):
             #~ print '"%s"' % chapter_name
             #~ for section_name, text in sorted(sections.items()):
                 #~ print '    "%s"' % section_name
-        for name, sections in sorted(self.chapters.items()):
+        for chapter_name, sections in sorted(self.chapters.items()):
+            heder_not_yet_done = True
             for name, text in sorted(sections.items()):
+                if text and heder_not_yet_done:
+                    if chapter_name != ' DEFAULT ':
+                        output.write(u'; %s\n' % ('='*75))
+                        output.write(u'; == %s\n' % chapter_name)
+                        output.write(u'; %s\n' % ('='*75))
+                    heder_not_yet_done = False
                 output.write(u''.join(text))
 
 
@@ -1078,9 +1085,9 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """
         self.doctree.push_state()
         self.doctree.chapter('__VARIABLES__')
-        self.doctree.write(u';%s\n' % ('-'*76))
-        self.doctree.write(u'; Variables\n')
-        self.doctree.write(u';%s\n' % ('-'*76))
+        #~ self.doctree.write(u';%s\n' % ('-'*76))
+        #~ self.doctree.write(u'; Variables\n')
+        #~ self.doctree.write(u';%s\n' % ('-'*76))
         self.doctree.write(u'.bss\n')
         # XXX check .use_ram attribute
         for name, variable in sorted(self.variables.items()):

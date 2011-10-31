@@ -181,15 +181,12 @@ END-CODE
 (  0 - false
   -1 - true
 )
-( include normalize to boolean )
-
 ( > Boolean invert. )
 CODE NOT ( b -- b )  ( XXX alias 0= )
-    DEPENDS-ON cmp_set_true
-    DEPENDS-ON cmp_set_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t tst 0(SP) " LF
-    ." \t jz  _cmp_set_true " LF
-    ." \t jmp _cmp_set_false " LF
+    ." \t jz  __set_true " LF
+    ." \t jmp __set_false " LF
 END-CODE
 
 ( ---------------------------------------------------
@@ -197,102 +194,99 @@ END-CODE
     "/"
 )
 ( ----- Compare ----- )
-CODE cmp_set_true ( n -- b )
-    ." \t mov \x23 -1, 0(SP) " LF   ( replace argument w/ result )
-    ASM-NEXT
-END-CODE
-
-CODE cmp_set_false ( n -- b )
-    ." \t mov \x23 0, 0(SP) " LF    ( replace argument w/ result )
-    ASM-NEXT
-END-CODE
-
-
-CODE cmp_true ( x y -- b )
+( > Internal helper. Providing several labels to be called from assembler:
+( >
+( > - ``__set_true``    stack: ``x -- true`` )
+( > - ``__set_false``   stack: ``x -- false`` )
+( > - ``__drop_and_set_true``  stack: ``x y -- true`` )
+( > - ``__drop_and_set_false`` stack: ``x y -- false`` )
+CODE __COMPARE_HELPER
+    ." __drop_and_set_true:" LF
     ASM-DROP                        ( remove 1st argument )
-    ." \t mov \x23 -1, 0(SP) " LF   ( replace 2nd argument w/ result )
+    ." __set_true:" LF
+    ." \t mov \x23 -1, 0(SP) " LF    ( replace 2nd argument w/ result )
     ASM-NEXT
-END-CODE
 
-CODE cmp_false ( x y -- b )
+    ." __drop_and_set_false:" LF
     ASM-DROP                        ( remove 1st argument )
+    ." __set_false:" LF
     ." \t mov \x23 0, 0(SP) " LF    ( replace 2nd argument w/ result )
     ASM-NEXT
 END-CODE
 
 
+( > Compare two numbers. )
 CODE < ( x y -- b )
-    DEPENDS-ON cmp_true
-    DEPENDS-ON cmp_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t cmp 0(SP), 2(SP) " LF
-    ." \t jl  _cmp_true " LF
-    ." \t jmp _cmp_false " LF
+    ." \t jl  __drop_and_set_true " LF
+    ." \t jmp __drop_and_set_false " LF
 END-CODE
 
+( > Compare two numbers. )
 CODE > ( x y -- b )
-    DEPENDS-ON cmp_true
-    DEPENDS-ON cmp_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t cmp 2(SP), 0(SP) " LF
-    ." \t jl  _cmp_true " LF
-    ." \t jmp _cmp_false " LF
+    ." \t jl  __drop_and_set_true " LF
+    ." \t jmp __drop_and_set_false " LF
 END-CODE
 
+( > Compare two numbers. )
 CODE <= ( x y -- b )
-    DEPENDS-ON cmp_true
-    DEPENDS-ON cmp_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t cmp 0(SP), 2(SP) " LF
-    ." \t jge _cmp_false " LF
-    ." \t jmp _cmp_true " LF
+    ." \t jge __drop_and_set_false " LF
+    ." \t jmp __drop_and_set_true " LF
 END-CODE
 
+( > Compare two numbers. )
 CODE >= ( x y -- b )
-    DEPENDS-ON cmp_true
-    DEPENDS-ON cmp_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t cmp 0(SP), 2(SP) " LF
-    ." \t jge _cmp_true " LF
-    ." \t jmp _cmp_false " LF
+    ." \t jge __drop_and_set_true " LF
+    ." \t jmp __drop_and_set_false " LF
 END-CODE
 
+( > Tests two numbers for equality. )
 CODE == ( x y -- b )
-    DEPENDS-ON cmp_true
-    DEPENDS-ON cmp_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t cmp 0(SP), 2(SP) " LF
-    ." \t jeq _cmp_true " LF
-    ." \t jmp _cmp_false " LF
+    ." \t jeq __drop_and_set_true " LF
+    ." \t jmp __drop_and_set_false " LF
 END-CODE
 
 ( XXX alias for == )
+( > Tests two numbers for equality. )
 CODE = ( x y -- b )
-    DEPENDS-ON cmp_true
-    DEPENDS-ON cmp_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t cmp 0(SP), 2(SP) " LF
-    ." \t jeq _cmp_true " LF
-    ." \t jmp _cmp_false " LF
+    ." \t jeq __drop_and_set_true " LF
+    ." \t jmp __drop_and_set_false " LF
 END-CODE
 
+( > Tests two numbers for unequality. )
 CODE != ( x y -- b )
-    DEPENDS-ON cmp_true
-    DEPENDS-ON cmp_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t cmp 0(SP), 2(SP) " LF
-    ." \t jne _cmp_true " LF
-    ." \t jmp _cmp_false " LF
+    ." \t jne __drop_and_set_true " LF
+    ." \t jmp __drop_and_set_false " LF
 END-CODE
 
 
+( > Test if number equals zero. )
 CODE 0= ( x -- b )
-    DEPENDS-ON cmp_set_true
-    DEPENDS-ON cmp_set_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t tst 0(SP) " LF
-    ." \t jz  _cmp_set_true " LF
-    ." \t jmp _cmp_set_false " LF
+    ." \t jz  __set_false " LF
+    ." \t jmp __set_true " LF
 END-CODE
 
+( > Test if number is positive. )
 CODE 0> ( x -- b )
-    DEPENDS-ON cmp_set_true
-    DEPENDS-ON cmp_set_false
+    DEPENDS-ON __COMPARE_HELPER
     ." \t tst 0(SP) " LF
-    ." \t jn  _cmp_set_false " LF
-    ." \t jmp _cmp_set_true " LF
+    ." \t jn  __set_false " LF
+    ." \t jmp __set_true " LF
 END-CODE
 
 ( --------------------------------------------------- )
@@ -310,7 +304,7 @@ CODE ZERO ( adr u -- )
 END-CODE
 
 ( --------------------------------------------------- )
-( > internal helper for ." )
+( > internal helper for ``."`` )
 CODE __write_text ( -- )
     ." \t mov @IP+, R15\n"
     ." \t call \x23 write\n"

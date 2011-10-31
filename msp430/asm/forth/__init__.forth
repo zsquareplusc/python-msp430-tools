@@ -82,13 +82,17 @@
 \ in immediate mode, then they won't work.  Making these work in immediate mode
 \ is left as an exercise for the reader.
 \
-( > Example: ``condition IF true-part THEN rest`` )
+( > Examples:
+( >
+( > - ``condition IF true-part THEN rest`` )
 \      -- compiles to: --> condition 0BRANCH OFFSET true-part rest
 \      where OFFSET is the offset of 'rest'
-( > Example: `` condition IF true-part ELSE false-part THEN`` )
+( > - ``condition IF true-part ELSE false-part THEN`` )
 \      -- compiles to: --> condition 0BRANCH OFFSET true-part BRANCH OFFSET2 false-part rest
 \      where OFFSET if the offset of false-part and OFFSET2 is the offset of rest
 \
+\ alternate form with mor common wording
+( > - ``condition IF true-part ELSE false-part ENDIF`` )
 \ IF is an IMMEDIATE word which compiles 0BRANCH followed by a dummy offset, and places
 \ the address of the 0BRANCH on the stack.  Later when we see THEN, we pop that address
 \ off the stack, calculate the offset, and back-fill the offset.

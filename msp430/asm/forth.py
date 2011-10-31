@@ -553,7 +553,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word(':')
     def word_colon(self, stack):
-        """Begin defining a function. Example: ``: ADDONE 1 + ;``"""
+        """Begin defining a function. Example: ``: ADD-ONE 1 + ;``"""
         name = self.next_word()
         self.frame = Frame(name)
         self.frame.chapter = self.doctree.chapter_name
@@ -637,7 +637,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('IMMEDIATE')
     def word_immediate(self, stack):
-        """Tag current function definition as immediate."""
+        """\
+        Tag current function definition as immediate. This means that it is
+        executed even during compilation.
+        """
         if self.frame is None: raise ValueError('not in colon definition')
         self.frame.forth_immediate = True
 
@@ -684,7 +687,9 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @immediate
     @rpn.word('RECURSE')
     def word_recurse(self, stack):
-        """Call currently defined word."""
+        """\
+        Call currently defined word. This is used to write recursive functions.
+        """
         if not self.compiling: raise ValueError('not allowed in immediate mode')
         if self.frame is None: raise ValueError('not in colon definition')
         # put conditional branch operation in sequence, remember position of offset on stack
@@ -1099,7 +1104,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     @rpn.word('INCLUDE')
     def word_INCLUDE(self, stack):
-        """Include definitions from an other file. Example: ``INCLUDE helper.forth``"""
+        """Include and execute definitions from an other file. Example: ``INCLUDE helper.forth``"""
         name = self.next_word()
         self._include(name)
 

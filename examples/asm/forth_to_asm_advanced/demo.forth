@@ -24,7 +24,6 @@
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 INCLUDE core.forth
 INCLUDE msp430.forth
-INCLUDE io.forth
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 

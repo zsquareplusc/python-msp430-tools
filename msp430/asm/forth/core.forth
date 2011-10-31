@@ -40,6 +40,7 @@ END-CODE
 INCLUDE _builtins.forth
 INCLUDE _memory.forth
 INCLUDE _helpers.forth
+INCLUDE _msp430_lowlevel.forth
 
 
 ( > Generate init code for forth runtime and core words. )

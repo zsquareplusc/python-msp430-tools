@@ -7,7 +7,6 @@
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 INCLUDE core.forth
 INCLUDE msp430.forth
-INCLUDE io.forth
 
 ( - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - )
 ( Control the LEDs on the Launchpad )

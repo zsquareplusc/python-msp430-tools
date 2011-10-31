@@ -36,16 +36,16 @@ DIS = python -m msp430.asm.disassemble
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .PHONY: clean all
 
-all: clean led.titext
+all: clean led.titext led.S
 #	$(CAT) led.titext
 
 clean:
 	$(RM) led.titext led.o4 led.s-cpp led.S \
 	      startup.o4 startup.s-cpp \
-	      intvec.o4 intvec.s-cpp io.forth
+	      intvec.o4 intvec.s-cpp msp430.forth
 
 # dependencies
-led.forth: io.forth
+led.forth: msp430.forth
 
 # linking final program
 led.titext: startup.o4 led.o4 intvec.o4
@@ -55,7 +55,7 @@ led.titext: startup.o4 led.o4 intvec.o4
 startup.s-cpp:
 	$(LIB) -o $@ asm/startup.S
 
-io.forth:
+msp430.forth:
 	$(H2FORTH) $(H2FORTHFLAGS) -o $@ $(MCU).h
 
 # pattern rules for the assembler

@@ -72,7 +72,7 @@ END-CODE
 : GREEN_OFF ( -- ) BIT6 P1OUT CRESET ;
 
 ( Read in the button on the Launchpad )
-: S2        P1IN C@ BIT3 AND NOT ;
+: S2        BIT3 P1IN CTESTBIT NOT ;
 
 ( Delay functions )
 : SHORT-DELAY     ( -- ) 0x4fff DELAY ;

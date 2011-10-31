@@ -23,6 +23,12 @@
 : ASM-NEXT ." \t br @IP+ \t; NEXT \n " ;
 
 ( > Emit assembler for DROP. )
+( > Example::
+( >
+( >    CODE DROP-DEMO ( n -- )
+( >        ASM-DROP
+( >        ASM-NEXT
+( >    END-CODE )
 : ASM-DROP ." \t incd SP \t; DROP \n " ;
 
 ( > Emit assembler to pop top of stack to register R15. )
@@ -41,6 +47,13 @@
 : ASM-W->TOS   ." \t push W \n " ;
 
 ( > Helper to write a call in assembler. )
+( > Example::
+( >
+( >    CODE PUTCHAR ( u -- )
+( >        ASM-TOS->R15
+( >        ASM-CALL putchar
+( >        ASM-NEXT
+( >    END-CODE )
 ( The function inserts commands in the currently compiling frame so that the
   corresponding assembler snippet is output when that functionis called. ASM-CALL
   itself is immediate [executed during compilation].)

@@ -585,8 +585,8 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             END-CODE
 
         There is a number of supporting functions for outpoutting assembler.
-        E.g. `ASM-NEXT`_, `ASM-DROP`_, `TOS->R15`_, `R15->TOS`_, `TOS->W`_,
-        `W->TOS`_
+        E.g. `ASM-NEXT`_, `ASM-DROP`_, `ASM-TOS->R15`_, `ASM-R15->TOS`_,
+        `ASM-TOS->W`_, `ASM-W->TOS`_
         """
         name = self.next_word()
         self.frame = NativeFrame(name)

@@ -277,8 +277,8 @@ END-CODE
 CODE 0= ( x -- b )
     DEPENDS-ON __COMPARE_HELPER
     ." \t tst 0(SP) " LF
-    ." \t jz  __set_false " LF
-    ." \t jmp __set_true " LF
+    ." \t jz  __set_true " LF
+    ." \t jmp __set_false " LF
 END-CODE
 
 ( > Test if number is positive. )

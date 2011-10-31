@@ -28,7 +28,7 @@ class LinkError(rpn.RPNError):
 # start_address to end_address (excluding!)
 # if the data is complete, a call to shrink_to_fit() adjusts the
 # start and end addresses for a final positioning of the data
-class Segment:
+class Segment(object):
     """\
     Store data bytes along with information about a segment. A segment can
     also contain subsegments.
@@ -194,6 +194,8 @@ class Linker(rpn.RPN):
         rpn.RPN.__init__(self)
         # separate name space for symbols from the data
         self.labels = {}
+        # weak aliases are checked if a label is undefined.
+        self.weak_alias = {}
         # the linking will require multiple passes, a flag controls
         # if errors are fatal or ignored
         self.errors_are_fatal = True
@@ -333,6 +335,19 @@ class Linker(rpn.RPN):
                         self.source_column)
         self.labels[name] = value
 
+    @rpn.word('WEAK-ALIAS')
+    def _weak_alias(self, rpn):
+        """Assign a symbol for an other symbol. The alias is used when the symbol is not defined."""
+        name = self.name_symbol(self.next_word())
+        alias = self.name_symbol(self.next_word())
+        if name in self.weak_alias and self.weak_alias[name] != alias:
+            raise LinkError(
+                    'weak alias %r redefined (old value: %r)' % (name, self.weak_alias[name]),
+                    self.source_filename,
+                    self.source_line,
+                    self.source_column)
+        self.weak_alias[name] = alias
+
     @rpn.word('CREATE-SYMBOL')
     def _create_symbol(self, rpn):
         """Mark current location with symbol"""
@@ -352,9 +367,13 @@ class Linker(rpn.RPN):
     def _get_symbol(self, rpn):
         """Get a symbol and put its value on the stack."""
         name = self.name_symbol(self.next_word())
+        # check if there is an alias as long as its not already found in labels
+        if name in self.weak_alias and name not in self.labels:
+            name = self.weak_alias[name]
         try:
             value = self.labels[name]
         except KeyError:
+            # other wise it is undefined
             if self.errors_are_fatal:
                 raise LinkError(
                         'Label %r is not defined' % (name,),

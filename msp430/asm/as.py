@@ -844,15 +844,27 @@ class MSP430Assembler(object):
         return u'SEGMENT %s' % (name[1],)
 
     def insn__dot_SET_2(self, insn, mode, label, value):
-        """Define a symbol with a value (can be used at link time)"""
+        """Define a symbol with a value (can be used at link time)."""
         if label[0] != 'SYMBOLIC':
             raise AssemblerError('Unsupported argument type: %r' % label[1])
         if value[0] != 'SYMBOLIC':
             raise AssemblerError('Unsupported argument type: %r' % value[1])
-        return u'%s CONSTANT %s' % (value[1], label[1])
+        return u'%s CONSTANT-SYMBOL %s' % (value[1], label[1])
+
+    def insn__dot_WEAKALIAS_2(self, insn, mode, label, value):
+        """\
+        Define a symbol with a value (can be used at link time). This is some
+        sort of weak definition that can be redefined by other labels or set
+        commands.
+        """
+        if label[0] != 'SYMBOLIC':
+            raise AssemblerError('Unsupported argument type: %r' % label[1])
+        if value[0] != 'SYMBOLIC':
+            raise AssemblerError('Unsupported argument type: %r' % value[1])
+        return u'WEAK-ALIAS %s %s' % (label[1], value[1])
 
     def insn__dot_ASCII_N(self, insn, mode, *args):
-        """Insert the given text as bytes"""
+        """Insert the given text as bytes."""
         result = []
         for am, value, m in args:
             if am != 'STRING':

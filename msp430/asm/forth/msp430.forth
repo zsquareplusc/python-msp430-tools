@@ -15,8 +15,8 @@ INCLUDE _interrupts.forth
 ( > Bit clear operation, 8 bit. )
 ( > Example: ``BIT0 P1OUT CRESET`` )
 CODE CRESET ( n adr -- )
-    TOS->R15
-    TOS->R14
+    ASM-TOS->R15
+    ASM-TOS->R14
     ." \t bic.b R14, 0(R15) \n "
     ASM-NEXT
 END-CODE
@@ -24,8 +24,8 @@ END-CODE
 ( > Bit set operation, 8 bit. )
 ( > Example: ``BIT0 P1OUT CSET`` )
 CODE CSET ( n adr -- )
-    TOS->R15
-    TOS->R14
+    ASM-TOS->R15
+    ASM-TOS->R14
     ." \t bis.b R14, 0(R15) \n "
     ASM-NEXT
 END-CODE
@@ -33,8 +33,8 @@ END-CODE
 ( > Bit toggle operation, 8 bit. )
 ( > Example: ``BIT0 P1OUT CTOGGLE`` )
 CODE CTOGGLE ( n adr -- )
-    TOS->R15
-    TOS->R14
+    ASM-TOS->R15
+    ASM-TOS->R14
     ." \t xor.b R14, 0(R15) \n "
     ASM-NEXT
 END-CODE
@@ -42,7 +42,7 @@ END-CODE
 ( > Bit test operation, 8 bit. )
 ( > Example: ``BIT0 P1IN CTESTBIT IF 1 THEN 0 ENDIF`` )
 CODE CTESTBIT ( mask adr -- bool )
-    TOS->W
+    ASM-TOS->W
     ." \t bit.b @W, 0(SP) \n "
     ." \t jz  .cbit0 \n "
     ." \t mov \x23 -1, 0(SP) \n "       ( replace TOS w/ result )
@@ -59,7 +59,7 @@ END-CODE
 ( > Bit clear operation, 16 bit. )
 ( > Example: ``CCIE TA0CCTL1 RESET`` )
 CODE RESET ( n adr -- )
-    TOS->W
+    ASM-TOS->W
     ." \t bic @SP+, 0(W) \n "
     ASM-NEXT
 END-CODE
@@ -67,7 +67,7 @@ END-CODE
 ( > Bit set operation, 16 bit. )
 ( > Example: ``CCIE TA0CCTL1 SET`` )
 CODE SET ( n adr -- )
-    TOS->W
+    ASM-TOS->W
     ." \t bis @SP+, 0(W) \n "
     ASM-NEXT
 END-CODE
@@ -75,7 +75,7 @@ END-CODE
 ( > Bit toggle operation, 16 bit. )
 ( > Example: ``CCIE TA0CCTL1 TOGGLE`` )
 CODE TOGGLE ( n adr -- )
-    TOS->W
+    ASM-TOS->W
     ." \t xor @SP+, 0(W) \n "
     ASM-NEXT
 END-CODE
@@ -83,7 +83,7 @@ END-CODE
 ( > Bit test operation, 16 bit. )
 ( > Example: ``CCIFG TA0CCTL1 TESTBIT IF 1 ELSE 0 ENDIF`` )
 CODE TESTBIT ( mask adr -- bool )
-    TOS->W
+    ASM-TOS->W
     ." \t bit @W, 0(SP) \n "
     ." \t jz  .bit0 \n "
     ." \t mov \x23 -1, 0(SP) \n "       ( replace TOS w/ result )
@@ -139,7 +139,7 @@ END-CODE
 ( > Simple busy-wait type delay. 3 cycles/loop. )
 ( > Example: ``20 DELAY`` )
 CODE DELAY ( n -- )
-    TOS->W
+    ASM-TOS->W
     ." .loop: \t dec W \n "
     ." \t jnz .loop \n "
     ASM-NEXT
@@ -163,16 +163,16 @@ END-CODE
 
 ( > Move byte from memory to memory, 8 bit. )
 CODE C@! ( src-adr dst-adr -- )
-    TOS->R15                        ( pop destination address )
-    TOS->R14                        ( pop source address )
+    ASM-TOS->R15                    ( pop destination address )
+    ASM-TOS->R14                    ( pop source address )
     ." \t mov.b @R14, 0(R15) \n "   ( copy value from src to dst )
     ASM-NEXT
 END-CODE
 
 ( > Move word from memory to memory, 16 bit. )
 CODE @! ( src-adr dst-adr -- )
-    TOS->R15                        ( pop destination address )
-    TOS->R14                        ( pop source address )
+    ASM-TOS->R15                    ( pop destination address )
+    ASM-TOS->R14                    ( pop source address )
     ." \t mov @R14, 0(R15) \n "     ( copy value from src to dst )
     ASM-NEXT
 END-CODE

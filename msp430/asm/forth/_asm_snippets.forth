@@ -26,19 +26,19 @@
 : ASM-DROP ." \t incd SP \t; DROP \n " ;
 
 ( > Emit assembler to pop top of stack to register R15. )
-: TOS->R15 ." \t pop  R15 \n " ;
+: ASM-TOS->R15 ." \t pop  R15 \n " ;
 
 ( > Emit assembler to pop top of stack to register R14. )
-: TOS->R14 ." \t pop  R14 \n " ;
+: ASM-TOS->R14 ." \t pop  R14 \n " ;
 
 ( > Emit assembler to push R15 on stack. )
-: R15->TOS ." \t push R15 \n " ;
+: ASM-R15->TOS ." \t push R15 \n " ;
 
 ( > Emit assembler to pop top of stack to register W. )
-: TOS->W   ." \t pop  W \n " ;
+: ASM-TOS->W   ." \t pop  W \n " ;
 
 ( > Emit assembler to push register W on stack. )
-: W->TOS   ." \t push W \n " ;
+: ASM-W->TOS   ." \t push W \n " ;
 
 ( > Helper to write a call in assembler. )
 ( The function inserts commands in the currently compiling frame so that the

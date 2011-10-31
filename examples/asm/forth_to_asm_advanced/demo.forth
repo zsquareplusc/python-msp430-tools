@@ -30,14 +30,14 @@ INCLUDE io.forth
 
 ( Write null terminated string using TimerA UART )
 CODE WRITE ( s -- )
-    TOS->R15
+    ASM-TOS->R15
     ASM-CALL write
     ASM-NEXT
 END-CODE
 
 ( Output single character using the TimerA UART )
 CODE EMIT ( u -- )
-    TOS->R15
+    ASM-TOS->R15
     ASM-CALL putchar
     ASM-NEXT
 END-CODE
@@ -51,15 +51,15 @@ END-CODE
 ( Fetch received character from TimerA UART )
 CODE RX-CHAR ( -- u )
     ." \t mov.b timer_a_uart_rxd, W\n "
-    W->TOS
+    ASM-W->TOS
     ASM-NEXT
 END-CODE
 
 ( Perform a single ADC10 measurement )
 CODE ADC10 ( u -- u )
-    TOS->R15
+    ASM-TOS->R15
     ASM-CALL single_adc10
-    R15->TOS
+    ASM-R15->TOS
     ASM-NEXT
 END-CODE
 

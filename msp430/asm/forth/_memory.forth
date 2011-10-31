@@ -17,8 +17,8 @@ END-CODE
 
 ( > Store byte value. )
 CODE C! ( n adr -- )
-    TOS->R15                        ( pop address )
-    TOS->R14                        ( pop value )
+    ASM-TOS->R15                    ( pop address )
+    ASM-TOS->R14                    ( pop value )
     ." \t mov.b R14, 0(R15) \n "    ( write to address - separate instruction b/c byte mode )
     ASM-NEXT
 END-CODE
@@ -32,7 +32,7 @@ END-CODE
 
 ( > Store word value. )
 CODE ! ( n adr -- )
-    TOS->W                          ( pop address )
+    ASM-TOS->W                      ( pop address )
     ." \t mov @SP+, 0(W) \n "       ( pop value and write to address )
     ASM-NEXT
 END-CODE

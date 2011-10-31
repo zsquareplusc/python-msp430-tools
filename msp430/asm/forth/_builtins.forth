@@ -62,7 +62,7 @@ END-CODE
 
 ( > Push a copy of the N'th element. )
 CODE PICK ( n -- n )
-    TOS->W                    ( get element number from stack )
+    ASM-TOS->W                ( get element number from stack )
     ." \t rla W " LF          ( multiply by 2 -> 2 byte / cell )
     ." \t add SP, W " LF      ( calculate address on stack )
     ." \t push 0(W) " LF
@@ -159,7 +159,7 @@ END-CODE
 
 ( > Logical left shift by u bits. )
 CODE LSHIFT ( n u -- n*2^u )
-    TOS->W
+    ASM-TOS->W
     ." .lsh:\t clrc\n"
     ." \t rlc 0(SP) \t; x <<= 1\n"
     ." \t dec W\n"
@@ -169,7 +169,7 @@ END-CODE
 
 ( > Logical right shift by u bits. )
 CODE RSHIFT ( n u -- n/2^u )
-    TOS->W
+    ASM-TOS->W
     ." .rsh:\t clrc\n"
     ." \t rrc 0(SP) \t; x >>= 1\n"
     ." \t dec W\n"
@@ -294,8 +294,8 @@ END-CODE
 ( XXX Forth name ERASE conflicts with FCTL bit name in MSP430 )
 ( > Erase memory area. )
 CODE ZERO ( adr u -- )
-    TOS->W      ( count )
-    TOS->R15    ( address )
+    ASM-TOS->W      ( count )
+    ASM-TOS->R15    ( address )
     ." .erase_loop: clr.b 0(R15)\n"
     ." \t inc R15\n"
     ." \t dec W\n"

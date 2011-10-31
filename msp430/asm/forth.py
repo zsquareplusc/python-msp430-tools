@@ -966,7 +966,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                             self.doctree.write('\t.word %s, %-6s ; 0x%04x\n' % (
                                     self.create_asm_label('LIT'),
                                     value,
-                                    value))
+                                    value & 0xffff))
                         self._compile_remember('LIT')
                     elif entry == self.instruction_seek:
                         # branch needs special case as offset needs to be recalculated
@@ -1009,7 +1009,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
     def _compile_interrupt_frame(self, frame):
         """Compilation of interrupt function"""
-        self.doctree.chapter('_interrupts.forth') # locate in same section as support code
         self.doctree.section(frame.name)
         self.doctree.write(u'.text\n.even\n')
         self.doctree.write(u';%s\n' % ('-'*76))
@@ -1022,7 +1021,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.doctree.write(u'\tmov IP, 2(RTOS)  ; save IP on return stack\n')
         self.doctree.write(u'\tmov SP, 0(RTOS)  ; save SP pointer on return stack it points to SR on stack\n')
         self.doctree.write(u'\tmov #%s, IP      ; Move address of thread of interrupt handler in IP\n' % self.create_asm_label(frame.name))
-        self.doctree.write('\tjmp %s\n' % self.create_asm_label('DO-INTERRUPT'))
+        self.doctree.write('\tbr  #%s\n' % self.create_asm_label('DO-INTERRUPT'))
         # the thread for the interrupt handler
         self.doctree.write(u'%s:\n' % self.create_asm_label(frame.name))
         self._compile_thread(frame)

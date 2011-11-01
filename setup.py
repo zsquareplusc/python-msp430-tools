@@ -9,6 +9,7 @@
 
 from distutils.core import setup
 import sys
+import glob
 
 setup(
     name="python-msp430-tools",

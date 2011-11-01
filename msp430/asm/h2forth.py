@@ -6,7 +6,10 @@
 # Simplified BSD License (see LICENSE.txt for full text)
 
 """\
-Conversion of C header files (specially for the MSP430) to forth.
+Conversion of C header files (specially for the MSP430) to Forth.
+
+It's main purpose is to extract the #defines from the CPU specific
+header files for the TI MSP430.
 """
 
 import logging

@@ -6,12 +6,27 @@ include setup.py
 recursive-include msp430 *.py *.txt
 recursive-include examples *.py *.txt *.S *akefile *.ini *.nsi *.m43 *.forth
 
-include msp430/asm/definitions/*.peripheral
 include msp430/asm/forth/*.forth
+
+include msp430/asm/librarian/asm/startup.S
+include msp430/asm/librarian/asm/intvec16.S
+include msp430/asm/librarian/asm/intvec32.S
+include msp430/asm/librarian/asm/adc10.S
+include msp430/asm/librarian/asm/write.S
+include msp430/asm/librarian/asm/timer_a_uart/putchar.S
+include msp430/asm/librarian/asm/timer_a_uart/putchar_outmod.S
+include msp430/asm/librarian/asm/timer_a_uart/receive_interrupt.S
 
 include scripts/*.py
 
 include doc/*.rst
 include doc/*.txt
+include doc/asm/*.rst
+include doc/asm/forth_wordlist.py
+include doc/asm/rpn_wordlist.py
 include doc/conf.py
 include doc/Makefile
+
+include win32/downloader.ico
+include win32/downloader.xcf
+include win32/setup-combined-tools-py2exe.py

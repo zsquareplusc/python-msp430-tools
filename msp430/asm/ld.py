@@ -325,14 +325,16 @@ class Linker(rpn.RPN):
         """Create symbol and assign to it the value from the stack"""
         name = self.name_symbol(self.next_word())
         value = self.pop()
-        if name in self.labels:
-            if self.labels[name] != value:
-                raise LinkError('redefinition of symbol with different value (previous: %r, new: %r)' % (
+        if self.check_labels is not None:
+            if name in self.check_labels and self.check_labels[name] != value:
+                raise LinkError('redefinition of symbol %r with different value (previous: %r, new: %r)' % (
+                            name,
                             self.labels[name],
                             value),
                         self.source_filename,
                         self.source_line,
                         self.source_column)
+            self.check_labels[name] = value
         self.labels[name] = value
 
     @rpn.word('WEAK-ALIAS')
@@ -526,7 +528,7 @@ class Linker(rpn.RPN):
     def pass_three(self):
         """\
         Shortcut to run the 3rd pass of 3 stage linking.
-        This run uses all the labels and created the final contents.
+        This run uses all the labels and creates the final contents.
         """
         self.errors_are_fatal = True
         self.top_segment.clear()

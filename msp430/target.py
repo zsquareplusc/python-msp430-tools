@@ -511,6 +511,7 @@ Multiple --upload options are allowed.
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def parse_args(self):
+        (self.options, self.args) = None, []  # parse_args may terminate...
         (self.options, self.args) = self.parser.parse_args()
 
         self.debug = self.options.debug
@@ -686,11 +687,12 @@ Multiple --upload options are allowed.
     def main(self):
         """Main command line entry"""
         start_time = None
-        abort_due_to_error = True
+        abort_due_to_error = False
         try:
             self.create_option_parser()
             self.add_extra_options()
             self.parse_args()
+            abort_due_to_error = True
             self.parse_extra_options()
             if self.options.time:
                 start_time = time.time()
@@ -709,7 +711,7 @@ Multiple --upload options are allowed.
         finally:
             if abort_due_to_error:
                 sys.stderr.write("Cleaning up after error...\n")
-            if not self.options.no_close:
+            if self.options is not None and not self.options.no_close:
                 self.close_connection()                     # release communication port
             elif self.verbose:
                 sys.stderr.write("WARNING: port is left open (--no-close)\n")

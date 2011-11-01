@@ -18,7 +18,7 @@
 .text
 
             ; Initialize stack pointer
-RESET:      mov    #_stack, SP
+__RESET:    mov    #_stack, SP
 
 .Linit_data: ; Copy initial values for variables in data segment
             mov     #_data_init_end-_data_init_start, R15

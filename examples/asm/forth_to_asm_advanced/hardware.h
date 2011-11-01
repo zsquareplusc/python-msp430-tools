@@ -5,6 +5,7 @@
 
 // Timer A UART configuration
 #define TAUART_RX_INTERRUPT vector_100
+#define TAUART_VECTOR       TIMERA1_VECTOR
 //~ #define TAUART_TX_DINT
 
 #define TAUART_BIT_TICKS  416 // ~2400 @ 1e6

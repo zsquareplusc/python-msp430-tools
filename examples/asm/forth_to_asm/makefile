@@ -42,18 +42,20 @@ all: clean led.titext led.S
 clean:
 	$(RM) led.titext led.o4 led.s-cpp led.S \
 	      startup.o4 startup.s-cpp \
-	      intvec.o4 intvec.s-cpp msp430.forth
+	      intvec16.S intvec16.o4 intvec.s-cpp msp430.forth
 
 # dependencies
 led.forth: msp430.forth
 
 # linking final program
-led.titext: startup.o4 led.o4 intvec.o4
+led.titext: startup.o4 led.o4 intvec16.o4
 	$(LD) $(LDFLAGS) -o $@ $^
 
 # files generated from templates / other files
 startup.s-cpp:
 	$(LIB) -o $@ asm/startup.S
+intvec16.S:
+	$(LIB) -o $@ asm/intvec16.S
 
 msp430.forth:
 	$(H2FORTH) $(H2FORTHFLAGS) -o $@ $(MCU).h

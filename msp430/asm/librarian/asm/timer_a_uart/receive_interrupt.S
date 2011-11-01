@@ -45,20 +45,24 @@
 #include "hardware.h"
 
 #ifndef TAUART_BIT_TICKS
-    #define TAUART_BIT_TICKS  416 // ~2400 @ 1e6
+    #define TAUART_BIT_TICKS    416 // ~2400 @ 1e6
 #endif // TAUART_BIT_TICKS
 
 #ifndef TAUART_RX_TxR
-    #define TAUART_RX_TxR      TAR
+    #define TAUART_RX_TxR       TAR
 #endif // TAUART_RX_TxR
 
 #ifndef TAUART_RX_CCR
-    #define TAUART_RX_CCR      TACCR1
+    #define TAUART_RX_CCR       TACCR1
 #endif // TAUART_RX_CCR
 
 #ifndef TAUART_RX_CCTL
-    #define TAUART_RX_CCTL     TACCTL1
+    #define TAUART_RX_CCTL      TACCTL1
 #endif // TAUART_RX_CCTL
+
+#ifndef TAUART_VECTOR
+    #define TAUART_VECTOR       TIMERA1_VECTOR
+#endif // TAUART_VECTOR
 
 
 ; variables
@@ -73,7 +77,7 @@ timer_a_uart_rxd:
 .text
 
 ; ---------------------------------------------------------------------------
-; interrupt handler to receive as Timer_A UART
+; Interrupt handler to receive as Timer_A UART.
 ; Timer_A UART: receive character
 ; Resources: TACCR1
 ;
@@ -85,8 +89,9 @@ timer_a_uart_rxd:
 ;    ^       ^    ^    ^    ^    ^    ^    ^    ^     interrupts
 ;  Capture   |<------------ Compare ----------->|
 ; ---------------------------------------------------------------------------
-timer_uart_rx_interrupt:
-        bic     #CCIFG, &TAUART_RX_CCTL          ; clear interrupt flag
+timer_uart_interrupt:
+vector_{TAUART_VECTOR} = timer_uart_interrupt
+        bic     #CCIFG, &TAUART_RX_CCTL ; clear interrupt flag
         add     .Lrxbit, PC
         jmp     .Lrxstart               ; start bit
         jmp     .Lrxdatabit             ; D0
@@ -109,7 +114,7 @@ timer_uart_rx_interrupt:
 .Lrxstart:                              ; start bit, initialize
         clr     .Lrxshift               ; clear input buffer
         add     #(TAUART_BIT_TICKS/2), &TAUART_RX_CCR   ; start bit + 1.5 bits -> first bit
-        mov     #CCIE|CCIS_0|SCS, &TAUART_RX_CCTL; set compare mode, sample bits
+        mov     #CCIE|CCIS_0|SCS, &TAUART_RX_CCTL       ; set compare mode, sample bits
         jmp     .Lrxex                  ; set state,...
 
 .Lrxdatabit:                            ; save data bit
@@ -121,7 +126,7 @@ timer_uart_rx_interrupt:
         reti
 
 ; ---------------------------------------------------------------------------
-; Set up for reception
+; Set up for reception.
 ; ---------------------------------------------------------------------------
 timer_uart_rx_setup:
         mov     #CCIE|CAP|CM_2|CCIS_0|SCS, &TAUART_RX_CCTL ; capture mode

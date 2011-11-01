@@ -11,10 +11,10 @@ MANIFEST
 *.o4
 *.titext
 examples/asm/*/led.titxt
-examples/asm/forth_to_asm/io.forth
+examples/asm/forth_to_asm/msp430.forth
 examples/asm/forth_to_asm/led.S
 examples/asm/forth_to_asm/*.s-cpp
-examples/asm/forth_to_asm_advanced/io.forth
+examples/asm/forth_to_asm_advanced/msp430.forth
 examples/asm/forth_to_asm_advanced/demo.S
 examples/asm/forth_to_asm_advanced/*.s-cpp
 

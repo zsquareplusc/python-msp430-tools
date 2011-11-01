@@ -12,7 +12,7 @@ export PYTHONPATH
 # options
 MCU = msp430g2231
 ASFLAGS =
-LDFLAGS = -v --mcu $(MCU)
+LDFLAGS = -v --mcu $(MCU) --map map.txt
 CPPFLAGS =
 FORTHFLAGS = -DMCU=$(MCU)
 H2FORTHFLAGS = $(CPPFLAGS)
@@ -42,14 +42,14 @@ all: clean demo.titext demo.S
 clean:
 	$(RM) demo.titext *.o4 demo.s-cpp demo.S \
 	      startup.s-cpp \
-	      intvec.s-cpp msp430.forth \
+	      intvec16.S intvec16.s-cpp msp430.forth \
 	      write.s-cpp putchar.S timer_a_uart_rx.S adc10.S adc10.s-cpp
 
 # dependencies
 demo.forth: msp430.forth
 
 # linking final program
-demo.titext: startup.o4 demo.o4 intvec.o4 write.o4 putchar.o4 timer_a_uart_rx.o4 adc10.o4
+demo.titext: startup.o4 demo.o4 intvec16.o4 write.o4 putchar.o4 timer_a_uart_rx.o4 adc10.o4
 	$(LD) $(LDFLAGS) -o $@ $^
 
 
@@ -64,6 +64,8 @@ timer_a_uart_rx.S:
 	$(LIB) -o $@ asm/timer_a_uart/receive_interrupt.S
 adc10.S:
 	$(LIB) -o $@ asm/adc10.S
+intvec16.S:
+	$(LIB) -o $@ asm/intvec16.S
 
 
 msp430.forth:

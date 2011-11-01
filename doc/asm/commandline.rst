@@ -21,8 +21,8 @@ Options:
                         name of the object file
   --filename=FILE       Use this filename for input (useful when source is
                         passed on stdin)
-  -v, --verbose         print status messages to stdout
-  --debug               print debug messages to stdout
+  -v, --verbose         print status messages to stderr
+  --debug               print debug messages to stderr
   -i, --instructions    Show list of supported instructions and exit (see also
                         -x)
 
@@ -42,6 +42,7 @@ well as the following pseudo instructions:
 - ``.SET``     Define a symbol with a value (can be used at link time)
 - ``.SKIP``    Skip the given amount of bytes
 - ``.TEXT``    Select ``.text`` section for output
+- ``.WEAKALIAS`` Create alias for label in case it is not defined directly
 - ``.WORD``    Insert the given 16 bit values
 
 

@@ -4,7 +4,7 @@
 #include <msp430g2231.h>
 
 // Timer A UART configuration
-#define TAUART_RX_INTERRUPT vector_100
+#define TAUART_RX_INTERRUPT __vector_100
 #define TAUART_VECTOR       TIMERA1_VECTOR
 //~ #define TAUART_TX_DINT
 

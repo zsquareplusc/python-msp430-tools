@@ -1014,7 +1014,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.doctree.write(u';%s\n' % ('-'*76))
 
         # interrupt entry code
-        self.doctree.write(u'vector_%s:\n' % (frame.vector))
+        self.doctree.write(u'__vector_%s:\n' % (frame.vector))
         self.doctree.write(u'\tsub #4, RTOS     ; prepare to push 2 values on return stack\n')
         self.doctree.write(u'\tmov IP, 2(RTOS)  ; save IP on return stack\n')
         self.doctree.write(u'\tmov SP, 0(RTOS)  ; save SP pointer on return stack it points to SR on stack\n')

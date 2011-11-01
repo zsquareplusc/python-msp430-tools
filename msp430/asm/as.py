@@ -23,7 +23,7 @@ re_line_hint = re.compile(r'#[\t ]+(\d+)[\t ]+"(.+)"')
 re_comment = re.compile(r'(;|//).*$')
 
 re_asmstatement = re.compile(r'''^
-    (((?P<LABEL>[\w_?\.$]+):)?)
+    (((?P<LABEL>\S+):)?)
     ([\t ]*(?P<INSN>\.?\w+)(?P<MODE>\.\w)?
       ([\t ]+(?P<OPERANDS>.*)
       )?
@@ -163,6 +163,17 @@ class MSP430Assembler(object):
             return infix2postfix(value, variable_prefix=u'GET-SYMBOL ')
         except ValueError, e:
             raise AssemblerError('invalid expression: %r' % (value,))
+
+    def expand_label(self, label):
+        """\
+        Processing of label names. Allow calcualted label names with some restrictions.
+        Replace {} as in "__vector_{(0x0004)}" => "__vector_4".
+        """
+        if label is not None:   # easier to use with regexp'es
+            if '{' in label:
+                label = re.sub(r'({\(?(.*?)\)?)}', lambda x: str(int(x.group(2), 0)), label)
+                #~ print "XXX", name
+        return label
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -968,11 +979,7 @@ class MSP430Assembler(object):
                 # test for expression like lines: "SYMBOL=VALUE"
                 g = re_expression.match(line)
                 if g:
-                    name = g.group('NAME').strip()
-                    if '{' in name:
-                        # XXX replace {} as in "vector_{(0x0004)}" = "vector_4"
-                        name = re.sub(r'({\(?(.*?)\)?)}', lambda x: str(int(x.group(2), 0)), name)
-                        #~ print "XXX", name
+                    name = self.expand_label(g.group('NAME').strip())
                     if self.debug: sys.stderr.write('%s:%d: %s = %s\n' % (
                             filename,
                             lineno,
@@ -989,7 +996,7 @@ class MSP430Assembler(object):
                 g = re_asmstatement.match(line)
                 if g:
                     #~ print g.groups()
-                    label = g.group(u'LABEL')
+                    label = self.expand_label(g.group(u'LABEL'))
                     insn  = (g.group(u'INSN') or '').upper()
                     mode  = (g.group(u'MODE') or '').upper()
                     arg_str = g.group(u'OPERANDS')

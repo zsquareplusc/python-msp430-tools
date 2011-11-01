@@ -89,8 +89,8 @@ timer_a_uart_rxd:
 ;    ^       ^    ^    ^    ^    ^    ^    ^    ^     interrupts
 ;  Capture   |<------------ Compare ----------->|
 ; ---------------------------------------------------------------------------
+__vector_{TAUART_VECTOR}:
 timer_uart_interrupt:
-vector_{TAUART_VECTOR} = timer_uart_interrupt
         bic     #CCIFG, &TAUART_RX_CCTL ; clear interrupt flag
         add     .Lrxbit, PC
         jmp     .Lrxstart               ; start bit

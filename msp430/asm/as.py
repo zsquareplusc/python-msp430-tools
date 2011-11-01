@@ -968,15 +968,20 @@ class MSP430Assembler(object):
                 # test for expression like lines: "SYMBOL=VALUE"
                 g = re_expression.match(line)
                 if g:
+                    name = g.group('NAME').strip()
+                    if '{' in name:
+                        # XXX replace {} as in "vector_{(0x0004)}" = "vector_4"
+                        name = re.sub(r'({\(?(.*?)\)?)}', lambda x: str(int(x.group(2), 0)), name)
+                        #~ print "XXX", name
                     if self.debug: sys.stderr.write('%s:%d: %s = %s\n' % (
                             filename,
                             lineno,
-                            g.group('NAME').strip(),
+                            name,
                             g.group('EXPR').strip()))
                     output.write('%d LINE    %s CONSTANT-SYMBOL %s\n' % (
                             lineno,
                             self.argument(g.group('EXPR').strip()),
-                            g.group('NAME').strip(),
+                            name,
                             ))
                     continue
 
@@ -1055,13 +1060,13 @@ def main():
             action = "store_true",
             dest = "verbose",
             default = False,
-            help = "print status messages to stdout")
+            help = "print status messages to stderr")
     parser.add_option(
             "--debug",
             action = "store_true",
             dest = "debug",
             default = False,
-            help = "print debug messages to stdout")
+            help = "print debug messages to stderr")
     parser.add_option(
             "-i", "--instructions",
             action = "store_true",

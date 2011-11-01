@@ -190,7 +190,7 @@ class Linker(rpn.RPN):
     is used to read and process it. Linker specific instructions are
     implemented in this class.
     """
-    def __init__(self, instructions):
+    def __init__(self, instructions=[]):
         rpn.RPN.__init__(self)
         # separate name space for symbols from the data
         self.labels = {}
@@ -225,7 +225,9 @@ class Linker(rpn.RPN):
         """\
         Select a different segment to put data into. The segment name must be
         known. The location counter is set to append to any existing data in
-        the segment.
+        the segment. Example::
+
+            SEGMENT .vectors
         """
         name = rpn.next_word()
         try:
@@ -248,25 +250,39 @@ class Linker(rpn.RPN):
     def word_FILENAME(self, rpn):
         """\
         Store source filename for error messages. This also clears all local
-        symbols.
+        symbols. Example::
+
+            FILENAME source.S
         """
         self.source_filename = self.next_word()
 
     @rpn.word('LINE')
     def word_LINE(self, rpn):
-        """Store source filename for error messages."""
+        """\
+        Store source filename for error messages.
+        Example::
+
+            5 LINE
+        """
         self.source_line = self.pop()
 
     @rpn.word('COLUMN')
     def word_COLUMN(self, rpn):
-        """Store source filename for error messages."""
+        """\
+        Store source filename for error messages.
+        Example::
+
+            10 COLUMN
+        """
         self.source_column = self.pop()
 
     @rpn.word('8BIT')
     def word_8BIT(self, rpn):
         """\
         Store a byte (8 bits) from the stack in the current segment. The value
-        is masked to 8 bits.
+        is masked to 8 bits. Example::
+
+            0x12 8BIT
         """
         if self.current_segment is None: raise LinkError('No segment selected (use .text, .section etc.)')
         self.current_segment.write_8bit(int(self.pop()))
@@ -276,7 +292,9 @@ class Linker(rpn.RPN):
     def word_16BIT(self, rpn):
         """\
         Store a word (16 bits) from the stack in the current segment. The value
-        is masked to 16 bits.
+        is masked to 16 bits. Example::
+
+            0x1234 16BIT
         """
         if self.current_segment is None: raise LinkError('No segment selected (use .text, .section etc.)')
         self.current_segment.write_16bit(int(self.pop()))
@@ -286,7 +304,10 @@ class Linker(rpn.RPN):
     def word_32BIT(self, rpn):
         """\
         Store an integer (32 bits) from the stack in the current segment. The value
-        is masked to 32 bits.
+        is masked to 32 bits. Example::
+
+            0x12345678 32BIT
+
         """
         if self.current_segment is None: raise LinkError('No segment selected (use .text, .section etc.)')
         self.current_segment.write_32bit(int(self.pop()))
@@ -322,7 +343,7 @@ class Linker(rpn.RPN):
 
     @rpn.word('CONSTANT-SYMBOL')
     def _constant_symbol(self, rpn):
-        """Create symbol and assign to it the value from the stack"""
+        """Create symbol and assign to it the value from the stack. Example: ``1 CONSTANT-SYMBOL somelabel``"""
         name = self.name_symbol(self.next_word())
         value = self.pop()
         if self.check_labels is not None:
@@ -339,7 +360,12 @@ class Linker(rpn.RPN):
 
     @rpn.word('WEAK-ALIAS')
     def _weak_alias(self, rpn):
-        """Assign a symbol for an other symbol. The alias is used when the symbol is not defined."""
+        """\
+        Assign a symbol for an other symbol. The alias is used when the symbol is not defined.
+
+        Example: ``WEAK-ALIAS __vector_0 _unused_vector`` here, if
+        ``__vector_0`` is not defined, it will point to ``_unused_vector``.
+        """
         name = self.name_symbol(self.next_word())
         alias = self.name_symbol(self.next_word())
         if name in self.weak_alias and self.weak_alias[name] != alias:
@@ -352,7 +378,7 @@ class Linker(rpn.RPN):
 
     @rpn.word('CREATE-SYMBOL')
     def _create_symbol(self, rpn):
-        """Mark current location with symbol"""
+        """Mark current location with symbol. Example: ``CREATE-SYMBOL somelabel``"""
         name = self.name_symbol(self.next_word())
         #~ # this simple check does not work as we're doing multiple passes
         if self.check_labels is not None:
@@ -367,7 +393,7 @@ class Linker(rpn.RPN):
 
     @rpn.word('GET-SYMBOL')
     def _get_symbol(self, rpn):
-        """Get a symbol and put its value on the stack."""
+        """Get a symbol and put its value on the stack. Example: ``GET-SYMBOL somelabel``"""
         name = self.name_symbol(self.next_word())
         # check if there is an alias as long as its not already found in labels
         if name in self.weak_alias and name not in self.labels:
@@ -395,6 +421,10 @@ class Linker(rpn.RPN):
         """\
         MSP430 jump instruction (insns dist). Takes offset and instruction
         from stack, calculate final opcode and store it.
+
+        Example::
+
+            0x2000 GET-SYMBOL somelabel PC - 2 - JMP
         """
         distance = self.pop()
         instruction = self.pop()

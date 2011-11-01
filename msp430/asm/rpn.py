@@ -252,32 +252,32 @@ class RPNStackOps(object):
 
     @word("CLEAR")
     def clear(self, stack=None):
-        """Clear stack"""
+        """Clear stack."""
         del self[:]
 
     @word("DUP")
     def dup(self, stack):
-        """Duplicate TOS"""
+        """Duplicate TOS."""
         self.push(self[-1])
 
     @word("DROP")
     def drop(self, stack):
-        """Remove TOS"""
+        """Remove TOS."""
         self.pop()
 
     @word("SWAP")
     def swap(self, stack):
-        """Exchange the two topmost elements"""
+        """Exchange the two topmost elements."""
         self[-1], self[-2] = self[-2], self[-1]
 
     @word("OVER")
     def over(self, stack):
-        """Push a copy of the second element"""
+        """Push a copy of the second element."""
         self.push(self[-2])
 
     @word("PICK")
     def pick(self, stack):
-        """Push a copy of the N'th element"""
+        """Push a copy of the N'th element."""
         self.push(self[-self.pop()])
 
 class RPNSimpleMathOps(object):
@@ -285,21 +285,25 @@ class RPNSimpleMathOps(object):
 
     @word("+")
     def add(self, stack):
+        """Add two numbers on the stack."""
         x, y = self.pop2()
         self.push(y + x)
 
     @word("-")
     def sub(self, stack):
+        """Subtract two numbers on the stack."""
         x, y = self.pop2()
         self.push(y - x)
 
     @word("*")
     def mul(self, stack):
+        """Multiply two numbers on the stack."""
         x, y = self.pop2()
         self.push(y * x)
 
     @word("/")
     def div(self, stack):
+        """Divide two numbers on the stack."""
         x, y = self.pop2()
         self.push(y / x)
 
@@ -309,25 +313,25 @@ class RPNMoreMathOps(object):
 
     @word("MIN")
     def minimum(self, stack):
-        """Leave the smaller of two values on the stack"""
+        """Leave the smaller of two values on the stack."""
         x, y = self.pop2()
         self.push(min(y, x))
 
     @word("MAX")
     def maximum(self, stack):
-        """Leave the larger of two values on the stack"""
+        """Leave the larger of two values on the stack."""
         x, y = self.pop2()
         self.push(max(y, x))
 
 
     @word("INT")
     def word_INT(self, stack):
-        """Convert TOS to an integer"""
+        """Convert TOS to an integer."""
         self.push(int(self.pop()))
 
     @word("FLOAT")
     def word_FLOAT(self, stack):
-        """Convert TOS to a floating point number"""
+        """Convert TOS to a floating point number."""
         self.push(float(self.pop()))
 
     @word("NEG")
@@ -335,35 +339,41 @@ class RPNMoreMathOps(object):
         self.push(-self.pop())
 
 class RPNBitOps(object):
-    """Mix-in class with words for bit operations"""
+    """Mix-in class with words for bit operations."""
 
     @word("|")
     def bitor(self, stack):
+        """Bitwise OR of two numbers on the stack."""
         x, y = self.pop2()
         self.push(y | x)
 
     @word("&")
     def bitand(self, stack):
+        """Bitwise AND of two numbers on the stack."""
         x, y = self.pop2()
         self.push(y & x)
 
     @word("^")
     def bitxor(self, stack):
+        """Bitwise XOR of two numbers on the stack."""
         x, y = self.pop2()
         self.push(y ^ x)
 
     @word("<<")
     def bit_shift_left(self, stack):
+        """Bitwise shift left."""
         x, y = self.pop2()
         self.push(y << x)
 
     @word(">>")
     def bit_shift_right(self, stack):
+        """Bitwise shift right."""
         x, y = self.pop2()
         self.push(y >> x)
 
     @word("~")
     def bitnot(self, stack):
+        """Bitwise invert of number on stack."""
         self.push(~self.pop())
 
 class RPNLogicOps(object):
@@ -371,23 +381,26 @@ class RPNLogicOps(object):
 
     @word("NOT")
     def word_NOT(self, stack):
+        """Logical NOT of number on stack"""
         self.push(not self.pop())
 
     @word("AND")
     def word_AND(self, stack):
+        """Logical AND of two numbers on the stack"""
         x, y = self.pop2()
         self.push(bool(y and x))
 
     @word("OR")
     def word_OR(self, stack):
+        """Logical OR of two numbers on the stack"""
         x, y = self.pop2()
         self.push(bool(y or x))
 
     @word("IFTE")
     def word_IFTE(self, stack):
         """\
-        if then else for 3 values on the stack: predicate, value_true,
-        value_false
+        If then else for 3 values on the stack: predicate, value_true,
+        value_false.
         """
         x, y = self.pop2()
         z = self.pop()
@@ -407,31 +420,37 @@ class RPNCompareOps(object):
 
     @word("<")
     def smaller(self, stack):
+        """Compare two numbers on the stack."""
         x, y = self.pop2()
         self.push(bool(y < x))
 
     @word("<=")
     def smaller_equal(self, stack):
+        """Compare two numbers on the stack."""
         x, y = self.pop2()
         self.push(bool(y <= x))
 
     @word(">")
     def larger(self, stack):
+        """Compare two numbers on the stack."""
         x, y = self.pop2()
         self.push(bool(y > x))
 
     @word(">=")
     def larger_equal(self, stack):
+        """Compare two numbers on the stack."""
         x, y = self.pop2()
         self.push(bool(y >= x))
 
     @word("==")
     def equal(self, stack):
+        """Compare two numbers on the stack."""
         x, y = self.pop2()
         self.push(bool(y == x))
 
     @word("!=")
     def not_equal(self, stack):
+        """Compare two numbers on the stack."""
         x, y = self.pop2()
         self.push(bool(y != x))
 

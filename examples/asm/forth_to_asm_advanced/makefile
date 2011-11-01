@@ -1,5 +1,7 @@
 # example make file
 
+NAME = demo
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # setting up the environment
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -12,7 +14,7 @@ export PYTHONPATH
 # options
 MCU = msp430g2231
 ASFLAGS =
-LDFLAGS = -v --mcu $(MCU) --map map.txt
+LDFLAGS = -v --mcu $(MCU) --map $(NAME).map
 CPPFLAGS =
 FORTHFLAGS = -DMCU=$(MCU)
 H2FORTHFLAGS = $(CPPFLAGS)
@@ -36,20 +38,20 @@ DIS = python -m msp430.asm.disassemble
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .PHONY: clean all
 
-all: clean demo.titext demo.S
+all: clean $(NAME).titext demo.S
 #	$(CAT) demo.titext
 
 clean:
-	$(RM) demo.titext *.o4 demo.s-cpp demo.S \
+	$(RM) $(NAME).titext *.o4 $(NAME).s-cpp $(NAME).S $(NAME).map \
 	      startup.s-cpp \
 	      intvec16.S intvec16.s-cpp msp430.forth \
 	      write.s-cpp putchar.S timer_a_uart_rx.S adc10.S adc10.s-cpp
 
 # dependencies
-demo.forth: msp430.forth
+$(NAME).forth: msp430.forth
 
 # linking final program
-demo.titext: startup.o4 demo.o4 intvec16.o4 write.o4 putchar.o4 timer_a_uart_rx.o4 adc10.o4
+$(NAME).titext: startup.o4 $(NAME).o4 intvec16.o4 write.o4 putchar.o4 timer_a_uart_rx.o4 adc10.o4
 	$(LD) $(LDFLAGS) -o $@ $^
 
 
@@ -87,15 +89,15 @@ msp430.forth:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .PHONY: download-jtag download-bsl download-gdb
 
-download-jtag: demo.titext
+download-jtag: $(NAME).titext
 	python -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
 
-download-bsl: demo.titext
+download-bsl: $(NAME).titext
 	python -m msp430.bsl.target -e $^
 
-download-gdb: demo.titext
+download-gdb: $(NAME).titext
 	python -m msp430.gdb.target -e $^
 
-download-mspdebug: demo.titext
+download-mspdebug: $(NAME).titext
 	mspdebug rf2500 "prog $^" exit
 

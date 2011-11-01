@@ -13,7 +13,15 @@ can be debugged without any special tools, just a text editor. It also makes
 the format quite universal; it could produce binaries for all sorts of CPUs
 (single special case: the directive ``JMP`` is MSP430 specific).
 
-For more details about the file format, take a look at the sources of ``ld.py``.
+A list of supported words can be found in the following document:
+
+.. toctree::
+    :maxdepth: 1
+
+    linker_words
+
+For more details also take a look at the sources of ``ld.py``.
+
 
 Modules
 -------

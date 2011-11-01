@@ -31,6 +31,7 @@ clean:
 
 forthwords:
 	cd asm; python forth_wordlist.py
+	cd asm; python rpn_wordlist.py --title "Linker Word List" -o linker_words.rst msp430.asm.ld Linker
 
 html:   forthwords
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) _build/html

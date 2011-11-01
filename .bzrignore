@@ -1,7 +1,6 @@
 build
 dist
-doc/asm/forth_words.rst
-doc/asm/linker_words.rst
+doc/asm/*_words.rst
 doc/_build/*
 doc/_static/*
 doc/_templates/*
@@ -13,7 +12,7 @@ MANIFEST
 *.titext
 examples/asm/*/led.titxt
 examples/asm/forth_to_asm/msp430.forth
-examples/asm/forth_to_asm/led.S
+examples/asm/forth_to_asm/*.S
 examples/asm/forth_to_asm/*.s-cpp
 examples/asm/forth_to_asm_advanced/msp430.forth
 examples/asm/forth_to_asm_advanced/*.S

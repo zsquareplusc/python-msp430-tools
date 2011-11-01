@@ -23,6 +23,7 @@ Contents:
     utilities
     shell
     assembler
+    internals
     license
 
 Indices and tables

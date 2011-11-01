@@ -18,7 +18,7 @@ setup(
     author_email="cliechti@gmx.net",
     url="http://launchpad.net/python-msp430-tools/",
 
-    version = '0.5',
+    version = '0.6',
     options = { "py2exe":
         {
             'dist_dir': 'bin',

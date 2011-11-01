@@ -12,6 +12,7 @@ section is about the internals of the tools and may be interesting to
 developers that extended the tools or use them as a library.
 
 .. toctree::
+    :maxdepth: 3
 
     asm/tutorial
     asm/commandline

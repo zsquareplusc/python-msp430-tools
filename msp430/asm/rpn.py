@@ -257,27 +257,27 @@ class RPNStackOps(object):
 
     @word("DUP")
     def dup(self, stack):
-        """Duplicate TOS."""
+        """Duplicate the topmost element on the stack."""
         self.push(self[-1])
 
     @word("DROP")
     def drop(self, stack):
-        """Remove TOS."""
+        """Remove and forget about topmost element on the stack."""
         self.pop()
 
     @word("SWAP")
     def swap(self, stack):
-        """Exchange the two topmost elements."""
+        """Exchange the two topmost elements on the stack."""
         self[-1], self[-2] = self[-2], self[-1]
 
     @word("OVER")
     def over(self, stack):
-        """Push a copy of the second element."""
+        """Push a copy of the second element on the stack."""
         self.push(self[-2])
 
     @word("PICK")
     def pick(self, stack):
-        """Push a copy of the N'th element."""
+        """Push a copy of the N'th element on the stack."""
         self.push(self[-self.pop()])
 
 class RPNSimpleMathOps(object):
@@ -336,6 +336,7 @@ class RPNMoreMathOps(object):
 
     @word("NEG")
     def negate(self, stack):
+        """Negate number on stack."""
         self.push(-self.pop())
 
 class RPNBitOps(object):

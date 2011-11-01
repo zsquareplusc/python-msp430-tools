@@ -77,8 +77,6 @@ def main():
 
     sys.path.append('../..')
     mod = __import__(args[0])
-    print mod
-    print dir(mod)
     cls = getattr(sys.modules[args[0]], args[1])
     obj = cls()
     create_wordlist(obj, outfile, options.title)

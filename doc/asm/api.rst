@@ -22,6 +22,19 @@ A list of supported words can be found in the following document:
 
 For more details also take a look at the sources of ``ld.py``.
 
+MCU Definition file format
+--------------------------
+MCU memory definitions can be provided in a file with Forth like
+syntax.
+
+A list of supported words can be found in the following document:
+
+.. toctree::
+    :maxdepth: 1
+
+    mcdudef_words
+
+For more details also take a look at the sources of ``mcu_definition_parser.py``.
 
 Modules
 -------

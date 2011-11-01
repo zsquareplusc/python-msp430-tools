@@ -32,6 +32,7 @@ clean:
 forthwords:
 	cd asm; python forth_wordlist.py
 	cd asm; python rpn_wordlist.py --title "Linker Word List" -o linker_words.rst msp430.asm.ld Linker
+	cd asm; python rpn_wordlist.py --title "MCU Definition Word List" -o mcdudef_words.rst msp430.asm.mcu_definition_parser MCUDefintitions
 
 html:   forthwords
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) _build/html

@@ -699,6 +699,7 @@ Multiple --upload options are allowed.
             self.do_the_work()
             abort_due_to_error = False
         except SystemExit:
+            abort_due_to_error = False                      # lets assume they are not becuase of an internal error
             raise                                           # let pass exit() calls
         except KeyboardInterrupt:
             if self.debug: raise                            # show full trace in debug mode
@@ -712,7 +713,11 @@ Multiple --upload options are allowed.
             if abort_due_to_error:
                 sys.stderr.write("Cleaning up after error...\n")
             if self.options is not None and not self.options.no_close:
-                self.close_connection()                     # release communication port
+                try:
+                    self.close_connection()                     # release communication port
+                except Exception, msg:                              # every Exception is caught and displayed
+                    if self.debug: raise                            # show full trace in debug mode
+                    sys.stderr.write("\nAn error occurred during shutdown:\n%s\n" % msg) # short message in user mode
             elif self.verbose:
                 sys.stderr.write("WARNING: port is left open (--no-close)\n")
             if start_time is not None:

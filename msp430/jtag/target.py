@@ -151,6 +151,12 @@ Features of backends:
                 help="search for %(msp430)s or %(msp430mspgcc)s in this place first" % self.text_variables,
                 default=None)
 
+        self.parser.add_option("--fet-update",
+                dest="do_fet_update",
+                help="with TI's MSP430 library, initiate download of firmware to MSP430UIF box",
+                default=False,
+                action='store_true')
+
         group = OptionGroup(self.parser, "Connection", """\
 NOTE: On Windows, use "USB", "TIUSB" or "COM5" etc if using MSP430.dll from TI.
 On other platforms, e.g. Linux, use "/dev/ttyUSB0" etc. if using
@@ -237,7 +243,21 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
                 backend = jtag.CTYPES_TI
             else:
                 raise parser.error("no such backend: %r" % self.options.backend)
-            jtag.init_backend(backend)
+            jtag.init_backend(backend, verbose=self.options.verbose)
+        else:
+            jtag.init_backend(verbose=self.options.verbose)
+
+        if self.options.do_fet_update:
+            if jtag.backend == jtag.CTYPES_TI:
+                sys.stderr.write("NOTICE: Please wait while updating - do not interrupt!\n")
+                if jtag.MSP430_FET_FwUpdate(None, None, 0) == 0:
+                    sys.stderr.write("--fet-upgarde done successfuly - terminating\n")
+                    sys.exit(0)
+                else:
+                    sys.stderr.write("ERROR: --fet-upgarde failed\n")
+                    sys.exit(1)
+            else:
+                self.parser.error('--fet-update only supported with TI backend')
 
         if self.options.spy_bi_wire:
             jtag.interface = 'spy-bi-wire'

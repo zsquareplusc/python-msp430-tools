@@ -75,15 +75,15 @@ CTYPES_TI = "ctypes/TI or 3rd party"
 # exceptions
 class JTAGException(Exception): pass
 
-def locate_library(libname, paths=sys.path, loader=None):
+def locate_library(libname, paths=sys.path, loader=None, verbose=0):
     if loader is None: loader=ctypes.windll
     for path in paths:
         if path.lower().endswith('.zip'):
             path = os.path.dirname(path)
         library = os.path.join(path, libname)
-        if DEBUG > 4: sys.stderr.write('trying %r...\n' % library)
+        if verbose > 4: sys.stderr.write('trying %r...\n' % library)
         if os.path.exists(library):
-            if DEBUG > 4: sys.stderr.write('using %r\n' % library)
+            if verbose > 4: sys.stderr.write('using %r\n' % library)
             return loader.LoadLibrary(library), library
     else:
         raise IOError('%s not found' % libname)
@@ -93,7 +93,7 @@ backend = None
 backend_info = None
 _parjtag = None
 
-def init_backend(force=None):
+def init_backend(force=None, verbose=0):
     global backend
     global backend_info
     global _parjtag
@@ -127,7 +127,7 @@ def init_backend(force=None):
         try:
             search_path.insert(0, os.environ['LIBMSPGCC_PATH'])
         except KeyError:
-            if DEBUG > 4: sys.stderr.write('LIBMSPGCC_PATH is not set\n')
+            if verbose > 4: sys.stderr.write('LIBMSPGCC_PATH is not set\n')
             if sys.platform == 'win32':
                 search_path.insert(0, os.path.abspath('.'))
                 # as fallback, append PATH
@@ -152,21 +152,21 @@ def init_backend(force=None):
         if sys.platform == 'win32':
             # the library is found on the PATH, respectively in the executables directory
             if force == CTYPES_MSPGCC:
-                MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path)
+                MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path, verbose=verbose)
                 backend = CTYPES_MSPGCC
             elif force == CTYPES_TI:
                 #~ MSP430mspgcc = ctypes.windll.MSP430
-                MSP430mspgcc, backend_info = locate_library('MSP430.dll', search_path)
+                MSP430mspgcc, backend_info = locate_library('MSP430.dll', search_path, verbose=verbose)
                 backend = CTYPES_TI
             elif force is None:
                 # autodetect
                 try:
                     # try to use the TI or third party library
-                    MSP430mspgcc, backend_info = locate_library('MSP430.dll', search_path)
+                    MSP430mspgcc, backend_info = locate_library('MSP430.dll', search_path, verbose=verbose)
                     backend = CTYPES_TI
                 except IOError:
                     # when that fails, use the mspgcc implementation
-                    MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path)
+                    MSP430mspgcc, backend_info = locate_library('MSP430mspgcc.dll', search_path, verbose=verbose)
                     backend = CTYPES_MSPGCC
             else:
                 raise ValueError("no such backend: %r" % force)
@@ -174,21 +174,21 @@ def init_backend(force=None):
             # the library is found on the PATH, respectively in the executables directory
             try:
                 if force == CTYPES_MSPGCC:
-                    MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
+                    MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll, verbose=verbose)
                     backend = CTYPES_MSPGCC
                 elif force == CTYPES_TI:
                     #~ MSP430mspgcc = ctypes.windll.MSP430
-                    MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll)
+                    MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll, verbose=verbose)
                     backend = CTYPES_TI
                 elif force is None:
                     # autodetect
                     try:
                         # try to use the TI or third party library
-                        MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll)
+                        MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll, verbose=verbose)
                         backend = CTYPES_TI
                     except IOError:
                         # when that fails, use the mspgcc implementation
-                        MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll)
+                        MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll, verbose=verbose)
                         backend = CTYPES_MSPGCC
                 else:
                     raise ValueError("no such backend: %r" % force)
@@ -210,6 +210,7 @@ def init_backend(force=None):
             MSP430_Open.argtypes        = []
             MSP430_Open.restype         = ctypes.c_int
         else:
+            STATUS_T = ctypes.c_long
             MSP430_Identify             = MSP430mspgcc.MSP430_Identify
             MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.c_char*80), ctypes.c_long, ctypes.c_long]
             MSP430_Identify.restype     = ctypes.c_int
@@ -219,10 +220,15 @@ def init_backend(force=None):
                 status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
                 if status != STATUS_OK:
                     return STATUS_ERROR
-                if DEBUG:
+                if verbose:
                     sys.stderr.write('MSP430_Identify: Device type: %r\n' % str(buffer[4:36]).replace('\0',''))
                 #~ status = MSP430_Reset(ALL_RESETS, FALSE, FALSE)
                 return status
+        
+            global MSP430_FET_FwUpdate
+            MSP430_FET_FwUpdate             = MSP430mspgcc.MSP430_FET_FwUpdate
+            MSP430_FET_FwUpdate.argtypes    = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_long] # filename, callback, handle
+            MSP430_FET_FwUpdate.restype     = STATUS_T
 
         MSP430_Close                    = MSP430mspgcc.MSP430_Close
         MSP430_Close.argtypes           = [ctypes.c_long]
@@ -257,7 +263,7 @@ def init_backend(force=None):
             MSP430_WriteRegister.restype    = ctypes.c_int
         else:
             # TI's USB-FET lib does not have this function
-            if DEBUG:
+            if verbose:
                 sys.stderr.write('MSP430_*Register not found in library. Not supported.\n')
         if backend == CTYPES_MSPGCC:
             #~ MSP430_Funclet                  = MSP430mspgcc.MSP430_Funclet
@@ -271,7 +277,7 @@ def init_backend(force=None):
             MSP430_isHalted.restype         = ctypes.c_int
         else:
             # TI's USB-FET lib does not have this function
-            if DEBUG:
+            if verbose:
                 sys.stderr.write('MSP430_Funclet and isHalted not found in library. Not supported.\n')
         MSP430_Error_Number             = MSP430mspgcc.MSP430_Error_Number
         MSP430_Error_Number.argtypes    = []
@@ -285,7 +291,7 @@ def init_backend(force=None):
             MSP430_Secure.restype           = ctypes.c_int
         except AttributeError:
             # mspgcc lib does not have this function
-            if DEBUG:
+            if verbose:
                 sys.stderr.write('MSP430_Secure not found in library. Not supported.\n')
             def MSP430_Secure():
                 raise NotImplementedError("this function is not supported with this MSP430 library")
@@ -314,7 +320,7 @@ def init_backend(force=None):
                 status = MSP430_Initialize(port, ctypes.byref(version))
                 if status != STATUS_OK:
                     raise IOError("Could not initialize the library (port: %s)" % port)
-                if DEBUG:
+                if verbose:
                     sys.stderr.write('backend library version: %d\n' % (version.value,))
                 if backend == CTYPES_TI:
                     if interface == 'spy-bi-wire':
@@ -503,10 +509,10 @@ def init_backend(force=None):
         _parjtag = ParJTAG()
 
     # print the used backend
-    if DEBUG:
+    if verbose:
         sys.stderr.write("JTAG backend: %s (%s)\n" % (backend, backend_info))
-        if backend == CTYPES_MSPGCC:
-            _parjtag.configure(DEBUG_OPTION, DEBUG)
+        #~ if backend == CTYPES_MSPGCC:
+            #~ _parjtag.configure(DEBUG_OPTION, verbose)
 
 
 class JTAG(object):

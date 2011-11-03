@@ -322,6 +322,10 @@ def init_backend(force=None, verbose=0):
                     raise IOError("Could not initialize the library (port: %s)" % port)
                 if verbose:
                     sys.stderr.write('backend library version: %d\n' % (version.value,))
+                if version.value < 0:
+                    # warn if firmware and MSP430.dll are incompatible
+                    sys.stderr.write('WARNING: FET Firmware not compatible with MSP430 library!\n')
+                    sys.stderr.write('         Consider using --fet-update.\n')
                 if backend == CTYPES_TI:
                     if interface == 'spy-bi-wire':
                         status = MSP430_Configure(INTERFACE_MODE, SPYBIWIRE_IF)

@@ -47,7 +47,7 @@ setup(
     zipfile = "lib/shared.zip",
 )
 
-# py2exe does not lool at the package_data option of distutils. add files manually
+# py2exe does not look at the package_data option of distutils. add files manually
 package_data = [
         'msp430/asm/definitions/msp430-mcu-list.txt',
         'msp430/bsl/BL_150S_14x.txt',

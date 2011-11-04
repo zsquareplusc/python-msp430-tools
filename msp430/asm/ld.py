@@ -212,6 +212,14 @@ class Linker(rpn.RPN):
         self.address = 0
         self.segments = {}
 
+    def linker_error(self, message):
+        """\
+        Raise a LinkError. This function generate an exception with information
+        annotated about source (filename, lineo, etc.).
+        """
+        raise LinkError(message, self.source_filename, self.source_line, self.source_column)
+
+
     @rpn.word('RESET')
     def word_reset(self, rpn):
         """\
@@ -219,6 +227,9 @@ class Linker(rpn.RPN):
         with the same preconditions (such as no segment selected).
         """
         self.current_segment = None
+        self.source_filename = '<unknown>'
+        self.source_line = None
+        self.source_column = None
 
     @rpn.word('SEGMENT')
     def word_SEGMENT(self, rpn):
@@ -233,11 +244,7 @@ class Linker(rpn.RPN):
         try:
             segment = self.segments[name]
         except KeyError:
-            raise LinkError(
-                    "There is no segment named %s" % (name,),
-                    self.source_filename,
-                    self.source_line,
-                    self.source_column)
+            self.linker_error("There is no segment named %s" % (name,))
         self.current_segment = segment
         if segment.start_address is not None:
             address = segment.start_address
@@ -284,7 +291,8 @@ class Linker(rpn.RPN):
 
             0x12 8BIT
         """
-        if self.current_segment is None: raise LinkError('No segment selected (use .text, .section etc.)')
+        if self.current_segment is None:
+            self.linker_error('No segment selected (use .text, .section etc.)')
         self.current_segment.write_8bit(int(self.pop()))
         self.address += 1
 
@@ -296,7 +304,8 @@ class Linker(rpn.RPN):
 
             0x1234 16BIT
         """
-        if self.current_segment is None: raise LinkError('No segment selected (use .text, .section etc.)')
+        if self.current_segment is None:
+            self.linker_error('No segment selected (use .text, .section etc.)')
         self.current_segment.write_16bit(int(self.pop()))
         self.address += 2
 
@@ -309,7 +318,8 @@ class Linker(rpn.RPN):
             0x12345678 32BIT
 
         """
-        if self.current_segment is None: raise LinkError('No segment selected (use .text, .section etc.)')
+        if self.current_segment is None:
+            self.linker_error('No segment selected (use .text, .section etc.)')
         self.current_segment.write_32bit(int(self.pop()))
         self.address += 4
 
@@ -319,7 +329,8 @@ class Linker(rpn.RPN):
         Reserve space in the current segment. Length in bytes is taken from
         the stack.
         """
-        if self.current_segment is None: raise LinkError('No segment selected (use .text, .section etc.)')
+        if self.current_segment is None:
+            self.linker_error('No segment selected (use .text, .section etc.)')
         count = self.pop()
         for i in xrange(count):
                 self.current_segment.data.append(None)
@@ -328,7 +339,8 @@ class Linker(rpn.RPN):
     @rpn.word('ALIGN')
     def word_ALIGN(self, rpn):
         """Make location counter (PC) even."""
-        if self.current_segment is None: raise LinkError('No segment selected (use .text, .section etc.)')
+        if self.current_segment is None:
+            self.linker_error('No segment selected (use .text, .section etc.)')
         exponent = self.pop()
         if exponent > 0:
             mask = (1 << exponent) - 1
@@ -348,13 +360,10 @@ class Linker(rpn.RPN):
         value = self.pop()
         if self.check_labels is not None:
             if name in self.check_labels and self.check_labels[name] != value:
-                raise LinkError('redefinition of symbol %r with different value (previous: %r, new: %r)' % (
+                self.linker_error('redefinition of symbol %r with different value (previous: %r, new: %r)' % (
                             name,
                             self.labels[name],
-                            value),
-                        self.source_filename,
-                        self.source_line,
-                        self.source_column)
+                            value))
             self.check_labels[name] = value
         self.labels[name] = value
 
@@ -369,11 +378,7 @@ class Linker(rpn.RPN):
         name = self.name_symbol(self.next_word())
         alias = self.name_symbol(self.next_word())
         if name in self.weak_alias and self.weak_alias[name] != alias:
-            raise LinkError(
-                    'weak alias %r redefined (old value: %r)' % (name, self.weak_alias[name]),
-                    self.source_filename,
-                    self.source_line,
-                    self.source_column)
+            self.linker_error('Weak alias %r redefined (old value: %r)' % (name, self.weak_alias[name]))
         self.weak_alias[name] = alias
 
     @rpn.word('CREATE-SYMBOL')
@@ -383,11 +388,7 @@ class Linker(rpn.RPN):
         #~ # this simple check does not work as we're doing multiple passes
         if self.check_labels is not None:
             if name in self.check_labels:
-                raise LinkError(
-                        'Label %r redefined (old value: %r)' % (name, self.labels[name]),
-                        self.source_filename,
-                        self.source_line,
-                        self.source_column)
+                self.linker_error('Label %r redefined (old value: %r)' % (name, self.labels[name]))
             self.check_labels[name] = self.address
         self.labels[name] = self.address
 
@@ -403,11 +404,7 @@ class Linker(rpn.RPN):
         except KeyError:
             # other wise it is undefined
             if self.errors_are_fatal:
-                raise LinkError(
-                        'Label %r is not defined' % (name,),
-                        self.source_filename,
-                        self.source_line,
-                        self.source_column)
+                self.linker_error('Label %r is not defined' % (name,))
             else:
                 value = 0
         self.push(value)
@@ -430,18 +427,10 @@ class Linker(rpn.RPN):
         instruction = self.pop()
         if distance & 1:
             if self.errors_are_fatal:
-                raise LinkError(
-                        'Jump distance must be of even length (distance %d)' % (distance,),
-                        self.source_filename,
-                        self.source_line,
-                        self.source_column)
+                self.linker_error('Jump distance must be of even length (distance %d)' % (distance,))
         if distance < -512*2 or distance > 511*2:
             if self.errors_are_fatal:
-                raise LinkError(
-                        'Jump out of range (distance %d)' % (distance,),
-                        self.source_filename,
-                        self.source_line,
-                        self.source_column)
+                self.linker_errorr('Jump out of range (distance %d)' % (distance,))
         else:
             instruction |= 0x3ff & (distance/2)
         self.current_segment.write_16bit(instruction)
@@ -478,7 +467,7 @@ class Linker(rpn.RPN):
             elif definition['__type__'] == 'symbol':
                 symbols.append(definition)
             else:
-                raise LinkError('unknown record type in memory map: %r' % definition['__type__'])
+                self.linker_error('unknown record type in memory map: %r' % definition['__type__'])
 
         # step 2: create a hierarchical tree of segments
         for segment in self.segments.values():
@@ -503,7 +492,7 @@ class Linker(rpn.RPN):
                 elif location == 'end':
                     self.labels[name] = segment.end_address
                 else:
-                    raise LinkError('invalid location %r for symbol %r' % (location, name))
+                    self.linker_error('invalid location %r for symbol %r' % (location, name))
 
     def update_mirrored_segments(self):
         """In all mirrored segments, update the copied data."""
@@ -701,11 +690,13 @@ Output is in "TI-Text" format."""
             if options.verbose > 2:
                 sys.stderr.write(u'reading stdin...\n')
             instructions.append('reset')
+            instructions.extend(['filename', '<stdin>'])
             instructions.extend(sys.stdin.read().split())
         else:
             if options.verbose > 2:
                 sys.stderr.write(u'reading file "%s"...\n'% filename)
             instructions.append('reset')
+            instructions.extend(['filename', filename])
             try:
                 instructions.extend(rpn.words_in_file(filename))
             except IOError, e:
@@ -768,16 +759,14 @@ Output is in "TI-Text" format."""
         if options.verbose > 1:
             sys.stderr.write("        Pass 3: final output.\n")
         linker.pass_three()
+    except LinkError as e:
+        sys.stderr.write(u'%s:%s: %s\n' % (e.filename, e.lineno if e.lineno is not None else '?', e))
+        sys.exit(1)
     except rpn.RPNError as e:
-        sys.stderr.write(u"%s:%s: %s\n" % (e.filename, e.lineno, e))
+        sys.stderr.write(u'%s:%s: %s\n' % (e.filename, e.lineno if e.lineno is not None else '?', e))
         if options.debug and e.text:
             sys.stderr.write(u"%s:%s: input line was: %r\n" % (e.filename, e.lineno, e.text))
-        sys.exit(1)
-    except LinkError as msg:
-        if msg.filename and msg.lineno is not None:
-            sys.stderr.write(u'%s:%s: %s\n' % (msg.filename, msg.lineno, msg))
-        else:
-            sys.stderr.write('ERROR: %s\n' % (msg,))
+        if options.debug: raise
         sys.exit(1)
 
     # ========= Output final result =========

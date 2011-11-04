@@ -39,7 +39,6 @@ re_operand = re.compile(r'''
         (?P<INDEXED>        (?P<IDX_VALUE>[^,"]+)\((?P<IDX_REG>\w+)\)   ) | 
         (?P<POST_INC>       @(?P<PI_REG>[^,"]+)\+        ) |
         (?P<INDIRECT>       @(?P<IND_REG>[^,"]+)           ) |
-        (?P<REGISTER>       (?P<REG>PC|SP|SR|R0|R10|R11|R12|R13|R14|R15|R1|R2|R3|R4|R5|R6|R7|R8|R9)  ) |
         (?P<SYMBOLIC>       [^,"]+           ) |
         (?P<STRING>         "(?P<STR>(\\"|[^,])+?)"       )
     ''', re.VERBOSE|re.IGNORECASE|re.UNICODE)
@@ -941,6 +940,10 @@ class MSP430Assembler(object):
                 token_type = m.lastgroup
                 if token_type not in ('DELIMITER', 'SPACE'):
                     token = m.group(token_type)
+                    # registers and symbols can not be told appart with a
+                    # simple regexp. do the conversion here
+                    if token_type == 'SYMBOLIC' and token.upper() in regnumbers:
+                        token_type = 'REGISTER'
                     args.append((token_type, token, m))
         return args
 

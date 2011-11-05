@@ -29,18 +29,18 @@ re_asmstatement = re.compile(r'''^
       )?
     )?''', re.VERBOSE|re.IGNORECASE|re.UNICODE)
 
-re_expression = re.compile(r'(?P<NAME>.*?)=(?P<EXPR>.*)', re.UNICODE)
+re_expression = re.compile(r'(?P<NAME>\w+?)=(?P<EXPR>.+)', re.UNICODE)
 
 re_operand = re.compile(r'''
-        (?P<SPACE>          \s+             ) |
-        (?P<DELIMITER>      ,               ) |
-        (?P<IMMEDIATE>      \#(?P<IMM_VAL>[^,"]+)           ) |
-        (?P<ABSOLUTE>       &(?P<ABS_VAL>[^,"]+)           ) |
-        (?P<INDEXED>        (?P<IDX_VALUE>[^,"]+)\((?P<IDX_REG>\w+)\)   ) | 
-        (?P<POST_INC>       @(?P<PI_REG>[^,"]+)\+        ) |
-        (?P<INDIRECT>       @(?P<IND_REG>[^,"]+)           ) |
-        (?P<SYMBOLIC>       [^,"]+           ) |
-        (?P<STRING>         "(?P<STR>(\\"|[^,])+?)"       )
+        (?P<STRING>         "(?P<STR>[^"\\]*?(\\.[^"\\]*?)*?)"     ) |
+        (?P<SPACE>          \s+                         ) |
+        (?P<DELIMITER>      ,                           ) |
+        (?P<IMMEDIATE>      \#(?P<IMM_VAL>[^,"]+)       ) |
+        (?P<ABSOLUTE>       &(?P<ABS_VAL>[^,"]+)        ) |
+        (?P<INDEXED>        (?P<IDX_VALUE>[^,"]+)\((?P<IDX_REG>\w+)\)   ) |
+        (?P<POST_INC>       @(?P<PI_REG>[^,"]+)\+       ) |
+        (?P<INDIRECT>       @(?P<IND_REG>[^,"]+)        ) |
+        (?P<SYMBOLIC>       [^,"]+                      ) |
     ''', re.VERBOSE|re.IGNORECASE|re.UNICODE)
 
 
@@ -925,7 +925,7 @@ class MSP430Assembler(object):
 
     def tokenize_operands(self, arg_str):
         """\
-        split a comma separated argument string into a list of argument
+        Split a comma separated argument string into a list of argument
         tuples (address_mode, value, match_obj).
         """
         args = []
@@ -938,7 +938,9 @@ class MSP430Assembler(object):
                         arg_str[pos:pos+10],))
                 pos = m.end()
                 token_type = m.lastgroup
-                if token_type not in ('DELIMITER', 'SPACE'):
+                if token_type is None:
+                    raise AssemblerError(u'Can not parse argument: %r...' % (arg_str,))
+                elif token_type not in ('DELIMITER', 'SPACE'):
                     token = m.group(token_type)
                     # registers and symbols can not be told appart with a
                     # simple regexp. do the conversion here

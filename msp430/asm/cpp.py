@@ -196,10 +196,14 @@ class Preprocessor(object):
             (?P<NONPREPROC> ^[^\#].*         )
             ''', re.VERBOSE|re.UNICODE)
 
-    re_silinecomment = re.compile('(//).*')
-    re_inlinecomment = re.compile('/\*.*?\*/')
-    re_splitter = re.compile('(\W+)', re.UNICODE)
-    re_macro_usage = re.compile('(?P<MACRO>\w+)[\t ]*\((?P<ARGS>.*)\)', re.UNICODE)
+    re_silinecomment = re.compile(r'(//).*')
+    re_inlinecomment = re.compile(r'/\*.*?\*/')
+    re_macro_usage = re.compile(r'(?P<MACRO>\w+)[\t ]*\((?P<ARGS>.*)\)', re.UNICODE)
+    re_splitter = re.compile(r'''
+            (?P<STRING>     "([^"\\]*?(\\.[^"\\]*?)*?)"     ) |
+            (?P<WORD>       \w+         ) |
+            (?P<NONWORD>    [^"\w]+       )
+            ''', re.VERBOSE|re.UNICODE)
 
     def __init__(self):
         self.macros = {}
@@ -230,17 +234,28 @@ class Preprocessor(object):
             self.expansion_done = False
             line = self.re_macro_usage.sub(self._apply_macro, line)
             # replace object like macros
-            words = self.re_splitter.split(line)
+            pos = 0
             res = []
-            #print words         #DEBUG
-            for word in words:
-                if word in self.namespace.defines:
-                    res.append(self.namespace.defines[word])
-                    self.expansion_done = True
-                #~ elif word in self.macros:
-                    #~ expansion_done = True
-                else:
+            while pos < len(line):
+                m = self.re_splitter.match(line, pos)
+                if m is None:
+                    raise PreprocessorError(u'No match in macro replacement code: %r...' % (
+                        line[pos:pos+10],))
+                pos = m.end()
+                token_type = m.lastgroup
+                if token_type in ('STRING', 'NONWORD', 'OTHER'):
+                    word = m.group(token_type)
                     res.append(word)
+                elif token_type == 'WORD':
+                    word = m.group(token_type)
+                    if word in self.namespace.defines:
+                        res.append(self.namespace.defines[word])
+                        self.expansion_done = True
+                    else:
+                        res.append(word)
+                else:
+                    raise PreprocessorError(u'No match in macro replacement code: %r...' % (
+                        line[pos:pos+10],))
             line = ''.join(res)
             recusion_limit -= 1
         if recusion_limit == 0:

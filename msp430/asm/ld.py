@@ -97,11 +97,11 @@ class Segment(object):
         if None not in (self.end_address, self.start_address):
             size = self.end_address - self.start_address
             if size:
-                start = '0x%04x' % self.start_address
-                end = '0x%04x' % (self.end_address - 1)
+                start = '0x%04x' % (self.start_address,)
+                end = '0x%04x' % (self.end_address - 1,)
             else:
                 start = end = 'n/a'
-            size_str = '%d B' % (size)
+            size_str = '%d B' % (size,)
         else:
             start = end = ''
             size = 0

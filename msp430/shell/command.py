@@ -139,13 +139,16 @@ def command_cat(parser, argv):
                 sys.stdout.write(line)
             f.close()
 
+
 def command_true(parser, argv):
     (options, args) = parser.parse_args(argv)
     return 0
 
+
 def command_false(parser, argv):
     (options, args) = parser.parse_args(argv)
     return 1
+
 
 def command_expand(parser, argv):
     (options, args) = parser.parse_args(argv)
@@ -170,6 +173,7 @@ def command_rm(parser, argv):
 
     rm(expanded(args), options.force, options.recursive)
 
+
 def command_mkdir(parser, argv):
     parser.add_option("-p",
         dest = "create_missing",
@@ -185,10 +189,12 @@ def command_mkdir(parser, argv):
     for path in args:
         mkdir(path, options.create_missing)
 
+
 def command_touch(parser, argv):
     """update file date"""
     (options, args) = parser.parse_args(argv)
     touch(expanded(args))
+
 
 def command_cp(parser, argv):
     """copy files"""
@@ -209,6 +215,7 @@ def command_cp(parser, argv):
         parser.error('Missing SOURCE')
     cp(expanded(args), target)
 
+
 def command_mv(parser, argv):
     """move or rename files"""
     parser.add_option("-f", "--force",
@@ -222,6 +229,24 @@ def command_mv(parser, argv):
         parser.error('Expected at least one SOURCE and TARGET argument.')
     target = args.pop()
     mv(expanded(args), target)
+
+
+def command_which(parser, argv):
+    """find files on PATH"""
+    parser.add_option("-v", "--verbose",
+        dest = "stop_first",
+        help = "Show all hits (default: stop after 1st).",
+        default = True,
+        action = 'store_false'
+    )
+    (options, args) = parser.parse_args(argv)
+    path = os.environ['PATH'].split(os.pathsep)
+    for filename in args:
+        for location in path:
+            p = os.path.join(location, filename)
+            if os.path.exists(p):
+                sys.stdout.write('%s\n' % p)
+                if options.stop_first: return
 
 
 def command_list(parser, argv):
@@ -242,6 +267,7 @@ COMMANDS = {
         'true': (command_true,   'Simply return exit code 0',      '%prog'),
         'touch': (command_touch, 'Update file date, create file.', '%prog [options] FILE...'),
         'list': (command_list,   'This text.',                     '%prog'),
+        'which': (command_which, 'Find files in teh PATH',         '%prog [options] FILE...'),
         }
 
 def main():

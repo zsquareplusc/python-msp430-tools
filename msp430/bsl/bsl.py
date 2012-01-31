@@ -61,7 +61,7 @@ class BSL(object):
     def BSL_TXBLK(self, address, data):
         #~ print "BSL_TXBLK(0x%02x, len=%r)" % (address, len(data))
         length = len(data)
-        packet = struct.pack('<HH', address, length) + data
+        packet = struct.pack('<HH', address, length) + bytes(data)
         answer = self.bsl(BSL_TXBLK, packet, expect = 0)
 
     def BSL_RXBLK(self, address, length):

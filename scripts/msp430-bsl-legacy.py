@@ -389,7 +389,6 @@ def main():
     sys.stderr.flush()
 
     #prepare data to download
-    bslobj.data = memory.Memory()                   # prepare downloaded data
     if filetype is not None:                        # if the filetype is given...
         if filename is None:
             raise ValueError("No filename but filetype specified")
@@ -398,16 +397,19 @@ def main():
         else:
             file = open(filename, "rb")             # or from a file
         if filetype == 0:                           # select load function
-            bslobj.data.loadIHex(file)              # intel hex
+            bslobj.data = memory.load(filename, file, 'ihex') # intel hex
         elif filetype == 1:
-            bslobj.data.loadTIText(file)            # TI's format
+            bslobj.data = memory.load(filename, file, 'titext') # TI's format
         else:
             raise ValueError("Illegal filetype specified")
     else:                                           # no filetype given...
         if filename == '-':                         # for stdin:
-            bslobj.data.loadIHex(sys.stdin)         # assume intel hex
+            bslobj.data = memory.load(filename, sys.stdin, 'ihex') # assume intel hex
         elif filename:
-            bslobj.data.loadFile(filename)          # autodetect otherwise
+            bslobj.data = memory.load(filename)     # autodetect otherwise
+    # msp430.legacy.bsl doesn't expect seg.data to be type bytearray
+    for seg in bslobj.data:
+        seg.data = bytes(seg.data)
 
     if DEBUG > 3: sys.stderr.write("File: %r" % filename)
 

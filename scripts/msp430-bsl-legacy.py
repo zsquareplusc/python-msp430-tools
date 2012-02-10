@@ -126,6 +126,13 @@ wrong password. NAKs during programming indicate that the flash was not
 erased before programming.
 """ % (sys.argv[0], VERSION))
 
+def legacy_memory(memory):
+    # msp430.legacy.bsl doesn't expect seg.data to be type bytearray
+    # XXX note this affects the Segments in the memory, no copy is made
+    for segment in memory:
+        segment.data = bytes(segment.data)
+    return memory
+
 
 # Main:
 def main():
@@ -180,7 +187,7 @@ def main():
                 comPort = a                         # take the string and let serial driver decide
         elif o in ("-P", "--password"):
             # extract password from file
-            bslobj.passwd = memory.Memory(a).getMemrange(0xffe0, 0xffff)
+            bslobj.passwd = legacy_memory(memory.load(a)).getMemrange(0xffe0, 0xffff)
         elif o in ("-w", "--wait"):
             wait = 1
         elif o in ("-f", "--framesize"):
@@ -302,8 +309,7 @@ def main():
         elif o in ("-N", "--notimeout"):
             notimeout = 1
         elif o in ("-B", "--bsl"):
-            bslrepl = memory.Memory() # File to program
-            bslrepl.loadFile(a)
+            bslrepl = legacy_memory(memory.load(a)) # File to program
         elif o in ("-V", "--bslversion"):
             todo.append(bslobj.actionReadBSLVersion) # load replacement BSL as first item
         elif o in ("-S", "--speed"):
@@ -389,7 +395,6 @@ def main():
     sys.stderr.flush()
 
     #prepare data to download
-    bslobj.data = memory.Memory()                   # prepare downloaded data
     if filetype is not None:                        # if the filetype is given...
         if filename is None:
             raise ValueError("No filename but filetype specified")
@@ -398,16 +403,16 @@ def main():
         else:
             file = open(filename, "rb")             # or from a file
         if filetype == 0:                           # select load function
-            bslobj.data.loadIHex(file)              # intel hex
+            bslobj.data = legacy_memory(memory.load(filename, file, 'ihex')) # intel hex
         elif filetype == 1:
-            bslobj.data.loadTIText(file)            # TI's format
+            bslobj.data = legacy_memory(memory.load(filename, file, 'titext')) # TI's format
         else:
             raise ValueError("Illegal filetype specified")
     else:                                           # no filetype given...
         if filename == '-':                         # for stdin:
-            bslobj.data.loadIHex(sys.stdin)         # assume intel hex
+            bslobj.data = legacy_memory(memory.load(filename, sys.stdin, 'ihex')) # assume intel hex
         elif filename:
-            bslobj.data.loadFile(filename)          # autodetect otherwise
+            bslobj.data = legacy_memory(memory.load(filename)) # autodetect otherwise
 
     if DEBUG > 3: sys.stderr.write("File: %r" % filename)
 

@@ -318,7 +318,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         group.add_option("--swap-reset-test",
                 dest="swap_reset_test",
                 action="store_true",
-                help="exchenage RST and TEST signals (DTR/RTS)",
+                help="exchange RST and TEST signals (DTR/RTS)",
                 default=False)
         group.add_option("--test-on-tx",
                 dest="test_on_tx",
@@ -486,6 +486,10 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
 
     # override reset method: use control line
     def reset(self):
+        """Reset the device."""
+        
+        self.logger.info('Reset device')
+        
         #~ time.sleep(0.25)
         #~ self.set_RST(True)      # power supply
         #~ self.set_TEST(True)     # power supply

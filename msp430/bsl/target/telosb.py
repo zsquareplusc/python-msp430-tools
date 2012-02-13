@@ -21,8 +21,8 @@ class TelosBTarget(SerialBSLTarget):
            _________     __________
           | ADG715  |   | MSP430
           |         |   | ..
-    DTR-->| SCL     |   | ..
-    RTS-->| SDA     |   | ..
+    DTR-->| SDA     |   | ..
+    RTS-->| SCL     |   | ..
           |         |   | ..
           |-S8--//--|   | .. 
           |   ...   |   | ..

@@ -502,6 +502,3 @@ def main():
     # run the main application
     bsl_target = SerialBSLTarget()
     bsl_target.main()
-
-if __name__ == '__main__':
-    main()

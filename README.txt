@@ -12,7 +12,7 @@ can be used as standalone applications or as library for other programs.
 Download tools
 ==============
 Command line tools, e.g. ``python -m msp430.gdb.target``. They can up and
-donwload memory of MSP430 targets.
+download memory of MSP430 targets.
 
 - ``msp430.jtag.target``    JTAG interface
 - ``msp430.bsl.target``     F1x, F2x, F4x BSL
@@ -54,8 +54,9 @@ Description of Python library
     A simple assembler and linker, also a disassembler, supporting MSP430(X).
 
 ``msp430.bsl``
-    Support for the boot strap loader. ``msp430.bsl.target`` is the main module
-    for the downloader.
+    Support for the boot strap loader. ``msp430.bsl.target`` is the main 
+    package for the downloader and contains subclassed modules for target
+    specific BSL hardware.
 
 ``msp430.bsl5``
     Support for the boot strap loader of F5xx/F6xx devices. ``msp430.bsl5.hid``

@@ -997,7 +997,7 @@ class BootStrapLoader(LowLevel):
             raise BSLException, "verify without data not possible"
 
     def actionReset(self):
-        """Perform a reset, start user programm"""
+        """Perform a reset, start user program"""
         sys.stderr.write("Reset device ...\n")
         sys.stderr.flush()
         self.bslReset(0) #only reset

@@ -33,12 +33,12 @@ setup(
             ],
     package_dir={'msp430': 'msp430'},
     package_data={'msp430': [
-            'msp430/asm/definitions/msp430-mcu-list.txt',
-            'msp430/bsl/BL_150S_14x.txt',
-            'msp430/bsl/BL_150S_44x.txt',
-            'msp430/bsl/BS_150S_14x.txt',
-            'msp430/bsl/patch.txt',
-            'msp430/bsl5/RAM_BSL.00.05.04.34.txt',
+            'asm/definitions/msp430-mcu-list.txt',
+            'bsl/BL_150S_14x.txt',
+            'bsl/BL_150S_44x.txt',
+            'bsl/BS_150S_14x.txt',
+            'bsl/patch.txt',
+            'bsl5/RAM_BSL.00.05.04.34.txt',
             ]},
     scripts=[
             'scripts/msp430-bsl',

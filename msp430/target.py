@@ -245,6 +245,8 @@ class Target(object):
         status messages on stderr are printed unless the quiet parameter is
         true (this can e.g. used to download helper code)
         """
+        if self.verbose and not quiet:
+            sys.stderr.write('Programming...\n')
         if download_data is None:
             download_data = self.download_data
         for segment in download_data:
@@ -260,6 +262,8 @@ class Target(object):
 
     def verify_by_file(self):
         """upload and compare to self.download_data"""
+        if self.verbose:
+            sys.stderr.write('Verify by file...\n')
         for segment in self.download_data:
             if self.verbose > 1:
                 sys.stderr.write("Verify segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
@@ -272,6 +276,8 @@ class Target(object):
 
     def erase_check_by_file(self):
         """upload address ranges used in self.download_data and check if memory erased (0xff)"""
+        if self.verbose:
+            sys.stderr.write('Erase check by file...\n')
         for segment in self.download_data:
             if self.verbose > 1:
                 sys.stderr.write("Erase check segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
@@ -286,6 +292,8 @@ class Target(object):
         """\
         Erase Flash segments that will be used by the data in self.download_data.
         """
+        if self.verbose:
+            sys.stderr.write('Erase by file...\n')
         for segment in self.download_data:
             address = segment.startaddress
             # mask address to get to segment start

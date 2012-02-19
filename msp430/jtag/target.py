@@ -33,7 +33,7 @@ class JTAGTarget(object):
 
     def memory_read(self, address, length):
         """Read from memory."""
-        return bytearray(self.jtagobj.uploadData(address, length))
+        return bytes(self.jtagobj.uploadData(address, length))
 
     def memory_write(self, address, data):
         """Write to memory."""
@@ -57,7 +57,7 @@ class JTAGTarget(object):
 
     def version(self):
         """The 16 bytes of the ROM that contain chip and BSL info are returned."""
-        return self.jtagobj.uploadData(0x0ff0, 16)
+        return bytes(self.jtagobj.uploadData(0x0ff0, 16))
 
     def reset(self):
         """Reset the device."""

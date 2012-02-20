@@ -27,20 +27,20 @@ setup(
                     'IronPythonConsole', 'System', 'System.IO.Ports', 'System.Windows.Forms.Clipboard', 'clr',
                     'modes.editingmodes', 'startup', 'Carbon', 'Carbon.Files', 'wx'],
             'packages': ['msp430', 'msp430.asm', 'msp430.memory', 'msp430.shell',
-                        'msp430.gdb', 'msp430.jtag', 'msp430.bsl', 'msp430.bsl5'],
+                        'msp430.gdb', 'msp430.jtag', 'msp430.bsl', 'msp430.bsl.target', 'msp430.bsl5'],
             'includes': ['pywinusb', 'EasyDialogs'],
             'dll_excludes': ['HIL.dll', 'MSP430.dll', 'MSP430mspgcc.dll'],
             'optimize': 2,
         }
     },
     console = [
-        "scripts/msp430-bsl.py",
-        "scripts/msp430-jtag.py",
-        "scripts/msp430-tool.py",
+        "scripts/msp430-bsl",
+        "scripts/msp430-jtag",
+        "scripts/msp430-tool",
     ],
     windows = [
         {
-            'script': "scripts/msp430-downloader.py",
+            'script': "scripts/msp430-downloader",
             'icon_resources': [(0x0001, 'win32/downloader.ico')]
         },
     ],

@@ -37,7 +37,7 @@ in the application note "slaa96b" from TI (see references). Then this
 program can be used to communicate between the PC and the MSP430 device.
 
 The program can be started by typing "msp430-bsl" in a console.
-To run it in the source directory, use "python msp430-bsl.py"
+To run it in the source directory, use "python msp430-bsl"
 
 Usage: msp430.bsl.target [OPTIONS] [FILE [FILE...]]
 

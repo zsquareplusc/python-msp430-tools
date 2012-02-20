@@ -65,9 +65,9 @@ def identify_device(device_id, bsl_version):
         except KeyError:
             return DEVICEIDS[device_id, None]
     except KeyError:
-        if device_id[0] == '0x1f': return F1x
-        if device_id[0] == '0x2f': return F2x
-        if device_id[0] == '0x4f': return F4x
+        if device_id >> 8 == 0x1f: return F1x
+        if device_id >> 8 == 0x2f: return F2x
+        if device_id >> 8 == 0x4f: return F4x
         raise KeyError('device type not known %04x/%04x' % (device_id, bsl_version))
 
 

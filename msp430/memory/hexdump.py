@@ -142,7 +142,7 @@ What is dumped?
     parser.add_option("-i", "--input-format",
             dest="input_format",
             help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
-            default="titext",
+            default=None,
             metavar="TYPE")
 
     (options, args) = parser.parse_args()

@@ -255,7 +255,7 @@ class ELFObject:
         for section in self.sections:
             fileobj.seek(section.sh_offset)
             data = fileobj.read(section.sh_size)
-            section.data = data
+            section.data = bytearray(data)
             if section.sh_type == ELFSection.SHT_STRTAB:
                 section.values = data.split('\0')
             section.lma = self.getLMA(section)
@@ -327,6 +327,7 @@ def load(filelike):
         #~ sys.stderr.write("ELF section %s at 0x%04x %d bytes\n" % (section.name, section.lma, len(section.data)))
         if len(section.data):
             memory.segments.append(msp430.memory.Segment(section.lma, section.data))
+    return memory
 
 
 if __name__ == '__main__':

@@ -37,7 +37,9 @@ def hexdump(adr_data_tuple, output=sys.stdout):
     :param output: file like object to write to
     """
     adr, memstr = adr_data_tuple
-    for address, row in sixteen(adr, memstr):
+    # conversion to byte array only needed for python 2.xx as bytes would return
+    # characters instead of ints
+    for address, row in sixteen(adr, bytearray(memstr)):
         values = ' '.join("%02x" % x for x in row)
         ascii  = ''.join(chr(x) if (32 <= x < 128) else '.' for x in row)
         # pad width
@@ -150,7 +152,7 @@ What is dumped?
     if not args:
         parser.error("missing object file name")
 
-    if options.input_format not in msp430.memory.load_formats:
+    if options.input_format is not None and options.input_format not in msp430.memory.load_formats:
         parser.error('Input format %s not supported.' % (options.input_format))
 
     global debug
@@ -167,6 +169,8 @@ What is dumped?
             except AttributeError:
                 fileobj = sys.stdin
             filename = '<stdin>'
+            if options.input_format is None:
+                parser.error('Input format must be specified when reading from stdin.')
         else:
             fileobj = open(filename, "rb")  # or from a file
         mem = msp430.memory.load(filename, fileobj, options.input_format)

@@ -341,8 +341,10 @@ def main():
             sys.exit(os.spawnve(os.P_WAIT, sys.executable, [sys.executable] + sys.argv[1:], os.environ))
         else:
             # XXX this does only work if module is in pythons search path..
-            os.execve(sys.executable, [sys.executable, '-m', 'msp430.jtag.target'] + sys.argv[1:], os.environ)
-            #~ os.execve(sys.executable, [sys.executable, __file__] + sys.argv, os.environ)
+            if sys.platform == 'win32':
+                os.spawnve(os.P_WAIT, sys.executable, [sys.executable, '-m', 'msp430.jtag.target'] + sys.argv[1:], os.environ)
+            else:
+                os.execve(sys.executable, [sys.executable, '-m', 'msp430.jtag.target'] + sys.argv[1:], os.environ)
         return
 
     # run the main application

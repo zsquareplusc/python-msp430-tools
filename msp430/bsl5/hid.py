@@ -231,7 +231,7 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
         else:
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
+                self.logger.info("Transmitting password: %s" % (str(password).encode('hex'),))
                 self.BSL_RX_PASSWORD(password)
 
         # download full BSL

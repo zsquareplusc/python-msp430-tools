@@ -241,13 +241,19 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
         full_bsl_txt = pkgutil.get_data('msp430.bsl5', 'RAM_BSL.00.05.04.34.txt')
         full_bsl = msp430.memory.load('BSL', StringIO(full_bsl_txt), format='titext')
         self.program_file(full_bsl, quiet=True)
-        self.BSL_LOAD_PC(0x2504)
+
+        # Loading the PC can cause USB to stall and disconnect, causing a broken pipe.
+        # Handle the error gracefully and try to resume.
+        try:
+            self.BSL_LOAD_PC(0x2504)
+        except OSError as e:
+            self.logger.info("Caught " + str(e))
+        self.close()
 
         # must re-initialize communication, BSL or USB system needs some time
         # to be ready
         self.logger.info("Waiting for BSL...")
         time.sleep(3)
-        self.close()
         self.open(self.options.device)
         # checking version, this is also a connection check
         bsl_version = self.BSL_VERSION()

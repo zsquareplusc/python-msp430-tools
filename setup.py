@@ -38,7 +38,7 @@ setup(
             'bsl/BL_150S_44x.txt',
             'bsl/BS_150S_14x.txt',
             'bsl/patch.txt',
-            'bsl5/RAM_BSL.00.05.04.34.txt',
+            'bsl5/RAM_BSL.00.06.05.34.txt',
             ]},
     scripts=[
             'scripts/msp430-bsl',

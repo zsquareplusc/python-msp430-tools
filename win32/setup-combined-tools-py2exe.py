@@ -54,7 +54,7 @@ package_data = [
         'msp430/bsl/BL_150S_44x.txt',
         'msp430/bsl/BS_150S_14x.txt',
         'msp430/bsl/patch.txt',
-        'msp430/bsl5/RAM_BSL.00.05.04.34.txt',
+        'msp430/bsl5/RAM_BSL.00.06.05.34.txt',
         ]
 
 print "appending package data..."

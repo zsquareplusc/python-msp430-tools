@@ -84,7 +84,7 @@ def _ihexline(address, buffer, end=False, record_type=0):
         record_type = 1
     out.append(':%02X%04X%02X' % (len(buffer), address & 0xffff, record_type))
     sum = len(buffer) + ((address >> 8) & 255) + (address & 255) + (record_type & 255)
-    for b in buffer:
+    for b in bytearray(buffer):
         out.append('%02X' % (b & 255))
         sum += b & 255
     out.append('%02X\r\n' % ( (-sum) & 255))

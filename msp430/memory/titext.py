@@ -45,6 +45,7 @@ def save(memory, filelike):
     """output TI-Text to given file object"""
     for segment in sorted(memory.segments):
         filelike.write("@%04x\n" % segment.startaddress)
-        for i in range(0, len(segment.data), 16):
-            filelike.write("%s\n" % " ".join(["%02x" % x for x in segment.data[i:i+16]]))
+        data = bytearray(segment.data)
+        for i in range(0, len(data), 16):
+            filelike.write("%s\n" % " ".join(["%02x" % x for x in data[i:i+16]]))
     filelike.write("q\n")

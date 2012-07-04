@@ -123,8 +123,14 @@ def main():
         if name.endswith('_') and not name.startswith('_'):
             name = name[:-1]
         if definition:
-            value = cpp.namespace.eval(definition)
-            outfile.write('%r CONSTANT %s\n' % (value, name))
+            try:
+                value = cpp.namespace.eval(definition)
+            except msp430.asm.cpp.PreprocessorError, e:
+                sys.stderr.write('cannot convert expression: %s\n' % (e,))
+            except msp430.asm.rpn.RPNError, e:
+                sys.stderr.write('cannot convert expression: %s\n' % (e,))
+            else:
+                outfile.write('%r CONSTANT %s\n' % (value, name))
         else:
             outfile.write('1 CONSTANT %s\n' % (name,))
 

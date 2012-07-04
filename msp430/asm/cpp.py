@@ -198,7 +198,7 @@ class Preprocessor(object):
 
     re_silinecomment = re.compile(r'(//).*')
     re_inlinecomment = re.compile(r'/\*.*?\*/')
-    re_macro_usage = re.compile(r'(?P<MACRO>\w+)[\t ]*\((?P<ARGS>.*)\)', re.UNICODE)
+    re_macro_usage = re.compile(r'(?P<MACRO>\w+)[\t ]*\((?P<ARGS>.*?)\)', re.UNICODE)
     re_splitter = re.compile(r'''
             (?P<STRING>     "([^"\\]*?(\\.[^"\\]*?)*?)"     ) |
             (?P<WORD>       \w+         ) |
@@ -217,8 +217,8 @@ class Preprocessor(object):
             values = [x.strip() for x in match_obj.group('ARGS').split(',')]
             args, expansion = self.macros[name]
             if len(args) != len(values):
-                raise PreprocessorError('Macro invocation with wrong number of parameters. Expected %d got %d' % (
-                        len(args), len(values)))
+                raise PreprocessorError('Macro invocation with wrong number of parameters. Expected %d got %d: %r' % (
+                        len(args), len(values), values))
             self.expansion_done = True
             return expansion % dict(zip(args, values))
         else:

@@ -29,7 +29,13 @@ setup(
             'packages': ['msp430', 'msp430.asm', 'msp430.memory', 'msp430.shell',
                         'msp430.gdb', 'msp430.jtag', 'msp430.bsl', 'msp430.bsl5'],
             'includes': ['pywinusb', 'EasyDialogs'],
-            'dll_excludes': ['HIL.dll', 'MSP430.dll', 'MSP430mspgcc.dll'],
+            'dll_excludes': [
+                    'HIL.dll', 'MSP430.dll', 'MSP430mspgcc.dll',
+                    'API-MS-Win-Core-LocalRegistry-L1-1-0.dll',
+                    'API-MS-Win-Core-ProcessThreads-L1-1-0.dll',
+                    'API-MS-Win-Security-Base-L1-1-0.dll',
+                    'POWRPROF.dll',
+                    ],
             'optimize': 2,
         }
     },

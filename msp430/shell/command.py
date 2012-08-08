@@ -241,12 +241,23 @@ def command_which(parser, argv):
     )
     (options, args) = parser.parse_args(argv)
     path = os.environ['PATH'].split(os.pathsep)
-    for filename in args:
-        for location in path:
-            p = os.path.join(location, filename)
-            if os.path.exists(p):
-                sys.stdout.write('%s\n' % p)
-                if options.stop_first: return
+    for name in args:
+        names = [name]
+        # windows not only finds the name it also finds it with several
+        # different extensions, need to check these too...
+        if sys.platform.startswith('win'):
+            try:
+                extensions = os.environ['PATHEXT'].split(os.pathsep)
+                names.extend(['%s%s' % (name, ext) for ext in extensions])
+            except KeyError:
+                sys.stderr.write('Warning, environment variable PATHEXT not set!\n')
+        # for each name search through the path
+        for filename in names:
+            for location in path:
+                p = os.path.join(location, filename)
+                if os.path.exists(p):
+                    sys.stdout.write('%s\n' % p)
+                    if options.stop_first: return
 
 
 def command_list(parser, argv):

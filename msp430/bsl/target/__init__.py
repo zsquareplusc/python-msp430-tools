@@ -268,7 +268,7 @@ class SerialBSL(bsl.BSL):
             self.serial.baudrate = baudrate
 
 
-    def start_bsl(self):
+    def start_bsl(self, prompt_before_release=False):
         """\
         Start the ROM-BSL using the pulse pattern on TEST and RST.
         """
@@ -283,6 +283,8 @@ class SerialBSL(bsl.BSL):
         self.set_TEST(False)    # TEST pin: Vcc
         self.set_TEST(True)     # TEST pin: GND
         self.set_TEST(False)    # TEST pin: Vcc
+        if prompt_before_release:
+            raw_input('BSL start pattern sent, type [ENTER] to release RST and continue:')
         self.set_RST(True)      # RST  pin: Vcc
         self.set_TEST(True)     # TEST pin: GND
         time.sleep(0.250)       # give MSP430's oscillator time to stabilize
@@ -355,6 +357,12 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
                 help="do not wait for answer to BSL commands",
                 default=False)
 
+        group.add_option("--prompt-before-release",
+                dest="prompt_before_release",
+                action="store_true",
+                help="after sending the BSL start pattern, before releasing RST, prompt again",
+                default=False)
+
         group.add_option("--control-delay",
                 dest="control_delay",
                 type="float",
@@ -412,7 +420,8 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         self.set_RST(True)
 
         if self.options.start_pattern:
-            self.start_bsl()
+            self.start_bsl(self.options.prompt_before_release)
+
 
         if self.options.do_mass_erase:
             self.extra_timeout = 6

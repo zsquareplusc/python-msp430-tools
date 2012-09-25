@@ -414,7 +414,6 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         if self.options.start_pattern:
             self.start_bsl()
 
-
         if self.options.do_mass_erase:
             self.extra_timeout = 6
             self.mass_erase()
@@ -422,11 +421,11 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
             self.BSL_TXPWORD('\xff'*32)
             # remove mass_erase from action list so that it is not done
             # twice
-            self.remove_action(self.mass_erase)
+            self.remove_action(self.mass_erase) 
         else:
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
+                self.logger.info("Transmitting password: %s" % (bytes(password).encode('hex'),))
                 self.BSL_TXPWORD(password)
 
         # check for extended features (e.g. >64kB support)

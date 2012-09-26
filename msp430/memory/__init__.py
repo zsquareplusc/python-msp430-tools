@@ -7,7 +7,7 @@
 
 """\
 Manage a set of addressed binary strings (Segments) in a Memory object.
-This type of data is used to represent memory contents of teh MCU.
+This type of data is used to represent memory contents of the MCU.
 """
 
 from msp430.memory import titext, elf, intelhex, bin, hexdump, error
@@ -159,7 +159,7 @@ class Memory(object):
             else:   # undefined memory is filled with 0xff
                 res = res + fill
                 fromadr = fromadr + 1 # adjust start
-        return res
+        return bytes(res)
 
     def get(self, address, size):
         """\
@@ -169,7 +169,7 @@ class Memory(object):
         :param size: Size of the of block to read
         :return: A byte string covering the given memory range.
         :exception ValueError: unavailable addresses are tried to read"""
-        data = []
+        data = bytearray()
         for seg in self.segments:
             #~ print "0x%04x  " * 2 % (seg.startaddress, seg.startaddress + len(seg.data))
             if seg.startaddress <= address and seg.startaddress + len(seg.data) >= address:
@@ -178,10 +178,9 @@ class Memory(object):
                 length = min(len(seg.data)-offset, size)
                 data.append(seg.data[offset:offset+length])
                 address += length
-        value = ''.join(data)
-        if len(value) != size:
+        if len(data) != size:
             raise ValueError("could not collect the requested data")
-        return value
+        return bytes(data)
 
     def set(self, address, contents):
         """\
@@ -217,20 +216,20 @@ class Memory(object):
         if self.segments:
             # not empty, smart merge
             new_segments = []
-            segmentdata = []
+            segmentdata = bytearray()
             segment_address = 0
             last_address = 0
             for address, byte in stream_merge(DataStream(self), DataStream(other)):
                 if address != last_address:
                     if segmentdata:
-                        new_segments.append(Segment(segment_address, ''.join(segmentdata)))
+                        new_segments.append(Segment(segment_address, segmentdata))
                     last_address = address
                     segment_address = address
-                    segmentdata = []
+                    segmentdata = bytearray()
                 segmentdata.append(byte)
                 last_address += 1
             if segmentdata:
-                new_segments.append(Segment(segment_address, ''.join(segmentdata)))
+                new_segments.append(Segment(segment_address, segmentdata))
             self.segments = new_segments
         else:
             # empty: just take the new data

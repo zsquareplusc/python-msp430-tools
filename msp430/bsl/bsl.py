@@ -126,8 +126,8 @@ class BSL(object):
             address += size
             length -= size
         if odd and data:
-            data.pop()  # remove the additional byte w've added on upload
-        return data
+            data.pop()  # remove the additional byte we've added on upload
+        return bytes(data)
 
     def memory_write(self, address, data):
         """\
@@ -140,8 +140,9 @@ class BSL(object):
         while data:
             block, data = data[:self.MAXSIZE], data[self.MAXSIZE:]
             if self.extended_address_mode:
+                # XXX optimize: send only when offset has changed since previous call
                 self.BSL_SETMEMOFFSET(address >> 16)
-            self.BSL_TXBLK(address & 0xffff, block)
+            self.BSL_TXBLK(address & 0xffff, bytes(block))
             address += len(block)
 
     def mass_erase(self):

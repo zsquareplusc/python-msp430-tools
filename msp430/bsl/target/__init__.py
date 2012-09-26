@@ -434,7 +434,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         else:
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                self.logger.info("Transmitting password: %s" % (bytes(password).encode('hex'),))
+                self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
                 self.BSL_TXPWORD(password)
 
         # check for extended features (e.g. >64kB support)
@@ -445,7 +445,6 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
             family = msp430.target.identify_device(self.device_id, self.bsl_version)
             if family == msp430.target.F1x:
                 bsl_name = 'BL_150S_14x.txt'
-                #~ bsl_name = 'BS_150S_14x.txt'
             elif family == msp430.target.F4x:
                 bsl_name = 'BL_150S_44x.txt'
             else:

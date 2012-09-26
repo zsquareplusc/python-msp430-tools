@@ -181,9 +181,9 @@ class Target(object):
     def flash_segment_size(self, address):
         """Determine the Flash segment size"""
         # XXX make it device family aware
-        if address < 0x1000:
+        if address < 0x1100:
             modulo = 64
-        elif address < 0x1100:
+        elif address < 0x1200:
             modulo = 256
         else:
             modulo = 512

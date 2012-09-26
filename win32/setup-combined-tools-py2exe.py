@@ -11,6 +11,7 @@ os.chdir('..')
 print "changed directory to %s" % os.path.abspath(os.curdir)
 
 sys.argv.append("py2exe")
+#~ sys.argv.append("--xref")
 
 setup(
     name = 'http://mspgcc.sourceforge.net',
@@ -22,19 +23,37 @@ setup(
     options = { "py2exe":
         {
             'dist_dir': 'bin',
-            'excludes': ['javax.comm', 'macpath', 'TERMIOS', 'FCNTL',
-                    'os2emxpath', '_parjtag',
-                    'IronPythonConsole', 'System', 'System.IO.Ports', 'System.Windows.Forms.Clipboard', 'clr',
-                    'modes.editingmodes', 'startup', 'Carbon', 'Carbon.Files', 'wx'],
+            'excludes': [
+                    'os2emxpath', '_parjtag','pdb', 'pyreadline', 'plistlib', 'doctest',
+                    #~ 'IronPythonConsole', 'System', 'System.Windows.Forms.Clipboard', 'clr',
+                    'modes.editingmodes', 'startup', 'Carbon', 'Carbon.Files', 'wx',
+                    # pyserial, other platforms
+                    'serial.serialjava', 'serial.serialcli', 'serial.serialposix',
+                    'serial.tools.list_ports_posix',
+                    ],
             'packages': ['msp430', 'msp430.asm', 'msp430.memory', 'msp430.shell',
                         'msp430.gdb', 'msp430.jtag', 'msp430.bsl', 'msp430.bsl5'],
-            'includes': ['pywinusb', 'EasyDialogs'],
+            'includes': [
+                    'pywinusb', 'EasyDialogs',
+                    'serial.urlhandler.protocol_hwgrep', 'serial.urlhandler.protocol_rfc2217',
+                    'serial.urlhandler.protocol_socket', 'serial.urlhandler.protocol_loop',
+                    ],
             'dll_excludes': [
+                    # misc windows stuff
+                    'OLEAUT32.dll', 'USER32.dll', 'SHELL32.dll', 'KERNEL32.dll',
+                    'ADVAPI32.dll', 'WS2_32.dll', 'VERSION.dll', 'ole32.dll',
+                    'RPCRT4.dll', 'COMDLG32.dll', 'WSOCK32.dll', 'COMCTL32.dll',
+                    'WINSPOOL.DRV', 'GDI32.dll', 'gdiplus.dll', 'WINMM.dll',
+                    # our own
                     'HIL.dll', 'MSP430.dll', 'MSP430mspgcc.dll',
+                    # win7
                     'API-MS-Win-Core-LocalRegistry-L1-1-0.dll',
                     'API-MS-Win-Core-ProcessThreads-L1-1-0.dll',
                     'API-MS-Win-Security-Base-L1-1-0.dll',
                     'POWRPROF.dll',
+                    # other files
+                    'MSVCP90.dll',
+                    'MSVCRTR90.dll',
                     ],
             'optimize': 2,
         }

@@ -206,11 +206,18 @@ inaccurate for large values.
                 default=None,
                 metavar="BYTES")
 
+        group.add_option("--unlock-bsl",
+                dest="unlock_bsl",
+                help="unlock Flash BSL (e.g. F5x) ATTENTION: can make device unusable!",
+                default=False,
+                action='store_true')
+
         self.parser.add_option_group(group)
 
         group = OptionGroup(self.parser, "JTAG fuse", """\
-WARNING: This is not reversible, use with care!  Note: Not supported with the
-simple parallel port adapter (7V source required).",
+WARNING: This is not reversible, use with care!
+Note: For F1x, F2, F4x: not supported with the simple parallel port adapter
+(7V source required).",
 """)
 
         group.add_option("--secure",
@@ -292,6 +299,8 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
     def open_connection(self):
         """Connect to target"""
         self.jtagobj.open(self.options.port_name)   # try to open port
+        if self.options.unlock_bsl:
+            jtag._parjtag.configure(jtag.UNLOCK_BSL_MODE, True)
         if self.options.ramsize is not None:
             self.jtagobj.setRamsize(self.options.ramsize)
         self.jtagobj.connect()                  # connect to target

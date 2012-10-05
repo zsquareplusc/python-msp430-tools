@@ -39,6 +39,7 @@ EDT_TRACE_MODE = 7
 INTERFACE_MODE = 8      # see INTERFACE_TYPE below
 SET_MDB_BEFORE_RUN = 9
 RAM_PRESERVE_MODE = 10  # Configure whether RAM content should be preserved/restored
+UNLOCK_BSL_MODE = 11
 
 # INTERFACE_TYPE
 JTAG_IF = 0
@@ -240,7 +241,7 @@ def init_backend(force=None, verbose=0):
         MSP430_WriteRegister.restype    = ctypes.c_int
     else:
         # TI's USB-FET lib does not have this function
-        if verbose:
+        if verbose > 1:
             sys.stderr.write('MSP430_*Register not found in library. Not supported.\n')
     if backend == CTYPES_MSPGCC:
         #~ MSP430_Funclet                  = MSP430mspgcc.MSP430_Funclet
@@ -254,7 +255,7 @@ def init_backend(force=None, verbose=0):
         MSP430_isHalted.restype         = ctypes.c_int
     else:
         # TI's USB-FET lib does not have this function
-        if verbose:
+        if verbose > 1:
             sys.stderr.write('MSP430_Funclet and isHalted not found in library. Not supported.\n')
     MSP430_Error_Number             = MSP430mspgcc.MSP430_Error_Number
     MSP430_Error_Number.argtypes    = []
@@ -268,7 +269,7 @@ def init_backend(force=None, verbose=0):
         MSP430_Secure.restype           = ctypes.c_int
     except AttributeError:
         # mspgcc lib does not have this function
-        if verbose:
+        if verbose > 1:
             sys.stderr.write('MSP430_Secure not found in library. Not supported.\n')
         def MSP430_Secure():
             raise NotImplementedError("this function is not supported with this MSP430 library")

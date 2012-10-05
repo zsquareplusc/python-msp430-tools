@@ -145,6 +145,7 @@ Options:
     -R BYTES, --ramsize=BYTES
                         specify the amount of RAM to be used to program flash
                         (default: auto detected)
+    --unlock-bsl        unlock Flash BSL (e.g. F5x)
 
   JTAG fuse:
     WARNING: This is not reversible, use with care!  Note: Not supported
@@ -177,6 +178,18 @@ Options:
     Alternatively, it is possible run ``msp430-jtag -w`` to power the
     eval board from the JTAG interface.
 
+.. note::
+    --secure on F1x,F2x,F4x requires support by the JTAG interface for higher
+    voltage.
+
+.. warning::
+    --secure is irreversible and disabled JTAG access
+
+.. warning::
+    --unlock-bsl enables writes to the BSL memory area on F5x/F6x devices.
+    The user is responsible to erase and program appropriately, otherwise
+    the device can be made unusable (JTAG disabled, BSL disabled, no user code
+    running),
 
 Backends
 --------
@@ -247,6 +260,21 @@ Examples
 ``cat led.txt|msp430-jtag -e -``
     Pipe the data from "cat" to msp430-jtag to erase and program the flash.
     (un*x example, don't forget the dash at the end of the line)
+
+``msp430-jtag --unlock-bsl --erase 0x1000/2k`` newbsl.a43
+    Write a replacement BSL to a F5x or F6x device. This is a dangerous option,
+    if it goes wrong, the device may become inaccessible (JTAG disabled, BSL
+    disabled, no user code running). Never write new code without --erase
+    as the BSL would end up being an AND combination of the previous Flash
+    content and the new code, which is certainly not executing properly.
+    Unfortunately does the BSL signature that is checked by the boot code of
+    the CPU not guard against this mistake. However, it is allowed to erase but
+    write no new BSL.
+
+    NOTE: Only do this if you know how to write new BSL code. The BSL signature
+          are in the binary must contain the correct data, otherwise the MCU
+          may be rendered unusable.
+    NOTE: Works only with MSP430.dll as backend.
 
 
 USB JTAG adapters

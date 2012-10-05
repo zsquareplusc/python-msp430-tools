@@ -347,7 +347,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         group.add_option("--password",
                 dest="password",
                 action="store",
-                help="transmit password before doing anything else, password is given in given (TI-Text/ihex/etc) file",
+                help="transmit password before doing anything else, password loaded from (TI-Text/ihex/etc) file",
                 default=None,
                 metavar="FILE")
 

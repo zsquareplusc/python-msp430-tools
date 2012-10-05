@@ -241,6 +241,9 @@ def command_which(parser, argv):
     )
     (options, args) = parser.parse_args(argv)
     path = os.environ['PATH'].split(os.pathsep)
+    if sys.platform.startswith('win'):
+        # windows implicitly searches the current dir too
+        path.insert(0, '.')
     for name in args:
         names = [name]
         # windows not only finds the name it also finds it with several

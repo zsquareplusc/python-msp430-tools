@@ -92,7 +92,7 @@ the differences between the files.
 
     (options, args) = parser.parse_args()
 
-    if options.input_format is not None and options.input_format not in memory.load_formats:
+    if options.input_format is not None and options.input_format not in msp430.memory.load_formats:
         parser.error('Input format %s not supported.' % (options.input_format))
 
     global debug

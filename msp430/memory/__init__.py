@@ -176,7 +176,7 @@ class Memory(object):
                 # segment contains data in the address range
                 offset = address - seg.startaddress
                 length = min(len(seg.data)-offset, size)
-                data.append(seg.data[offset:offset+length])
+                data.extend(seg.data[offset:offset+length])
                 address += length
         if len(data) != size:
             raise ValueError("could not collect the requested data")
@@ -232,9 +232,9 @@ class Memory(object):
                 new_segments.append(Segment(segment_address, segmentdata))
             self.segments = new_segments
         else:
-            # empty: just take the new data
+            # empty: just take the new data (a copy)
             for segment in other:
-                self.segments.append(segment)
+                self.segments.append(Segment(segment.startaddress, bytearray(segment.data)))
 
 
 def load(filename, fileobj=None, format=None):

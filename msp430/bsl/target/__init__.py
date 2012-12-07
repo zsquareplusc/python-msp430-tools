@@ -497,16 +497,18 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         
         self.logger.info('Reset device')
         
-        #~ time.sleep(0.25)
-        #~ self.set_RST(True)      # power supply
-        #~ self.set_TEST(True)     # power supply
-        #~ time.sleep(0.1)
-        #~ self.patch_in_use = False
+        # dual reset:
+        # 1) use the control line
+        # 2) while the control line is used to set the device in reset, also
+        #    use a write to the WDTCTL register.
+        # This has the advantage that the control line is used when connected
+        # but when the control line is not available, a reset is still likely
+        # to be successful with the WDTCTL.
         self.set_RST(False)
+        SerialBSL.reset(self)
         time.sleep(0.1)
-        #~ SerialBSL.reset(self)
         self.set_RST(True)
-        #~ time.sleep(0.250)       # give MSP430's oscillator time to stabilize
+        time.sleep(0.1)
 
 
 def main():

@@ -20,6 +20,7 @@ import ctypes
 ERASE_SEGMENT = 0       # Erase a segment.
 ERASE_MAIN    = 1       # Erase all MAIN memory.
 ERASE_ALL     = 2       # Erase all MAIN and INFORMATION memory.
+ERASE_TOTAL   = 3       # Erase all MAIN and INFORMATION memory including IP protected area
 
 # Configurations of the MSP430 driver
 # TI and MSPGCC's library
@@ -29,23 +30,28 @@ RAMSIZE_OPTION    = 1   # Change RAM used to download and program flash blocks
 DEBUG_OPTION      = 2   # Set debug level. Enables debug outputs.
 FLASH_CALLBACK    = 3   # Set a callback for progress report during flash write void f(WORD count, WORD total)
 # TI's library
-EMULATION_MODE  = 1
-CLK_CNTRL_MODE  = 2
-MCLK_CNTRL_MODE = 3
-FLASH_TEST_MODE = 4     # Flash Marginal Read Test.
+EMULATION_MODE  = 1     # 4xx emulation mode
+#~ CLK_CNTRL_MODE  = 2
+#~ MCLK_CNTRL_MODE = 3
+#~ FLASH_TEST_MODE = 4     # Flash Marginal Read Test.
 LOCKED_FLASH_ACCESS = 5 # Allows Locked Info Mem Segment A access (if set to '1')
-FLASH_SWOP = 6
+#~ FLASH_SWOP = 6
 EDT_TRACE_MODE = 7
 INTERFACE_MODE = 8      # see INTERFACE_TYPE below
 SET_MDB_BEFORE_RUN = 9
 RAM_PRESERVE_MODE = 10  # Configure whether RAM content should be preserved/restored
-UNLOCK_BSL_MODE = 11
+UNLOCK_BSL_MODE = 11    # F5x/F6x Flash BSL access
+DEVICE_CODE = 12        # just used internal for the device code of L092 and C092
+WRITE_EXTERNAL_MEMORY = 13 # set true to write the external SPI image of the L092
+DEBUG_LPM_X = 14        # set DEBUG_LPM_X true to start debugging of LPMx.5
+JTAG_SPEED = 15         # Configure JTAG speed
+TOTAL_ERASE_DEVICE = 16 # total device erase including IP protection
 
 # INTERFACE_TYPE
-JTAG_IF = 0
-SPYBIWIRE_IF = 1
-SPYBIWIREJTAG_IF = 2
-AUTOMATIC_IF = 3
+JTAG_IF = 0             # 4 Wire JTAG protocol used 
+SPYBIWIRE_IF = 1        # 2 Wire (Spy-bi-wire) JTAG protocol used
+SPYBIWIREJTAG_IF = 2    # 2 Wire Devices accessed by 4wire JTAG protocol
+AUTOMATIC_IF = 3        # Protocol will be detected automatically
 
 # FLASH_TEST_MODE
 FLASH_MARGINAL_READ_OFF = 0
@@ -57,6 +63,16 @@ PUC_RESET = 1 << 0      # Power up clear (i.e., a "soft") reset.
 RST_RESET = 1 << 1      # RST/NMI (i.e., "hard") reset.
 VCC_RESET = 1 << 2      # Cycle Vcc (i.e., a "power on") reset.
 ALL_RESETS = PUC_RESET + RST_RESET + VCC_RESET
+
+
+# enum SYSTEM_EVENT_MSP
+FET_CONNECTION_LOST = 0     # System event FET connection is lost
+DEVICE_CONNECTION_LOST = 1  # System event device connection is lost
+FET_RESTART_NEEDED = 2      # System event FET restart needed
+DEVICE_IN_LPM5_MODE = 3     # System event device entered LPMx.5
+DEVICE_WAKEUP_LPM5_MODE = 4 # System event devices wakes up from LPMx.5
+# callbakc definition
+SYSTEM_NOTIFY_CALLBACK = ctypes.CFUNCTYPE(None, ctypes.c_int) # param is enum SYSTEM_EVENT_MSP
 
 # interface type 'spy-bi-wire' or 'JTAG'
 interface = 'JTAG'
@@ -189,19 +205,57 @@ def init_backend(force=None, verbose=0):
         MSP430_Open.restype         = ctypes.c_int
     else:
         STATUS_T = ctypes.c_long
-        MSP430_Identify             = MSP430mspgcc.MSP430_Identify
-        MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.c_char*80), ctypes.c_long, ctypes.c_long]
-        MSP430_Identify.restype     = ctypes.c_int
-        # TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
-        def MSP430_Open():
-            buffer = (ctypes.c_char*80)()
-            status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
-            if status != STATUS_OK:
-                return STATUS_ERROR
-            if verbose:
-                sys.stderr.write('MSP430_Identify: Device type: %r\n' % str(buffer[4:36]).replace('\0',''))
-            #~ status = MSP430_Reset(ALL_RESETS, FALSE, FALSE)
-            return status
+        try:
+            # try old API first (V2.x and early V3.x DLLs)
+            MSP430_Identify             = MSP430mspgcc.MSP430_Identify
+            MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.c_char*80), ctypes.c_long, ctypes.c_long]
+            MSP430_Identify.restype     = ctypes.c_int
+        except AttributeError:
+            global MSP430_GetJtagID, MSP430_GetFoundDevice, MSP430_OpenDevice, MSP430_SET_SYSTEM_NOTIFY_CALLBACK
+            # new API (more recent V3.x DLL)
+            MSP430_SET_SYSTEM_NOTIFY_CALLBACK             = MSP430mspgcc.MSP430_SET_SYSTEM_NOTIFY_CALLBACK
+            MSP430_SET_SYSTEM_NOTIFY_CALLBACK.argtypes    = [SYSTEM_NOTIFY_CALLBACK]
+            MSP430_SET_SYSTEM_NOTIFY_CALLBACK.restype     = STATUS_T
+
+            MSP430_GetJtagID             = MSP430mspgcc.MSP430_GetJtagID
+            MSP430_GetJtagID.argtypes    = [ctypes.POINTER(ctypes.c_long)]
+            MSP430_GetJtagID.restype     = STATUS_T
+
+            MSP430_GetFoundDevice             = MSP430mspgcc.MSP430_GetFoundDevice
+            MSP430_GetFoundDevice.argtypes    = [ctypes.c_char_p, ctypes.c_long]
+            MSP430_GetFoundDevice.restype     = STATUS_T
+
+            MSP430_OpenDevice             = MSP430mspgcc.MSP430_OpenDevice
+            MSP430_OpenDevice.argtypes    = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_long, ctypes.c_long, ctypes.c_long]
+            MSP430_OpenDevice.restype     = STATUS_T
+
+            # TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
+            def MSP430_Open():
+                buffer = (ctypes.c_char*80)()
+                #~ status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
+                #~ if status != STATUS_OK:
+                    #~ return STATUS_ERROR
+                if MSP430_OpenDevice("DEVICE_UNKNOWN", "", 0, 0, 0) != STATUS_OK:
+                    return STATUS_ERROR
+                if MSP430_GetFoundDevice(ctypes.byref(buffer), 80) != STATUS_OK:
+                    return STATUS_ERROR
+
+                if verbose:
+                    sys.stderr.write('MSP430_Identify: Device type: %r\n' % str(buffer[4:36]).replace('\0',''))
+                #~ status = MSP430_Reset(ALL_RESETS, FALSE, FALSE)
+                return STATUS_OK
+        else:
+            # this is for the old DLL API
+            # TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
+            def MSP430_Open():
+                buffer = (ctypes.c_char*80)()
+                status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
+                if status != STATUS_OK:
+                    return STATUS_ERROR
+                if verbose:
+                    sys.stderr.write('MSP430_Identify: Device type: %r\n' % str(buffer[4:36]).replace('\0',''))
+                #~ status = MSP430_Reset(ALL_RESETS, FALSE, FALSE)
+                return STATUS_OK
 
         global MSP430_FET_FwUpdate
         MSP430_FET_FwUpdate             = MSP430mspgcc.MSP430_FET_FwUpdate

@@ -12,7 +12,7 @@ import sys
 import shutil
 
 # XXX method to get latest? currently a version is hardcoded.
-URL = 'http://sourceforge.net/projects/mspgcc/files/msp430mcu/msp430mcu-20110612.tar.bz2/download'
+URL = 'http://sourceforge.net/projects/mspgcc/files/msp430mcu/msp430mcu-20130321.tar.bz2/download'
 ARCHIVE_NAME = 'upstream.tar.bz2'
 
 # set up environment
@@ -26,7 +26,7 @@ if os.path.exists(ARCHIVE_NAME):
     print "%s found on disk using it. To download latest data, rename or delete the file." % (ARCHIVE_NAME)
 else:
     # download archive from MSPGCC (git web interface)
-    print "Downloading archive from sf.net (~3MB). This may take a few minutes..."
+    print "Downloading archive from sf.net (~15MB). This may take a few minutes..."
     archive = urllib2.urlopen(URL)
     archfile = open(ARCHIVE_NAME, 'wb')
     archfile.write(archive.read())

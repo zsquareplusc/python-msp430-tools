@@ -143,7 +143,7 @@ class Segment(object):
                 address += len(segment.data)
         # save true end address, but not before checking if data fits in segment
         if None not in (address, self.end_address) and address > self.end_address:
-            raise LinkError('Segment %s contains too much data (total %d bytes, %d too much)' % (
+            raise LinkError('Segment %s contains too much data (total %d bytes, %d bytes in excess)' % (
                                 self.name, len(self.data), address - self.end_address))
         if address is not None:
             self.end_address = address
@@ -586,7 +586,7 @@ def to_TI_Text(segments):
     last_address = None
     for address, byte in to_addressed_byte_stream(segments):
         # need to start a new block if address jumping
-        if address - 1 != last_address:
+        if address - 1 != last_address or address == 0x10000:
             if out and row_count != 0: # except for the 1st one
                 out.append("\n")
             out.append("@%04x\n" % (address,))

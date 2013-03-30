@@ -461,7 +461,7 @@ memory-map-begin
     programmable segment     .infoC         0x1880-0x18ff
     programmable segment     .infoB         0x1900-0x197f
     programmable segment     .infoA         0x1980-0x19ff
-    programmable segment     .vectors       0xffd0-0xffff   # 48 B vectors
+    programmable segment     .vectors       0xffd0-0xffff   # 48 vectors
 memory-map-end
 
 template-begin

@@ -17,6 +17,8 @@ ASFLAGS = -x -v
 LD = python -m msp430.asm.ld
 LDFLAGS = -v --mcu MSP430F5529
 
+RM = python -m msp430.shell.command rm -f
+
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # the rules used to build
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -31,7 +33,7 @@ led.txt: led.o4
 	${LD} ${LDFLAGS} -o $@ $^
 
 clean:
-	rm -f led.txt led.o4
+	${RM} led.txt led.o4
 
 # pattern rule for the assembler
 %o4: %S

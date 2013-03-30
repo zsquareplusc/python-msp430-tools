@@ -20,22 +20,8 @@ RESET:  mov     #0x5a80, &0x015c        ; disable WDT
         jmp     .L1                     ; loop the toggling part
 
 
-; set the reset vector (and all the others) to the program start
+; set the reset vector to the program start
 .section .vectors
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
-        .word  RESET
+        .skip  126                      ; skip other vectors
         .word  RESET                    ; reset vector
 

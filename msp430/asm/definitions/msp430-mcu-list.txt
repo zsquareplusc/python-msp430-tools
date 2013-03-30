@@ -1,4 +1,4 @@
- -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2010-2011 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
@@ -217,6 +217,13 @@ template-values
     MSP430F235           0x0200-0x09ff   0xc000-0xffdd    #  2kB 15kB
     MSP430F2350          0x0200-0x09ff   0xc000-0xffdd    #  2kB 15kB
     MSP430F2370          0x0200-0x09ff   0x8000-0xffdd    #  2kB 31kB
+    MSP430F2410          0x1100-0x20ff   0x2100-0xffbd    #  4kB 55kB
+    MSP430F247           0x1100-0x20ff   0x8000-0xffbd    #  4kB 31kB
+    MSP430F2471          0x1100-0x20ff   0x8000-0xffbd    #  4kB 31kB
+    MSP430F248           0x1100-0x20ff   0x4000-0xffbd    #  4kB 47kB
+    MSP430F2481          0x1100-0x20ff   0x4000-0xffbd    #  4kB 47kB
+    MSP430F249           0x0200-0x09ff   0x1100-0xffbd    #  2kB 59kB
+    MSP430F2491          0x0200-0x09ff   0x1100-0xffbd    #  2kB 59kB
 
     # special entry to link software into RAM instead of Flash
     MSP430F2xxRAM       0x0200-0x021f   0x0220-0x09ff    #    32B 2016B
@@ -235,17 +242,10 @@ template-begin
 template-variables
     <MCU>               <RAM>           <FLASH>         <FLASH2>
 template-values
-    MSP430F2410          0x1100-0x20ff   0x2100-0xffbd    # 4kB 55kB
     MSP430F2416          0x1100-0x20ff   0x2100-0xffbd    0x00010000-0x00018fff    # 4kB 55kB + 36kB = 91kB
     MSP430F2417          0x1100-0x30ff   0x3100-0xffbd    0x00010000-0x00019fff    # 8kB 51kB + 40kB = 91kB
     MSP430F2418          0x1100-0x30ff   0x3100-0xffbd    0x00010000-0x0001ffff    # 8kB 51kB + 64kB = 115kB
     MSP430F2419          0x1100-0x20ff   0x2100-0xffbd    0x00010000-0x0001ffff    # 4kB 55kB + 64kB = 119kB
-    MSP430F247           0x1100-0x20ff   0x8000-0xffbd    # 4kB 31kB
-    MSP430F2471          0x1100-0x20ff   0x8000-0xffbd    # 4kB 31kB
-    MSP430F248           0x1100-0x20ff   0x4000-0xffbd    # 4kB 47kB
-    MSP430F2481          0x1100-0x20ff   0x4000-0xffbd    # 4kB 47kB
-    MSP430F249           0x0200-0x09ff   0x1100-0xffbd    # 2kB 59kB
-    MSP430F2491          0x0200-0x09ff   0x1100-0xffbd    # 2kB 59kB
     MSP430F2616          0x1100-0x20ff   0x2100-0xffbd    0x00010000-0x00018fff    # 4kB 55kB + 36kB = 91kB
     MSP430F2617          0x1100-0x30ff   0x3100-0xffbd    0x00010000-0x00019fff    # 8kB 51kB + 40kB = 91kB
     MSP430F2618          0x1100-0x30ff   0x3100-0xffbd    0x00010000-0x0001ffff    # 8kB 51kB + 64kB = 115kB
@@ -378,6 +378,8 @@ template-values
     MSP430F479           0x0200-0x09ff   0x1100-0xffdf    #  2kB 59kB
     MSP430F4793          0x0200-0x0bff   0x1100-0xffdf    # 2560B 59kB
     MSP430F4794          0x0200-0x0bff   0x1100-0xffdf    # 2560B 59kB
+    MSP430F47126         0x1100-0x20ff   0x2100-0xffbf    # 4kB 55kB
+    MSP430F47127         0x1100-0x20ff   0x2100-0xffbf    # 4kB 55kB
     MSP430FE423          0x0200-0x02ff   0xe000-0xffdf    # 256B  8kB
     MSP430FE4232         0x0200-0x02ff   0xe000-0xffdf    # 256B  8kB
     MSP430FE423A         0x0200-0x02ff   0xe000-0xffdf    # 256B  8kB
@@ -427,8 +429,6 @@ template-values
     MSP430F46181         0x1100-0x30ff   0x3100-0xffbf    0x00010000-0x0001ffff    # 8kB 51kB + 64kB = 115kB
     MSP430F4619          0x1100-0x20ff   0x2100-0xffbf    0x00010000-0x0001ffff    # 4kB 55kB + 64kB = 119kB
     MSP430F46191         0x1100-0x20ff   0x2100-0xffbf    0x00010000-0x0001ffff    # 4kB 55kB + 64kB = 119kB
-    MSP430F47126         0x1100-0x20ff   0x2100-0xffbf    # 4kB 55kB
-    MSP430F47127         0x1100-0x20ff   0x2100-0xffbf    # 4kB 55kB
     MSP430F47163         0x1100-0x20ff   0x2100-0xffbf    0x00010000-0x00018fff    # 4kB 55kB + 36kB = 91kB
     MSP430F47166         0x1100-0x20ff   0x2100-0xffbf    0x00010000-0x00018fff    # 4kB 55kB + 36kB = 91kB
     MSP430F47167         0x1100-0x20ff   0x2100-0xffbf    0x00010000-0x00018fff    # 4kB 55kB + 36kB = 91kB

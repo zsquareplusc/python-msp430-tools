@@ -30,6 +30,10 @@ class Word(unicode):
         self.text = text
         return self
 
+
+    def lower(self):
+        return Word(unicode.lower(self), self.filename, self.lineno, self.text)
+
     #~ def __repr__(self):
         #~ return "%s(%s, %s, %s)" % (
                 #~ self.__class__.__name__,
@@ -82,8 +86,11 @@ class RPNError(Exception):
         self.offset = offset
         self.text = text
 
-    #~ def __str__(self):
-        #~ return '%s:%s: %s' % (self.filename, self.lineno, self.message)
+    def __str__(self):
+        if self.filename and self.lineno:
+            return '%s:%s: %s' % (self.filename, self.lineno, self.message)
+        else:
+            return str(self.message)
 
 
 def rpn_function(code):

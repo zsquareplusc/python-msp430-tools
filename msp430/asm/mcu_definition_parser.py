@@ -80,6 +80,14 @@ import pkgutil
 class MCUDefintitionError(Exception):
     """for errors in de MCU definition file"""
 
+def filtered_words(words, mapping):
+    """\
+    Go through a sequence of words. Words occuring in mapping are replaced,
+    others are passed on as-is.
+    """
+    for word in words:
+        yield mapping.get(word, word)
+
 
 class MCUDefintitions(rpn.RPN):
 
@@ -154,7 +162,7 @@ class MCUDefintitions(rpn.RPN):
             if word.lower() == 'template-variables':
                 break
             template.append(word)
-        template = ' '.join(template)
+        #~ template = ' '.join(template)
         # read the variables
         template_variables = []
         while True:
@@ -168,16 +176,13 @@ class MCUDefintitions(rpn.RPN):
             word = self.next_word()
             if word.lower() == 'template-end':
                 if template_row:
-                    raise MCUDefintitionError('Values in template values section left')
+                    raise MCUDefintitionError('number of values in template not a multiple of number of variables')
                 break
             # collect values
             template_row.append(word)
             # enough values for template -> apply
             if len(template_row) == len(template_variables):
-                t = template
-                for k, v in zip(template_variables, template_row):
-                    t = t.replace(k, v)
-                self.memory_maps.update(parse_words(iter(t.split())))
+                self.memory_maps.update(parse_words(filtered_words(template, dict(zip(template_variables, template_row)))))
                 template_row = []
 
 
@@ -388,7 +393,7 @@ def load_internal():
     given mcu_name.
     """
     data = pkgutil.get_data('msp430.asm', 'definitions/msp430-mcu-list.txt')
-    return parse_words(rpn.words_in_string(data))
+    return parse_words(rpn.words_in_string(data, name='msp430-mcu-list.txt'))
 
 def load_from_file(filename):
     """\

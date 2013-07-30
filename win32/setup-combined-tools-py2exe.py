@@ -59,13 +59,13 @@ setup(
         }
     },
     console = [
-        "scripts/msp430-bsl.py",
-        "scripts/msp430-jtag.py",
-        "scripts/msp430-tool.py",
+        "scripts/msp430-bsl",
+        "scripts/msp430-jtag",
+        "scripts/msp430-tool",
     ],
     windows = [
         {
-            'script': "scripts/msp430-downloader.py",
+            'script': "scripts/msp430-downloader",
             'icon_resources': [(0x0001, 'win32/downloader.ico')]
         },
     ],
@@ -90,3 +90,4 @@ for path in package_data:
             path,
             compress_type=zipfile.ZIP_DEFLATED
             )
+

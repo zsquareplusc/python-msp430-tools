@@ -32,7 +32,7 @@ setup(
                     'serial.tools.list_ports_posix',
                     ],
             'packages': ['msp430', 'msp430.asm', 'msp430.memory', 'msp430.shell',
-                        'msp430.gdb', 'msp430.jtag', 'msp430.bsl', 'msp430.bsl5'],
+                        'msp430.gdb', 'msp430.jtag', 'msp430.bsl', 'msp430.bsl.target', 'msp430.bsl5'],
             'includes': [
                     'pywinusb', 'EasyDialogs',
                     'serial.urlhandler.protocol_hwgrep', 'serial.urlhandler.protocol_rfc2217',
@@ -79,7 +79,7 @@ package_data = [
         'msp430/bsl/BL_150S_44x.txt',
         'msp430/bsl/BS_150S_14x.txt',
         'msp430/bsl/patch.txt',
-        'msp430/bsl5/RAM_BSL.00.05.04.34.txt',
+        'msp430/bsl5/RAM_BSL.00.06.05.34.txt',
         ]
 
 print "appending package data..."

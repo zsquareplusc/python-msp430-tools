@@ -663,7 +663,7 @@ Currently implementations for Windows (pywinusb) and GNU/Linux are provided
 
         As USB devices only have a stub BSL, this also downloads a full
         BSL to the device RAM. The BSL is kept in the package as
-        ``RAM_BSL.00.05.04.34.txt`` (loaded using :mod:`pkgdata`).
+        ``RAM_BSL.00.06.05.34.txt`` (loaded using :mod:`pkgdata`).
 
     .. method:: reset()
 

@@ -231,23 +231,29 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
         else:
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
+                self.logger.info("Transmitting password: %s" % (str(password).encode('hex'),))
                 self.BSL_RX_PASSWORD(password)
 
         # download full BSL
         if self.verbose:
             sys.stderr.write('Download full BSL...\n')
-        bsl_version_expected = (0x00, 0x05, 0x04, 0x34)
-        full_bsl_txt = pkgutil.get_data('msp430.bsl5', 'RAM_BSL.00.05.04.34.txt')
+        bsl_version_expected = (0x00, 0x06, 0x05, 0x34)
+        full_bsl_txt = pkgutil.get_data('msp430.bsl5', 'RAM_BSL.00.06.05.34.txt')
         full_bsl = msp430.memory.load('BSL', StringIO(full_bsl_txt), format='titext')
         self.program_file(full_bsl, quiet=True)
-        self.BSL_LOAD_PC(0x2504)
+
+        # Loading the PC can cause USB to stall and disconnect, causing a broken pipe.
+        # Handle the error gracefully and try to resume.
+        try:
+            self.BSL_LOAD_PC(0x2504)
+        except OSError as e:
+            self.logger.info("Caught " + str(e))
+        self.close()
 
         # must re-initialize communication, BSL or USB system needs some time
         # to be ready
         self.logger.info("Waiting for BSL...")
         time.sleep(3)
-        self.close()
         self.open(self.options.device)
         # checking version, this is also a connection check
         bsl_version = self.BSL_VERSION()

@@ -231,13 +231,13 @@ def init_backend(force=None, verbose=0):
 
             # TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
             def MSP430_Open():
-                buffer = (ctypes.c_char*80)()
+                buffer = (ctypes.c_char*112)()
                 #~ status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
                 #~ if status != STATUS_OK:
                     #~ return STATUS_ERROR
                 if MSP430_OpenDevice("DEVICE_UNKNOWN", "", 0, 0, 0) != STATUS_OK:
                     return STATUS_ERROR
-                if MSP430_GetFoundDevice(ctypes.byref(buffer), 80) != STATUS_OK:
+                if MSP430_GetFoundDevice(ctypes.byref(buffer), 112) != STATUS_OK:
                     return STATUS_ERROR
 
                 if verbose:
@@ -248,8 +248,8 @@ def init_backend(force=None, verbose=0):
             # this is for the old DLL API
             # TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
             def MSP430_Open():
-                buffer = (ctypes.c_char*80)()
-                status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
+                buffer = (ctypes.c_char*112)()
+                status = MSP430_Identify(ctypes.byref(buffer), 112, 0)
                 if status != STATUS_OK:
                     return STATUS_ERROR
                 if verbose:

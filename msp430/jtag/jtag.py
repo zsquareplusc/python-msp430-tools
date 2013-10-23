@@ -208,7 +208,7 @@ def init_backend(force=None, verbose=0):
         try:
             # try old API first (V2.x and early V3.x DLLs)
             MSP430_Identify             = MSP430mspgcc.MSP430_Identify
-            MSP430_Identify.argtypes    = [ctypes.POINTER(ctypes.c_char*80), ctypes.c_long, ctypes.c_long]
+            MSP430_Identify.argtypes    = [ctypes.c_char_p, ctypes.c_long, ctypes.c_long]
             MSP430_Identify.restype     = ctypes.c_int
         except AttributeError:
             global MSP430_GetJtagID, MSP430_GetFoundDevice, MSP430_OpenDevice, MSP430_SET_SYSTEM_NOTIFY_CALLBACK
@@ -231,13 +231,13 @@ def init_backend(force=None, verbose=0):
 
             # TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
             def MSP430_Open():
-                buffer = (ctypes.c_char*112)()
+                buffer = ctypes.create_string_buffer(500)
                 #~ status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
                 #~ if status != STATUS_OK:
                     #~ return STATUS_ERROR
                 if MSP430_OpenDevice("DEVICE_UNKNOWN", "", 0, 0, 0) != STATUS_OK:
                     return STATUS_ERROR
-                if MSP430_GetFoundDevice(ctypes.byref(buffer), 112) != STATUS_OK:
+                if MSP430_GetFoundDevice(buffer, ctypes.sizeof(buffer)) != STATUS_OK:
                     return STATUS_ERROR
 
                 if verbose:
@@ -248,8 +248,8 @@ def init_backend(force=None, verbose=0):
             # this is for the old DLL API
             # TI's USB-FET lib does not have this function, they have an MSP430_Identify instead
             def MSP430_Open():
-                buffer = (ctypes.c_char*112)()
-                status = MSP430_Identify(ctypes.byref(buffer), 112, 0)
+                buffer = ctypes.create_string_buffer(500)
+                status = MSP430_Identify(buffer, ctypes.sizeof(buffer), 0)
                 if status != STATUS_OK:
                     return STATUS_ERROR
                 if verbose:
@@ -389,9 +389,9 @@ def init_backend(force=None, verbose=0):
             if status != STATUS_OK:
                 raise IOError("Can't open interface: %s" % MSP430_Error_String(MSP430_Error_Number()))
 
-            status = MSP430_Configure(VERIFICATION_MODE, TRUE)
-            if status != STATUS_OK:
-                raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
+            #~ status = MSP430_Configure(VERIFICATION_MODE, TRUE)
+            #~ if status != STATUS_OK:
+                #~ raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
             if backend == CTYPES_TI:
                 # switch off the RAM preserve mode, to speed up operations
                 # it also makes the behaviour closer to mspgcc the library
@@ -739,11 +739,14 @@ class JTAG(object):
 
 # simple, stupid module test, debug is set above
 if __name__ == '__main__':
+    init_backend(verbose = 3)
     #~ init_backend(CTYPES_MSPGCC)
     #~ init_backend(CTYPES_TI)
     jtagobj = JTAG()
+    jtagobj.verbose = 3
     print "Backend: %s" % (backend, )
-    jtagobj.open()
+    jtagobj.open('USB')
+    #~ jtagobj.open()
     try:
         jtagobj.connect()
         jtagobj.reset()

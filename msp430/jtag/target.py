@@ -258,10 +258,10 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             if jtag.backend == jtag.CTYPES_TI:
                 sys.stderr.write("NOTICE: Please wait while updating - do not interrupt!\n")
                 if jtag.MSP430_FET_FwUpdate(None, None, 0) == 0:
-                    sys.stderr.write("--fet-upgarde done successfuly - terminating\n")
+                    sys.stderr.write("--fet-update done successfuly - terminating\n")
                     sys.exit(0)
                 else:
-                    sys.stderr.write("ERROR: --fet-upgarde failed\n")
+                    sys.stderr.write("ERROR: --fet-update failed\n")
                     sys.exit(1)
             else:
                 self.parser.error('--fet-update only supported with TI backend')

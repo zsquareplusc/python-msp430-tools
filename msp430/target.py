@@ -50,7 +50,8 @@ DEVICEIDS = {
     (0xf169, None): F1x,      # F16x
     (0xf16c, None): F1x,      # F161x
     (0xf227, None): F2x,      # F22xx
-    (0xf26f, None): F2x,
+    (0xf249, None): F2x,      # F22xx
+    (0xf26f, None): F2x,      # F24x
     (0xf413, None): F4x,
     (0xf427, None): F4x,      # FE42x, FW42x, F41(5,7), F42x0
     (0xf439, None): F4x,      # FG43x
@@ -65,9 +66,9 @@ def identify_device(device_id, bsl_version):
         except KeyError:
             return DEVICEIDS[device_id, None]
     except KeyError:
-        if device_id >> 8 == 0x1f: return F1x
-        if device_id >> 8 == 0x2f: return F2x
-        if device_id >> 8 == 0x4f: return F4x
+        if device_id >> 8 == 0xf1: return F1x
+        if device_id >> 8 == 0xf2: return F2x
+        if device_id >> 8 == 0xf4: return F4x
         raise KeyError('device type not known %04x/%04x' % (device_id, bsl_version))
 
 
@@ -575,7 +576,7 @@ Multiple --upload options are allowed.
                 adr, adr2 = parseAddressRange(a)
                 if adr2 is not None:
                     while adr <= adr2:
-                        if not (0x1000 <= adr <= 0xffff):
+                        if not (0x1000 <= adr <= 0xffffff):
                             self.parser.error("Start address for --erase is not within Flash memory: 0x%04x" % (adr,))
                         elif adr < 0x1100:
                             modulo = 64     # F2xx XXX: on F1xx/F4xx are segments erased twice

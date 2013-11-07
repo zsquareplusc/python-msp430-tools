@@ -354,7 +354,12 @@ def init_backend(force=None, verbose=0):
                 raise IOError("Could not initialize the library (port: %s)" % port)
             if verbose:
                 sys.stderr.write('backend library version: %d\n' % (version.value,))
-            if version.value < 0:
+            if version.value == -3:
+                # warn if firmware and MSP430.dll are incompatible
+                sys.stderr.write('ERROR: FET Firmware not compatible with MSP430 library!\n')
+                sys.stderr.write('         Consider using --fet-update.\n')
+                raise IOError('FET firmware error: FET:V2, DLL:V3 missmatch')
+            elif version.value < 0:
                 # warn if firmware and MSP430.dll are incompatible
                 sys.stderr.write('WARNING: FET Firmware not compatible with MSP430 library!\n')
                 sys.stderr.write('         Consider using --fet-update.\n')

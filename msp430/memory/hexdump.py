@@ -94,7 +94,7 @@ def load(filelike):
             # find out how many digits are relevant
             digits = int(2 * len(hex_data) / 3)
             # take these and decode the hex data
-            segmentdata.extend(int(hex_data[x:x+1], 16) for x in range(0, digits, 2))
+            segmentdata.extend(int(hex_data[x:x+2], 16) for x in range(0, digits, 2))
             # update address
             last_address += digits / 2
         except Exception as e:

@@ -17,7 +17,7 @@ setup(
     version="0.7",
     author="Chris Liechti",
     author_email="cliechti@gmx.net",
-    url="http://launchpad.net/python-msp430-tools/",
+    url="https://github.com/zsquareplusc/python-msp430-tools",
     packages=[
             'msp430',
             'msp430.asm',
@@ -57,7 +57,7 @@ setup(
             'scripts/msp430-tool',
             ],
     license="Simplified BSD License",
-    long_description=open('README.txt').read(),
+    long_description=open('README.rst').read(),
     classifiers = [
 #        'Development Status :: 5 - Production/Stable',
         'Development Status :: 4 - Beta',

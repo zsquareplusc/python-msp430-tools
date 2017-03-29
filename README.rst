@@ -1,13 +1,21 @@
-===========================================
- MSP430 Tools (Python scripts and library)
-===========================================
+====================================
+ MSP430 Tools |build-status| |docs|
+====================================
 
 The python-msp430-tools are a collection of tools related to the MSP430
 embedded processor.
 
-Python 2.6 or newer (2.x series) is required for most modules. The python
+Python_ 2.6 or newer (2.x series) is required for most modules. The python
 package "msp430" can be installed with "python setup.py install". These modules
 can be used as standalone applications or as library for other programs.
+
+Documentation
+=============
+For API documentation, usage and examples_ see files in the "doc"
+directory.  The ".rst" files can be read in any text editor or being converted
+to HTML or PDF using Sphinx_. A HTML version is online at
+https://python-msp430-tools.readthedocs.io
+
 
 Download tools
 ==============
@@ -92,3 +100,14 @@ Description of Python library
 ``msp430.legacy``
     Support code for older tools.
 
+
+
+.. _examples: https://github.com/zsquareplusc/python-msp430-tools/tree/master/examples
+.. _Python: http://python.org/
+.. _Sphinx: http://sphinx-doc.org/
+.. |build-status| image:: https://travis-ci.org/zsquareplusc/python-msp430-tools.svg?branch=master
+   :target: https://travis-ci.org/zsquareplusc/python-msp430-tools
+   :alt: Build status
+.. |docs| image:: https://readthedocs.org/projects/python-msp430-tools/badge/?version=latest
+   :target: http://python-msp430-tools.readthedocs.io/
+   :alt: Documentation

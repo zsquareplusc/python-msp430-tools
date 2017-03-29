@@ -38,7 +38,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'python-msp430-tools'
-copyright = u'2011, Chris Liechti'
+copyright = u'2011-2017, Chris Liechti'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

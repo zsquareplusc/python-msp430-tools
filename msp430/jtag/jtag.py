@@ -186,7 +186,7 @@ def init_backend(force=None, verbose=0):
                     backend = CTYPES_MSPGCC
             else:
                 raise ValueError("no such backend: %r" % force)
-        except IOError, e:
+        except IOError as e:
             raise IOError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so" or "libMSP430.so": %s' % e)
 
     global MSP430_Initialize, MSP430_Open, MSP430_Identify, MSP430_Close
@@ -749,7 +749,7 @@ if __name__ == '__main__':
     #~ init_backend(CTYPES_TI)
     jtagobj = JTAG()
     jtagobj.verbose = 3
-    print "Backend: %s" % (backend, )
+    print("Backend: %s" % (backend, ))
     jtagobj.open('USB')
     #~ jtagobj.open()
     try:

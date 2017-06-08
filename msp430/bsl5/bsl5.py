@@ -224,8 +224,8 @@ if __name__ == '__main__':
         def bsl(self, cmd, message='', expect=None):
             txdata = struct.pack('<cBBB', DATA_FRAME, cmd, len(message), len(message)) + message
             txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   #append checksum
-            print repr(txdata), len(txdata)
-            print ''.join(['\\x%02x' % ord(x) for x in txdata])
+            print(repr(txdata), len(txdata))
+            print(''.join(['\\x%02x' % ord(x) for x in txdata]))
 
     dummy = DummyBSL()
     dummy.BSL_RX_PASSWORD("\xff"*32)

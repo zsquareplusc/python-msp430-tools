@@ -65,7 +65,7 @@ class JTAGTarget(object):
             self.release_done = True
             try:
                 self.jtagobj.reset(1, 1)
-            except IOError, e: # XXX currently getting EEM errors on launchpad
+            except IOError as e: # XXX currently getting EEM errors on launchpad
                 pass
 
     def close(self):

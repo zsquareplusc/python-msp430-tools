@@ -16,7 +16,7 @@ import struct
 import logging
 import time
 import pkgutil
-from cStringIO import StringIO
+from io import BytesIO
 
 from optparse import OptionGroup
 import msp430.target
@@ -452,7 +452,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
 
             self.logger.info('Download replacement BSL as requested by --replace-bsl')
             replacement_bsl_txt = pkgutil.get_data('msp430.bsl', bsl_name)
-            replacement_bsl = msp430.memory.load('BSL', StringIO(replacement_bsl_txt), format='titext')
+            replacement_bsl = msp430.memory.load('BSL', BytesIO(replacement_bsl_txt), format='titext')
             self.program_file(replacement_bsl)
 
             bsl_start_address = struct.unpack("<H", replacement_bsl.get(0x0220, 2))[0]
@@ -465,7 +465,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
             if self.bsl_version <= 0x0110:
                 self.logger.info('Buggy BSL, applying patch')
                 patch_txt = pkgutil.get_data('msp430.bsl', 'patch.txt')
-                patch = msp430.memory.load('PATCH', StringIO(patch_txt), format='titext')
+                patch = msp430.memory.load('PATCH', BytesIO(patch_txt), format='titext')
                 self.program_file(patch)
                 self.patch_in_use = True
 

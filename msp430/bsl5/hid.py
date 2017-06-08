@@ -20,7 +20,7 @@ import pkgutil
 from optparse import OptionGroup
 import msp430.target
 import msp430.memory
-from cStringIO import StringIO
+from io import BytesIO
 
 
 class HIDBSL5Base(bsl5.BSL5):
@@ -239,7 +239,7 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
             sys.stderr.write('Download full BSL...\n')
         bsl_version_expected = (0x00, 0x06, 0x05, 0x34)
         full_bsl_txt = pkgutil.get_data('msp430.bsl5', 'RAM_BSL.00.06.05.34.txt')
-        full_bsl = msp430.memory.load('BSL', StringIO(full_bsl_txt), format='titext')
+        full_bsl = msp430.memory.load('BSL', BytesIO(full_bsl_txt), format='titext')
         self.program_file(full_bsl, quiet=True)
 
         # Loading the PC can cause USB to stall and disconnect, causing a broken pipe.

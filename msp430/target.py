@@ -589,7 +589,7 @@ Multiple --upload options are allowed.
                         adr = adr + modulo
                 else:
                     self.add_action(self.erase, adr)
-            except ValueError, e:
+            except ValueError as e:
                 self.parser.error("--erase: %s" % e)
 
         default_action = True
@@ -617,7 +617,7 @@ Multiple --upload options are allowed.
                 if end is None:
                     end = start + 15
                 self.add_action(self.upload, start, end)
-            except ValueError, e:
+            except ValueError as e:
                 self.parser.error("--upload: %s" % e)
 
         if self.options.do_reset:
@@ -714,7 +714,7 @@ Multiple --upload options are allowed.
             if self.debug: raise                            # show full trace in debug mode
             sys.stderr.write("\nAbort on user request.\n")  # short message in user mode
             sys.exit(1)                                     # set error level for script usage
-        except Exception, msg:                              # every Exception is caught and displayed
+        except Exception as msg:                            # every Exception is caught and displayed
             if self.debug: raise                            # show full trace in debug mode
             sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short message in user mode
             sys.exit(1)                                     # set error level for script usage
@@ -724,8 +724,8 @@ Multiple --upload options are allowed.
             if self.options is not None and not self.options.no_close:
                 try:
                     self.close_connection()                     # release communication port
-                except Exception, msg:                              # every Exception is caught and displayed
-                    if self.debug: raise                            # show full trace in debug mode
+                except Exception as msg:                        # every Exception is caught and displayed
+                    if self.debug: raise                        # show full trace in debug mode
                     sys.stderr.write("\nAn error occurred during shutdown:\n%s\n" % msg) # short message in user mode
             elif self.verbose:
                 sys.stderr.write("WARNING: port is left open (--no-close)\n")

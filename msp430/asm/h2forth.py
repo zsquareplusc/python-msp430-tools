@@ -106,7 +106,7 @@ def main():
         error_found = cpp.preprocess(infile, msp430.asm.cpp.Discard(), infilename)
         if error_found:
             sys.exit(1)
-    except msp430.asm.cpp.PreprocessorError, e:
+    except msp430.asm.cpp.PreprocessorError as e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
         if options.debug:
             if hasattr(e, 'text'):
@@ -125,9 +125,9 @@ def main():
         if definition:
             try:
                 value = cpp.namespace.eval(definition)
-            except msp430.asm.cpp.PreprocessorError, e:
+            except msp430.asm.cpp.PreprocessorError as e:
                 sys.stderr.write('cannot convert expression: %s\n' % (e,))
-            except msp430.asm.rpn.RPNError, e:
+            except msp430.asm.rpn.RPNError as e:
                 sys.stderr.write('cannot convert expression: %s\n' % (e,))
             else:
                 outfile.write('%r CONSTANT %s\n' % (value, name))

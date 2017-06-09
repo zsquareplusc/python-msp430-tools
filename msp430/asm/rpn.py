@@ -17,6 +17,11 @@ import codecs
 import re
 import logging
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 m_comment = re.compile('(#.*$)', re.UNICODE)    # regexp to remove line comments
 
 class Word(unicode):
@@ -145,7 +150,7 @@ class RPNBase(list):
         word = None # in case next_word raises an exception
         try:
             while True:
-                word = iterator.next()
+                word = next(iterator)
                 self.interpret_word(word)
         except StopIteration:
             pass
@@ -177,7 +182,7 @@ class RPNBase(list):
         raise KeyError('%r not in any namespace' % (word,))
 
     def next_word(self):
-        return self._iterator.next()
+        return next(self._iterator)
 
     def interpret_word(self, word):
         """\
@@ -494,8 +499,8 @@ def interpreter_loop(namespace={}, debug=False, rpn_class=RPN, rpn_instance=None
         rpn_instance = rpn_class(namespace)
     while True:
         try:
-            print
-            print rpn_instance
+            print()
+            print(rpn_instance)
             words = raw_input('> ')
             rpn_instance.interpret_sequence(words.split(), filename='<stdin>')
         except KeyboardInterrupt:
@@ -503,9 +508,9 @@ def interpreter_loop(namespace={}, debug=False, rpn_class=RPN, rpn_instance=None
             break
         except SystemExit:
             raise
-        except Exception, msg:
+        except Exception as msg:
             if debug: raise
-            print "ERROR:", msg
+            print("ERROR:", msg)
 
 
 if __name__ == '__main__':

@@ -74,7 +74,7 @@ Example::
     template-end
 """
 
-import rpn
+from . import rpn
 import pkgutil
 
 class MCUDefintitionError(Exception):
@@ -427,23 +427,23 @@ if __name__ == '__main__':
 
     try:
         memory_maps = load_internal()
-    except rpn.RPNError, e:
-        print "%s:%s: %s" % (e.filename, e.lineno, e)
+    except rpn.RPNError as e:
+        print("%s:%s: %s" % (e.filename, e.lineno, e))
     else:
         if options.list:
             for mcu in sorted(memory_maps):
-                print mcu
+                print(mcu)
             #~ pprint(memory_maps)
         for mcu in args:
-            print '== memory map for %s ==' % mcu
+            print('== memory map for %s ==' % mcu)
             memmap = expand_definition(memory_maps, mcu)
             if options.dump:
                 pprint(memmap)
             else:
                 for name, segment in sorted(memmap.items()):
                     if not name.startswith('__') and 'start' in segment:
-                        print '%-12s %08x-%08x %s' % (
+                        print('%-12s %08x-%08x %s' % (
                                 name,
                                 segment['start'],
                                 segment['end'],
-                                ','.join(segment['flags']))
+                                ','.join(segment['flags'])))

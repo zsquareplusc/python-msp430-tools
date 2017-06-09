@@ -699,7 +699,7 @@ Output is in "TI-Text" format."""
             instructions.extend(['filename', filename])
             try:
                 instructions.extend(rpn.words_in_file(filename))
-            except IOError, e:
+            except IOError as e:
                 sys.stderr.write('ld: %s: File not found\n' % (filename,))
                 sys.exit(1)
 

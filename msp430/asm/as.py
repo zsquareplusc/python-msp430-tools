@@ -160,7 +160,7 @@ class MSP430Assembler(object):
         """
         try:
             return infix2postfix(value, variable_prefix=u'GET-SYMBOL ')
-        except ValueError, e:
+        except ValueError as e:
             raise AssemblerError('invalid expression: %r' % (value,))
 
     def expand_label(self, label):
@@ -188,11 +188,12 @@ class MSP430Assembler(object):
             raise AssemblerError('Unsupported mode: %r' % (mode,))
 
 
-    def _buildArg(self, insn, (mode, value, match_obj), constreg=True):
+    def _buildArg(self, insn, xxx, constreg=True):
         """\
         Return a tuple:
         (address mode, register number, memory value or None, 0=abs 1=relative to pc)
         """
+        (mode, value, match_obj) = xxx
         value = value.strip()
         if mode == 'IMMEDIATE':
             try:
@@ -628,8 +629,9 @@ class MSP430Assembler(object):
             u'JMP':  (0x3c00, "Jump unconditionally"),
             }
 
-    def assembleJumpInstruction(self, insn, mode, (t, target, match_obj)):
+    def assembleJumpInstruction(self, insn, mode, xxx):
         """(un)conditional, relative jump"""
+        (t, target, match_obj) = xxx
         if mode:
             raise AssemblerError(u'Bad mode (%s) for this instruction: %s%s' (mode, insn, mode))
         try:

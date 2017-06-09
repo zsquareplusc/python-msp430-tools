@@ -243,5 +243,5 @@ if __name__ == '__main__':
             symbols = load_symbols(filename)
             pprint(symbols.peripherals)
     except rpn.RPNError as e:
-        print "%s:%s: %s" % (e.filename, e.lineno, e)
+        print("%s:%s: %s" % (e.filename, e.lineno, e))
         #~ raise

@@ -23,7 +23,7 @@ from msp430.asm import infix2postfix
 from msp430.asm import rpn
 
 
-def line_joiner(next_line):
+def line_joiner(line_iterator):
     """\
     Given a readline function, return lines, but handle line continuations
     ('\\\n'). When lines are joined, the same number of blank lines is output
@@ -34,7 +34,7 @@ def line_joiner(next_line):
         joined_lines = 0
         while joined_line[-2:] == '\\\n':
             joined_line = joined_line[:-2]
-            line = next_line()
+            line = next(line_iterator)
             if not line: break
             joined_line += line.rstrip() + '\n' # XXX drops spaces too
             joined_lines += 1
@@ -136,7 +136,7 @@ class Evaluator(rpn.RPN):
                     scanner=Scanner,
                     precedence = precedence,
                     variable_prefix='LOOKUP ')
-        except ValueError, e:
+        except ValueError as e:
             raise PreprocessorError('error in expression: %r' % (expression,))
         #~ print "RPN: %r" % (rpn_expr,) # XXX debug
         # hack: replace "LOOKUP <word> DEFINED" with "DEFINED <word>"
@@ -277,7 +277,7 @@ class Preprocessor(object):
         line = ''
         lineno = 0
         try:
-            for line in line_joiner(iter(infile).next):
+            for line in line_joiner(iter(infile)):
                 lineno += 1
                 #~ print "|", line.rstrip()
                 line = self.re_inlinecomment.sub('', line) #.strip()
@@ -464,7 +464,7 @@ class Preprocessor(object):
             if hiddenstack:
                 raise PreprocessorError('missing #endif')
 
-        except PreprocessorError, e:
+        except PreprocessorError as e:
             # annotate exception with location in source file
             e.line = lineno
             e.filename = filename
@@ -552,7 +552,7 @@ def main():
         try:
             infilename = args[0]
             infile = codecs.open(infilename, 'r', 'utf-8')
-        except IOError, e:
+        except IOError as e:
             sys.stderr.write('cpp: %s: File not found\n' % (infilename,))
             sys.exit(1)
 
@@ -589,7 +589,7 @@ def main():
         error_found = cpp.preprocess(infile, outfile, infilename, print_include)
         if error_found:
             sys.exit(2)
-    except PreprocessorError, e:
+    except PreprocessorError as e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
         if options.debug:
             if hasattr(e, 'text'):

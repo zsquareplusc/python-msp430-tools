@@ -79,9 +79,9 @@ def convert_precedence_list(precedence_list):
 default_precedence = convert_precedence_list(default_precedence_list)
 
 def print_precedence_list():
-    print "Operator precedence from lowest to highest:"
+    print("Operator precedence from lowest to highest:")
     for priority, equals in enumerate(precedence_list):
-        print '%d: %s' % (priority, ' '.join(equals))
+        print('%d: %s' % (priority, ' '.join(equals)))
 
 #~ print_precedence_list()
 

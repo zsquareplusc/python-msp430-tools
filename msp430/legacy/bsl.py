@@ -11,7 +11,8 @@
 # Volker Rzehak
 # additional infos from slaa089a.pdf
 
-import sys, time, string, cStringIO, struct
+import sys, time, string, struct
+from io import BytesIO
 import serial
 from msp430.memory import Memory
 
@@ -779,7 +780,7 @@ class BootStrapLoader(LowLevel):
         else:
             # sanity check of password
             if len(passwd) != 32:
-                raise ValueError, "password has wrong length (%d)\n" % len(passwd)
+                raise ValueError("password has wrong length (%d)\n" % len(passwd))
             sys.stderr.write('Transmit password ...\n')
             sys.stderr.flush()
         # send the password
@@ -893,12 +894,12 @@ class BootStrapLoader(LowLevel):
                 if DEBUG:
                     sys.stderr.write("Using built in BSL replacement for F4x devices\n")
                     sys.stderr.flush()
-                replacementBSL.loadTIText(cStringIO.StringIO(F4X_BSL))  # parse embedded BSL
+                replacementBSL.loadTIText(BytesIO.StringIO(F4X_BSL))  # parse embedded BSL
             else:
                 if DEBUG:
                     sys.stderr.write("Using built in BSL replacement for F1x devices\n")
                     sys.stderr.flush()
-                replacementBSL.loadTIText(cStringIO.StringIO(F1X_BSL))  # parse embedded BSL
+                replacementBSL.loadTIText(BytesIO.StringIO(F1X_BSL))  # parse embedded BSL
 
         # now download the new BSL, if allowed and needed (version lower than the
         # the replacement) or forced
@@ -921,7 +922,7 @@ class BootStrapLoader(LowLevel):
                 # Programming and verification is done in one pass.
                 # The patch file is only read and parsed once.
                 segments = Memory()                     #data to program
-                segments.loadTIText(cStringIO.StringIO(PATCH))  #parse embedded patch
+                segments.loadTIText(BytesIO.StringIO(PATCH))  #parse embedded patch
                 # program patch
                 self.programData(segments, self.ACTION_PROGRAM | self.ACTION_VERIFY)
                 self.patchLoaded = 1
@@ -974,7 +975,7 @@ class BootStrapLoader(LowLevel):
         if self.data is not None:
             self.programData(self.data, self.ACTION_ERASE_CHECK)
         else:
-            raise BSLException, "cannot do erase check against data with not knowing the actual data"
+            raise BSLException("cannot do erase check against data with not knowing the actual data")
 
     def actionProgram(self):
         """Program data into flash memory."""
@@ -985,7 +986,7 @@ class BootStrapLoader(LowLevel):
             sys.stderr.write("%i bytes programmed.\n" % self.byteCtr)
             sys.stderr.flush()
         else:
-            raise BSLException, "programming without data not possible"
+            raise BSLException("programming without data not possible")
 
     def actionVerify(self):
         """Verify programmed data"""
@@ -994,7 +995,7 @@ class BootStrapLoader(LowLevel):
             sys.stderr.flush()
             self.programData(self.data, self.ACTION_VERIFY)
         else:
-            raise BSLException, "verify without data not possible"
+            raise BSLException("verify without data not possible")
 
     def actionReset(self):
         """Perform a reset, start user program"""
@@ -1038,11 +1039,11 @@ class BootStrapLoader(LowLevel):
         try:
             baudconfigs = self.bauratetable[self.cpu]
         except KeyError:
-            raise ValueError, "unknown CPU type %s, can't switch baudrate" % self.cpu
+            raise ValueError("unknown CPU type %s, can't switch baudrate" % self.cpu)
         try:
             a,l = baudconfigs[baudrate]
         except KeyError:
-            raise ValueError, "baudrate not valid. valid values are %r" % baudconfigs.keys()
+            raise ValueError("baudrate not valid. valid values are %r" % baudconfigs.keys())
 
         sys.stderr.write("Changing baudrate to %d ...\n" % baudrate)
         if baudrate > 38400:
@@ -1059,4 +1060,4 @@ class BootStrapLoader(LowLevel):
         ans = self.bslTxRx(self.BSL_TXVERSION, 0) # Command: receive version info
         # the following values are in big endian style!!!
         family_type, bsl_version = struct.unpack(">H8xH4x", ans[:-2]) # cut away checksum and extract data
-        print "Device Type: 0x%04x\nBSL version: 0x%04x\n" % (family_type, bsl_version)
+        sys.stdout.write("Device Type: 0x%04x\nBSL version: 0x%04x\n" % (family_type, bsl_version))

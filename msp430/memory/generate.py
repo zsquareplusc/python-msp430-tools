@@ -97,7 +97,7 @@ def main():
         parser.error('conflicting options --count and --random')
 
     # create data
-    adresses = xrange(options.start_address, options.start_address + options.size, 2)
+    adresses = range(options.start_address, options.start_address + options.size, 2)
     if options.count:
         data = b''.join(struct.pack("<H", x & 0xffff) for x in adresses)
     elif options.random:

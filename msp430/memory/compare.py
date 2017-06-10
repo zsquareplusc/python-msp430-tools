@@ -12,7 +12,7 @@ files.
 
 import sys
 import os
-import cStringIO
+from io import BytesIO
 import difflib
 import msp430.memory
 import msp430.memory.hexdump
@@ -28,7 +28,7 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, html=False):
     """
     hexdumps = []
     for mem in (mem1, mem2):
-        dump = cStringIO.StringIO()
+        dump = BytesIO.StringIO()
         msp430.memory.hexdump.save(mem, dump)
         hexdumps.append(dump)
 

@@ -14,7 +14,13 @@ It can be used to talk to e.g. msp430-gdbproxy or mspdebug.
 from struct import pack, unpack
 import socket
 import threading
-import Queue
+
+
+try:
+    import queue
+except ImportError:
+    import Queue as queue
+
 
 class GDBException(Exception):
     """Generic protocol errors"""
@@ -193,7 +199,7 @@ class GDBClient(ClientSocketConnector):
         elif packet[0:1] == 'o' or packet[0:1] == 'O':
             message = packet[1:]
             if len(message) & 1:
-                print "Odd length 'o' message - cutting off last character"     #XXX hack
+                sys.stderr.write("Odd length 'o' message - cutting off last character\n")     #XXX hack
                 message = message[:-1]
             self.output(message.decode('hex'))
         else:
@@ -205,7 +211,7 @@ class GDBClient(ClientSocketConnector):
 
     def output(self, message):
         """called on 'o' (output) packages"""
-        print "REMOTE>", message
+        sys.stdout.write("REMOTE> {}\n".format(message))
 
     # --- commands ---
     def set_extended(self):

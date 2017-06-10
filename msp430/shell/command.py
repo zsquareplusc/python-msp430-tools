@@ -308,7 +308,7 @@ def main():
         result = command(parser, args)
         if result is None: result = 0
         sys.exit(result)
-    except Exception, e:
+    except Exception as e:
         if debug: raise
         sys.stderr.write('ERROR: %s\n' % (e,))
         sys.exit(1)

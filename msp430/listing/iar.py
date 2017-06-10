@@ -43,13 +43,13 @@ class Module:
         return [lbl for lbl,adr,glob in self.labels if glob]
 
     def display(self):
-        print "Module: %s" % self.name
+        sys.stdout.write("Module: %s\n" % self.name)
         if self.labels:
-            print "\tLabels:"
+            sys.stdout.write("\tLabels:\n")
             for l in self.labels:
-                print "\t\t%s \t@0x%04x (%d)" % l
+                sys.stdout.write("\t\t%s \t@0x%04x (%d)\n" % l)
         else:
-            print "\tno labels in this module"
+            sys.stdout.write("\tno labels in this module\n")
 
 #REs for ENTRY LIST
 RE_ENTRY = re.compile(r'^  ([\w_\?0-9]+)[\t ]+([A-F0-9]+)',re.I)
@@ -75,7 +75,7 @@ RE_SEGMENTS = re.compile('SEGMENTS IN ADDRESS ORDER')
 
 class MemMap:
     def __init__(self, filename = None):
-        print 'init mem map:', filename
+        sys.stderr.write('init mem map: {}\n'.format(filename))
         self.module = 0
         self.modules = []
         self.MP_NONE, self.MP_GLOBAL, self.MP_LOCAL = range(3) # types of labels
@@ -100,7 +100,7 @@ class MemMap:
                 g = self.sections[i][0].search(l)
                 if g:
                     if verbosity:
-                        print "Scanning section", self.sections[i][2]
+                        sys.stderr.write("Scanning section {}\n".format(self.sections[i][2]))
                     section = i
                     break;
             if section >= 0:
@@ -170,8 +170,7 @@ class MemMap:
                 seg_end = seg_start
                 seg_size = 0
             if verbosity:
-                print "segment %s from address 0x%04x to 0x%04x size: %d" % (seg_name, seg_start, seg_end, seg_size)
-
+                sys.stderr.write("segment %s from address 0x%04x to 0x%04x size: %d\n" % (seg_name, seg_start, seg_end, seg_size))
 
     def __contains__(self, item):
         """check if item is available"""
@@ -227,7 +226,7 @@ if __name__ == '__main__':
         programFlash = sys.argv[1]
         memorymap = MemMap(sys.argv[1])
     except Exception, e:
-        print "error while reading arguments: %s" % e
+        sys.stderr.write("error while reading arguments: %s\n" % e)
         raise SystemExit(1)
     pprint.pprint(symbols)
 

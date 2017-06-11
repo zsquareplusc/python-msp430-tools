@@ -71,7 +71,7 @@ class SerialBSL5(bsl5.BSL5):
         self.control_delay = 0.05
 
 
-    def open(self, port=0, baudrate=9600, ignore_answer=False):
+    def open(self, port, baudrate=9600, ignore_answer=False):
         self.ignore_answer = ignore_answer
         self.logger.info('Opening serial port %r' % port)
         try:
@@ -261,7 +261,7 @@ class SerialBSL5Target(SerialBSL5, msp430.target.Target):
         group.add_option("-p", "--port",
                 dest="port",
                 help="Use com-port",
-                default=0)
+                default='hwgrep://USB')
         group.add_option("--invert-test",
                 dest="invert_test",
                 action="store_true",

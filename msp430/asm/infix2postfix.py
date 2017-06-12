@@ -11,6 +11,7 @@ Parse algebraic expressions (infix) and output postfix notation.
 
 import re
 
+
 class Scanner(object):
 
     scannerRE = re.compile(r'''
@@ -23,7 +24,7 @@ class Scanner(object):
        (?P<UNARYOPERATOR>   not|(\B[-+~]\b)   ) |
        (?P<OPERATOR>        or|and|<<|>>|==|!=|<=|>=|[-+*/\|&\^<>] ) |
        (?P<VARIABLE>        \.?[$_a-z]\w*   )
-    ''', re.VERBOSE|re.IGNORECASE|re.UNICODE)
+    ''', re.VERBOSE | re.IGNORECASE | re.UNICODE)
 
     def __init__(self, source):
         self.source = source
@@ -36,7 +37,7 @@ class Scanner(object):
                 return None, None
             m = self.scannerRE.match(self.source, self.pos)
             if m is None:
-                raise ValueError('invalid token: %r...' % (self.source[self.pos:self.pos+10],))
+                raise ValueError('invalid token: %r...' % (self.source[self.pos:self.pos + 10],))
             self.pos = m.end()
             token_type = m.lastgroup
             if token_type != 'SPACE':
@@ -50,24 +51,27 @@ class Scanner(object):
                 elif token_type == 'NUMBER':
                     token = int(token)
                 elif token_type == 'UNARYOPERATOR':
-                    if token == '-': token = 'neg'
-                    elif token == '+': token = '0 +'
+                    if token == '-':
+                        token = 'neg'
+                    elif token == '+':
+                        token = '0 +'
                 return token_type, token
 
 default_precedence_list = [
-        # lowest precedence
-        ['or'],
-        ['and'],
-        ['not'],
-        ['<', '<=', '>', '>=', '==', '!='],
-        ['|', '^', '&'],
-        ['<<', '>>'],
-        ['+', '-'],
-        ['*', '/', '%'],
-        ['~', 'neg', '0 +'],
-        ['(', ')'],
-        # highest precedence
-        ]
+    # lowest precedence
+    ['or'],
+    ['and'],
+    ['not'],
+    ['<', '<=', '>', '>=', '==', '!='],
+    ['|', '^', '&'],
+    ['<<', '>>'],
+    ['+', '-'],
+    ['*', '/', '%'],
+    ['~', 'neg', '0 +'],
+    ['(', ')'],
+    # highest precedence
+]
+
 
 def convert_precedence_list(precedence_list):
     precedence = {}
@@ -77,6 +81,7 @@ def convert_precedence_list(precedence_list):
     return precedence
 
 default_precedence = convert_precedence_list(default_precedence_list)
+
 
 def print_precedence_list():
     print("Operator precedence from lowest to highest:")
@@ -131,7 +136,8 @@ def infix2postfix(expression, variable_prefix='', scanner=Scanner, precedence=de
     while True:
         token_type, token = s.scan()
         #~ print token_type, token
-        if token_type is None: break
+        if token_type is None:
+            break
         elif token_type == 'LEFT':
             operator_stack.append(token)
         elif token_type == 'VARIABLE':
@@ -169,4 +175,3 @@ def infix2postfix(expression, variable_prefix='', scanner=Scanner, precedence=de
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-

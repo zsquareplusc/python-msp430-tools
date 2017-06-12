@@ -35,13 +35,15 @@ def line_joiner(line_iterator):
         while joined_line[-2:] == '\\\n':
             joined_line = joined_line[:-2]
             line = next(line_iterator)
-            if not line: break
-            joined_line += line.rstrip() + '\n' # XXX drops spaces too
+            if not line:
+                break
+            joined_line += line.rstrip() + '\n'  # XXX drops spaces too
             joined_lines += 1
         while joined_lines > 1:
             yield '\n'
             joined_lines -= 1
-        if not joined_line: break
+        if not joined_line:
+            break
         yield joined_line
 
 
@@ -60,7 +62,7 @@ class Scanner(infix2postfix.Scanner):
        (?P<UNARYOPERATOR>   defined|!|(\B[-+~]\b)   ) |
        (?P<OPERATOR>        \|\||&&|<<|>>|==|!=|<=|>=|[-+*/\|&\^<>] ) |
        (?P<VARIABLE>        \.?[$_a-z]\w*   )
-    ''', re.VERBOSE|re.IGNORECASE|re.UNICODE)
+    ''', re.VERBOSE | re.IGNORECASE | re.UNICODE)
 
 cpp_precedence_list = [
         # lowest precedence
@@ -77,14 +79,20 @@ cpp_precedence_list = [
         ['defined'],
         ['(', ')'],
         # highest precedence
-        ]
+    ]
 
 precedence = infix2postfix.convert_precedence_list(cpp_precedence_list)
 
+
 class Undefined(object):
-    def __int__(self): return 0
-    def __str__(self): return ''
-    def __repr__(self): return '<UNDEFINED>'
+    def __int__(self):
+        return 0
+
+    def __str__(self):
+        return ''
+
+    def __repr__(self):
+        return '<UNDEFINED>'
 undefined = Undefined()
 
 
@@ -114,9 +122,9 @@ class Evaluator(rpn.RPN):
             try:
                 backup = self[:]
                 value = self.eval(self.defines[key])
-                self[:] = backup # XXX better way to do this
+                self[:] = backup  # XXX better way to do this
                 self.push(value)
-            except Exception as e:
+            except Exception:
                 #~ print "RPN eval failed using directly: %r %r %s" % (key, self.defines[key], e) # XXX debug
                 self.push(self.defines[key])
         else:
@@ -134,9 +142,9 @@ class Evaluator(rpn.RPN):
             rpn_expr = infix2postfix.infix2postfix(
                     expression,
                     scanner=Scanner,
-                    precedence = precedence,
+                    precedence=precedence,
                     variable_prefix='LOOKUP ')
-        except ValueError as e:
+        except ValueError:
             raise PreprocessorError('error in expression: %r' % (expression,))
         #~ print "RPN: %r" % (rpn_expr,) # XXX debug
         # hack: replace "LOOKUP <word> DEFINED" with "DEFINED <word>"
@@ -165,7 +173,7 @@ class AnnoatatedLineWriter(object):
         # emit line number and file hints for the next stage
         if self.marker != lineno:
             self.output.write('# %d "%s"\n' % (lineno, self.filename))
-        self.marker = lineno+1
+        self.marker = lineno + 1
         try:
             self.output.write(text)
         except IOError:
@@ -194,7 +202,7 @@ class Preprocessor(object):
             (?P<ENDIF>      ^[\t ]*\#[\t ]*endif                                ) |
             (?P<UNDEF>      ^[\t ]*\#[\t ]*undef[\t ]+(?P<UNDEF_NAME>.*)        ) |
             (?P<NONPREPROC> ^[^\#].*         )
-            ''', re.VERBOSE|re.UNICODE)
+            ''', re.VERBOSE | re.UNICODE)
 
     re_silinecomment = re.compile(r'(//).*')
     re_inlinecomment = re.compile(r'/\*.*?\*/')
@@ -203,7 +211,7 @@ class Preprocessor(object):
             (?P<STRING>     "([^"\\]*?(\\.[^"\\]*?)*?)"     ) |
             (?P<WORD>       \w+         ) |
             (?P<NONWORD>    [^"\w]+       )
-            ''', re.VERBOSE|re.UNICODE)
+            ''', re.VERBOSE | re.UNICODE)
 
     def __init__(self):
         self.macros = {}
@@ -224,7 +232,6 @@ class Preprocessor(object):
         else:
             return match_obj.group(0)   # nothing of ours, return original
 
-
     def expand(self, line):
         """Expand object and function like macros in given line."""
         recusion_limit = 10
@@ -240,7 +247,7 @@ class Preprocessor(object):
                 m = self.re_splitter.match(line, pos)
                 if m is None:
                     raise PreprocessorError(u'No match in macro replacement code: %r...' % (
-                        line[pos:pos+10],))
+                        line[pos:pos + 10],))
                 pos = m.end()
                 token_type = m.lastgroup
                 if token_type in ('STRING', 'NONWORD', 'OTHER'):
@@ -255,7 +262,7 @@ class Preprocessor(object):
                         res.append(word)
                 else:
                     raise PreprocessorError(u'No match in macro replacement code: %r...' % (
-                        line[pos:pos+10],))
+                        line[pos:pos + 10],))
             line = ''.join(res)
             recusion_limit -= 1
         if recusion_limit == 0:
@@ -280,12 +287,12 @@ class Preprocessor(object):
             for line in line_joiner(iter(infile)):
                 lineno += 1
                 #~ print "|", line.rstrip()
-                line = self.re_inlinecomment.sub('', line) #.strip()
+                line = self.re_inlinecomment.sub('', line)  #.strip()
                 if in_comment:
                     p = line.find('*/')
                     if p >= 0:
                         in_comment = False
-                        line = line[p+2:]
+                        line = line[p + 2:]
                         if not line.strip():
                             continue
                     else:
@@ -367,7 +374,8 @@ class Preprocessor(object):
                     self.log.debug("#endif %r" % (if_name,))
                     while True:
                         (process, my_if_was_not_hidden, if_name, implicit_endif) = hiddenstack.pop()
-                        if not implicit_endif: break
+                        if not implicit_endif:
+                            break
                     continue
                 elif not process:
                     continue
@@ -447,7 +455,7 @@ class Preprocessor(object):
                     error_found = True
                     continue
                 elif m.lastgroup == 'PRAGMA':
-                    pass #=> line will be output below
+                    pass  #=> line will be output below
                 elif m.lastgroup == 'NONPREPROC':
                     line = self.expand(line)
                 else:
@@ -491,40 +499,40 @@ def main():
 
     parser = OptionParser()
     parser.add_option("-o", "--outfile",
-                      dest = "outfile",
-                      help = "name of the object file",
-                      metavar = "FILE")
+                      dest="outfile",
+                      help="name of the object file",
+                      metavar="FILE")
     parser.add_option("-p", "--preload",
-                      dest = "preload",
-                      help = "process this file first. its output is discarded but definitions are kept.",
-                      metavar = "FILE")
+                      dest="preload",
+                      help="process this file first. its output is discarded but definitions are kept.",
+                      metavar="FILE")
     parser.add_option("-v", "--verbose",
-                      action = "store_true",
-                      dest = "verbose",
-                      default = False,
+                      action="store_true",
+                      dest="verbose",
+                      default=False,
                       help="print status messages")
     parser.add_option("--debug",
-                      action = "store_true",
-                      dest = "debug",
-                      default = False,
-                      help = "print debug messages to stdout")
+                      action="store_true",
+                      dest="debug",
+                      default=False,
+                      help="print debug messages to stdout")
     parser.add_option("-D", "--define",
-                      action = "append",
-                      dest = "defines",
-                      metavar = "SYM[=VALUE]",
-                      default = [],
+                      action="append",
+                      dest="defines",
+                      metavar="SYM[=VALUE]",
+                      default=[],
                       help="define symbol")
     parser.add_option("-I", "--include-path",
-                      action = "append",
-                      dest = "include_paths",
-                      metavar = "PATH",
-                      default = [],
+                      action="append",
+                      dest="include_paths",
+                      metavar="PATH",
+                      default=[],
                       help="Add directory to the search path list for includes")
     parser.add_option("--dependency-scan",
-                      action = "store_true",
-                      dest = "dependency_scan_only",
-                      default = False,
-                      help = "just print names of includes, not actual content")
+                      action="store_true",
+                      dest="dependency_scan_only",
+                      default=False,
+                      help="just print names of includes, not actual content")
 
     (options, args) = parser.parse_args()
 
@@ -538,7 +546,6 @@ def main():
         logging.getLogger('cpp').setLevel(logging.INFO)
     else:
         logging.getLogger('cpp').setLevel(logging.WARN)
-
 
     if options.outfile:
         outfile = codecs.open(options.outfile, 'w', 'utf-8')
@@ -581,7 +588,7 @@ def main():
         # remember outfile as we're changing it below
         def print_include(path, outfile=outfile):
             outfile.write('%s\n' % (path,))
-        outfile = Discard() # discard following output
+        outfile = Discard()  # discard following output
     else:
         print_include = None
 

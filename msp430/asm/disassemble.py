@@ -10,7 +10,6 @@ Disassembler for TI MSP430(X)
 """
 
 import sys
-import struct
 import msp430.memory
 import msp430.asm.peripherals
 
@@ -22,13 +21,13 @@ regnames = ['PC',  'SP',  'SR',  'R3',
             'R12', 'R13', 'R14', 'R15']
 
 
-def addressMode(bytemode, asrc = None, ad = None, src = None, dest = None):
+def addressMode(bytemode, asrc=None, ad=None, src=None, dest=None):
     x = y = ''
     c = 0
     # source first
     if asrc is not None:
-        if src == 2 and asrc > 1: # R3/CG2
-            x = "#%d" % (None,None,4,8)[asrc]
+        if src == 2 and asrc > 1:  # R3/CG2
+            x = "#%d" % (None, None, 4, 8)[asrc]
         elif src == 3:  # CG3
             if asrc == 3:
                 if bytemode:
@@ -36,7 +35,7 @@ def addressMode(bytemode, asrc = None, ad = None, src = None, dest = None):
                 else:
                     x = "#0xffff"
             else:
-                x = "#%d" % (0,1,2)[asrc]
+                x = "#%d" % (0, 1, 2)[asrc]
         else:
             if asrc == 0:   # register mode
                 x = regnames[src]
@@ -44,7 +43,7 @@ def addressMode(bytemode, asrc = None, ad = None, src = None, dest = None):
                 if src == 0:
                     x = '0x%(x)04x'
                     c += 1  # read
-                elif src == 2: # abs
+                elif src == 2:  # abs
                     x = '&0x%(x)04x'
                     c += 1  # read
                 else:           # indexed
@@ -70,7 +69,7 @@ def addressMode(bytemode, asrc = None, ad = None, src = None, dest = None):
                 #~ y = '%(y)s'
                 y = '0x%(y)04x'
                 c += 2  # read modify write
-            elif dest == 2: # abs
+            elif dest == 2:  # abs
                 y = '&0x%(y)04x'
                 #~ y = '&0x%(y)04x'
                 c += 2  # read modify write
@@ -79,7 +78,7 @@ def addressMode(bytemode, asrc = None, ad = None, src = None, dest = None):
                 #~ y = '0x%%(y)04x(%s)' % regnames[dest]
                 c += 2  # read modify write
 
-    return x,y,c
+    return x, y, c
 
 
 singleOperandInstructions = {
@@ -108,7 +107,7 @@ doubleOperandInstructions = {
 }
 
 jumpInstructions = {
-    0x0: 'jnz', # jne
+    0x0: 'jnz',  # jne
     0x1: 'jz',  # jeq
     0x2: 'jnc',
     0x3: 'jc',
@@ -300,12 +299,13 @@ class Instruction:
         if self.src is not None and self.dst is not None:
             return ("%%-%ds %%s, %%s" % INSN_WIDTH) % ("%s%s" % (self.name, self.address_mode), self.src, self.dst)
         elif self.dst is not None:
-            return ("%%-%ds %%s" % INSN_WIDTH) % ( "%s%s" % (self.name, self.address_mode), self.dst)
+            return ("%%-%ds %%s" % INSN_WIDTH) % ("%s%s" % (self.name, self.address_mode), self.dst)
         else:
             return ("%%-%ds" % INSN_WIDTH) % (self.name,)
 
     def str_width_label(self, label):
-        if not self.jumps(): raise ValueError('only possible with jump insns')
+        if not self.jumps():
+            raise ValueError('only possible with jump insns')
         if self.dst is not None and self.dst[0:1] == '#' and self.src is None:
             return ("%%-%ds #%%s" % INSN_WIDTH) % (self.name, label)
         raise ValueError('only possible with dst only insns')
@@ -373,7 +373,7 @@ class MSP430Disassembler(object):
         if self.msp430x:
             self.adr_fmt = "0x%08x"
         else:
-            self.adr_fmt = "0x%04x" 
+            self.adr_fmt = "0x%04x"
 
     def restart(self, address):
         """reset internal state. used to restart decoding on each segment"""
@@ -382,7 +382,6 @@ class MSP430Disassembler(object):
         self.used_words = []
         self.first_address = None
         self.instructions = []
-
 
     def _save_instruction(self, insn):
         """store decoded instruction, prepare for next one"""
@@ -438,9 +437,9 @@ class MSP430Disassembler(object):
             bytemode = (opcode >> 6) & 1
             asrc = (opcode >> 4) & 3
             src = opcode & 0xf
-            x,y,c = addressMode(bytemode, asrc=asrc, src=src)
+            x, y, c = addressMode(bytemode, asrc=asrc, src=src)
             name, addcyles = singleOperandInstructions[(opcode >> 7) & 0x1f]
-            self.cycles += c + addcyles # some functions have additional cycles (push etc)
+            self.cycles += c + addcyles  # some functions have additional cycles (push etc)
             if extension_word is not None:
                 name += 'x'
                 al = (extension_word >> 6) & 1
@@ -473,7 +472,7 @@ class MSP430Disassembler(object):
                 elif asrc == 3:
                     self.cycles += 1
                     if name == 'call': self.cycles += 1
-            else: # this happens for immediate values provided by the constant generators
+            else:  # this happens for immediate values provided by the constant generators
                 if name == 'push': self.cycles += 2 - 1
                 if name == 'call': self.cycles += 3
 
@@ -489,7 +488,7 @@ class MSP430Disassembler(object):
             bytemode = (opcode >> 6) & 1
             adst = (opcode >> 7) & 1
             asrc = (opcode >> 4) & 3
-            x,y,c = addressMode(
+            x, y, c = addressMode(
                     bytemode,
                     src=(opcode >> 8) & 0xf,
                     ad=adst,
@@ -532,7 +531,7 @@ class MSP430Disassembler(object):
             offset = ((opcode & 0x3ff) << 1)
             if offset & 0x400:  # negative?
                 offset = -((~offset + 1) & 0x7ff)
-            self.cycles += 1 # jumps always have 2 cycles
+            self.cycles += 1  # jumps always have 2 cycles
             self.jump_instruction(name, offset)
 
         # extended instructions
@@ -558,7 +557,7 @@ class MSP430Disassembler(object):
                 address_low = self.word()
                 self.instruction(
                         'mova',
-                        src='&0x%08x' % ((src<<16) | address_low),
+                        src='&0x%08x' % ((src << 16) | address_low),
                         dst=regnames[dst])
             elif insnid == 3:
                 if dst == 0: self.cycles += 2
@@ -696,7 +695,6 @@ class MSP430Disassembler(object):
         if self.used_words: # if an instruction was set it would be the empty list
             self.instruction('illegal-insn-0x%04x' % opcode)
 
-
     def disassemble(self, output, source_only=False):
         """Iterate through the segments and disassemble, output at the end"""
         lines = []
@@ -764,6 +762,7 @@ class MSP430Disassembler(object):
 
 debug = False
 
+
 def inner_main():
     from optparse import OptionParser
     parser = OptionParser(usage="""\
@@ -772,45 +771,52 @@ def inner_main():
 MSP430(X) disassembler.
 """)
 
-    parser.add_option("-o", "--output",
-            dest="output",
-            help="write result to given file",
-            metavar="DESTINATION")
+    parser.add_option(
+        "-o", "--output",
+        dest="output",
+        help="write result to given file",
+        metavar="DESTINATION")
 
-    parser.add_option("--debug",
-            dest="debug",
-            help="print debug messages",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "--debug",
+        dest="debug",
+        help="print debug messages",
+        default=False,
+        action='store_true')
 
-    parser.add_option("-v", "--verbose",
-            dest="verbose",
-            help="print more details",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "-v", "--verbose",
+        dest="verbose",
+        help="print more details",
+        default=False,
+        action='store_true')
 
-    parser.add_option("-i", "--input-format",
-            dest="input_format",
-            help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
-            default=None,
-            metavar="TYPE")
+    parser.add_option(
+        "-i", "--input-format",
+        dest="input_format",
+        help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
+        default=None,
+        metavar="TYPE")
 
-    parser.add_option("-x", "--msp430x",
-            action = "store_true",
-            dest = "msp430x",
-            default = False,
-            help = "Enable MSP430X instruction set")
+    parser.add_option(
+        "-x", "--msp430x",
+        action="store_true",
+        dest="msp430x",
+        default=False,
+        help="Enable MSP430X instruction set")
 
-    parser.add_option("--source",
-            dest="source",
-            default = False,
-            action='store_true',
-            help="omit hex dump, just output assembler source")
+    parser.add_option(
+        "--source",
+        dest="source",
+        default=False,
+        action='store_true',
+        help="omit hex dump, just output assembler source")
 
-    parser.add_option("--symbols",
-            dest="symbols",
-            help="read register names for given architecture (e.g. F1xx)",
-            metavar="NAME")
+    parser.add_option(
+        "--symbols",
+        dest="symbols",
+        help="read register names for given architecture (e.g. F1xx)",
+        metavar="NAME")
 
     (options, args) = parser.parse_args()
 
@@ -863,7 +869,7 @@ def main():
         sys.exit(1)                             # set error level for script usage
     except Exception as msg:                    # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short messy in user mode
         sys.exit(1)                             # set error level for script usage
 
 if __name__ == '__main__':

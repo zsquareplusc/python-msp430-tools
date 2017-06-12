@@ -77,8 +77,10 @@ Example::
 from . import rpn
 import pkgutil
 
+
 class MCUDefintitionError(Exception):
     """for errors in de MCU definition file"""
+
 
 def filtered_words(words, mapping):
     """\
@@ -184,7 +186,6 @@ class MCUDefintitions(rpn.RPN):
             if len(template_row) == len(template_variables):
                 self.memory_maps.update(parse_words(filtered_words(template, dict(zip(template_variables, template_row)))))
                 template_row = []
-
 
     @rpn.word('PROGRAMMABLE')
     def word_PROGRAMMABLE(self, stack):
@@ -294,7 +295,7 @@ class MCUDefintitions(rpn.RPN):
         else:
             # address range
             start, end = self.address_range(address)
-            self.memory_map[segment_name] = {'start':start, 'end':end}
+            self.memory_map[segment_name] = {'start': start, 'end': end}
         self.memory_map[segment_name]['order'] = self.order
         self.memory_map[segment_name]['flags'] = self.flags
         self.memory_map[segment_name]['__name__'] = segment_name
@@ -329,7 +330,7 @@ class MCUDefintitions(rpn.RPN):
                 self.memory_map[symbol_name][key] = value
         else:
             # address
-            self.memory_map[symbol_name] = {'address':int(address,16)}
+            self.memory_map[symbol_name] = {'address': int(address, 16)}
         self.memory_map[symbol_name]['__name__'] = symbol_name
         self.memory_map[symbol_name]['__type__'] = 'symbol'
 
@@ -361,6 +362,7 @@ class MCUDefintitions(rpn.RPN):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 def parse_words(iterable):
     """\
     Parse a configuration file/text using the given iterable.
@@ -375,14 +377,15 @@ def expand_definition(memory_maps, name):
     Recursively expand the '__based_on__' keys to create a 'flat' definition
     for the given MCU name.
     """
-    map = dict(memory_maps[name]) # get a copy of the dict
+    map = dict(memory_maps[name])  # get a copy of the dict
     try:
         base = map.pop('__based_on__')
     except KeyError:
         pass
     else:
         map.update(expand_definition(memory_maps, base))
-    if '__name__' in map: del map['__name__']   # name was overwritten by lowest base
+    if '__name__' in map:
+        del map['__name__']   # name was overwritten by lowest base
     map['__name__'] = name
     return map
 
@@ -394,6 +397,7 @@ def load_internal():
     """
     data = pkgutil.get_data('msp430.asm', 'definitions/msp430-mcu-list.txt')
     return parse_words(rpn.words_in_string(data, name='msp430-mcu-list.txt'))
+
 
 def load_from_file(filename):
     """\
@@ -411,17 +415,19 @@ if __name__ == '__main__':
 
     parser = OptionParser()
 
-    parser.add_option("-l", "--list",
-            action = "store_true",
-            dest = "list",
-            default = False,
-            help = "list available MCU names")
+    parser.add_option(
+        "-l", "--list",
+        action="store_true",
+        dest="list",
+        default=False,
+        help="list available MCU names")
 
-    parser.add_option("-d", "--dump",
-            action = "store_true",
-            dest = "dump",
-            default = False,
-            help = "dump all data instead of pretty printing")
+    parser.add_option(
+        "-d", "--dump",
+        action="store_true",
+        dest="dump",
+        default=False,
+        help="dump all data instead of pretty printing")
 
     (options, args) = parser.parse_args()
 

@@ -24,6 +24,7 @@ except NameError:
 
 m_comment = re.compile('(#.*$)', re.UNICODE)    # regexp to remove line comments
 
+
 class Word(unicode):
     """\
     Like a string but annotated with the position in the source file it was read from.
@@ -34,7 +35,6 @@ class Word(unicode):
         self.lineno = lineno
         self.text = text
         return self
-
 
     def lower(self):
         return Word(unicode.lower(self), self.filename, self.lineno, self.text)
@@ -63,9 +63,10 @@ def words_in_string(data, name='<string>', include_newline=False):
     """
     for n, line in enumerate(data.splitlines()):
         for word in m_comment.sub('', line).split():
-            yield Word(word, name, n+1, line)
+            yield Word(word, name, n + 1, line)
         if include_newline:
-            yield Word('\n', name, n+1, line)
+            yield Word('\n', name, n + 1, line)
+
 
 def words_in_file(filename, fileobj=None, include_newline=False):
     """\
@@ -76,9 +77,9 @@ def words_in_file(filename, fileobj=None, include_newline=False):
         fileobj = codecs.open(filename, 'r', 'utf-8')
     for n, line in enumerate(fileobj):
         for word in m_comment.sub('', line).split():
-            yield Word(word, filename, n+1, line)
+            yield Word(word, filename, n + 1, line)
         if include_newline:
-            yield Word('\n', filename, n+1, line)
+            yield Word('\n', filename, n + 1, line)
 
 
 class RPNError(Exception):
@@ -147,7 +148,7 @@ class RPNBase(list):
         old_iterator = self._iterator
         # store function to make it available to called functions
         self._iterator = iterator
-        word = None # in case next_word raises an exception
+        word = None  # in case next_word raises an exception
         try:
             while True:
                 word = next(iterator)
@@ -171,7 +172,7 @@ class RPNBase(list):
 
     def look_up(self, word):
         """Find the word in one of the namespaces and return the value"""
-        lowercased_word = word.lower() # case insensitive
+        lowercased_word = word.lower()  # case insensitive
         for namespace in (self.namespace, self.builtins):
             try:
                 element = namespace[lowercased_word]
@@ -237,9 +238,9 @@ class RPNBase(list):
         """return a string describing the topmost elements from the stack"""
         if self:
             N = min(4, len(self))
-            tops = ["%s:%s" % ("xyzt"[i], self.printer(self[-i-1])) for i in range(N)]
+            tops = ["%s:%s" % ("xyzt"[i], self.printer(self[-i - 1])) for i in range(N)]
             if len(self) > 4:
-                tops.append(' (%d more)' % (len(self)-4,))
+                tops.append(' (%d more)' % (len(self) - 4,))
             return ' '.join(tops)
         return "stack empty"
 
@@ -248,7 +249,7 @@ class RPNBase(list):
         t = type(obj)
         if type(t) == float:
             e = int(math.log10(abs(obj)))
-            e = int(e/3)*3
+            e = int(e / 3) * 3
             if e:
                 return "%ge%s" % ((obj/10**e), e)
             else:
@@ -291,6 +292,7 @@ class RPNStackOps(object):
     def pick(self, stack):
         """Push a copy of the N'th element on the stack."""
         self.push(self[-self.pop()])
+
 
 class RPNSimpleMathOps(object):
     """Mix-in class with words for simple math operations"""
@@ -335,7 +337,6 @@ class RPNMoreMathOps(object):
         x, y = self.pop2()
         self.push(max(y, x))
 
-
     @word("INT")
     def word_INT(self, stack):
         """Convert TOS to an integer."""
@@ -350,6 +351,7 @@ class RPNMoreMathOps(object):
     def negate(self, stack):
         """Negate number on stack."""
         self.push(-self.pop())
+
 
 class RPNBitOps(object):
     """Mix-in class with words for bit operations."""
@@ -389,6 +391,7 @@ class RPNBitOps(object):
         """Bitwise invert of number on stack."""
         self.push(~self.pop())
 
+
 class RPNLogicOps(object):
     """Mix-in class with words for Logic operations"""
 
@@ -427,6 +430,7 @@ class RPNLogicOps(object):
         """testing only: print all knwon words to stdout"""
         for namespace in (self.namespace, self.builtins):
             pprint.pprint(namespace)
+
 
 class RPNCompareOps(object):
     """Mix-in class with words for comarisons"""
@@ -501,7 +505,7 @@ def interpreter_loop(namespace={}, debug=False, rpn_class=RPN, rpn_instance=None
         try:
             print()
             print(rpn_instance)
-            words = raw_input('> ')
+            words = input('> ')
             rpn_instance.interpret_sequence(words.split(), filename='<stdin>')
         except KeyboardInterrupt:
             print
@@ -509,11 +513,10 @@ def interpreter_loop(namespace={}, debug=False, rpn_class=RPN, rpn_instance=None
         except SystemExit:
             raise
         except Exception as msg:
-            if debug: raise
+            if debug:
+                raise
             print("ERROR:", msg)
 
 
 if __name__ == '__main__':
-    import sys
-    interpreter_loop(debug = '-d' in sys.argv)
-
+    interpreter_loop(debug='-d' in sys.argv)

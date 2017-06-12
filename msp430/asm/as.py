@@ -27,7 +27,7 @@ re_asmstatement = re.compile(r'''^
     ([\t ]*(?P<INSN>\.?\w+)(?P<MODE>\.\w)?
       ([\t ]+(?P<OPERANDS>.*)
       )?
-    )?''', re.VERBOSE|re.IGNORECASE|re.UNICODE)
+    )?''', re.VERBOSE | re.IGNORECASE | re.UNICODE)
 
 re_expression = re.compile(r'(?P<NAME>\w+?)=(?P<EXPR>.+)', re.UNICODE)
 
@@ -41,7 +41,7 @@ re_operand = re.compile(r'''
         (?P<POST_INC>       @(?P<PI_REG>[^,"]+)\+       ) |
         (?P<INDIRECT>       @(?P<IND_REG>[^,"]+)        ) |
         (?P<SYMBOLIC>       [^,"]+                      ) |
-    ''', re.VERBOSE|re.IGNORECASE|re.UNICODE)
+    ''', re.VERBOSE | re.IGNORECASE | re.UNICODE)
 
 
 regnumbers = {
@@ -101,7 +101,7 @@ class MSP430Assembler(object):
         if msp430x:
             # extended double operand instructions
             for name, (_, doc) in self._doubleopnames.items():
-                self.instructions["%sX" % name] = (2, self.assembleExtendedDoubleOperandInstruction, doc+' (20 bit)')
+                self.instructions["%sX" % name] = (2, self.assembleExtendedDoubleOperandInstruction, doc + ' (20 bit)')
             # extended single operand instructions
             self.instructions.update({
                 u'POPM':    (2, self.assemblePUSHMPOPM,
@@ -138,7 +138,7 @@ class MSP430Assembler(object):
             if method_name.startswith('insn_'):
                 name = method_name[5:-2].replace('_dot_', '.')
                 if method_name[-1] == 'N':
-                    argc = None # arbitrary length
+                    argc = None  # arbitrary length
                 else:
                     argc = int(method_name[-1])
                 function = getattr(self, method_name)
@@ -147,12 +147,11 @@ class MSP430Assembler(object):
             if msp430x and method_name.startswith('insnx_'):
                 name = method_name[6:-2].replace('_dot_', '.')
                 if method_name[-1] == 'N':
-                    argc = None # arbitrary length
+                    argc = None  # arbitrary length
                 else:
                     argc = int(method_name[-1])
                 function = getattr(self, method_name)
                 self.instructions[name] = (argc, function, function.__doc__)
-
 
     def argument(self, value):
         """\
@@ -160,7 +159,7 @@ class MSP430Assembler(object):
         """
         try:
             return infix2postfix(value, variable_prefix=u'GET-SYMBOL ')
-        except ValueError as e:
+        except ValueError:
             raise AssemblerError('invalid expression: %r' % (value,))
 
     def expand_label(self, label):
@@ -180,13 +179,16 @@ class MSP430Assembler(object):
         """\
         Return a tuple: ("bw" byte mode bit, "al" address length bit).
         """
-        if   mode == '.B': return (1, 1)
-        elif mode == '.W': return (0, 1)
-        elif mode == '':   return (0, 1)
-        elif mode == '.A': return (1, 0)
+        if mode == '.B':
+            return (1, 1)
+        elif mode == '.W':
+            return (0, 1)
+        elif mode == '':
+            return (0, 1)
+        elif mode == '.A':
+            return (1, 0)
         else:
             raise AssemblerError('Unsupported mode: %r' % (mode,))
-
 
     def _buildArg(self, insn, xxx, constreg=True):
         """\
@@ -205,7 +207,7 @@ class MSP430Assembler(object):
                     # here we do the constreg optimisation for the MSP430
                     if n == 4 and insn != 'PUSH':   # MSP430 has a push bug....
                         return (2, 2, None, 0)
-                    elif n == 8 and insn != 'PUSH': # MSP430 has a push bug....
+                    elif n == 8 and insn != 'PUSH':  # MSP430 has a push bug....
                         return (3, 2, None, 0)
                     elif n == 0:
                         return (0, 3, None, 0)
@@ -240,7 +242,6 @@ class MSP430Assembler(object):
             raise AssemblerError('Register name invalid: %s' % e)
         raise AssemblerError('Bad argument type: %s %s' % (mode, value))
 
-
     def _name_address_mode(self, asrc, src):
         """\
         Return a description of address mode, passed the two mode bits and a
@@ -267,43 +268,48 @@ class MSP430Assembler(object):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     _doubleopnames = {
-            u'MOV':  (0x4, "Copy source to destination"),
-            u'ADD':  (0x5, "Add source to destination"),
-            u'ADDC': (0x6, "Add with carry"),
-            u'SUBC': (0x7, "Subtract with carry"),
-            u'SUB':  (0x8, "Subtract source from destination"),
-            u'CMP':  (0x9, "Compare"),
-            u'DADD': (0xa, "Decimal add"),
-            u'BIT':  (0xb, "Test bit (Bitwise AND, CC flags only)"),
-            u'BIC':  (0xc, "Clear bit (bitwise AND NOT)"),
-            u'BIS':  (0xd, "Set bit (bitwise OR)"),
-            u'XOR':  (0xe, "Bitwise exclusive OR"),
-            u'AND':  (0xf, "Bitwise AND"),
-            }
+        u'MOV':  (0x4, "Copy source to destination"),
+        u'ADD':  (0x5, "Add source to destination"),
+        u'ADDC': (0x6, "Add with carry"),
+        u'SUBC': (0x7, "Subtract with carry"),
+        u'SUB':  (0x8, "Subtract source from destination"),
+        u'CMP':  (0x9, "Compare"),
+        u'DADD': (0xa, "Decimal add"),
+        u'BIT':  (0xb, "Test bit (Bitwise AND, CC flags only)"),
+        u'BIC':  (0xc, "Clear bit (bitwise AND NOT)"),
+        u'BIS':  (0xd, "Set bit (bitwise OR)"),
+        u'XOR':  (0xe, "Bitwise exclusive OR"),
+        u'AND':  (0xf, "Bitwise AND"),
+    }
 
     def _buildDoubleOperand(self, insn_name, bw, asrc, src, adst, dst):
         """Build opcode from arguments."""
         opcode = self._doubleopnames[insn_name][0]
-        return opcode<<12 | bw<<6 | asrc<<4 | src<<8 | adst<<7 | dst
+        return opcode << 12 | bw << 6 | asrc << 4 | src << 8 | adst << 7 | dst
 
     def assembleDoubleOperandInstruction(self, insn, mode, source, destination):
         """Double operand instruction."""
         bw, al = self._addressing_mode(mode)
-        if not al: raise AssemblerError('Bad mode (%s) for this instruction: %s%s' % (mode, insn, mode))
+        if not al:
+            raise AssemblerError('Bad mode (%s) for this instruction: %s%s' % (mode, insn, mode))
 
         asrc, src, op1, rel1 = self._buildArg(insn, source)
         adst, dst, op2, rel2 = self._buildArg(insn, destination, constreg=False)
-        if adst > 1: raise AssemblerError('%s (%r) is not possible as destination.' % (
-                self._name_address_mode(adst,dst), destination[1]))
+        if adst > 1:
+            raise AssemblerError('%s (%r) is not possible as destination.' % (
+                self._name_address_mode(adst, dst), destination[1]))
         out = [u'0x%04x 16bit' % self._buildDoubleOperand(insn, bw, asrc, src, adst, dst)]
         if op1:
-            if rel1: out.append(u'%s PC - 16bit' % self.argument(op1))
-            else:    out.append(u'%s 16bit' % self.argument(op1))
+            if rel1:
+                out.append(u'%s PC - 16bit' % self.argument(op1))
+            else:
+                out.append(u'%s 16bit' % self.argument(op1))
         if op2:
-            if rel2: out.append(u'%s PC - 16bit' % self.argument(op2))
-            else:    out.append(u'%s 16bit' % self.argument(op2))
+            if rel2:
+                out.append(u'%s PC - 16bit' % self.argument(op2))
+            else:
+                out.append(u'%s 16bit' % self.argument(op2))
         return ' '.join(out)
-
 
     def assembleExtendedDoubleOperandInstruction(self, insn, mode, source, destination):
         """Double operand instruction"""
@@ -311,8 +317,9 @@ class MSP430Assembler(object):
         bw, al = self._addressing_mode(mode)
         asrc, src, op1, rel1 = self._buildArg(insn, source)
         adst, dst, op2, rel2 = self._buildArg(insn, destination, constreg=False)
-        if adst > 1: raise AssemblerError('%s (%r) is not possible as destination.' % (
-                self._name_address_mode(adst,dst), destination[1]))
+        if adst > 1:
+            raise AssemblerError('%s (%r) is not possible as destination.' % (
+                self._name_address_mode(adst, dst), destination[1]))
         out = []
         # the core instruction
         opcode = self._buildDoubleOperand(insn[:-1], bw, asrc, src, adst, dst)
@@ -347,30 +354,28 @@ class MSP430Assembler(object):
                 out.append(argument1)
             out.append(u'0x%04x' % (opcode))
             out.append(u'0x%04x %s 0xf0000 & 9 >> | %s 0xf0000 & 16 >> |' % (
-                    0x1800 | al<<6, argument1, argument2))
+                    0x1800 | al << 6, argument1, argument2))
             # assemble items from stack
-            out.append(u' 16bit'*words)
+            out.append(u' 16bit' * words)
         else:
-            out.append(u'0x%04x 16bit' % (0x1800 | zc<<8 | al<<6))
+            out.append(u'0x%04x 16bit' % (0x1800 | zc << 8 | al << 6))
             out.append(u'0x%04x 16bit' % (opcode))
         return u' '.join(out)
 
-
     _singleopnames = {
-            u'RRC':  (0x0, "Rotate right through carry"),
-            u'SWPB': (0x1, "Swap bytes"),
-            u'RRA':  (0x2, "Rotate right arithmetically"),
-            u'SXT':  (0x3, "Sign extend"),
-            u'PUSH': (0x4, "Push source on stack"),
-            u'CALL': (0x5, "Call subroutine"),
-            #~ 'RETI': (0x6, "Return from interrupt"),
-            }
+        u'RRC':  (0x0, "Rotate right through carry"),
+        u'SWPB': (0x1, "Swap bytes"),
+        u'RRA':  (0x2, "Rotate right arithmetically"),
+        u'SXT':  (0x3, "Sign extend"),
+        u'PUSH': (0x4, "Push source on stack"),
+        u'CALL': (0x5, "Call subroutine"),
+        #~ 'RETI': (0x6, "Return from interrupt"),
+    }
 
     def _buildSingleOperand(self, insn_name, bw, adst, dst):
         """Build opcode from arguments."""
         opcode = self._singleopnames[insn_name][0]
-        return 0x1000 | opcode<<7 | bw<<6 | adst<<4 | dst
-
+        return 0x1000 | opcode << 7 | bw << 6 | adst << 4 | dst
 
     def assembleSingleOperandInstruction(self, insn, mode, destination):
         """Single operand instruction"""
@@ -381,8 +386,10 @@ class MSP430Assembler(object):
         adst, dst, op, rel = self._buildArg(insn, destination, constreg=False)
         out = [u'0x%04x 16bit' % self._buildSingleOperand(insn, bw, adst, dst)]
         if op:
-            if rel: out.append(u'%s PC - 16bit' % self.argument(op))
-            else:   out.append(u'%s 16bit' % self.argument(op))
+            if rel:
+                out.append(u'%s PC - 16bit' % self.argument(op))
+            else:
+                out.append(u'%s 16bit' % self.argument(op))
         return u' '.join(out)
 
     def insn_RETI_0(self, insn, mode):
@@ -397,17 +404,18 @@ class MSP430Assembler(object):
         opcode = self._buildSingleOperand(insn[:-1], bw, adst, dst)
         out = []
         if op:
-            if rel: argument = u'%s PC - 4 -' % self.argument(op)
-            else:   argument = u'%s' % self.argument(op)
+            if rel:
+                argument = u'%s PC - 4 -' % self.argument(op)
+            else:
+                argument = u'%s' % self.argument(op)
             out.append(u'%s' % (argument,))
             out.append(u'0x%04x' % (opcode | dst))
-            out.append(u'0x%04x %s 0xf0000 & 16 >> |' % (0x1800 | al<<6, argument))
-            out.extend([u'16bit']*3)
+            out.append(u'0x%04x %s 0xf0000 & 16 >> |' % (0x1800 | al << 6, argument))
+            out.extend([u'16bit'] * 3)
         else:
-            out.append(u'0x%04x 16bit' % (0x1800 | al<<6))
+            out.append(u'0x%04x 16bit' % (0x1800 | al << 6))
             out.append(u'0x%04x 16bit' % (opcode | dst))
         return u' '.join(out)
-
 
     def assembleExtendedRotate(self, insn, mode, destination):
         """RRUX, RRAX RRCX"""
@@ -429,17 +437,18 @@ class MSP430Assembler(object):
         if op:
             if zc:
                 raise AssemblerError(u'Destination %s not supported with %s%s' % (destination, insn, mode))
-            if rel: argument = u'%s PC - 4 -' % self.argument(op)
-            else:   argument = u'%s' % self.argument(op)
+            if rel:
+                argument = u'%s PC - 4 -' % self.argument(op)
+            else:
+                argument = u'%s' % self.argument(op)
             out.append(argument)
             out.append(u'0x%04x' % (opcode))
-            out.append(u'0x%04x %s 0xf0000 & 16 >> |' % (0x1800 | al<<6, argument))
-            out.extend([u'16bit']*3)
+            out.append(u'0x%04x %s 0xf0000 & 16 >> |' % (0x1800 | al << 6, argument))
+            out.extend([u'16bit'] * 3)
         else:
-            out.append(u'0x%04x 16bit' % (0x1800 | zc<<8 | al<<6))
+            out.append(u'0x%04x 16bit' % (0x1800 | zc << 8 | al << 6))
             out.append(u'0x%04x 16bit' % (opcode))
         return u' '.join(out)
-
 
     def insnx_MOVA_2(self, insn, mode, source, destination):
         """Move 20 bit value"""
@@ -484,7 +493,6 @@ class MSP430Assembler(object):
                     self._name_address_mode(asrc, src),
                     self._name_address_mode(adst, dst)))
 
-
     def assembleExtendedDoubleOperandInstruction2(self, insn, mode, source, destination, reg, imm):
         """Assemble one of the extended address mode instructions"""
         asrc, src, op1, rel1 = self._buildArg(insn, source, constreg=False)
@@ -519,7 +527,6 @@ class MSP430Assembler(object):
         """Compare the 20-bit source with a 20-bit destination register"""
         return self.assembleExtendedDoubleOperandInstruction2(insn, mode, source, destination, 0x00d0, 0x0090)
 
-
     def assembleExtendedSingleOperandInstructionR4(self, insn, mode, source, destination):
         """RRCM, RRAM, RLAM, RRUM"""
         asrc, src, op1, rel1 = self._buildArg(insn, source, constreg=False)
@@ -536,21 +543,19 @@ class MSP430Assembler(object):
             raise AssemblerError('%s (%r) is not possible as destination.' % (
                     self._name_address_mode(adst, dst), destination[1]))
 
-        out = []
         if asrc == 3:       # immediate/post_inc mods - register mode
             if src == 0:    # immediate mode
                 count = int(op1)
                 if not 0 <= count <= 3:
                     raise AssemblerError('Repetition count out of range (%d)' % (count,))
                 return u'0x%04x 16bit' % (
-                        { 'RRCM': 0x0040,
-                          'RRAM': 0x0140,
-                          'RLAM': 0x0240,
-                          'RRUM': 0x0340,
-                        }[insn] | (option << 4) | (count<<10) | dst)
+                        {'RRCM': 0x0040,
+                         'RRAM': 0x0140,
+                         'RLAM': 0x0240,
+                         'RRUM': 0x0340,
+                        }[insn] | (option << 4) | (count << 10) | dst)
         raise AssemblerError(u'%s (%r) is not possible as count.' % (
                 self._name_address_mode(asrc, src), source[1]))
-
 
     def insnx_CALLA_1(self, insn, mode, target):
         """Call subroutine (20 bit addresses)"""
@@ -582,7 +587,6 @@ class MSP430Assembler(object):
                 out.append(u'0x%04x 16bit' % (0x1370 | dst))
         return ' '.join(out)
 
-
     def assemblePUSHMPOPM(self, insn, mode, repeat, register):
         """PUSHM, POPM"""
         asrc, src, op1, rel1 = self._buildArg(insn, repeat, constreg=False)
@@ -606,28 +610,27 @@ class MSP430Assembler(object):
                 if not 1 <= count <= 16:
                     raise AssemblerError('Repetition count out of range (%d)' % (count,))
                 if insn == 'PUSHM':
-                    out = [u'0x%04x 16bit' % (0x1400 | (option << 8) | (count<<4) | dst)]
+                    out = [u'0x%04x 16bit' % (0x1400 | (option << 8) | (count << 4) | dst)]
                 else:     # POPM
-                    out = [u'0x%04x 16bit' % (0x1600 | (option << 8) | (count<<4) | (dst-count-1))]
+                    out = [u'0x%04x 16bit' % (0x1600 | (option << 8) | (count << 4) | (dst - count-1))]
                 return u' '.join(out)
         raise AssemblerError(u'%s (%r) is not possible as count.' % (
                 self._name_address_mode(asrc, src), repeat))
 
-
     _jumpopnames = {
-            u'JNE':  (0x2000, "Jump if not equal (JNZ)"),
-            u'JNZ':  (0x2000, "Jump if not zero"),
-            u'JEQ':  (0x2400, "Jump if equal (JZ)"),
-            u'JZ':   (0x2400, "Jump if zero"),
-            u'JLO':  (0x2800, "Jump if lower (unsigned, JNC)"),
-            u'JNC':  (0x2800, "Jump if carry is not set"),
-            u'JHS':  (0x2c00, "Jump if higher or same (unsigned, JC)"),
-            u'JC':   (0x2c00, "Jump if carry is set"),
-            u'JN':   (0x3000, "Jump if negative"),
-            u'JGE':  (0x3400, "Jump if greater or equal (signed)"),
-            u'JL':   (0x3800, "Jump if lower (signed)"),
-            u'JMP':  (0x3c00, "Jump unconditionally"),
-            }
+        u'JNE':  (0x2000, "Jump if not equal (JNZ)"),
+        u'JNZ':  (0x2000, "Jump if not zero"),
+        u'JEQ':  (0x2400, "Jump if equal (JZ)"),
+        u'JZ':   (0x2400, "Jump if zero"),
+        u'JLO':  (0x2800, "Jump if lower (unsigned, JNC)"),
+        u'JNC':  (0x2800, "Jump if carry is not set"),
+        u'JHS':  (0x2c00, "Jump if higher or same (unsigned, JC)"),
+        u'JC':   (0x2c00, "Jump if carry is set"),
+        u'JN':   (0x3000, "Jump if negative"),
+        u'JGE':  (0x3400, "Jump if greater or equal (signed)"),
+        u'JL':   (0x3800, "Jump if lower (signed)"),
+        u'JMP':  (0x3c00, "Jump unconditionally"),
+    }
 
     def assembleJumpInstruction(self, insn, mode, xxx):
         """(un)conditional, relative jump"""
@@ -648,7 +651,6 @@ class MSP430Assembler(object):
             # jumps to labels, absolute addresses
             distance = u'%s PC - 2 -' % self.argument(target)
         return u'0x%04x %s JMP' % (opcode, distance)
-
 
     # These instructions are emulated by using one of the insn above most
     # depend on the constant registers to be efficient.
@@ -751,7 +753,6 @@ class MSP430Assembler(object):
     def insn_RET_0(self, insn, mode):
         """Return from subroutine"""
         return self._emulation('MOV', '', '@SP+, PC')
-
 
     # extended emulated instructions
     def _x_emulation(self, insn, mode, arg_str):
@@ -937,7 +938,7 @@ class MSP430Assembler(object):
                 m = re_operand.match(arg_str, pos)
                 if m is None:
                     raise AssemblerError(u'Can not parse argument: %r...' % (
-                        arg_str[pos:pos+10],))
+                        arg_str[pos:pos + 10],))
                 pos = m.end()
                 token_type = m.lastgroup
                 if token_type is None:
@@ -959,13 +960,15 @@ class MSP430Assembler(object):
         lineno = 0
         if filename:
             output.write(u'FILENAME %s\n' % (filename,))   # XXX escape string (whitespace, encoding)
-        if self.debug: sys.stderr.write(u'Parsing "%s":\n' % (filename,))
+        if self.debug:
+            sys.stderr.write(u'Parsing "%s":\n' % (filename,))
 
         try:
             while True:
                 line = f.readline()
                 lineno += 1
-                if not line: break              # if end of file
+                if not line:
+                    break              # if end of file
 
                 # catch line/filename hints from the preprocessor
                 m = re_line_hint.match(line)
@@ -981,13 +984,15 @@ class MSP430Assembler(object):
                 # remove line comments
                 line = re_comment.sub('', line)  # cut out single line comments
                 line = line.rstrip()            # strip whitespace/EOL
-                if not line: continue           # skip empty lines
+                if not line:
+                    continue           # skip empty lines
 
                 # test for expression like lines: "SYMBOL=VALUE"
                 g = re_expression.match(line)
                 if g:
                     name = self.expand_label(g.group('NAME').strip())
-                    if self.debug: sys.stderr.write('%s:%d: %s = %s\n' % (
+                    if self.debug:
+                        sys.stderr.write('%s:%d: %s = %s\n' % (
                             filename,
                             lineno,
                             name,
@@ -995,8 +1000,7 @@ class MSP430Assembler(object):
                     output.write('%d LINE    %s CONSTANT-SYMBOL %s\n' % (
                             lineno,
                             self.argument(g.group('EXPR').strip()),
-                            name,
-                            ))
+                            name))
                     continue
 
                 # test for assembler statements: "[LABEL:] INSN [SRC] [DST] [...]
@@ -1004,14 +1008,15 @@ class MSP430Assembler(object):
                 if g:
                     #~ print g.groups()
                     label = self.expand_label(g.group(u'LABEL'))
-                    insn  = (g.group(u'INSN') or '').upper()
-                    mode  = (g.group(u'MODE') or '').upper()
+                    insn = (g.group(u'INSN') or '').upper()
+                    mode = (g.group(u'MODE') or '').upper()
                     arg_str = g.group(u'OPERANDS')
                     args = self.tokenize_operands(arg_str)
-                    if self.debug: sys.stderr.write(u'%s:%d: %-16s %-8s %s\n' % (
+                    if self.debug:
+                        sys.stderr.write(u'%s:%d: %-16s %-8s %s\n' % (
                             filename,
                             lineno,
-                            label is not None and label+u':' or u'',
+                            label is not None and label + u':' or u'',
                             u'%s%s' % (insn, mode),
                             u', '.join(x[1] for x in args)))
                     if label:
@@ -1047,46 +1052,47 @@ class MSP430Assembler(object):
             e.text = line
             raise e
 
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def main():
     from optparse import OptionParser
 
-    parser = OptionParser(usage = '%prog [options] source.S')
+    parser = OptionParser(usage='%prog [options] source.S')
     parser.add_option(
             "-x", "--msp430x",
-            action = "store_true",
-            dest = "msp430x",
-            default = False,
-            help = "Enable MSP430X instruction set")
+            action="store_true",
+            dest="msp430x",
+            default=False,
+            help="Enable MSP430X instruction set")
     parser.add_option(
             "-o", "--outfile",
-            dest = "outfile",
-            help = "name of the object file",
-            default = None,
-            metavar = "FILE")
+            dest= "outfile",
+            help="name of the object file",
+            default=None,
+            metavar="FILE")
     parser.add_option(
             "--filename",
-            dest = "input_filename",
-            help = "Use this filename for input (useful when source is passed on stdin)",
-            metavar = "FILE")
+            dest="input_filename",
+            help="Use this filename for input (useful when source is passed on stdin)",
+            metavar="FILE")
     parser.add_option(
             "-v", "--verbose",
-            action = "store_true",
-            dest = "verbose",
-            default = False,
-            help = "print status messages to stderr")
+            action="store_true",
+            dest="verbose",
+            default=False,
+            help="print status messages to stderr")
     parser.add_option(
             "--debug",
-            action = "store_true",
-            dest = "debug",
-            default = False,
-            help = "print debug messages to stderr")
+            action="store_true",
+            dest="debug",
+            default=False,
+            help="print debug messages to stderr")
     parser.add_option(
             "-i", "--instructions",
-            action = "store_true",
-            dest = "list_instructions",
-            default = False,
-            help = "Show list of supported instructions and exit (see also -x)")
+            action="store_true",
+            dest="list_instructions",
+            default=False,
+            help="Show list of supported instructions and exit (see also -x)")
 
     (options, args) = parser.parse_args()
 
@@ -1144,7 +1150,6 @@ def main():
             if hasattr(e, 'text'):
                 sys.stderr.write('%s:%s: input line: %r\n' % (e.filename, e.line, e.text))
         sys.exit(1)
-
 
     if options.debug:
         sys.stderr.write("%s\n" % (("END %s" % filename).center(70).replace(' ', '-')))

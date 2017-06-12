@@ -62,7 +62,7 @@ class Segment(object):
         if by_address:
             self.subsegments.sort()
         else:
-            self.subsegments.sort(lambda a,b: cmp(a.order , b.order))
+            self.subsegments.sort(lambda a, b: cmp(a.order, b.order))
         for segment in self.subsegments:
             segment.sort_subsegments(by_address)
 
@@ -108,19 +108,19 @@ class Segment(object):
             size_str = ''
         if not hide_empty or size:
             output.write("%s%-24s%s%8s-%-8s %8s  %s%s%s%s\n" % (
-                    indent,
-                    self.name,
-                    ' ' * (8-len(indent)),
-                    start,
-                    end,
-                    size_str,
-                    self.little_endian and 'LE' or 'BE',
-                    self.programmable and ', downloaded' or '',
-                    self.mirror_of and (', mirror of "%s"' % (self.mirror_of,)) or '',
-                    self.read_only and ', read_only' or '',
-                    ))
+                indent,
+                self.name,
+                ' ' * (8 - len(indent)),
+                start,
+                end,
+                size_str,
+                self.little_endian and 'LE' or 'BE',
+                self.programmable and ', downloaded' or '',
+                self.mirror_of and (', mirror of "%s"' % (self.mirror_of,)) or '',
+                self.read_only and ', read_only' or '',
+            ))
         for segment in self.subsegments:
-            segment.print_tree(output, indent=indent+'   ', hide_empty=hide_empty)
+            segment.print_tree(output, indent=indent + '   ', hide_empty=hide_empty)
 
     def shrink_to_fit(self, address=None):
         """modify start- and end_address of segment to fit the data that it contains"""
@@ -132,7 +132,7 @@ class Segment(object):
             self.start_address = address
         # pad own data
         if self.align and len(self.data) & 1:
-            self.data.append(0xff) # pad to align data on even addresses
+            self.data.append(0xff)  # pad to align data on even addresses
         # reserve space for own data
         if address is not None:
             address += len(self.data)
@@ -176,6 +176,7 @@ class Segment(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 class Linker(rpn.RPN):
     """\
     The linker processes a set of instructions and builds a memory image.
@@ -218,7 +219,6 @@ class Linker(rpn.RPN):
         annotated about source (filename, lineo, etc.).
         """
         raise LinkError(message, self.source_filename, self.source_line, self.source_column)
-
 
     @rpn.word('RESET')
     def word_reset(self, rpn):
@@ -332,8 +332,8 @@ class Linker(rpn.RPN):
         if self.current_segment is None:
             self.linker_error('No segment selected (use .text, .section etc.)')
         count = self.pop()
-        for i in xrange(count):
-                self.current_segment.data.append(None)
+        for i in range(count):
+            self.current_segment.data.append(None)
         self.address += count
 
     @rpn.word('ALIGN')
@@ -409,7 +409,6 @@ class Linker(rpn.RPN):
                 value = 0
         self.push(value)
 
-
     # XXX this should be separate as it is machine dependant (while the rest of
     #     the linker is not). The calculation is not the problem, the error
     #     messages are - there are currently no instructions for that
@@ -428,11 +427,11 @@ class Linker(rpn.RPN):
         if distance & 1:
             if self.errors_are_fatal:
                 self.linker_error('Jump distance must be of even length (distance %d)' % (distance,))
-        if distance < -512*2 or distance > 511*2:
+        if distance < -512 * 2 or distance > 511 * 2:
             if self.errors_are_fatal:
                 self.linker_errorr('Jump out of range (distance %d)' % (distance,))
         else:
-            instruction |= 0x3ff & (distance/2)
+            instruction |= 0x3ff & (distance / 2)
         self.current_segment.write_16bit(instruction)
         self.address += 2
 
@@ -449,19 +448,21 @@ class Linker(rpn.RPN):
         # step 1: create a flat list of segments
         for name, definition in segment_definitions.items():
             # skip special entries
-            if name.startswith('__'): continue
+            if name.startswith('__'):
+                continue
             if definition['__type__'] == 'segment':
                 # create a segment
                 start, end = definition.get('start'), definition.get('end')
-                if end is not None: end += 1
+                if end is not None:
+                    end += 1
                 self.segments[name] = Segment(
-                        name,
-                        start,
-                        end,
-                        programmable = 'programmable' in definition['flags'],
-                        parent = definition.get('in'),
-                        mirror_of = definition.get('mirror'),
-                        )
+                    name,
+                    start,
+                    end,
+                    programmable='programmable' in definition['flags'],
+                    parent=definition.get('in'),
+                    mirror_of=definition.get('mirror'),
+                )
                 self.segments[name].order = definition.get('order')
                 self.segments[name].read_only = 'read-only' in definition['flags']
             elif definition['__type__'] == 'symbol':
@@ -557,6 +558,7 @@ class Linker(rpn.RPN):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 def substitute_none(data):
     """Ensure that stream does not contain None"""
     for value in data:
@@ -587,7 +589,7 @@ def to_TI_Text(segments):
     for address, byte in to_addressed_byte_stream(segments):
         # need to start a new block if address jumping
         if address - 1 != last_address or address == 0x10000:
-            if out and row_count != 0: # except for the 1st one
+            if out and row_count != 0:  # except for the 1st one
                 out.append("\n")
             out.append("@%04x\n" % (address,))
             row_count = 0
@@ -608,8 +610,8 @@ def to_TI_Text(segments):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 def main():
-    import os
     import logging
     from optparse import OptionParser
     logging.basicConfig()
@@ -618,53 +620,53 @@ def main():
 %prog [options] [FILE...]|-]
 
 If no input files are specified data is read from stdin.
-Output is in "TI-Text" format."""
-            )
+Output is in "TI-Text" format.""")
     parser.add_option(
-            "-o", "--outfile",
-            dest="outfile",
-            help="name of the resulting binary (TI-Text)",
-            metavar="FILE",
-            default=None)
+        "-o", "--outfile",
+        dest="outfile",
+        help="name of the resulting binary (TI-Text)",
+        metavar="FILE",
+        default=None)
 
     parser.add_option(
-            "-T", "--segmentfile",
-            dest="segmentfile",
-            help="linker definition file",
-            metavar="FILE",
-            default=None)
+        "-T", "--segmentfile",
+        dest="segmentfile",
+        help="linker definition file",
+        metavar="FILE",
+        default=None)
 
     parser.add_option(
-            "-m", "--mcu",
-            dest="mcu_name",
-            help="name of the MCU (used to load memory map)",
-            metavar="MCU",
-            default='MSP430F1121')
+        "-m", "--mcu",
+        dest="mcu_name",
+        help="name of the MCU (used to load memory map)",
+        metavar="MCU",
+        default='MSP430F1121')
 
     parser.add_option(
-            "--mapfile",
-            dest="mapfile",
-            help="write map file",
-            metavar="FILE")
+        "--mapfile",
+        dest="mapfile",
+        help="write map file",
+        metavar="FILE")
 
     parser.add_option(
-            "-v", "--verbose",
-            action="count",
-            dest="verbose",
-            default=0,
-            help="print status messages, gan be given multiple times to increase messages")
+        "-v", "--verbose",
+        action="count",
+        dest="verbose",
+        default=0,
+        help="print status messages, gan be given multiple times to increase messages")
 
     parser.add_option(
-            "--debug",
-            action="store_true",
-            dest="debug",
-            default=False,
-            help="print debug messages")
+        "--debug",
+        action="store_true",
+        dest="debug",
+        default=False,
+        help="print debug messages")
 
-    parser.add_option("--symbols",
-            dest="symbols",
-            help="read register names for given architecture (e.g. F1xx)",
-            metavar="NAME")
+    parser.add_option(
+        "--symbols",
+        dest="symbols",
+        help="read register names for given architecture (e.g. F1xx)",
+        metavar="NAME")
 
     (options, args) = parser.parse_args()
 
@@ -694,7 +696,7 @@ Output is in "TI-Text" format."""
             instructions.extend(sys.stdin.read().split())
         else:
             if options.verbose > 2:
-                sys.stderr.write(u'reading file "%s"...\n'% filename)
+                sys.stderr.write(u'reading file "%s"...\n' % filename)
             instructions.append('reset')
             instructions.extend(['filename', filename])
             try:
@@ -710,7 +712,8 @@ Output is in "TI-Text" format."""
         all_peripherals = peripherals.load_internal(options.symbols)
         for peripheral in all_peripherals.peripherals.values():
             for reg_name, register in peripheral.items():
-                if reg_name.startswith('__'): continue
+                if reg_name.startswith('__'):
+                    continue
                 if '__address__' in register:
                     linker.labels[register['__name__']] = register['__address__']
                 for value, name in register['__bits__'].items():
@@ -732,7 +735,7 @@ Output is in "TI-Text" format."""
             mem_maps = mcu_definition_parser.load_from_file(options.segmentfile)
         else:
             mem_maps = mcu_definition_parser.load_internal()
-        options.mcu_name = options.mcu_name.upper() # XXX hack
+        options.mcu_name = options.mcu_name.upper()  # XXX hack
         segment_definitions = mcu_definition_parser.expand_definition(mem_maps, options.mcu_name)
     except Exception as msg:
         sys.stderr.write('ERROR loading segment descriptions: %s\n' % (msg,))
@@ -766,7 +769,8 @@ Output is in "TI-Text" format."""
         sys.stderr.write(u'%s:%s: %s\n' % (e.filename, e.lineno if e.lineno is not None else '?', e))
         if options.debug and e.text:
             sys.stderr.write(u"%s:%s: input line was: %r\n" % (e.filename, e.lineno, e.text))
-        if options.debug: raise
+        if options.debug:
+            raise
         sys.exit(1)
 
     # ========= Output final result =========
@@ -785,7 +789,7 @@ Output is in "TI-Text" format."""
 
     if options.mapfile:
         mapfile = codecs.open(options.mapfile, "w", "utf-8")
-        labels = [(v,k) for k,v in linker.labels.items()]
+        labels = [(v, k) for k, v in linker.labels.items()]
         labels.sort()
         for address, label in labels:
             mapfile.write(u'0x%04x %s\n' % (address, label))

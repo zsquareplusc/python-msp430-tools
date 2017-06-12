@@ -12,6 +12,7 @@ import pkgutil
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 def main():
     import sys
     import os
@@ -20,24 +21,24 @@ def main():
 
     parser = OptionParser(usage='%prog [options] temlate-name')
     parser.add_option("-o", "--outfile",
-                      dest = "outfile",
-                      help = "name of the object file",
-                      metavar = "FILE")
+                      dest="outfile",
+                      help="name of the object file",
+                      metavar="FILE")
     parser.add_option("--debug",
-                      action = "store_true",
-                      dest = "debug",
-                      default = False,
-                      help = "print debug messages to stdout")
+                      action="store_true",
+                      dest="debug",
+                      default=False,
+                      help="print debug messages to stdout")
     parser.add_option("-D", "--define",
-                      action = "append",
-                      dest = "defines",
-                      metavar = "SYM[=VALUE]",
-                      default = [],
+                      action="append",
+                      dest="defines",
+                      metavar="SYM[=VALUE]",
+                      default=[],
                       help="define symbol")
     parser.add_option("-l", "--list",
-                      action = "store_true",
-                      dest = "list",
-                      default = False,
+                      action="store_true",
+                      dest="list",
+                      default=False,
                       help="List available snippets")
 
     (options, args) = parser.parse_args()
@@ -53,7 +54,7 @@ def main():
         d = os.path.join(os.path.dirname(sys.modules['msp430.asm'].__file__), 'librarian')
         for root, dirs, files in os.walk(d):
             for filename in files:
-                outfile.write('    %s\n' % (os.path.join(root, filename)[1+len(d):],))
+                outfile.write('    %s\n' % (os.path.join(root, filename)[1 + len(d):],))
         sys.exit(0)
 
     if len(args) != 1:
@@ -87,4 +88,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

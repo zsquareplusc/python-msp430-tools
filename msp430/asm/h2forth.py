@@ -18,6 +18,7 @@ import msp430.asm.cpp
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 def main():
     import sys
     import os
@@ -26,30 +27,30 @@ def main():
 
     parser = OptionParser()
     parser.add_option("-o", "--outfile",
-                      dest = "outfile",
-                      help = "name of the object file",
-                      metavar = "FILE")
+                      dest="outfile",
+                      help="name of the object file",
+                      metavar="FILE")
     parser.add_option("-v", "--verbose",
-                      action = "store_true",
-                      dest = "verbose",
-                      default = False,
+                      action="store_true",
+                      dest="verbose",
+                      default=False,
                       help="print status messages")
     parser.add_option("--debug",
-                      action = "store_true",
-                      dest = "debug",
-                      default = False,
-                      help = "print debug messages to stdout")
+                      action="store_true",
+                      dest="debug",
+                      default=False,
+                      help="print debug messages to stdout")
     parser.add_option("-D", "--define",
-                      action = "append",
-                      dest = "defines",
-                      metavar = "SYM[=VALUE]",
-                      default = [],
+                      action="append",
+                      dest="defines",
+                      metavar="SYM[=VALUE]",
+                      default=[],
                       help="define symbol")
     parser.add_option("-I", "--include-path",
-                      action = "append",
-                      dest = "include_paths",
-                      metavar = "PATH",
-                      default = [],
+                      action="append",
+                      dest="include_paths",
+                      metavar="PATH",
+                      default=[],
                       help="Add directory to the search path list for includes")
 
     (options, args) = parser.parse_args()
@@ -65,12 +66,10 @@ def main():
     else:
         logging.getLogger('cpp').setLevel(logging.WARN)
 
-
     if options.outfile:
         outfile = codecs.open(options.outfile, 'w', 'utf-8')
     else:
         outfile = codecs.getwriter("utf-8")(sys.stdout)
-
 
     cpp = msp430.asm.cpp.Preprocessor()
     # extend include search path
@@ -113,7 +112,6 @@ def main():
                 sys.stderr.write('%s:%s: input line: %r\n' % (e.filename, e.line, e.text))
         sys.exit(1)
 
-
     outfile.write(': <UNDEFINED> 0 ;\n')
     #~ for definition in cpp.macros:
         #~ print definition
@@ -136,4 +134,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

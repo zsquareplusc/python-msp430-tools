@@ -78,9 +78,9 @@ class DocumentTree(object):
             for name, text in sorted(sections.items()):
                 if text and heder_not_yet_done:
                     if chapter_name != ' DEFAULT ':
-                        output.write(u'; %s\n' % ('='*75))
+                        output.write(u'; %s\n' % ('=' * 75))
                         output.write(u'; == %s\n' % chapter_name)
-                        output.write(u'; %s\n' % ('='*75))
+                        output.write(u'; %s\n' % ('=' * 75))
                     heder_not_yet_done = False
                 output.write(u''.join(text))
 
@@ -141,6 +141,7 @@ class Frame(list):
     def __repr__(self):
         return '%s[%s]' % (self.__class__.__name__, self.name,)
 
+
 class InterruptFrame(Frame):
     """\
     Interrupt frames are like normal Frames in most aspects but need different
@@ -172,14 +173,16 @@ class Variable(object):
 
     def __add__(self, other):
         if isinstance(other, Variable):
-            if self.frame is not other.frame: raise ValueError('Variables point to different frames')
+            if self.frame is not other.frame:
+                raise ValueError('Variables point to different frames')
             return Variable(self.frame, self.offset + other.offset)
         else:
             return Variable(self.frame, self.offset + other)
 
     def __sub__(self, other):
         if isinstance(other, Variable):
-            if self.frame is not other.frame: raise ValueError('Variables point to different frames')
+            if self.frame is not other.frame:
+                raise ValueError('Variables point to different frames')
             return Variable(self.frame, self.offset - other.offset)
         else:
             return Variable(self.frame, self.offset - other)
@@ -189,16 +192,6 @@ class Variable(object):
 
     def __repr__(self):
         return '%s(%r, %r)' % (self.__class__.__name__, self.frame, self.offset)
-
-
-def immediate(function):
-    """\
-    Function decorator used to tag Forth methods that will be executed
-    immediately even when in compile mode.
-    """
-    function.forth_immediate = True
-    return function
-
 
 
 def immediate(function):
@@ -244,11 +237,11 @@ class ForthBitOps(object):
 
     @rpn.word("2*")
     def arithmetic_shift_left(self, stack):
-        self[-1] = self[-1]*2
+        self[-1] = self[-1] * 2
 
     @rpn.word("2/")
     def arithmetic_shift_right(self, stack):
-        self[-1] = self[-1]/2
+        self[-1] = self[-1] / 2
 
 
 class ForthMiscOps(object):
@@ -267,7 +260,7 @@ class ForthMiscOps(object):
         self[-1] = self[-1] + 2
 
     @rpn.word("4+")
-    def plus_2(self, stack):
+    def plus_4(self, stack):
         self[-1] = self[-1] + 4
 
     @rpn.word("1-")
@@ -279,9 +272,8 @@ class ForthMiscOps(object):
         self[-1] = self[-1] - 2
 
     @rpn.word("4-")
-    def minus_2(self, stack):
+    def minus_4(self, stack):
         self[-1] = self[-1] - 4
-
 
     @rpn.word('/MOD')
     def word_divmod(self, stack):
@@ -363,12 +355,11 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         # load core language definitions from a forth file
         self._include('__init__.forth')
 
-
     def look_up(self, word):
         """Find the word in one of the name spaces for the host and return the value"""
         # target words are included w/ least priority. they must be available
         # so that compiling words on the host works
-        lowercased_word = word.lower() # case insensitive
+        lowercased_word = word.lower()  # case insensitive
         for namespace in (self.namespace, self.builtins, self.target_namespace):
             try:
                 element = namespace[lowercased_word]
@@ -383,7 +374,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         # builtin namespace is not searched as it only includes words
         # implemented in python. target name space has priority over normal
         # space.
-        lowercased_word = word.lower() # case insensitive
+        lowercased_word = word.lower()  # case insensitive
         for namespace in (self.target_namespace, self.namespace):
             try:
                 element = namespace[lowercased_word]
@@ -469,7 +460,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         else:
             self.push(number)
 
-
     @rpn.word('@')
     def word_at(self, stack):
         reference = stack.pop()
@@ -497,13 +487,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """Put position [within frame] on stack"""
         stack.push(Variable(self.frame, len(self.frame)))
 
-
-
     @immediate
     @rpn.word("'")
     def word_tick(self, stack):
         """Push reference to next word on stack."""
-        if self.frame is None: raise ValueError('not in colon definition')
+        if self.frame is None:
+            raise ValueError('not in colon definition')
         name = stack.next_word()
         self.frame.append(self.instruction_literal)
         self.frame.append(self.look_up(name))
@@ -523,7 +512,8 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         name = stack.next_word()
         value = ord(name[0])
         if self.compiling:
-            if self.frame is None: raise ValueError('not in colon definition')
+            if self.frame is None:
+                raise ValueError('not in colon definition')
             self.frame.append(self.instruction_literal)
             self.frame.append(value)
         else:
@@ -532,7 +522,8 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word(',')
     def word_coma(self, stack):
         """Append value from stack to current definition."""
-        if self.frame is None: raise ValueError('not in colon definition')
+        if self.frame is None:
+            raise ValueError('not in colon definition')
         value = stack.pop()
         if isinstance(value, Variable):
             # XXX special case for calculations with HERE
@@ -552,12 +543,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word(';')
     def word_semicolon(self, stack):
         """End definition of function. See `:`_"""
-        if self.frame is None: raise ValueError('not in colon definition')
+        if self.frame is None:
+            raise ValueError('not in colon definition')
         #~ print "defined", self.frame.name, self.frame     # XXX DEBUG
         self.namespace[self.frame.name.lower()] = self.frame
         self.frame = None
         self.compiling = False
-
 
     @immediate
     @rpn.word('CODE')
@@ -589,12 +580,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word('END-CODE')
     def word_end_code(self, stack):
         """End definition of a native code function. See CODE_."""
-        if self.frame is None: raise ValueError('not in colon definition')
+        if self.frame is None:
+            raise ValueError('not in colon definition')
         #~ print "defined code", self.frame.name, self.frame     # XXX DEBUG
         self.target_namespace[self.frame.name.lower()] = self.frame
         self.frame = None
         self.compiling = False
-
 
     @immediate
     @rpn.word('INTERRUPT')
@@ -618,13 +609,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word('END-INTERRUPT')
     def word_end_interrupt(self, stack):
         """End definition of a native code function. See INTERRUPT_ for example."""
-        if self.frame is None: raise ValueError('not in colon definition')
+        if self.frame is None:
+            raise ValueError('not in colon definition')
         #~ print "defined code", self.frame.name, self.frame     # XXX DEBUG
         self.target_namespace[self.frame.name.lower()] = self.frame
         self.frame = None
         self.compiling = False
-
-
 
     @immediate
     @rpn.word('IMMEDIATE')
@@ -633,7 +623,8 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         Tag current function definition as immediate. This means that it is
         executed even during compilation.
         """
-        if self.frame is None: raise ValueError('not in colon definition')
+        if self.frame is None:
+            raise ValueError('not in colon definition')
         self.frame.forth_immediate = True
 
     @immediate
@@ -643,10 +634,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         Get next word, look it up and add it to the current frame (not
         executing immediate functions).
         """
-        if self.frame is None: raise ValueError('not in colon definition')
+        if self.frame is None:
+            raise ValueError('not in colon definition')
         item = self.look_up(stack.next_word())
         self.frame.append(item)
-
 
     @immediate
     @rpn.word('[')
@@ -659,7 +650,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     def word_compile(self, stack):
         """Change to compilation mode."""
         self.compiling = True
-
 
     @rpn.word('LIT')
     def instruction_literal(self, stack):
@@ -688,13 +678,14 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """\
         Call currently defined word. This is used to write recursive functions.
         """
-        if not self.compiling: raise ValueError('not allowed in immediate mode')
-        if self.frame is None: raise ValueError('not in colon definition')
+        if not self.compiling:
+            raise ValueError('not allowed in immediate mode')
+        if self.frame is None:
+            raise ValueError('not in colon definition')
         # put conditional branch operation in sequence, remember position of offset on stack
         self.frame.append(self.instruction_branch_if_false)
         self.push(len(self.frame))
         self.frame.append(0)
-
 
     @rpn.word('WORD')
     def word_word(self, stack):
@@ -720,7 +711,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         name = stack.next_word()
         # allocate separate memory for the variable
         # (cross compiled to RAM)
-        self.variables[name] = Frame('var'+name)
+        self.variables[name] = Frame('var' + name)
         self.variables[name].append(0)
         # create a function that pushes the variables address
         frame = Frame(name)
@@ -747,7 +738,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         name = stack.next_word()
         # allocate separate memory for the variable
         # (cross compiled to RAM)
-        self.variables[name] = Frame('val'+name)
+        self.variables[name] = Frame('val' + name)
         self.variables[name].append(value)
         # create a function that pushes the variables address
         frame = Frame(name)
@@ -768,7 +759,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             self.frame.append(self.look_up('!'))
         else:
             value = stack.pop()
-            self.variables[name][0] = value # XXX
+            self.variables[name][0] = value  # XXX
 
     @rpn.word('RAM')
     def word_ram(self, stack):
@@ -786,7 +777,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         name = stack.next_word()
         # allocate separate memory
         # (cross compiled to RAM)
-        self.variables[name] = Frame('cre'+name)
+        self.variables[name] = Frame('cre' + name)
         self.variables[name].use_ram = self.use_ram
         self.frame = self.variables[name]
         # create a function that pushes the variables address
@@ -802,8 +793,9 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """Allocate memory in RAM or ROM."""
         count = stack.pop()
         if count > 0:
-            if count & 1: raise ValueError('odd sizes currently not supported')
-            self.frame.extend([0]*(count/2))
+            if count & 1:
+                raise ValueError('odd sizes currently not supported')
+            self.frame.extend([0] * (count / 2))
         else:
             raise ValueError('negative ALLOT not supported')
 
@@ -844,7 +836,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 break
         if not word.endswith(')'):
             raise ValueError('limitation, comment end ")" followed by data: %r' % (word,))
-
 
     def instruction_output_text(self, stack):
         words = stack._frame_iterator.next()
@@ -924,9 +915,9 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.doctree.chapter(frame.chapter)
         self.doctree.section(frame.name)
         self.doctree.write(u'.text\n.even\n')
-        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u';%s\n' % ('-' * 76))
         self.doctree.write(u'; compilation of word %s\n' % frame.name)
-        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u';%s\n' % ('-' * 76))
         self.doctree.write(u'%s:\n' % self.create_asm_label(frame.name))
         # compilation of the thread
         self.doctree.write('\tbr #%s\n' % self.create_asm_label('DOCOL'))
@@ -969,12 +960,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     elif entry == self.instruction_seek:
                         # branch needs special case as offset needs to be recalculated
                         offset = next()
-                        self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH'), offset*2))
+                        self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH'), offset * 2))
                         self._compile_remember('BRANCH')
                     elif entry == self.instruction_branch_if_false:
                         # branch needs special case as offset needs to be recalculated
                         offset = next()
-                        self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH0'), offset*2))
+                        self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH0'), offset * 2))
                         self._compile_remember('BRANCH0')
                     elif hasattr(entry, 'rpn_name'):
                         # for built-ins just take the name of the function
@@ -996,22 +987,22 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.doctree.chapter(frame.chapter)
         self.doctree.section(frame.name)
         self.doctree.write(u'.text\n.even\n')
-        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u';%s\n' % ('-' * 76))
         self.doctree.write(u'; compilation of native word %s\n' % frame.name)
-        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u';%s\n' % ('-' * 76))
         self.doctree.write(u'%s:\n' % self.create_asm_label(frame.name))
         # native code blocks are executed. They are expected to print out
         # assembler code
         frame(self)
-        self.doctree.write('\n') # get some space between this and next word
+        self.doctree.write('\n')  # get some space between this and next word
 
     def _compile_interrupt_frame(self, frame):
         """Compilation of interrupt function"""
         self.doctree.section(frame.name)
         self.doctree.write(u'.text\n.even\n')
-        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u';%s\n' % ('-' * 76))
         self.doctree.write(u'; compilation of interrupt %s\n' % frame.name)
-        self.doctree.write(u';%s\n' % ('-'*76))
+        self.doctree.write(u';%s\n' % ('-' * 76))
 
         # interrupt entry code
         self.doctree.write(u'__vector_%s:\n' % (frame.vector))
@@ -1026,7 +1017,6 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.doctree.write('\t.word %s\n\n' % self.create_asm_label('EXIT-INTERRUPT'))
         self._compile_remember('DO-INTERRUPT')
         self._compile_remember('EXIT-INTERRUPT')
-
 
     def instruction_cross_compile(self, stack, word=None):
         """\
@@ -1094,10 +1084,9 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             variable.name
             self.doctree.write(u'%s:  .skip %d \n' % (
                     self.create_asm_label(variable.name),
-                    2*len(variable)))
+                    2 * len(variable)))
             self.doctree.write('\n')
         self.doctree.pop_state()
-
 
     @rpn.word('INCLUDE')
     def word_INCLUDE(self, stack):
@@ -1134,7 +1123,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     self.interpret(rpn.words_in_string(data, name='forth/%s' % (name,), include_newline=True))
                     self.logger.info('done include %s' % (name,))
                     self.included_files.append(name)
-        self.doctree.pop_state() # restore previous chapter and section
+        self.doctree.pop_state()  # restore previous chapter and section
 
     @rpn.word('SHOW')
     def word_SHOW(self, stack):
@@ -1154,6 +1143,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 def main():
     from optparse import OptionParser
     logging.basicConfig(level=logging.ERROR)
@@ -1161,8 +1151,7 @@ def main():
     parser = OptionParser(usage="""\
 %prog [options] [FILE...]|-]
 
-If no input files are specified data is read from stdin."""
-            )
+If no input files are specified data is read from stdin.""")
     parser.add_option(
             "-o", "--outfile",
             dest="outfile",
@@ -1192,17 +1181,17 @@ If no input files are specified data is read from stdin."""
             help="interactive mode is started")
 
     parser.add_option("-D", "--define",
-                      action = "append",
-                      dest = "defines",
-                      metavar = "SYM[=VALUE]",
-                      default = [],
+                      action="append",
+                      dest="defines",
+                      metavar="SYM[=VALUE]",
+                      default=[],
                       help="define symbol")
 
     parser.add_option("-I", "--include-path",
-                      action = "append",
-                      dest = "include_paths",
-                      metavar = "PATH",
-                      default = [],
+                      action="append",
+                      dest="include_paths",
+                      metavar="PATH",
+                      default=[],
                       help="Add directory to the search path list for includes")
 
     (options, args) = parser.parse_args()
@@ -1233,7 +1222,7 @@ If no input files are specified data is read from stdin."""
             include_paths.append('.')
         else:
             if options.verbose:
-                sys.stderr.write(u'reading file "%s"...\n'% filename)
+                sys.stderr.write(u'reading file "%s"...\n' % filename)
             try:
                 instructions.extend(rpn.words_in_file(filename, include_newline=True))
             except IOError as e:
@@ -1255,7 +1244,7 @@ If no input files are specified data is read from stdin."""
                 symbol, value = definition.split('=', 1)
             else:
                 symbol, value = definition, '1'
-            forth.namespace[symbol.lower()] = value # XXX inserted as string only
+            forth.namespace[symbol.lower()] = value  # XXX inserted as string only
 
         #~ forth.doctree.chapter(filename)
         forth.interpret(iter(instructions))
@@ -1269,7 +1258,7 @@ If no input files are specified data is read from stdin."""
     finally:
         # enter interactive loop when desired
         if options.interactive:
-            rpn.interpreter_loop(debug = options.debug, rpn_instance=forth)
+            rpn.interpreter_loop(debug=options.debug, rpn_instance=forth)
 
 if __name__ == '__main__':
     main()

@@ -45,6 +45,7 @@ WORD-ACCESS <name>
 from msp430.asm import rpn
 import pkgutil
 
+
 class SymbolError(Exception):
     """for errors in de definition file"""
 
@@ -116,6 +117,7 @@ class SymbolDefinitions(rpn.RPN):
         if self.bits is None:
             raise SymbolError('only possible within REGISTER definition')
         symbol_name = self.next_word()
+
         def update_bits(stack, bits=self.bits):
             self.bits.update(bits)
         self.namespace[symbol_name.lower()] = update_bits
@@ -193,6 +195,7 @@ class SymbolDefinitions(rpn.RPN):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 def parse_words(iterable):
     """\
     Parse a configuration file/text using the given iterable.
@@ -226,11 +229,12 @@ if __name__ == '__main__':
 
     parser = OptionParser()
 
-    parser.add_option("--test",
-            action = "store_true",
-            dest = "test",
-            default = False,
-            help = "test run using internal data")
+    parser.add_option(
+        "--test",
+        action="store_true",
+        dest="test",
+        default=False,
+        help="test run using internal data")
 
     (options, args) = parser.parse_args()
 

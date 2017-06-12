@@ -12,6 +12,7 @@ This type of data is used to represent memory contents of the MCU.
 
 from msp430.memory import titext, elf, intelhex, bin, hexdump, error
 
+
 class DataStream(object):
     """\
     An iterator for addressed bytes. It yields all the bytes of a ``Memory``
@@ -74,7 +75,7 @@ def stream_merge(*streams):
             # then remove all the elements with lower addresses from all
             # streams. if a stream is exhausted, remove it from the list
             # of streams
-            for s in list(streams): # iterate over copy as we delete
+            for s in list(streams):  # iterate over copy as we delete
                 while s.address is not None and s.address <= address:
                     s.next()
                 if s.address is None:
@@ -83,10 +84,9 @@ def stream_merge(*streams):
             raise ValueError('streams not sorted?')
 
 
-
 class Segment(object):
     """Store a string or list with memory contents (bytes) along with its startaddress"""
-    def __init__(self, startaddress = 0, data=None):
+    def __init__(self, startaddress=0, data=None):
         if data is None:
             self.data = ''
         else:
@@ -152,13 +152,13 @@ class Memory(object):
                         catchlength = segend - fromadr
                     else:
                         catchlength = toadr - fromadr
-                    res = res + seg.data[fromadr-seg.startaddress : fromadr-seg.startaddress+catchlength]
+                    res = res + seg.data[fromadr - seg.startaddress:fromadr - seg.startaddress + catchlength]
                     fromadr = fromadr + catchlength    # adjust start
                     if len(res) >= toadr - fromadr:
                         break   # return res
             else:   # undefined memory is filled with 0xff
                 res = res + fill
-                fromadr = fromadr + 1 # adjust start
+                fromadr = fromadr + 1  # adjust start
         return bytes(res)
 
     def get(self, address, size):
@@ -175,8 +175,8 @@ class Memory(object):
             if seg.startaddress <= address and seg.startaddress + len(seg.data) >= address:
                 # segment contains data in the address range
                 offset = address - seg.startaddress
-                length = min(len(seg.data)-offset, size)
-                data.extend(seg.data[offset:offset+length])
+                length = min(len(seg.data) - offset, size)
+                data.extend(seg.data[offset:offset + length])
                 address += length
         if len(data) != size:
             raise ValueError("could not collect the requested data")
@@ -199,13 +199,13 @@ class Memory(object):
             if seg.startaddress <= address and seg.startaddress + len(seg.data) >= address:
                 # segment contains data in the address range
                 offset = address - seg.startaddress
-                length = min(len(seg.data)-offset, len(contents))
-                seg.data = seg.data[:offset] + contents[:length] + seg.data[offset+length:]
+                length = min(len(seg.data) - offset, len(contents))
+                seg.data = seg.data[:offset] + contents[:length] + seg.data[offset + length:]
                 contents = contents[length:]    # cut away what is used
-                if not contents: return         # stop if done
+                if not contents:
+                    return         # stop if done
                 address += length
         raise ValueError("could not write all data")
-
 
     def merge(self, other):
         """\

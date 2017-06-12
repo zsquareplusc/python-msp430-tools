@@ -13,6 +13,7 @@ files. It can also read and frite hex dumps to Memory objects.
 import sys
 import msp430.memory
 
+
 def sixteen(address, sequence):
     """A generator that yields sequences of 16 elements"""
     # yield tuples of (current_address, sequence_of_16_elements)
@@ -28,7 +29,6 @@ def sixteen(address, sequence):
         yield address, row
 
 
-
 def hexdump(adr_data_tuple, output=sys.stdout):
     """\
     Print a hex dump.
@@ -41,10 +41,10 @@ def hexdump(adr_data_tuple, output=sys.stdout):
     # characters instead of ints
     for address, row in sixteen(adr, bytearray(memstr)):
         values = ' '.join("%02x" % x for x in row)
-        ascii  = ''.join(chr(x) if (32 <= x < 128) else '.' for x in row)
+        ascii = ''.join(chr(x) if (32 <= x < 128) else '.' for x in row)
         # pad width
-        values += ' '*(47 - len(values))
-        ascii += ' '*(16 - len(values))
+        values += ' ' * (47 - len(values))
+        ascii += ' ' * (16 - len(values))
         # output line, insert gap at 8
         output.write("%08x:  %s %s  %s %s\n" % (
                 address,
@@ -55,7 +55,8 @@ def hexdump(adr_data_tuple, output=sys.stdout):
 def save(memory, filelike):
     """output a hexdump to given file object"""
     for n, segment in enumerate(sorted(memory.segments)):
-        if n: filelike.write('........:\n')
+        if n:
+            filelike.write('........:\n')
         hexdump((segment.startaddress, segment.data), output=filelike)
 
 
@@ -72,8 +73,10 @@ def load(filelike):
     segment_address = 0
     last_address = 0
     for n, line in enumerate(filelike):
-        if not line.strip(): continue  # skip empty lines
-        if line.startswith(b'...'): continue  # skip marker lines
+        if not line.strip():
+            continue  # skip empty lines
+        if line.startswith(b'...'):
+            continue  # skip marker lines
         try:
             adr, dump = line.split(b':', 1)
             address = int(adr, 16)
@@ -94,21 +97,21 @@ def load(filelike):
             # find out how many digits are relevant
             digits = int(2 * len(hex_data) / 3)
             # take these and decode the hex data
-            segmentdata.extend(int(hex_data[x:x+2], 16) for x in range(0, digits, 2))
+            segmentdata.extend(int(hex_data[x:x + 2], 16) for x in range(0, digits, 2))
             # update address
             last_address += digits / 2
         except Exception as e:
             raise msp430.memory.error.FileFormatError(
                     "line not valid hex dump (%s) : %r" % (e, line,),
-                    filename = getattr(filelike, "name", "<unknown>"),
-                    lineno = n+1)
+                    filename=getattr(filelike, "name", "<unknown>"),
+                    lineno=n + 1)
     if segmentdata:
         memory.segments.append(msp430.memory.Segment(segment_address, segmentdata))
     return memory
 
 
-
 debug = False
+
 
 def inner_main():
     from optparse import OptionParser
@@ -124,28 +127,32 @@ What is dumped?
 - ELF: only segments that are programmed
 - binary: complete file, address column is byte offset in file""")
 
-    parser.add_option("-o", "--output",
-            dest="output",
-            help="write result to given file",
-            metavar="DESTINATION")
+    parser.add_option(
+        "-o", "--output",
+        dest="output",
+        help="write result to given file",
+        metavar="DESTINATION")
 
-    parser.add_option("--debug",
-            dest="debug",
-            help="print debug messages",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "--debug",
+        dest="debug",
+        help="print debug messages",
+        default=False,
+        action='store_true')
 
-    parser.add_option("-v", "--verbose",
-            dest="verbose",
-            help="print more details",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "-v", "--verbose",
+        dest="verbose",
+        help="print more details",
+        default=False,
+        action='store_true')
 
-    parser.add_option("-i", "--input-format",
-            dest="input_format",
-            help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
-            default=None,
-            metavar="TYPE")
+    parser.add_option(
+        "-i", "--input-format",
+        dest="input_format",
+        help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
+        default=None,
+        metavar="TYPE")
 
     (options, args) = parser.parse_args()
 
@@ -192,7 +199,7 @@ def main():
         sys.exit(1)                             # set error level for script usage
     except Exception as msg:                    # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short messy in user mode
         sys.exit(1)                             # set error level for script usage
 
 if __name__ == '__main__':

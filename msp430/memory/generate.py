@@ -21,6 +21,7 @@ import random
 
 from optparse import OptionParser
 
+
 def main():
     parser = OptionParser(usage="""\
     %prog [options]
@@ -30,46 +31,53 @@ def main():
     This tool generates a hex file, of given size, ending on address
     0xffff if no start address is given.""")
 
-    parser.add_option("-o", "--output",
-            dest="output",
-            help="write result to given file",
-            metavar="DESTINATION")
+    parser.add_option(
+        "-o", "--output",
+        dest="output",
+        help="write result to given file",
+        metavar="DESTINATION")
 
-    parser.add_option("-f", "--output-format",
-            dest="output_format",
-            help="output format name (%s)" % (', '.join(memory.save_formats),),
-            default="titext",
-            metavar="TYPE")
+    parser.add_option(
+        "-f", "--output-format",
+        dest="output_format",
+        help="output format name (%s)" % (', '.join(memory.save_formats),),
+        default="titext",
+        metavar="TYPE")
 
-    parser.add_option("-l", "--length",
-            dest="size",
-            help="number of bytes to generate",
-            default=1024,
-            type="int")
+    parser.add_option(
+        "-l", "--length",
+        dest="size",
+        help="number of bytes to generate",
+        default=1024,
+        type="int")
 
-    parser.add_option("-s", "--start-address",
-            dest="start_address",
-            help="start address of data generated",
-            default=None,
-            type="int")
+    parser.add_option(
+        "-s", "--start-address",
+        dest="start_address",
+        help="start address of data generated",
+        default=None,
+        type="int")
 
-    parser.add_option("-c", "--count",
-            dest="count",
-            help="use address as data",
-            action="store_true",
-            default=False)
+    parser.add_option(
+        "-c", "--count",
+        dest="count",
+        help="use address as data",
+        action="store_true",
+        default=False)
 
-    parser.add_option("--const",
-            dest="const",
-            help="use given 16 bit number as data (default=0x3fff)",
-            default=0x3fff, # JMP $
-            type="int")
+    parser.add_option(
+        "--const",
+        dest="const",
+        help="use given 16 bit number as data (default=0x3fff)",
+        default=0x3fff,  # JMP $
+        type="int")
 
-    parser.add_option("--random",
-            dest="random",
-            help="fill with random numbers",
-            action="store_true",
-            default=False)
+    parser.add_option(
+        "--random",
+        dest="random",
+        help="fill with random numbers",
+        action="store_true",
+        default=False)
 
     (options, args) = parser.parse_args()
 

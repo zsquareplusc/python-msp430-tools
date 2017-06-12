@@ -9,6 +9,7 @@
 Error messages for file handler modules.
 """
 
+
 class FileFormatError(Exception):
     """\
     Exception for "file is not in the expected format" messages.

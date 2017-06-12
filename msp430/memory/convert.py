@@ -14,11 +14,11 @@ usage: convert file.txt >out.a43
 usage: convert file.txt -o out.a43
 """
 
-import msp430.memory.error
 from msp430 import memory
 import sys
 
 debug = False
+
 
 def inner_main():
     from optparse import OptionParser
@@ -32,28 +32,32 @@ It is also possible to specify multiple input files and create a single,
 merged output.
 """)
 
-    parser.add_option("-o", "--output",
-            dest="output",
-            help="write result to given file",
-            metavar="DESTINATION")
+    parser.add_option(
+        "-o", "--output",
+        dest="output",
+        help="write result to given file",
+        metavar="DESTINATION")
 
-    parser.add_option("-i", "--input-format",
-            dest="input_format",
-            help="input format name (%s)" % (', '.join(memory.load_formats),),
-            default=None,
-            metavar="TYPE")
+    parser.add_option(
+        "-i", "--input-format",
+        dest="input_format",
+        help="input format name (%s)" % (', '.join(memory.load_formats),),
+        default=None,
+        metavar="TYPE")
 
-    parser.add_option("-f", "--output-format",
-            dest="output_format",
-            help="output format name (%s)" % (', '.join(memory.save_formats),),
-            default="titext",
-            metavar="TYPE")
+    parser.add_option(
+        "-f", "--output-format",
+        dest="output_format",
+        help="output format name (%s)" % (', '.join(memory.save_formats),),
+        default="titext",
+        metavar="TYPE")
 
-    parser.add_option("-d", "--debug",
-            dest="debug",
-            help="print debug messages",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "-d", "--debug",
+        dest="debug",
+        help="print debug messages",
+        default=False,
+        action='store_true')
 
     (options, args) = parser.parse_args()
 
@@ -76,7 +80,7 @@ merged output.
     # prepare output
     if options.output is None:
         try:
-            out = sys.stdout.buffer #detach()
+            out = sys.stdout.buffer  # detach()
         except AttributeError:
             out = sys.stdout
     else:
@@ -110,7 +114,7 @@ def main():
         sys.exit(1)                             # set error level for script usage
     except Exception as msg:                    # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short messy in user mode
         sys.exit(1)                             # set error level for script usage
 
 if __name__ == '__main__':

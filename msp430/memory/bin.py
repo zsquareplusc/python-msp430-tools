@@ -11,11 +11,13 @@ Helper functions to read and write binary files.
 
 import msp430.memory
 
+
 def load(filelike):
     """load data from a (opened) file in binary format"""
     memory = msp430.memory.Memory()
     memory.append(msp430.memory.Segment(0, filelike.read()))
     return memory
+
 
 def save(memory, filelike):
     """output binary to given file object"""

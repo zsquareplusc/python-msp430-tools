@@ -11,7 +11,6 @@ files.
 """
 
 import sys
-import os
 from io import BytesIO
 import difflib
 import msp430.memory
@@ -61,34 +60,39 @@ This tool reads binary, ELF or hex input files, creates a hex dump and shows
 the differences between the files.
 """)
 
-    parser.add_option("-o", "--output",
-            dest="output",
-            help="write result to given file",
-            metavar="DESTINATION")
+    parser.add_option(
+        "-o", "--output",
+        dest="output",
+        help="write result to given file",
+        metavar="DESTINATION")
 
-    parser.add_option("-d", "--debug",
-            dest="debug",
-            help="print debug messages",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "-d", "--debug",
+        dest="debug",
+        help="print debug messages",
+        default=False,
+        action='store_true')
 
-    parser.add_option("-v", "--verbose",
-            dest="verbose",
-            help="print more details",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "-v", "--verbose",
+        dest="verbose",
+        help="print more details",
+        default=False,
+        action='store_true')
 
-    parser.add_option("-i", "--input-format",
-            dest="input_format",
-            help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
-            default=None,
-            metavar="TYPE")
+    parser.add_option(
+        "-i", "--input-format",
+        dest="input_format",
+        help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
+        default=None,
+        metavar="TYPE")
 
-    parser.add_option("--html",
-            dest="html",
-            help="create HTML output",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "--html",
+        dest="html",
+        help="create HTML output",
+        default=False,
+        action='store_true')
 
     (options, args) = parser.parse_args()
 
@@ -136,7 +140,7 @@ def main():
         sys.exit(1)                             # set error level for script usage
     except Exception as msg:                    # every Exception is caught and displayed
         if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short messy in user mode
         sys.exit(1)                             # set error level for script usage
 
 if __name__ == '__main__':

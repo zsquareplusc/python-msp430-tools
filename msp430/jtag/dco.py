@@ -22,22 +22,23 @@ import logging
 debug = False
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 def nice_frequency(frequency):
     """return a string of the frequency with SI unit and a reasonable number
        of digits"""
     if frequency < 1e3:
         return "%dHz" % frequency
     elif frequency < 10e3:
-        return "%.3fkHz" % (frequency/1e3)
+        return "%.3fkHz" % (frequency / 1e3)
     elif frequency < 100e3:
-        return "%.2fkHz" % (frequency/1e3)
+        return "%.2fkHz" % (frequency / 1e3)
     elif frequency < 1e6:
-        return "%.1fkHz" % (frequency/1e3)
+        return "%.1fkHz" % (frequency / 1e3)
     elif frequency < 10e6:
-        return "%.3fMHz" % (frequency/1e6)
+        return "%.3fMHz" % (frequency / 1e6)
     elif frequency < 1e9:
-        return "%.2fMHz" % (frequency/1e6)
-    return "%.2fGHz" % (frequency/1e9)
+        return "%.2fMHz" % (frequency / 1e6)
+    return "%.2fGHz" % (frequency / 1e9)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # variable types (with type code for the struct module)
@@ -45,6 +46,7 @@ TYPE_8BIT = '<B'
 TYPE_16BIT = '<H'
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
 def get_msp430_type():
     """return the MSP430 type id that is stored in the ROM"""
@@ -68,18 +70,18 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
 
     if device == 0xf1:
         measured_frequency, dco, bcs1 = clock.setDCO(
-            frequency*(1-tolerance),
-            frequency*(1+tolerance),
+            frequency * (1 - tolerance),
+            frequency * (1 + tolerance),
             maxrsel=7,
             dcor=dcor
         )
-        variables['freq'] = TYPE_16BIT, measured_frequency/1e3
+        variables['freq'] = TYPE_16BIT, measured_frequency / 1e3
         variables['dcoctl'] = TYPE_8BIT, dco
         variables['bcsctl1'] = TYPE_8BIT, bcs1
         variables['bcsctl2'] = TYPE_8BIT, dcor and 1 or 0
         out.write('// BCS settings for %s\n' % (nice_frequency(measured_frequency), ))
         if define:
-            suffix = '_%s' % nice_frequency(frequency).replace('.','_')
+            suffix = '_%s' % nice_frequency(frequency).replace('.', '_')
             out.write('#define DCOCTL%s 0x%02x\n' % (suffix, dco,))
             out.write('#define BCSCTL1%s 0x%02x\n' % (suffix, bcs1,))
             if dcor:
@@ -95,18 +97,18 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
                 out.write('BCSCTL2 = 0x00; // select internal ROSC\n')
     elif device == 0xf2:
         measured_frequency, dco, bcs1 = clock.setDCO(
-            frequency*(1-tolerance),
-            frequency*(1+tolerance),
+            frequency * (1 - tolerance),
+            frequency * (1 + tolerance),
             maxrsel=15,
             dcor=dcor
         )
-        variables['freq'] = TYPE_16BIT, measured_frequency/1e3
+        variables['freq'] = TYPE_16BIT, measured_frequency / 1e3
         variables['dcoctl'] = TYPE_8BIT, dco
         variables['bcsctl1'] = TYPE_8BIT, bcs1
         variables['bcsctl2'] = TYPE_8BIT, dcor and 1 or 0
         out.write('// BCS+ settings for %s\n' % (nice_frequency(measured_frequency), ))
         if define:
-            suffix = '_%s' % nice_frequency(frequency).replace('.','_')
+            suffix = '_%s' % nice_frequency(frequency).replace('.', '_')
             out.write('#define DCOCTL%s 0x%02x\n' % (suffix, dco,))
             out.write('#define BCSCTL1%s 0x%02x\n' % (suffix, bcs1,))
             if dcor:
@@ -124,10 +126,10 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
             out.write('BCSCTL3 = 0x00;\n')
     elif device == 0xf4:
         measured_frequency, scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1 = clock.setDCOPlus(
-            frequency*(1-tolerance),
-            frequency*(1+tolerance)
+            frequency * (1 - tolerance),
+            frequency * (1 + tolerance)
         )
-        variables['freq'] = TYPE_16BIT, measured_frequency/1e3
+        variables['freq'] = TYPE_16BIT, measured_frequency / 1e3
         variables['scfi0'] = TYPE_8BIT, scfi0
         variables['scfi1'] = TYPE_8BIT, scfi1
         variables['scfqctl'] = TYPE_8BIT, scfqctl
@@ -135,13 +137,12 @@ def adjust_clock(out, frequency, tolerance=0.02, dcor=False, define=False):
         variables['fll_ctl1'] = TYPE_8BIT, fll_ctl1
         out.write('// FLL+ settings for %s\n' % (nice_frequency(measured_frequency), ))
         if define:
-            suffix = '_%s' % nice_frequency(frequency).replace('.','_')
+            suffix = '_%s' % nice_frequency(frequency).replace('.', '_')
             out.write('#define SCFI0%(suffix)s 0x%(scfi0)02x\n'
                       '#define SCFI1%(suffix)s 0x%(scfi1)02x\n'
                       '#define SCFQCTL%(suffix)s 0x%(scfqctl)02x\n'
                       '#define FLL_CTL0%(suffix)s 0x%(fll_ctl0)02x\n'
-                      '#define FLL_CTL1%(suffix)s 0x%(fll_ctl1)02x\n' % vars()
-            )
+                      '#define FLL_CTL1%(suffix)s 0x%(fll_ctl1)02x\n' % vars())
         else:
             out.write('SCFI0 = 0x%02x;\nSCFI1 = 0x%02x;\nSCFQCTL = 0x%02x;\nFLL_CTL0 = 0x%02x;\nFLL_CTL1 = 0x%02x;\n' % (
                 scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1
@@ -161,8 +162,8 @@ def measure_clock(out):
         for rsel in range(8):
             fmin = clock.getDCOFreq(0x00, rsel)
             fmax = clock.getDCOFreq(0xff, rsel)
-            variables['rsel%d_fmin' % rsel] = TYPE_16BIT, fmin/1e3
-            variables['rsel%d_fmax' % rsel] = TYPE_16BIT, fmax/1e3
+            variables['rsel%d_fmin' % rsel] = TYPE_16BIT, fmin / 1e3
+            variables['rsel%d_fmax' % rsel] = TYPE_16BIT, fmax / 1e3
             out.write('%s <= f(rsel_%d) <= %s\n' % (
                 nice_frequency(fmin),
                 rsel,
@@ -174,8 +175,8 @@ def measure_clock(out):
         for rsel in range(16):
             fmin = clock.getDCOFreq(0x00, rsel)
             fmax = clock.getDCOFreq(0xff, rsel)
-            variables['rsel%d_fmin' % rsel] = TYPE_16BIT, fmin/1e3
-            variables['rsel%d_fmax' % rsel] = TYPE_16BIT, fmax/1e3
+            variables['rsel%d_fmin' % rsel] = TYPE_16BIT, fmin / 1e3
+            variables['rsel%d_fmax' % rsel] = TYPE_16BIT, fmax / 1e3
             out.write('%s <= f(rsel_%d) <= %s\n' % (
                 nice_frequency(fmin),
                 rsel,
@@ -188,13 +189,13 @@ def measure_clock(out):
         # XXX the F4xx has clock settings that go higher, but not all are valid
         # for the CPU
         #~ fmax = getDCOPlusFreq(0x03, 0xff, 0x80, 0x80, 0) # should be around 6MHz
-        f_all_max = clock.getDCOPlusFreq(0x13, 0xbf, 0x80, 0x80, 0) # should be around 16MHz
+        f_all_max = clock.getDCOPlusFreq(0x13, 0xbf, 0x80, 0x80, 0)  # should be around 16MHz
     else:
         raise IOError("unknown MSP430 type %02x" % device)
     out.write('fmin = %8dHz (%s)\n' % (f_all_min, nice_frequency(f_all_min)))
     out.write('fmax = %8dHz (%s)\n' % (f_all_max, nice_frequency(f_all_max)))
-    variables['fmin'] = TYPE_16BIT, f_all_min/1e3
-    variables['fmax'] = TYPE_16BIT, f_all_max/1e3
+    variables['fmin'] = TYPE_16BIT, f_all_min / 1e3
+    variables['fmax'] = TYPE_16BIT, f_all_max / 1e3
     return variables
 
 
@@ -204,6 +205,7 @@ calibvalues_memory_map = {
     8e6:  {'DCO': 0x10FC, 'BCS1': 0x10FD},
     1e6:  {'DCO': 0x10FE, 'BCS1': 0x10FF},
 }
+
 
 def calibrate_clock(out, tolerance=0.002, dcor=False):
     """\
@@ -220,13 +222,13 @@ def calibrate_clock(out, tolerance=0.002, dcor=False):
         # get the settings for all the frequencies
         for frequency in calibvalues_memory_map:
             measured_frequency, dco, bcs1 = clock.setDCO(
-                frequency*(1-tolerance),
-                frequency*(1+tolerance),
+                frequency * (1 - tolerance),
+                frequency * (1 + tolerance),
                 maxrsel=15,
                 dcor=dcor
             )
-            variables['f%dMHz_dcoctl' % (frequency/1e6)] = TYPE_8BIT, dco
-            variables['f%dMHz_bcsctl1' % (frequency/1e6)] = TYPE_8BIT, bcs1
+            variables['f%dMHz_dcoctl' % (frequency / 1e6)] = TYPE_8BIT, dco
+            variables['f%dMHz_bcsctl1' % (frequency / 1e6)] = TYPE_8BIT, bcs1
             out.write('BCS settings for %s: DCOCTL=0x%02x BCSCTL1=0x%02x\n' % (
                 nice_frequency(measured_frequency), dco, bcs1)
             )
@@ -240,6 +242,7 @@ def calibrate_clock(out, tolerance=0.002, dcor=False):
     return variables
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
 def main():
     from optparse import OptionParser
@@ -283,7 +286,6 @@ Use it at your own risk. No guarantee that the values are correct.""")
                       help="measure min and max clock settings and exit",
                       default=False, action="store_true")
 
-
     parser.add_option("-c", "--calibrate", dest="calibrate",
                       help="Restore calibration values on F2xx devices",
                       default=False, action="store_true")
@@ -325,12 +327,11 @@ Use it at your own risk. No guarantee that the values are correct.""")
         else:
             try:
                 frequency = float(args[0])
-            except ValueError, e:
+            except ValueError as e:
                 parser.error('bad frequency: %r (%s)' % (arg, e))
     if frequency is None and not (options.measure or options.calibrate):
         if len(args) != 1:
             parser.error('the target frequency expected')
-
 
     # prepare output
     if options.output is None or options.output == '-':
@@ -372,7 +373,7 @@ Use it at your own risk. No guarantee that the values are correct.""")
         if options.erase is not None:
             try:
                 address = int(options.erase, 0)
-            except ValueError, e:
+            except ValueError as e:
                 parser.error('bad --erase address: %r' % (options.erase))
             else:
                 jtagobj.makeActionSegmentErase(address)()
@@ -404,9 +405,9 @@ if __name__ == '__main__':
         raise                               # let pass exit() calls
     except KeyboardInterrupt:
         if debug: raise                     # show full trace in debug mode
-        sys.stderr.write("\nUser abort.\n") # short message in user mode
+        sys.stderr.write("\nUser abort.\n")  # short message in user mode
         sys.exit(1)                         # set error level for script usage
     except Exception, msg:                  # every Exception is caught and displayed
         if debug: raise                     # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short message in user mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short message in user mode
         sys.exit(1)                         # set error level for script usage

@@ -39,7 +39,7 @@ F4x = "F4x family"
 
 # known device list
 DEVICEIDS = {
-#    CPUID   BSLVER family
+    # CPUID   BSLVER family
     (0x1132, None): F1x,      # F1122, F1132
     (0x1232, None): F1x,      # F1222, F1232
     (0xf112, None): F1x,      # F11x, F11x1, F11x1A
@@ -59,6 +59,7 @@ DEVICEIDS = {
     (0xf46f, None): F4x,      # FG46xx
 }
 
+
 def identify_device(device_id, bsl_version):
     try:
         try:
@@ -74,6 +75,7 @@ def identify_device(device_id, bsl_version):
 
 class UnsupportedMCUFamily(Exception):
     """This exception is raised when the CPU family is not compatible"""
+
 
 # i don't like how texts are re-wrapped and paragraphs are joined. get rid
 # of that "bug"
@@ -177,7 +179,6 @@ class Target(object):
         self.verbose = 0
         self.debug = False
         self.debug = True   # XXX
-
 
     def flash_segment_size(self, address):
         """Determine the Flash segment size"""
@@ -283,7 +284,7 @@ class Target(object):
             if self.verbose > 1:
                 sys.stderr.write("Erase check segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
             data = self.memory_read(segment.startaddress, len(segment.data))
-            if data != '\xff'*len(segment.data):
+            if data != '\xff' * len(segment.data):
                 raise Exception("erase check failed at 0x%04x" % (segment.startaddress,))
             # XXX show hex DIFF
         if self.verbose:
@@ -308,7 +309,6 @@ class Target(object):
         if self.verbose:
             sys.stderr.write('Erase by file: OK\n')
 
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # command line interface implementation
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -317,35 +317,40 @@ class Target(object):
         """create OptionParser with default options"""
         self.parser = OptionParser(usage="%prog [OPTIONS] [FILE [FILE...]]", formatter=Formatter())
 
-        self.parser.add_option("--debug",
-                help="print debug messages and tracebacks (development mode)",
-                dest="debug",
-                default=False,
-                action='store_true')
+        self.parser.add_option(
+            "--debug",
+            help="print debug messages and tracebacks (development mode)",
+            dest="debug",
+            default=False,
+            action='store_true')
 
-        self.parser.add_option("-v", "--verbose",
-                help="show more messages (can be given multiple times)",
-                dest="verbose",
-                default=1,
-                action='count')
+        self.parser.add_option(
+            "-v", "--verbose",
+            help="show more messages (can be given multiple times)",
+            dest="verbose",
+            default=1,
+            action='count')
 
-        self.parser.add_option("-q", "--quiet",
-                help="suppress all messages",
-                dest="verbose",
-                action='store_const',
-                const=0)
+        self.parser.add_option(
+            "-q", "--quiet",
+            help="suppress all messages",
+            dest="verbose",
+            action='store_const',
+            const=0)
 
-        self.parser.add_option("--time",
-                help="measure time",
-                dest="time",
-                action="store_true",
-                default=False)
+        self.parser.add_option(
+            "--time",
+            help="measure time",
+            dest="time",
+            action="store_true",
+            default=False)
 
-        self.parser.add_option("-S", "--progress",
-                dest="progress",
-                help="show progress while programming",
-                default=False,
-                action='store_true')
+        self.parser.add_option(
+            "-S", "--progress",
+            dest="progress",
+            help="show progress while programming",
+            default=False,
+            action='store_true')
 
         group = OptionGroup(self.parser, "Data input", """\
 File format is auto detected, unless --input-format is used.
@@ -356,14 +361,14 @@ Multiple files can be given on the command line, all are merged before the
 download starts. "-" reads from stdin.
     """)
 
-        group.add_option("-i", "--input-format",
-                dest="input_format",
-                help="input format name (%s)" % (', '.join(memory.load_formats),),
-                default=None,
-                metavar="TYPE")
+        group.add_option(
+            "-i", "--input-format",
+            dest="input_format",
+            help="input format name (%s)" % (', '.join(memory.load_formats),),
+            default=None,
+            metavar="TYPE")
 
         self.parser.add_option_group(group)
-
 
         group = OptionGroup(self.parser, "Flash erase", """\
 Multiple --erase options are allowed. It is also possible to use address
@@ -372,36 +377,41 @@ ranges such as 0xf000-0xf0ff or 0xf000/4k.
 NOTE: SegmentA on F2xx is NOT erased with --mass-erase, that must be
 done separately with --erase=0x10c0 or --info-erase".
 """)
-        group.add_option("-e", "--mass-erase",
-                dest="do_mass_erase",
-                help="mass erase (clear all flash memory)",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "-e", "--mass-erase",
+            dest="do_mass_erase",
+            help="mass erase (clear all flash memory)",
+            default=False,
+            action='store_true')
 
-        group.add_option("-m", "--main-erase",
-                dest="do_main_erase",
-                help="erase main flash memory only",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "-m", "--main-erase",
+            dest="do_main_erase",
+            help="erase main flash memory only",
+            default=False,
+            action='store_true')
 
-        group.add_option("--info-erase",
-                dest="do_info_erase",
-                help="erase info flash memory only (0x1000-0x10ff)",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "--info-erase",
+            dest="do_info_erase",
+            help="erase info flash memory only (0x1000-0x10ff)",
+            default=False,
+            action='store_true')
 
-        group.add_option("-b", "--erase-by-file",
-                dest="do_erase_by_file",
-                help="erase only Flash segments where new data is downloaded",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "-b", "--erase-by-file",
+            dest="do_erase_by_file",
+            help="erase only Flash segments where new data is downloaded",
+            default=False,
+            action='store_true')
 
-        group.add_option("--erase",
-                dest="erase_list",
-                help="selectively erase segment at the specified address or address range",
-                default=[],
-                action='append',
-                metavar="ADDRESS")
+        group.add_option(
+            "--erase",
+            dest="erase_list",
+            help="selectively erase segment at the specified address or address range",
+            default=[],
+            action='append',
+            metavar="ADDRESS")
 
         self.parser.add_option_group(group)
 
@@ -417,32 +427,35 @@ only "-V" does a "check by file" of a programmed device without programming.
 
 Don't forget to erase ("-e", "-b" or "-m") before programming flash!
 """)
-        group.add_option("-E", "--erase-check",
-                dest="do_erase_check",
-                help="erase check by file",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "-E", "--erase-check",
+            dest="do_erase_check",
+            help="erase check by file",
+            default=False,
+            action='store_true')
 
-        group.add_option("-P", "--program",
-                dest="do_program",
-                help="program file",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "-P", "--program",
+            dest="do_program",
+            help="program file",
+            default=False,
+            action='store_true')
 
-        group.add_option("-V", "--verify",
-                dest="do_verify",
-                help="verify by file",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "-V", "--verify",
+            dest="do_verify",
+            help="verify by file",
+            default=False,
+            action='store_true')
 
-        group.add_option("-U", "--upload-by-file",
-                dest="do_upload_by_file",
-                help="upload the memory that is present in the given file(s)",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "-U", "--upload-by-file",
+            dest="do_upload_by_file",
+            help="upload the memory that is present in the given file(s)",
+            default=False,
+            action='store_true')
 
         self.parser.add_option_group(group)
-
 
         group = OptionGroup(self.parser, "Data upload", """\
 This can be used to read out the device memory.
@@ -451,53 +464,60 @@ It is possible to use address ranges such as 0xf000-0xf0ff or 0xf000/256, 0xfc00
 Multiple --upload options are allowed.
 """)
 
-        group.add_option("-u", "--upload",
-                dest="upload_list",
-                metavar="ADDRESS",
-                help='upload a data block, can be passed multiple times',
-                default=[],
-                action='append')
+        group.add_option(
+            "-u", "--upload",
+            dest="upload_list",
+            metavar="ADDRESS",
+            help='upload a data block, can be passed multiple times',
+            default=[],
+            action='append')
 
-        group.add_option("-o", "--output",
-                dest="output",
-                help="write uploaded data to given file",
-                metavar="DESTINATION")
+        group.add_option(
+            "-o", "--output",
+            dest="output",
+            help="write uploaded data to given file",
+            metavar="DESTINATION")
 
-        group.add_option("-f", "--output-format",
-                dest="output_format",
-                help="output format name (%s), default:%%default" % (', '.join(memory.save_formats),),
-                default="hex",
-                metavar="TYPE")
+        group.add_option(
+            "-f", "--output-format",
+            dest="output_format",
+            help="output format name (%s), default:%%default" % (', '.join(memory.save_formats),),
+            default="hex",
+            metavar="TYPE")
 
         self.parser.add_option_group(group)
 
         group = OptionGroup(self.parser, "Do before exit")
 
-        group.add_option("-x", "--execute",
-                dest="do_run",
-                metavar="ADDRESS",
-                type="int",
-                help='start program execution at specified address, might only be useful in conjunction with --wait',
-                default=None,
-                action='store')
+        group.add_option(
+            "-x", "--execute",
+            dest="do_run",
+            metavar="ADDRESS",
+            type="int",
+            help='start program execution at specified address, might only be useful in conjunction with --wait',
+            default=None,
+            action='store')
 
-        group.add_option("-r", "--reset",
-                dest="do_reset",
-                help="perform a normal device reset that will start the program that is specified in the reset interrupt vector",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "-r", "--reset",
+            dest="do_reset",
+            help="perform a normal device reset that will start the program that is specified in the reset interrupt vector",
+            default=False,
+            action='store_true')
 
-        group.add_option("-w", "--wait",
-                dest="do_wait",
-                help="wait for <ENTER> before closing the port",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "-w", "--wait",
+            dest="do_wait",
+            help="wait for <ENTER> before closing the port",
+            default=False,
+            action='store_true')
 
-        group.add_option("--no-close",
-                dest="no_close",
-                help="do not close port on exit",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "--no-close",
+            dest="no_close",
+            help="do not close port on exit",
+            default=False,
+            action='store_true')
 
         self.parser.add_option_group(group)
 
@@ -506,7 +526,6 @@ Multiple --upload options are allowed.
     def add_action(self, function, *args, **kwargs):
         """Store a function to be called and parameters in the list of actions"""
         self.action_list.append((function, args, kwargs))
-
 
     def remove_action(self, function):
         """Remove a function from the list of actions"""
@@ -526,7 +545,7 @@ Multiple --upload options are allowed.
         self.debug = self.options.debug
         self.verbose = self.options.verbose
 
-        if self.verbose > 3 :
+        if self.verbose > 3:
             level = logging.DEBUG
         elif self.verbose > 2:
             level = logging.INFO
@@ -606,7 +625,6 @@ Multiple --upload options are allowed.
             self.add_action(self.upload_by_file)
             default_action = False
 
-
         # as default action (no other given by user), program if a file is given
         if default_action and self.args:
             self.add_action(self.program_file)
@@ -656,7 +674,6 @@ Multiple --upload options are allowed.
                         format=self.options.input_format)
             self.download_data.merge(data)
 
-
     def do_the_work(self):
         """\
         Do the actual work, such as upload and download.
@@ -684,12 +701,11 @@ Multiple --upload options are allowed.
         if self.upload_data is not None:
             memory.save(self.upload_data, self.output, self.options.output_format)
 
-        if self.options.do_wait:                        # wait at the end if desired
+        if self.options.do_wait:                         # wait at the end if desired
             if self.verbose:
-                sys.stderr.write("Press <ENTER> ...\n") # display a prompt
+                sys.stderr.write("Press <ENTER> ...\n")  # display a prompt
                 sys.stderr.flush()
-            raw_input()                                 # wait for newline
-
+            input()                                      # wait for newline
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -716,7 +732,7 @@ Multiple --upload options are allowed.
             sys.exit(1)                                     # set error level for script usage
         except Exception as msg:                            # every Exception is caught and displayed
             if self.debug: raise                            # show full trace in debug mode
-            sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short message in user mode
+            sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short message in user mode
             sys.exit(1)                                     # set error level for script usage
         finally:
             if abort_due_to_error:
@@ -726,7 +742,7 @@ Multiple --upload options are allowed.
                     self.close_connection()                     # release communication port
                 except Exception as msg:                        # every Exception is caught and displayed
                     if self.debug: raise                        # show full trace in debug mode
-                    sys.stderr.write("\nAn error occurred during shutdown:\n%s\n" % msg) # short message in user mode
+                    sys.stderr.write("\nAn error occurred during shutdown:\n%s\n" % msg)  # short message in user mode
             elif self.verbose:
                 sys.stderr.write("WARNING: port is left open (--no-close)\n")
             if start_time is not None:
@@ -738,4 +754,3 @@ Multiple --upload options are allowed.
 if __name__ == '__main__':
     t = Target()
     t.main()
-

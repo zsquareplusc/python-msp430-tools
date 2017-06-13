@@ -16,30 +16,32 @@ port access).
 import struct
 
 # possible answers
-BSL_SYNC         = '\x80'
-CMD_FAILED       = '\x70'
-DATA_FRAME       = '\x80'
-DATA_ACK         = '\x90'
-DATA_NAK         = '\xA0'
+BSL_SYNC = '\x80'
+CMD_FAILED = '\x70'
+DATA_FRAME = '\x80'
+DATA_ACK = '\x90'
+DATA_NAK = '\xA0'
 
 # commands for the MSP430 target
-BSL_TXPWORD         = 0x10    # Receive password to unlock commands
-BSL_TXBLK           = 0x12    # Transmit block to boot loader
-BSL_RXBLK           = 0x14    # Receive  block from boot loader
-BSL_ERASE           = 0x16    # Erase one segment
-BSL_MERAS           = 0x18    # Erase complete FLASH memory
-BSL_CHANGEBAUD      = 0x20    # Change baud rate
-BSL_SETMEMOFFSET    = 0x21    # MemoryAddress = OffsetValue << 16 + Actual Address
-BSL_LOADPC          = 0x1A    # Load PC and start execution
-BSL_ERASE_CHECK     = 0x1C    # Erase check of flash
-BSL_TXVERSION       = 0x1E    # Get BSL version
+BSL_TXPWORD = 0x10    # Receive password to unlock commands
+BSL_TXBLK = 0x12    # Transmit block to boot loader
+BSL_RXBLK = 0x14    # Receive  block from boot loader
+BSL_ERASE = 0x16    # Erase one segment
+BSL_MERAS = 0x18    # Erase complete FLASH memory
+BSL_CHANGEBAUD = 0x20    # Change baud rate
+BSL_SETMEMOFFSET = 0x21    # MemoryAddress = OffsetValue << 16 + Actual Address
+BSL_LOADPC = 0x1A    # Load PC and start execution
+BSL_ERASE_CHECK = 0x1C    # Erase check of flash
+BSL_TXVERSION = 0x1E    # Get BSL version
 
 
 class BSLException(Exception):
     """Errors from the slave"""
 
+
 class BSLTimeout(BSLException):
     """got no answer from slave within time"""
+
 
 class BSLError(BSLException):
     """command execution failed"""
@@ -54,7 +56,7 @@ class BSL(object):
             raise ValueError("can't build checksum over odd-length data")
         checksum = 0
         for i in range(0, len(data), 2):
-            (w,) = struct.unpack("<H", data[i:i+2])
+            (w,) = struct.unpack("<H", data[i:i + 2])
             checksum ^= w
         return checksum & 0xffff
 
@@ -62,7 +64,7 @@ class BSL(object):
         #~ print "BSL_TXBLK(0x%02x, len=%r)" % (address, len(data))
         length = len(data)
         packet = struct.pack('<HH', address, length) + bytes(data)
-        answer = self.bsl(BSL_TXBLK, packet, expect = 0)
+        self.bsl(BSL_TXBLK, packet, expect=0)
 
     def BSL_RXBLK(self, address, length):
         packet = struct.pack('<HH', address, length)
@@ -71,30 +73,30 @@ class BSL(object):
 
     def BSL_MERAS(self):
         packet = struct.pack('<HH', 0xfffe, 0xa506)
-        answer = self.bsl(BSL_MERAS, packet, expect=0)
+        self.bsl(BSL_MERAS, packet, expect=0)
 
     def BSL_ERASE(self, address, option=0xa502):
         packet = struct.pack('<HH', address, option)
-        answer = self.bsl(BSL_ERASE, packet, expect=0)
+        self.bsl(BSL_ERASE, packet, expect=0)
 
     def BSL_CHANGEBAUD(self, bcsctl, multiply):
         packet = struct.pack('<HH', bcsctl, multiply)
-        answer = self.bsl(BSL_CHANGEBAUD, packet, expect=0)
+        self.bsl(BSL_CHANGEBAUD, packet, expect=0)
 
     def BSL_SETMEMOFFSET(self, address_hi_bits):
         packet = struct.pack('<HH', address_hi_bits, 0)
-        answer = self.bsl(BSL_SETMEMOFFSET, packet, expect=0)
+        self.bsl(BSL_SETMEMOFFSET, packet, expect=0)
 
     def BSL_LOADPC(self, address):
         packet = struct.pack('<HH', address, 0)
-        answer = self.bsl(BSL_LOADPC, packet, expect=0)
+        self.bsl(BSL_LOADPC, packet, expect=0)
 
     def BSL_TXPWORD(self, password):
         packet = struct.pack('<HH', 0, 0) + password
-        answer = self.bsl(BSL_TXPWORD, packet, expect=0)
+        self.bsl(BSL_TXPWORD, packet, expect=0)
 
     def BSL_TXVERSION(self):
-        answer = self.bsl(BSL_TXVERSION, "\0"*4)
+        answer = self.bsl(BSL_TXVERSION, "\0" * 4)
         return answer
 
     # - - - - - - High level functions - - - - - -
@@ -205,4 +207,4 @@ class DummyBSL(BSL):
 
 if __name__ == '__main__':
     dummy = DummyBSL()
-    dummy.BSL_TXPWORD("\xff"*32)
+    dummy.BSL_TXPWORD("\xff" * 32)

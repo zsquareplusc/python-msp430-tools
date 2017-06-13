@@ -13,6 +13,7 @@ It can be used to talk to e.g. msp430-gdbproxy or mspdebug.
 
 from struct import pack, unpack
 import socket
+import sys
 import threading
 
 
@@ -25,14 +26,18 @@ except ImportError:
 class GDBException(Exception):
     """Generic protocol errors"""
 
+
 class GDBRemoteTimeout(GDBException):
     """If target does not answer"""
+
 
 class GDBRemoteTooManyFailures(GDBException):
     """If target does not answer"""
 
+
 class GDBUnknownCommandError(GDBException):
     """If target does not know this command"""
+
 
 class GDBRemoteError(GDBException):
     """Target answered with 'E' (error) packet"""
@@ -44,17 +49,16 @@ class GDBRemoteError(GDBException):
         return self.errorcode
 
 
-
 HEXDIGITS = '0123456789abcdefABCDEF'
 IDLE, DATA, CRC1, CRC2 = ' ', '$', '1', '2'
 WAITING, SUCCESS, FAILURE = 0, 1, 2
 
 # breakpoint/watchpoint types:
-BRK_SOFTWARE            = 0
-BRK_HARDWARE            = 1
-BRK_WRITEWATCH          = 2
-BRK_READWATCH           = 3
-BRK_ACCESSWATCH         = 4
+BRK_SOFTWARE = 0
+BRK_HARDWARE = 1
+BRK_WRITEWATCH = 2
+BRK_READWATCH = 3
+BRK_ACCESSWATCH = 4
 
 STOP_SIGNAL = 'signal'
 STOP_THREAD = 'thread'
@@ -102,13 +106,15 @@ class ClientSocketConnector(threading.Thread):
             except socket.error:
                 break   # socket error -> terminate
             else:
-                if not text: break  # EOF -> terminate
+                if not text:
+                    break  # EOF -> terminate
                 self.handle_partial_data(text)
         self._alive = False
 
 
 # dummy decoder, not changing the message
-def identity(x): return x
+def identity(x):
+    return x
 
 # decoder for Stop Reply Packets
 def decodeStopReplyPackets(message):
@@ -129,11 +135,14 @@ def decodeStopReplyPackets(message):
     else:
         raise GDBException("unknown Stop Reply Packet")
 
+
 def hex2registers(message):
     return list(unpack('<HHHHHHHHHHHHHHHH', bytes(message).decode('hex')))
 
+
 def decodeRegister(message):
     return unpack('<H', bytes(message).decode('hex'))[0]
+
 
 def encodeRegister(value):
     return bytes(pack('<H', value).encode('hex'))
@@ -148,7 +157,7 @@ class GDBClient(ClientSocketConnector):
         self.errorcounter = 0   # count NACKS
         self.decoder = None
         self._lock = threading.Lock()
-        self.answer = Queue.Queue()
+        self.answer = queue.Queue()
 
     def handle_partial_data(self, data):
         #~ print data
@@ -192,7 +201,7 @@ class GDBClient(ClientSocketConnector):
         if packet == '':
             self.answer.put(GDBUnknownCommandError("Unknown command"))
         elif packet[0:1] == 'E':
-            errorcode = int(packet[1:],16)
+            errorcode = int(packet[1:], 16)
             self.answer.put(GDBRemoteError(errorcode, "Target responded with error code %d" % errorcode))
         elif packet[0:2] == 'OK':
             self.answer.put(None)
@@ -229,7 +238,7 @@ class GDBClient(ClientSocketConnector):
         expected answer Stop Reply Packets"""
         return self._remote_command('c%s' % (
                 startaddress is not None and '%x' % startaddress or ''
-            ), decoder=decodeStopReplyPackets, nowait=nowait, timeout=None
+               ), decoder=decodeStopReplyPackets, nowait=nowait, timeout=None
         )
 
     def cont_with_signal(self, signal, startaddress=None):
@@ -296,7 +305,7 @@ class GDBClient(ClientSocketConnector):
         #~ no answer expected"""
         #~ return self._remote_command('Q%s=%s' % (querry, value))
 
-    def step(self, startaddress = None):
+    def step(self, startaddress=None):
         """saddr -- step
         expected answer Stop Reply Packets"""
         return self._remote_command('s%s' % (
@@ -341,7 +350,6 @@ class GDBClient(ClientSocketConnector):
         expected answer 'OK' or 'Enn' or ''"""
         return self.query('Rcmd,%s' % bytes(command).encode('hex'), nowait=nowait)
 
-
     # ---
     def interrupt(self):
         """send Control+C.
@@ -371,7 +379,7 @@ class GDBClient(ClientSocketConnector):
                 raise ans
             else:
                 return decoder(ans)
-        except Queue.Empty:
+        except queue.Empty:
             raise GDBRemoteTimeout('no answer to command received within time')
         finally:
             self._lock.release()

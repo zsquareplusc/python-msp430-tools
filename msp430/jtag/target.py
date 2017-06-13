@@ -16,7 +16,6 @@ and HIL.dll/libHIL.so
 import sys
 import os
 import logging
-import time
 from msp430.jtag import jtag
 
 from optparse import OptionGroup
@@ -53,7 +52,7 @@ class JTAGTarget(object):
 
     def execute(self, address):
         """Start executing code on the target."""
-        self.jtagobj.actionRun(address) # load PC and execute
+        self.jtagobj.actionRun(address)  # load PC and execute
 
     def version(self):
         """The 16 bytes of the ROM that contain chip and BSL info are returned."""
@@ -65,7 +64,7 @@ class JTAGTarget(object):
             self.release_done = True
             try:
                 self.jtagobj.reset(1, 1)
-            except IOError as e: # XXX currently getting EEM errors on launchpad
+            except IOError:  # XXX currently getting EEM errors on launchpad
                 pass
 
     def close(self):
@@ -73,7 +72,6 @@ class JTAGTarget(object):
             self.release_done = True
             self.jtagobj.reset(1, 1)             # reset and release target
         self.jtagobj.close()                     # release communication port
-
 
 
 class JTAG(JTAGTarget, msp430.target.Target):
@@ -140,22 +138,25 @@ Features of backends:
 """ % self.text_variables)
 
     def add_extra_options(self):
-        self.parser.add_option("--help-backend",
-                dest="help_backend",
-                help="show help about the different backends",
-                default=False,
-                action='store_true')
+        self.parser.add_option(
+            "--help-backend",
+            dest="help_backend",
+            help="show help about the different backends",
+            default=False,
+            action='store_true')
 
-        self.parser.add_option("-l", "--library-path",
-                dest="library_path",
-                help="search for %(msp430)s or %(msp430mspgcc)s in this place first" % self.text_variables,
-                default=None)
+        self.parser.add_option(
+            "-l", "--library-path",
+            dest="library_path",
+            help="search for %(msp430)s or %(msp430mspgcc)s in this place first" % self.text_variables,
+            default=None)
 
-        self.parser.add_option("--fet-update",
-                dest="do_fet_update",
-                help="with TI's MSP430 library, initiate download of firmware to MSP430UIF box",
-                default=False,
-                action='store_true')
+        self.parser.add_option(
+            "--fet-update",
+            dest="do_fet_update",
+            help="with TI's MSP430 library, initiate download of firmware to MSP430UIF box",
+            default=False,
+            action='store_true')
 
         group = OptionGroup(self.parser, "Connection", """\
 NOTE: On Windows, use "USB", "TIUSB" or "COM5" etc if using MSP430.dll from TI.
@@ -170,47 +171,54 @@ the outputs. The DCO clock adjustment and thus the Flash timing may be
 inaccurate for large values.
     """ % self.text_variables)
 
-        group.add_option("--backend",
-                dest="backend",
-                help="select an alternate backend. See --help-backend for more information",
-                default=None)
+        group.add_option(
+            "--backend",
+            dest="backend",
+            help="select an alternate backend. See --help-backend for more information",
+            default=None)
 
-        group.add_option("-p", "--port",
-                dest="port_name",
-                metavar="PORT",
-                help='specify an other parallel port or serial port for the USBFET (the later requires %(msp430)s instead of %(msp430mspgcc)s).  (defaults to "LPT1" ("/dev/parport0" on Linux))' % self.text_variables,
-                default=None)
+        group.add_option(
+            "-p", "--port",
+            dest="port_name",
+            metavar="PORT",
+            help='specify an other parallel port or serial port for the USBFET (the later requires %(msp430)s instead of %(msp430mspgcc)s).  (defaults to "LPT1" ("/dev/parport0" on Linux))' % self.text_variables,
+            default=None)
 
-        group.add_option("--spy-bi-wire-jtag",
-                dest="spy_bi_wire_jtag",
-                help="interface is 4 wire on a spy-bi-wire capable device",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "--spy-bi-wire-jtag",
+            dest="spy_bi_wire_jtag",
+            help="interface is 4 wire on a spy-bi-wire capable device",
+            default=False,
+            action='store_true')
 
-        group.add_option("--spy-bi-wire",
-                dest="spy_bi_wire",
-                help="interface is 2 wire on a spy-bi-wire capable device",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "--spy-bi-wire",
+            dest="spy_bi_wire",
+            help="interface is 2 wire on a spy-bi-wire capable device",
+            default=False,
+            action='store_true')
 
-        group.add_option("--slowdown",
-                dest="slowdown",
-                metavar="MICROSECONDS",
-                help="artificially slow down the communication. Can help with long lines, try values between 1 and 50 (parallel port interface with mspgcc's HIL library only). (experts only)",
-                default=None)
+        group.add_option(
+            "--slowdown",
+            dest="slowdown",
+            metavar="MICROSECONDS",
+            help="artificially slow down the communication. Can help with long lines, try values between 1 and 50 (parallel port interface with mspgcc's HIL library only). (experts only)",
+            default=None)
 
-        group.add_option("-R", "--ramsize",
-                dest="ramsize",
-                type="int",
-                help="specify the amount of RAM to be used to program flash (default: auto detected)",
-                default=None,
-                metavar="BYTES")
+        group.add_option(
+            "-R", "--ramsize",
+            dest="ramsize",
+            type="int",
+            help="specify the amount of RAM to be used to program flash (default: auto detected)",
+            default=None,
+            metavar="BYTES")
 
-        group.add_option("--unlock-bsl",
-                dest="unlock_bsl",
-                help="unlock Flash BSL (e.g. F5x) ATTENTION: can make device unusable!",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "--unlock-bsl",
+            dest="unlock_bsl",
+            help="unlock Flash BSL (e.g. F5x) ATTENTION: can make device unusable!",
+            default=False,
+            action='store_true')
 
         self.parser.add_option_group(group)
 
@@ -220,11 +228,12 @@ Note: For F1x, F2, F4x: not supported with the simple parallel port adapter
 (7V source required).",
 """)
 
-        group.add_option("--secure",
-                dest="do_secure",
-                help="blow JTAG security fuse",
-                default=False,
-                action='store_true')
+        group.add_option(
+            "--secure",
+            dest="do_secure",
+            help="blow JTAG security fuse",
+            default=False,
+            action='store_true')
 
         self.parser.add_option_group(group)
 
@@ -233,7 +242,6 @@ Mass erase and program from file: "%(prog)s -e firmware.elf"
 Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
 """ % self.text_variables)
         self.parser.add_option_group(group)
-
 
     def parse_extra_options(self):
         """Process the extra options we added above"""
@@ -249,7 +257,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             elif self.options.backend == 'ti':
                 backend = jtag.CTYPES_TI
             else:
-                raise parser.error("no such backend: %r" % self.options.backend)
+                self.parser.error("no such backend: %r" % self.options.backend)
             jtag.init_backend(backend, verbose=self.options.verbose)
         else:
             jtag.init_backend(verbose=self.options.verbose)
@@ -290,11 +298,9 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
 
         self.jtagobj.data = self.download_data      # prepare downloaded data
 
-
     def close_connection(self):
         """Close connection to target"""
         self.close()
-
 
     def open_connection(self):
         """Connect to target"""
@@ -313,11 +319,10 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
                 # XXX and posix platforms?!
                 libHIL, backend_info = jtag.locate_library('libHIL.so', jtag.search_path, ctypes.cdll)
                 HIL_SetSlowdown = libHIL.HIL_SetSlowdown
-            HIL_SetSlowdown.argtypes  = [ctypes.c_ulong]
+            HIL_SetSlowdown.argtypes = [ctypes.c_ulong]
             #~ HIL_SetSlowdown.restype   = ctypes.c_int # actually void
             # set slowdown
             HIL_SetSlowdown(int(self.options.slowdown))
-
 
 
 def main():
@@ -334,7 +339,7 @@ def main():
             break
         if x == '-l' or x == '--library-path':
             index = sys.argv.index(x)
-            library_path = sys.argv.pop(index+1)
+            library_path = sys.argv.pop(index + 1)
             sys.argv.remove(x)
             break
     if library_path is not None:

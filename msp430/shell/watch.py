@@ -47,12 +47,13 @@ def main():
 
     parser = OptionParser(usage='%prog FILENAME [FILENAME...] --execute "some_program --"')
 
-    parser.add_option("-x", "--execute",
-            action = "store",
-            dest = "execute",
-            default = None,
-            metavar = "COMMAND",
-            help = "run this command when watched file(s) changed, -- is replaced by first FILENAME")
+    parser.add_option(
+        "-x", "--execute",
+        action="store",
+        dest="execute",
+        default=None,
+        metavar="COMMAND",
+        help="run this command when watched file(s) changed, -- is replaced by first FILENAME")
 
     (options, args) = parser.parse_args()
 

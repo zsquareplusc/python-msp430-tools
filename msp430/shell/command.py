@@ -17,6 +17,7 @@ import shutil
 import stat
 import glob
 
+
 def expanded(paths):
     """expand each element of a list of paths with globbing patterns"""
     for path1 in paths:
@@ -25,6 +26,7 @@ def expanded(paths):
                 yield path
         else:
             yield path1
+
 
 def mkdir(path, create_missing=False):
     """Create the given directory"""
@@ -36,6 +38,7 @@ def mkdir(path, create_missing=False):
                 raise OSError('path exists but is not a directory')
     else:
         os.mkdir(path)
+
 
 def cp(paths, dest):
     """\
@@ -50,10 +53,11 @@ def cp(paths, dest):
     for _ in itertools.imap(shutil.copy, paths, itertools.repeat(dest)):
         pass
 
+
 def _rm_path(path, force=False, recursive=False):
     if not os.path.exists(path):
         if force:
-            return # rm -f ignores missing paths
+            return  # rm -f ignores missing paths
         else:
             raise OSError('no such file or directory: %s' % (path,))
     elif not is_writeable(path):
@@ -71,10 +75,12 @@ def _rm_path(path, force=False, recursive=False):
     else:
         os.remove(path)
 
+
 def rm(paths, force=False, recursive=False):
     """Remove the given file or list of files."""
     for path in paths:
         _rm_path(path, force, recursive)
+
 
 def mv(paths, dest):
     """\
@@ -92,6 +98,7 @@ def mv(paths, dest):
             raise OSError('no such file or directory: %s' % (path,))
         shutil.move(path, dest)
 
+
 def touch(paths):
     """\
     Update the access and modification times of the given path or list of
@@ -106,13 +113,14 @@ def touch(paths):
         else:
             open(path, 'w').close()
 
+
 def is_writeable(path):
     """\
     Return True if the path is writeable by all of the populations
     specified, False otherwise.
     """
     if os.path.exists(path):
-        return (os.stat(path).st_mode & (stat.S_IWUSR|stat.S_IWGRP|stat.S_IWOTH)) != 0
+        return (os.stat(path).st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)) != 0
     raise OSError('no such file or directory: %s' % (path,))
 
 #############################################
@@ -129,7 +137,8 @@ def command_cat(parser, argv):
         if path == '-':
             try:
                 for line in sys.stdin:
-                    if not line: break
+                    if not line:
+                        break
                     sys.stdout.write(line)
             except KeyboardInterrupt:
                 pass
@@ -157,18 +166,18 @@ def command_expand(parser, argv):
 
 
 def command_rm(parser, argv):
-    parser.add_option("-r", "--recursive",
-        dest = "recursive",
-        help = "Delete subdirectories too.",
-        default = False,
-        action = 'store_true'
-    )
-    parser.add_option("-f", "--force",
-        dest = "force",
-        help = "Ignore missing, also delete write protected files.",
-        default = False,
-        action = 'store_true'
-    )
+    parser.add_option(
+        "-r", "--recursive",
+        dest="recursive",
+        help="Delete subdirectories too.",
+        default=False,
+        action='store_true')
+    parser.add_option(
+        "-f", "--force",
+        dest="force",
+        help="Ignore missing, also delete write protected files.",
+        default=False,
+        action='store_true')
     (options, args) = parser.parse_args(argv)
 
     rm(expanded(args), options.force, options.recursive)
@@ -176,11 +185,10 @@ def command_rm(parser, argv):
 
 def command_mkdir(parser, argv):
     parser.add_option("-p",
-        dest = "create_missing",
-        help = "Create any missing intermediate pathname components.",
-        default = False,
-        action = 'store_true'
-    )
+        dest="create_missing",
+        help="Create any missing intermediate pathname components.",
+        default=False,
+        action='store_true')
     (options, args) = parser.parse_args(argv)
 
     if not args:
@@ -198,12 +206,12 @@ def command_touch(parser, argv):
 
 def command_cp(parser, argv):
     """copy files"""
-    parser.add_option("-t", "--target-directory",
-        dest = "target_directory",
-        help = "Copy all SOURCE arguments into DIRECTORY.",
-        default = None,
-        metavar = "DIRECTORY"
-    )
+    parser.add_option(
+        "-t", "--target-directory",
+        dest="target_directory",
+        help="Copy all SOURCE arguments into DIRECTORY.",
+        default=None,
+        metavar="DIRECTORY")
     (options, args) = parser.parse_args(argv)
     if options.target_directory:
         target = options.target_directory
@@ -218,12 +226,12 @@ def command_cp(parser, argv):
 
 def command_mv(parser, argv):
     """move or rename files"""
-    parser.add_option("-f", "--force",
-        dest = "force",
-        help = "Do not ask any questions. (ignored)",
-        default = False,
-        action = 'store_true'
-    )
+    parser.add_option(
+        "-f", "--force",
+        dest="force",
+        help="Do not ask any questions. (ignored)",
+        default=False,
+        action='store_true')
     (options, args) = parser.parse_args(argv)
     if len(args) < 2:
         parser.error('Expected at least one SOURCE and TARGET argument.')
@@ -233,12 +241,12 @@ def command_mv(parser, argv):
 
 def command_which(parser, argv):
     """find files on PATH"""
-    parser.add_option("-v", "--verbose",
-        dest = "stop_first",
-        help = "Show all hits (default: stop after 1st).",
-        default = True,
-        action = 'store_false'
-    )
+    parser.add_option(
+        "-v", "--verbose",
+        dest="stop_first",
+        help="Show all hits (default: stop after 1st).",
+        default=True,
+        action='store_false')
     (options, args) = parser.parse_args(argv)
     path = os.environ['PATH'].split(os.pathsep)
     if sys.platform.startswith('win'):
@@ -260,7 +268,8 @@ def command_which(parser, argv):
                 p = os.path.join(location, filename)
                 if os.path.exists(p):
                     sys.stdout.write('%s\n' % p)
-                    if options.stop_first: return
+                    if options.stop_first:
+                        return
 
 
 def command_list(parser, argv):
@@ -282,7 +291,8 @@ COMMANDS = {
         'touch': (command_touch, 'Update file date, create file.', '%prog [options] FILE...'),
         'list': (command_list,   'This text.',                     '%prog'),
         'which': (command_which, 'Find files in teh PATH',         '%prog [options] FILE...'),
-        }
+    }
+
 
 def main():
     debug = False
@@ -306,7 +316,8 @@ def main():
     parser = optparse.OptionParser(usage=usage, prog=name)
     try:
         result = command(parser, args)
-        if result is None: result = 0
+        if result is None:
+            result = 0
         sys.exit(result)
     except Exception as e:
         if debug: raise
@@ -316,4 +327,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

@@ -70,7 +70,6 @@ class SerialBSL5(bsl5.BSL5):
         # delay after control line changes
         self.control_delay = 0.05
 
-
     def open(self, port, baudrate=9600, ignore_answer=False):
         self.ignore_answer = ignore_answer
         self.logger.info('Opening serial port %r' % port)
@@ -91,10 +90,8 @@ class SerialBSL5(bsl5.BSL5):
                 timeout=1,
             )
 
-
     def __del__(self):
         self.close()
-
 
     def close(self):
         """Close serial port"""
@@ -109,7 +106,6 @@ class SerialBSL5(bsl5.BSL5):
         packet = struct.pack('<B', multiply)
         answer = self.bsl(BSL_CHANGE_BAUD_RATE, packet, expect=0)
         self.check_answer(answer)
-
 
     def bsl(self, cmd, message='', expect=None):
         """\
@@ -132,7 +128,7 @@ class SerialBSL5(bsl5.BSL5):
         # first synchronize with slave
         self.logger.debug('Command 0x%02x %s' % (cmd, message.encode('hex')))
         # prepare command with checksum
-        txdata = struct.pack('<BHB', 0x80, 1+len(message), cmd) + message
+        txdata = struct.pack('<BHB', 0x80, 1 + len(message), cmd) + message
         txdata += struct.pack('<H', reduce(crc_update, txdata, 0xffff))   # append checksum
         #~ self.logger.debug('Sending command: %r' % (txdata.encode('hex'),))
         # transmit command
@@ -153,17 +149,21 @@ class SerialBSL5(bsl5.BSL5):
                 if ans:
                     break
         if ans != BSL5_ACK:
-            if ans: raise bsl5.BSL5Error('BSL reports error: %s' % BSL5_UART_ERROR_CODES.get(ans, 'unknown error'))
+            if ans:
+                raise bsl5.BSL5Error('BSL reports error: %s' % BSL5_UART_ERROR_CODES.get(ans, 'unknown error'))
             raise bsl5.BSL5Error('No ACK received (timeout)')
 
         head = self.serial.read(3)
-        if len(head) != 3: raise bsl5.BSL5Timeout('timeout while reading answer (header)')
+        if len(head) != 3:
+            raise bsl5.BSL5Timeout('timeout while reading answer (header)')
         pi, length = struct.unpack("<BH", head)
         if pi == '\x80':
             data = self.serial.read(length)
-            if len(data) != length: raise bsl5.BSL5Timeout('timeout while reading answer (data)')
+            if len(data) != length:
+                raise bsl5.BSL5Timeout('timeout while reading answer (data)')
             crc_str = self.serial.read(2)
-            if len(crc_str) != 2: raise bsl5.BSL5Timeout('timeout while reading answer (CRC)')
+            if len(crc_str) != 2:
+                raise bsl5.BSL5Timeout('timeout while reading answer (CRC)')
             crc = struct.unpack("<H", crc_str)
             crc_expected = reduce(crc_update, head + data, 0xffff)
             if crc != crc_expected:
@@ -172,9 +172,9 @@ class SerialBSL5(bsl5.BSL5):
                 raise bsl5.BSL5Error('expected %d bytes, got %d bytes' % (expect, len(data)))
             return data
         else:
-            if pi: raise bsl5.BSL5Error('received bad PI, expected 0x80 (got 0x%02x)' % (ord(pi),))
+            if pi:
+                raise bsl5.BSL5Error('received bad PI, expected 0x80 (got 0x%02x)' % (ord(pi),))
             raise bsl5.BSL5Error('received bad PI, expected 0x80 (got empty response)')
-
 
     def set_RST(self, level=True):
         """\
@@ -189,7 +189,6 @@ class SerialBSL5(bsl5.BSL5):
         else:
             self.serial.setDTR(level)
         time.sleep(self.control_delay)
-
 
     def set_TEST(self, level=True):
         """\
@@ -210,7 +209,6 @@ class SerialBSL5(bsl5.BSL5):
                 self.serial.setRTS(level)
         time.sleep(self.control_delay)
 
-
     def set_baudrate(self, baudrate):
         """\
         Change the BSL baud rate on the target and switch the serial port.
@@ -224,7 +222,6 @@ class SerialBSL5(bsl5.BSL5):
             self.BSL_CHANGE_BAUD_RATE(multiply)
             time.sleep(0.010)
             self.serial.baudrate = baudrate
-
 
     def start_bsl(self):
         """\
@@ -258,84 +255,91 @@ class SerialBSL5Target(SerialBSL5, msp430.target.Target):
     def add_extra_options(self):
         group = OptionGroup(self.parser, "Communication settings")
 
-        group.add_option("-p", "--port",
-                dest="port",
-                help="Use com-port",
-                default='hwgrep://USB')
-        group.add_option("--invert-test",
-                dest="invert_test",
-                action="store_true",
-                help="invert RTS line",
-                default=False)
-        group.add_option("--invert-reset",
-                dest="invert_reset",
-                action="store_true",
-                help="invert DTR line",
-                default=False)
-        group.add_option("--swap-reset-test",
-                dest="swap_reset_test",
-                action="store_true",
-                help="exchenage RST and TEST signals (DTR/RTS)",
-                default=False)
-        group.add_option("--test-on-tx",
-                dest="test_on_tx",
-                action="store_true",
-                help="TEST/TCK signal is muxed on TX line",
-                default=False)
+        group.add_option(
+            "-p", "--port",
+            dest="port",
+            help="Use com-port",
+            default='hwgrep://USB')
+        group.add_option(
+            "--invert-test",
+            dest="invert_test",
+            action="store_true",
+            help="invert RTS line",
+            default=False)
+        group.add_option(
+            "--invert-reset",
+            dest="invert_reset",
+            action="store_true",
+            help="invert DTR line",
+            default=False)
+        group.add_option(
+            "--swap-reset-test",
+            dest="swap_reset_test",
+            action="store_true",
+            help="exchenage RST and TEST signals (DTR/RTS)",
+            default=False)
+        group.add_option(
+            "--test-on-tx",
+            dest="test_on_tx",
+            action="store_true",
+            help="TEST/TCK signal is muxed on TX line",
+            default=False)
 
         self.parser.add_option_group(group)
 
         group = OptionGroup(self.parser, "BSL settings")
 
-        group.add_option("--no-start",
-                dest="start_pattern",
-                action="store_false",
-                help="no not use ROM-BSL start pattern on RST+TEST/TCK",
-                default=True)
+        group.add_option(
+            "--no-start",
+            dest="start_pattern",
+            action="store_false",
+            help="no not use ROM-BSL start pattern on RST+TEST/TCK",
+            default=True)
 
-        group.add_option("-s", "--speed",
-                dest="speed",
-                type=int,
-                help="change baud rate (default 9600)",
-                default=None)
+        group.add_option(
+            "-s", "--speed",
+            dest="speed",
+            type=int,
+            help="change baud rate (default 9600)",
+            default=None)
 
-        group.add_option("--password",
-                dest="password",
-                action="store",
-                help="transmit password before doing anything else, password is given in given (TI-Text/ihex/etc) file",
-                default=None,
-                metavar="FILE")
+        group.add_option(
+            "--password",
+            dest="password",
+            action="store",
+            help="transmit password before doing anything else, password is given in given (TI-Text/ihex/etc) file",
+            default=None,
+            metavar="FILE")
 
-        group.add_option("--ignore-answer",
-                dest="ignore_answer",
-                action="store_true",
-                help="do not wait for answer to BSL commands",
-                default=False)
+        group.add_option(
+            "--ignore-answer",
+            dest="ignore_answer",
+            action="store_true",
+            help="do not wait for answer to BSL commands",
+            default=False)
 
-        group.add_option("--control-delay",
-                dest="control_delay",
-                type="float",
-                help="set delay in seconds (float) for BSL start pattern",
-                default=0.01)
+        group.add_option(
+            "--control-delay",
+            dest="control_delay",
+            type="float",
+            help="set delay in seconds (float) for BSL start pattern",
+            default=0.01)
 
         self.parser.add_option_group(group)
-
 
     def parse_extra_options(self):
         if self.verbose > 1:   # debug infos
             if hasattr(serial, 'VERSION'):
                 sys.stderr.write("pySerial version: %s\n" % serial.VERSION)
 
-
     def close_connection(self):
         self.close()
-
 
     def open_connection(self):
         self.logger = logging.getLogger('BSL')
         self.open(
             self.options.port,
-            ignore_answer = self.options.ignore_answer,
+            ignore_answer=self.options.ignore_answer,
         )
         self.control_delay = self.options.control_delay
 
@@ -357,18 +361,17 @@ class SerialBSL5Target(SerialBSL5, msp430.target.Target):
         if self.options.start_pattern:
             self.start_bsl()
 
-
         if self.options.do_mass_erase:
             self.logger.info("Mass erase...")
             try:
-                self.BSL_RX_PASSWORD('\xff'*30 + '\0'*2)
+                self.BSL_RX_PASSWORD('\xff' * 30 + '\0' * 2)
             except bsl5.BSL5Error:
-                pass # it will fail - that is our intention to trigger the erase
+                pass  # it will fail - that is our intention to trigger the erase
             time.sleep(1)
             #~ self.extra_timeout = 6
             #~ self.mass_erase()
             #~ self.extra_timeout = None
-            self.BSL_RX_PASSWORD('\xff'*32)
+            self.BSL_RX_PASSWORD('\xff' * 32)
             # remove mass_erase from action list so that it is not done
             # twice
             self.remove_action(self.mass_erase)
@@ -386,7 +389,6 @@ class SerialBSL5Target(SerialBSL5, msp430.target.Target):
 
         # configure the buffer
         #~ self.detect_buffer_size()
-
 
     # override reset method: use control line
     def reset(self):

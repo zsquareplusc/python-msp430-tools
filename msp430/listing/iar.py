@@ -9,38 +9,40 @@
 Helper module to parse IAR listing files.
 """
 
-import re, sys, os
+import re
+import sys
 
 verbosity = 0
 
 symbols = {}
 
+
 class Module:
-    def __init__(self,name):
+    def __init__(self, name):
         self.name = name
         self.labels = []
 
-    def __getitem__(self,value):
+    def __getitem__(self, value):
         """return address or name of label depending on the argument, None if not found"""
-        if type(value) is str: # serach for label name
-            for lbl,adr,glob in self.labels:
+        if type(value) is str:  # serach for label name
+            for lbl, adr, glob in self.labels:
                 if lbl == value:
                     return adr
         elif type(value) is int:  # search for label address
-            for lbl,adr,glob in self.labels:
+            for lbl, adr, glob in self.labels:
                 if adr == value:
                     return lbl
         else:
             raise TypeError("string or integer required")
 
     def __contains__(self, value):
-        for lbl,adr,glob in self.labels:
+        for lbl, adr, glob in self.labels:
             if lbl == value:
                 return True
         return False
 
     def getLabels(self):
-        return [lbl for lbl,adr,glob in self.labels if glob]
+        return [lbl for lbl, adr, glob in self.labels if glob]
 
     def display(self):
         sys.stdout.write("Module: %s\n" % self.name)
@@ -52,20 +54,20 @@ class Module:
             sys.stdout.write("\tno labels in this module\n")
 
 #REs for ENTRY LIST
-RE_ENTRY = re.compile(r'^  ([\w_\?0-9]+)[\t ]+([A-F0-9]+)',re.I)
-RE_ENTRYMODNAME = re.compile(r'^([\w_\?/\\\.0-9]+)[\t ]+\(',re.I)
+RE_ENTRY = re.compile(r'^  ([\w_\?0-9]+)[\t ]+([A-F0-9]+)', re.I)
+RE_ENTRYMODNAME = re.compile(r'^([\w_\?/\\\.0-9]+)[\t ]+\(', re.I)
 
 #REs for SEGMENTS
-RE_SEGMENT = re.compile('^([\w_0-9]+)[\t ]+([A-F0-9]+)( - ([A-F0-9]+))?[\t ]+([A-F0-9]+)',re.I)
+RE_SEGMENT = re.compile('^([\w_0-9]+)[\t ]+([A-F0-9]+)( - ([A-F0-9]+))?[\t ]+([A-F0-9]+)', re.I)
 
 #REs for MODULE MAP
-RE_MP_ENTRYSTART    = re.compile(r'^           =====',re.I)
-RE_MP_ENTRY         = re.compile(r'^           ([\w_\?0-9:]+)[\t ]+([A-F0-9]+)',re.I)
-RE_MP_LONG_ENTRY    = re.compile(r'^           ([\w_\?0-9:]+)\n',re.I)
-RE_MP_LONG_ENTRY_ADDR = re.compile(r'^                                   ([A-F0-9]+) ',re.I)
-RE_MP_ENTRYMODNAME  = re.compile(r'MODULE, NAME : ([\w_\?/\\\.0-9]+)',re.I)
-RE_MP_ENTRYLOCAL    = re.compile(r'^           LOCAL',re.I)
-RE_MP_ENTRYENTRY    = re.compile(r'^           ENTRY',re.I)
+RE_MP_ENTRYSTART = re.compile(r'^           =====', re.I)
+RE_MP_ENTRY = re.compile(r'^           ([\w_\?0-9:]+)[\t ]+([A-F0-9]+)', re.I)
+RE_MP_LONG_ENTRY = re.compile(r'^           ([\w_\?0-9:]+)\n', re.I)
+RE_MP_LONG_ENTRY_ADDR = re.compile(r'^                                   ([A-F0-9]+) ', re.I)
+RE_MP_ENTRYMODNAME = re.compile(r'MODULE, NAME : ([\w_\?/\\\.0-9]+)', re.I)
+RE_MP_ENTRYLOCAL = re.compile(r'^           LOCAL', re.I)
+RE_MP_ENTRYENTRY = re.compile(r'^           ENTRY', re.I)
 
 RE_CROSSREFERENCE = re.compile('CROSS REFERENCE')
 RE_ENTRYLIST = re.compile('ENTRY LIST')
@@ -73,23 +75,25 @@ RE_MODULEMAP = re.compile('MODULE MAP')
 RE_CALLGRAPH = re.compile('CALL GRAPH')
 RE_SEGMENTS = re.compile('SEGMENTS IN ADDRESS ORDER')
 
+
 class MemMap:
-    def __init__(self, filename = None):
+    def __init__(self, filename=None):
         sys.stderr.write('init mem map: {}\n'.format(filename))
         self.module = 0
         self.modules = []
-        self.MP_NONE, self.MP_GLOBAL, self.MP_LOCAL = range(3) # types of labels
+        self.MP_NONE, self.MP_GLOBAL, self.MP_LOCAL = range(3)  # types of labels
         self.modmapstart = self.MP_NONE
         self.long_module_name = 0
 
         self.sections = [
-            (RE_CROSSREFERENCE, self.parseCROSSREFERENCE,"CROSS REFERENCE"),
+            (RE_CROSSREFERENCE, self.parseCROSSREFERENCE, "CROSS REFERENCE"),
             (RE_ENTRYLIST,      self.parseENTRYLIST,     "ENTRY LIST"),
             (RE_MODULEMAP,      self.parseMODULEMAP,     "MODULE MAP"),
             (RE_CALLGRAPH,      self.parseCALLGRAPH,     "CALL GRAPH"),
             (RE_SEGMENTS,       self.parseSEGMENTS,      "SEGMENTS IN ADDRESS ORDER"),
         ]
-        if filename is not None: self.load(filename)
+        if filename is not None:
+            self.load(filename)
 
     def load(self, filename):
         f = open(filename)
@@ -102,7 +106,7 @@ class MemMap:
                     if verbosity:
                         sys.stderr.write("Scanning section {}\n".format(self.sections[i][2]))
                     section = i
-                    break;
+                    break
             if section >= 0:
                 self.sections[section][1](l)
         f.close()
@@ -117,7 +121,7 @@ class MemMap:
             #modules.append(module)
         g = RE_ENTRY.search(l)
         if self.module and g:
-            self.module.labels.append((g.group(1),int(g.group(2), 16)))
+            self.module.labels.append((g.group(1), int(g.group(2), 16)))
 
     def parseMODULEMAP(self, l):
         g = RE_MP_ENTRYMODNAME.search(l)
@@ -147,12 +151,12 @@ class MemMap:
 
         g = RE_MP_LONG_ENTRY_ADDR.search(l)
         if self.modmapstart and self.module and g:
-            self.module.labels.append( (self.long_module_name, int(g.group(1),16), self.modmapstart) )
+            self.module.labels.append((self.long_module_name, int(g.group(1), 16), self.modmapstart))
             return
 
         g = RE_MP_ENTRY.search(l)
         if self.modmapstart and self.module and g:
-            self.module.labels.append( (g.group(1),int(g.group(2),16), self.modmapstart) )
+            self.module.labels.append((g.group(1), int(g.group(2), 16), self.modmapstart))
             return
 
     def parseCALLGRAPH(self, l):
@@ -162,10 +166,10 @@ class MemMap:
         g = RE_SEGMENT.search(l)
         if g:
             seg_name = g.group(1)
-            seg_start = int(g.group(2),16)
+            seg_start = int(g.group(2), 16)
             if g.group(4):
-                seg_end = int(g.group(4),16)
-                seg_size = int(g.group(5),16)
+                seg_end = int(g.group(4), 16)
+                seg_size = int(g.group(5), 16)
             else:
                 seg_end = seg_start
                 seg_size = 0
@@ -183,7 +187,7 @@ class MemMap:
         """get an address or label, raise exception if not found"""
         for m in self.modules:
             k = m[item]
-            if k != None:
+            if k is not None:
                 return k
         raise IndexError("not found")
 
@@ -225,8 +229,7 @@ if __name__ == '__main__':
     try:
         programFlash = sys.argv[1]
         memorymap = MemMap(sys.argv[1])
-    except Exception, e:
+    except Exception as e:
         sys.stderr.write("error while reading arguments: %s\n" % e)
         raise SystemExit(1)
     pprint.pprint(symbols)
-

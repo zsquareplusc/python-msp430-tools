@@ -15,6 +15,7 @@ import HIL
 #~ import psyco
 #~ psyco.full()
 
+
 def init(port='1'):
     """open the parallel port and prepare for SPI mode"""
     HIL.Initialize(port)
@@ -25,10 +26,12 @@ def init(port='1'):
     HIL.TDI(1)
     HIL.TMS(1)
 
+
 def close():
     """close the parallel port"""
     HIL.Release()
     HIL.Close(1)
+
 
 def _delay():
     """can be implemented if the SPI data rate has to be lowered"""
@@ -36,6 +39,7 @@ def _delay():
     #~ for i in range(10): HIL.DelayMSec(0)
     #~ HIL.DelayMSec(0)
     pass
+
 
 def shift(data):
     """shift an binary string from/to the slave, returning the
@@ -56,18 +60,21 @@ def shift(data):
         answer.append(chr(indata))
     return ''.join(answer)
 
+
 def sync():
     """read untlil something else as a 0xff arrives.
     """
     while shift('\xff') != '\xff':
         pass
 
+
 def getNullTeminated(maxlen=80):
     """read a null terminated string over SPI."""
     answer = []
     while maxlen:
         c = shift('\xff')
-        if c == '\0': break
+        if c == '\0':
+            break
         answer.append(c)
         maxlen -= 1
     return ''.join(answer)
@@ -82,12 +89,12 @@ if __name__ == '__main__':
     HIL.DelayMSec(10)
     HIL.RST(1)
     HIL.DelayMSec(10)
-    
-    #simple speed test
+
+    # simple speed test
     bytes = 0
     t1 = time.time()
     for i in range(200):
         #~ print '%r' % getNullTeminated()
         bytes += len(getNullTeminated()) + 1
     dt = time.time() - t1
-    print "%d bytes in %.2f seconds -> %.2f bytes/second" % (bytes, dt, bytes/dt)
+    print("%d bytes in %.2f seconds -> %.2f bytes/second" % (bytes, dt, bytes / dt))

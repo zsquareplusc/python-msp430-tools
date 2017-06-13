@@ -13,7 +13,6 @@ callibrate the clock to a gived frequency.
 """
 
 import cStringIO
-import sys
 from msp430 import memory
 from msp430.jtag import jtag
 import logging
@@ -39,12 +38,13 @@ def getDCOFreq(dcoctl, bcsctl1, bcsctl2=0):
     funclet = memory.load('counter', cStringIO.StringIO(COUNTER_FUNCLET), format='titext')
 
     funclet[0].data = funclet[0].data[:6] \
-                    + chr(dcoctl) + chr(bcsctl1) + chr(bcsctl2) \
-                    + funclet[0].data[9:]
+        + chr(dcoctl) + chr(bcsctl1) + chr(bcsctl2) \
+        + funclet[0].data[9:]
     runtime = jtag._parjtag.funclet(funclet[0].data, 100)
     count = jtag._parjtag.regread(14) | (jtag._parjtag.regread(15) << 16)
 
-    return 1000*count*4/runtime
+    return 1000 * count * 4 / runtime
+
 
 def setDCO(fmin, fmax, maxrsel=7, dcor=False):
     """\
@@ -55,16 +55,16 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
     log = logging.getLogger('msp430.jtag.dco')
     log.debug("setDCO target: %dHz < frequency < %dHz" % (fmin, fmax))
     resolution = 128
-    dco = 3<<5
+    dco = 3 << 5
     bcs1 = maxrsel
-    fast = True
     upper = False
     lower = False
 
     for tries in range(50):
         if upper and lower and resolution > 1:
             resolution /= 2
-            if resolution < 1: resolution = 1
+            if resolution < 1:
+                resolution = 1
             log.debug("switching to higher resolution (-> %d)" % (resolution,))
             upper = False
             lower = False
@@ -80,7 +80,8 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
                     if resolution > 1:
                         # try again with minimum settings but increased resolution
                         resolution /= 2
-                        if resolution < 1: resolution = 1
+                        if resolution < 1:
+                            resolution = 1
                         bcs1 = 0
                         dco = 0
                     else:
@@ -96,7 +97,8 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
                     if resolution > 1:
                         # try again with maximum settings but increased resolution
                         resolution /= 2
-                        if resolution < 1: resolution = 1
+                        if resolution < 1:
+                            resolution = 1
                         bcs1 = maxrsel
                         dco = 255
                     else:
@@ -118,6 +120,7 @@ e9 ff 53 00 d2 40 e4 ff 54 00 d2 40 da ff 50 00
 q
 """
 
+
 def getDCOPlusFreq(scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1):
     """\
     Measure DCO frequency on a F4xx device
@@ -126,13 +129,14 @@ def getDCOPlusFreq(scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1):
     """
     funclet = memory.load("counter", cStringIO.StringIO(COUNTERPLUS_FUNCLET), format='titext')
     funclet[0].data = funclet[0].data[:6] \
-                    + chr(scfi0) + chr(scfi1) \
-                    + chr(scfqctl) + chr(fll_ctl0) \
-                    + chr(fll_ctl1) + funclet[0].data[11:]
+        + chr(scfi0) + chr(scfi1) \
+        + chr(scfqctl) + chr(fll_ctl0) \
+        + chr(fll_ctl1) + funclet[0].data[11:]
     #~ funclet..[0x205] = scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1
     runtime = jtag._parjtag.funclet(funclet[0].data, 100)
     count = jtag._parjtag.regread(14) | (jtag._parjtag.regread(15) << 16)
-    return 1000*count*4/runtime
+    return 1000 * count * 4 / runtime
+
 
 def setDCOPlus(fmin, fmax):
     """\
@@ -152,7 +156,7 @@ def setDCOPlus(fmin, fmax):
         mid = (last + first) / 2
         # Select DCO range from 0.23MHz to 11.2MHz. Specify frequency via Ndco.
         # Disable Modulation. Enable DCO+.
-        frequency = getDCOPlusFreq(mid&3, mid>>2, 0x80, 0x80, 0)
+        frequency = getDCOPlusFreq(mid & 3, mid >> 2, 0x80, 0x80, 0)
         if frequency > fmax:
             log.debug("%luHz is too high, decreasing" % frequency)
             last = mid
@@ -162,8 +166,8 @@ def setDCOPlus(fmin, fmax):
         else:
             break
 
-    frequency = getDCOPlusFreq(mid&3, mid>>2, 0x80, 0x80, 0)
+    frequency = getDCOPlusFreq(mid & 3, mid >> 2, 0x80, 0x80, 0)
     log.debug("%luHz" % frequency)
     if fmin <= frequency <= fmax:
-        return frequency, mid&3, mid>>2, 0x80, 0x80, 0
+        return frequency, mid & 3, mid >> 2, 0x80, 0x80, 0
     raise IOError("Couldn't get DCO working with correct frequency.")

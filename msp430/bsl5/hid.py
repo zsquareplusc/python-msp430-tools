@@ -57,10 +57,10 @@ class HIDBSL5Base(bsl5.BSL5):
         +------+-----+-----------+
         """
         # first synchronize with slave
-        self.logger.debug('Command 0x%02x (%d bytes)' % (cmd, 1+len(message)))
+        self.logger.debug('Command 0x%02x (%d bytes)' % (cmd, 1 + len(message)))
         #~ self.logger.debug('Command 0x%02x %s (%d bytes)' % (cmd, message.encode('hex'), 1+len(message)))
-        txdata = bytearray(struct.pack('<BBB', 0x3f, 1+len(message), cmd) + message)
-        txdata += b'\xac'*(64 - len(txdata)) # pad up to block size
+        txdata = bytearray(struct.pack('<BBB', 0x3f, 1 + len(message), cmd) + message)
+        txdata += b'\xac' * (64 - len(txdata))  # pad up to block size
         #~ self.logger.debug('Sending command: %r %d Bytes' % (txdata.encode('hex'), len(txdata)))
         # transmit command
         self.write_report(txdata)
@@ -71,12 +71,13 @@ class HIDBSL5Base(bsl5.BSL5):
             pi = report[0]
             if pi == '\x3f':
                 length = ord(report[1])
-                data = report[2:2+length]
+                data = report[2:2 + length]
                 #~ if expect is not None and len(data) != expect:
                     #~ raise bsl5.BSL5Error('expected %d bytes, got %d bytes' % (expect, len(data)))
                 return data
             else:
-                if pi: raise bsl5.BSL5Error('received bad PI, expected 0x3f (got 0x%02x)' % (ord(pi),))
+                if pi:
+                    raise bsl5.BSL5Error('received bad PI, expected 0x3f (got 0x%02x)' % (ord(pi),))
                 raise bsl5.BSL5Error('received bad PI, expected 0x3f (got empty response)')
 
 
@@ -93,7 +94,7 @@ if sys.platform == 'win32':
 
         def open(self, device=None):
             if device is None:
-                filter = hid.HidDeviceFilter(vendor_id = 0x2047, product_id = 0x0200)
+                filter = hid.HidDeviceFilter(vendor_id=0x2047, product_id=0x0200)
                 all_devices = filter.get_devices()
                 try:
                     self.hid_device = all_devices[0]
@@ -133,6 +134,7 @@ if sys.platform == 'win32':
             return self.receiving_queue.get()
 else:
     import glob
+
     class HIDBSL5(HIDBSL5Base):
         """\
         HID support for running on Linux (systems with /dev/hidraw*).
@@ -150,8 +152,9 @@ else:
                                 device = os.path.join('/dev', os.path.basename(path))
                                 break
                     except IOError:
-                        pass # file could not be opened
-            if device is None: raise ValueError('USB VID:PID 2047:0200 not found (not in BSL mode? or try --device)')
+                        pass  # file could not be opened
+            if device is None:
+                raise ValueError('USB VID:PID 2047:0200 not found (not in BSL mode? or try --device)')
 
             self.logger.info('Opening HID device %r' % (device,))
             self.hid_device = os.open(device, os.O_RDWR)
@@ -185,28 +188,28 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
     def add_extra_options(self):
         group = OptionGroup(self.parser, "Communication settings")
 
-        group.add_option("-d", "--device",
-                dest="device",
-                help="device name (default: auto detection)",
-                default=None)
+        group.add_option(
+            "-d", "--device",
+            dest="device",
+            help="device name (default: auto detection)",
+            default=None)
 
         self.parser.add_option_group(group)
 
         group = OptionGroup(self.parser, "BSL settings")
 
-        group.add_option("--password",
-                dest="password",
-                action="store",
-                help="transmit password before doing anything else, password is given in given (TI-Text/ihex/etc) file",
-                default=None,
-                metavar="FILE")
+        group.add_option(
+            "--password",
+            dest="password",
+            action="store",
+            help="transmit password before doing anything else, password is given in given (TI-Text/ihex/etc) file",
+            default=None,
+            metavar="FILE")
 
         self.parser.add_option_group(group)
 
-
     def close_connection(self):
         self.close()
-
 
     def open_connection(self):
         self.logger = logging.getLogger('BSL')
@@ -219,12 +222,12 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
         if self.options.do_mass_erase:
             self.logger.info("Mass erase...")
             try:
-                self.BSL_RX_PASSWORD('\xff'*30 + '\0'*2)
+                self.BSL_RX_PASSWORD('\xff' * 30 + '\0' * 2)
             except bsl5.BSL5Error:
-                pass # it will fail - that is our intention to trigger the erase
+                pass  # it will fail - that is our intention to trigger the erase
             time.sleep(1)
             # after erase, unlock device
-            self.BSL_RX_PASSWORD('\xff'*32)
+            self.BSL_RX_PASSWORD('\xff' * 32)
             # remove mass_erase from action list so that it is not done
             # twice
             self.remove_action(self.mass_erase)
@@ -257,7 +260,7 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
         self.open(self.options.device)
         # checking version, this is also a connection check
         bsl_version = self.BSL_VERSION()
-        if bsl_version_expected !=  bsl_version_expected:
+        if bsl_version_expected != bsl_version:
             self.logger.error("BSL version mismatch (continuing anyway)")
         else:
             self.logger.debug("BSL version OK")

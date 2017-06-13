@@ -46,7 +46,7 @@ class GDBTarget(object):
 
     def execute(self, address):
         """Start executing code on the target."""
-        self.gdb.cont(address) # load PC and execute
+        self.gdb.cont(address)  # load PC and execute
 
     def version(self):
         """The 16 bytes of the ROM that contain chip and BSL info are returned."""
@@ -66,7 +66,6 @@ class GDBTarget(object):
             self.gdb = None
 
 
-
 class GDB(GDBTarget, msp430.target.Target):
     """Combine the GDB backend and the common target code."""
 
@@ -75,19 +74,18 @@ class GDB(GDBTarget, msp430.target.Target):
         msp430.target.Target.__init__(self)
         self.logger = logging.getLogger('GDB')
 
-
     def add_extra_options(self):
         group = OptionGroup(self.parser, "Connection")
 
-        group.add_option("-c", "--connect",
-                dest="host_port",
-                help="TCP/IP host name or ip and port of GDB server (default: %default)",
-                action='store',
-                default='localhost:2000',
-                metavar='HOST:PORT')
+        group.add_option(
+            "-c", "--connect",
+            dest="host_port",
+            help="TCP/IP host name or ip and port of GDB server (default: %default)",
+            action='store',
+            default='localhost:2000',
+            metavar='HOST:PORT')
 
         self.parser.add_option_group(group)
-
 
     def parse_extra_options(self):
         host, port = self.options.host_port.split(':')
@@ -95,10 +93,8 @@ class GDB(GDBTarget, msp430.target.Target):
         if self.verbose:
             sys.stderr.write("MSP430 remote GDB programmer Version: %s\n" % VERSION)
 
-
     def close_connection(self):
         self.close()
-
 
     def open_connection(self):
         self.open(self.host_port)

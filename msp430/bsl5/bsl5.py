@@ -16,24 +16,26 @@ port access, USB HID).
 import struct
 
 # commands for the MSP430 target
-BSL_RX_DATA_BLOCK       = 0x10    # Write to boot loader
-BSL_RX_DATA_BLOCK_FAST  = 0x1b    # Write to boot loader
-BSL_RX_PASSWORD         = 0x11    # Receive password to unlock commands
-BSL_ERASE_SEGMENT       = 0x12    # Erase one segment
-BSL_LOCK_INFO           = 0x13    # Toggle INFO_A lock bit
-BSL_MASS_ERASE          = 0x15    # Erase complete FLASH memory
-BSL_CRC_CHECK           = 0x16    # Run 16 bit CRC check over given area
-BSL_LOAD_PC             = 0x17    # Load PC and start execution
-BSL_TX_DATA_BLOCK       = 0x18    # Read from boot loader
-BSL_VERSION             = 0x19    # Get BSL version
-BSL_BUFFER_SIZE         = 0x1a    # Get BSL buffer size
+BSL_RX_DATA_BLOCK = 0x10        # Write to boot loader
+BSL_RX_DATA_BLOCK_FAST = 0x1b   # Write to boot loader
+BSL_RX_PASSWORD = 0x11          # Receive password to unlock commands
+BSL_ERASE_SEGMENT = 0x12        # Erase one segment
+BSL_LOCK_INFO = 0x13            # Toggle INFO_A lock bit
+BSL_MASS_ERASE = 0x15           # Erase complete FLASH memory
+BSL_CRC_CHECK = 0x16            # Run 16 bit CRC check over given area
+BSL_LOAD_PC = 0x17              # Load PC and start execution
+BSL_TX_DATA_BLOCK = 0x18        # Read from boot loader
+BSL_VERSION = 0x19              # Get BSL version
+BSL_BUFFER_SIZE = 0x1a          # Get BSL buffer size
 
 
 class BSL5Exception(Exception):
     """Errors from the slave"""
 
+
 class BSL5Timeout(BSL5Exception):
     """got no answer from slave within time"""
+
 
 class BSL5Error(BSL5Exception):
     """command execution failed"""
@@ -64,7 +66,7 @@ class BSL5(object):
     def check_answer(self, data):
         if data[0] == '\x3b':
             if data[1] == '\0':
-                return # SUCCESS!
+                return  # SUCCESS!
             raise BSL5Error(BSL5_ERROR_CODES.get(ord(data[1]), 'unknown error response 0x%02x' % ord(data[1])))
         elif data[0] != '\x3a':
             raise BSL5Error('unknown response 0x%02x' % ord(data[0]))
@@ -142,7 +144,8 @@ class BSL5(object):
         Read from memory. It creates multiple BSL_TX_DATA_BLOCK commands
         internally when the size is larger than the block size.
         """
-        if self.buffer_size is None: raise BSL5Error('block size!?')
+        if self.buffer_size is None:
+            raise BSL5Error('block size!?')
         data = bytearray()
         odd = bool(length & 1)
         if odd:
@@ -162,7 +165,8 @@ class BSL5(object):
         BSL_RX_DATA_BLOCK_FAST commands internally when the size is larger than
         the block size.
         """
-        if self.buffer_size is None: raise BSL5Error('block size!?')
+        if self.buffer_size is None:
+            raise BSL5Error('block size!?')
         if len(data) & 1:
             data += '\xff'
             #~ self.log.warn('memory_write: Odd length data not supported, padded with 0xff')
@@ -223,9 +227,9 @@ if __name__ == '__main__':
         """Test code: show what the BSL command would send"""
         def bsl(self, cmd, message='', expect=None):
             txdata = struct.pack('<cBBB', DATA_FRAME, cmd, len(message), len(message)) + message
-            txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   #append checksum
+            txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   # append checksum
             print(repr(txdata), len(txdata))
             print(''.join(['\\x%02x' % ord(x) for x in txdata]))
 
     dummy = DummyBSL()
-    dummy.BSL_RX_PASSWORD("\xff"*32)
+    dummy.BSL_RX_PASSWORD("\xff" * 32)

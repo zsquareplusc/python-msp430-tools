@@ -17,7 +17,6 @@ get meaningful numbers.
 
 from msp430.jtag import jtag
 import sys
-import os
 import time
 
 if __name__ == '__main__':
@@ -25,16 +24,18 @@ if __name__ == '__main__':
 
     parser = OptionParser(usage="%prog [OPTIONS]")
 
-    parser.add_option("-v", "--verbose",
-            dest="verbose",
-            help="show more messages (can be given multiple times)",
-            default=0,
-            action='count')
+    parser.add_option(
+        "-v", "--verbose",
+        dest="verbose",
+        help="show more messages (can be given multiple times)",
+        default=0,
+        action='count')
 
-    parser.add_option("-o", "--output",
-            dest="output",
-            help="write result to given file",
-            metavar="FILENAME")
+    parser.add_option(
+        "-o", "--output",
+        dest="output",
+        help="write result to given file",
+        metavar="FILENAME")
 
     (options, args) = parser.parse_args()
 

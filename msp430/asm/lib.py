@@ -46,7 +46,10 @@ def main():
     if options.outfile:
         outfile = codecs.open(options.outfile, 'w', 'utf-8')
     else:
-        outfile = codecs.getwriter("utf-8")(sys.stdout)
+        if sys.version_info >= (3, 0):
+            outfile = sys.stdout
+        else:
+            outfile = codecs.getwriter("utf-8")(sys.stdout)
 
     if options.list:
         outfile.write('List of available snippets:\n')
@@ -62,7 +65,7 @@ def main():
 
     # load desired snippet
     try:
-        template = pkgutil.get_data('msp430.asm', 'librarian/%s' % args[0])
+        template = pkgutil.get_data('msp430.asm', 'librarian/%s' % args[0]).decode('utf-8')
     except IOError:
         sys.stderr.write('lib: %s: File not found\n' % (args[0]),)
         if options.debug:

@@ -1207,10 +1207,14 @@ If no input files are specified data is read from stdin.""")
     if options.outfile is not None:
         out = codecs.open(options.outfile, 'w', 'utf-8')
     else:
-        out = codecs.getwriter("utf-8")(sys.stdout)
+        if sys.version_info >= (3, 0):
+            out = sys.stdout
+        else:
+            out = codecs.getwriter("utf-8")(sys.stdout)
 
-    # XXX make stderr unicode capable
-    sys.stderr = codecs.getwriter("utf-8")(sys.stderr)
+    if sys.version_info < (3, 0):
+        # XXX make stderr unicode capable
+        sys.stderr = codecs.getwriter("utf-8")(sys.stderr)
 
     instructions = []
     include_paths = []

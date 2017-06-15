@@ -508,7 +508,7 @@ def interpreter_loop(namespace={}, debug=False, rpn_class=RPN, rpn_instance=None
             words = input('> ')
             rpn_instance.interpret_sequence(words.split(), filename='<stdin>')
         except KeyboardInterrupt:
-            print
+            print()
             break
         except SystemExit:
             raise

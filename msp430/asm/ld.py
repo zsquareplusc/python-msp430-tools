@@ -681,10 +681,14 @@ Output is in "TI-Text" format.""")
     if options.outfile is not None:
         out = open(options.outfile, "wb")
     else:
-        out = sys.stdout
+        if sys.version_info >= (3, 0):
+            out = sys.stdout.buffer
+        else:
+            out = sys.stdout
 
-    # XXX make stderr unicode capable
-    sys.stderr = codecs.getwriter("utf-8")(sys.stderr)
+    if sys.version_info < (3, 0):
+        # XXX make stderr unicode capable
+        sys.stderr = codecs.getwriter("utf-8")(sys.stderr)
 
     instructions = []
     for filename in args:

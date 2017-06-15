@@ -343,7 +343,7 @@ class Preprocessor(object):
                     continue
                 elif m.lastgroup == 'IFDEF':
                     symbol = m.group('IFDEF_NAME').strip()
-                    value = self.namespace.defines.has_key(symbol)
+                    value = symbol in self.namespace.defines
                     self.log.debug("#ifdef %r -> %r" % (symbol, value))
                     hiddenstack.append((process, my_if_was_not_hidden, if_name, False))
                     if_name = symbol
@@ -355,7 +355,7 @@ class Preprocessor(object):
                     continue
                 elif m.lastgroup == 'IFNDEF':
                     symbol = m.group('IFNDEF_NAME').strip()
-                    value = not self.namespace.defines.has_key(symbol)
+                    value = symbol not in self.namespace.defines
                     self.log.debug("#ifndef %r -> %r" % (symbol, value))
                     hiddenstack.append((process, my_if_was_not_hidden, if_name, False))
                     if_name = symbol
@@ -400,7 +400,7 @@ class Preprocessor(object):
                         definition = m.group('MACRO_DEF').strip()
                     else:
                         definition = ''
-                    if self.macros.has_key(name):
+                    if name in self.macros:
                         self.log.warn("%r redefinition ignored" % (name),)
                     else:
                         # prepare the macro value to be used as format string
@@ -424,7 +424,7 @@ class Preprocessor(object):
                         definition = m.group('DEF_VALUE').strip()
                     else:
                         definition = ''
-                    if self.namespace.defines.has_key(symbol):
+                    if symbol in self.namespace.defines:
                         self.log.warn("%r redefinition ignored" % (symbol,))
                     else:
                         self.namespace.defines[symbol] = definition
@@ -550,11 +550,17 @@ def main():
     if options.outfile:
         outfile = codecs.open(options.outfile, 'w', 'utf-8')
     else:
-        outfile = codecs.getwriter("utf-8")(sys.stdout)
+        if sys.version_info >= (3, 0):
+            outfile = sys.stdout
+        else:
+            outfile = codecs.getwriter("utf-8")(sys.stdout)
 
     if not args or args[0] == '-':
         infilename = '<stdin>'
-        infile = codecs.getreader("utf-8")(sys.stdin)
+        if sys.version_info >= (3, 0):
+            infile = sys.stdin
+        else:
+            infile = codecs.getreader("utf-8")(sys.stdin)
     else:
         try:
             infilename = args[0]

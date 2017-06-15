@@ -69,7 +69,10 @@ def main():
     if options.outfile:
         outfile = codecs.open(options.outfile, 'w', 'utf-8')
     else:
-        outfile = codecs.getwriter("utf-8")(sys.stdout)
+        if sys.version_info >= (3, 0):
+            outfile = sys.stdout
+        else:
+            outfile = codecs.getwriter("utf-8")(sys.stdout)
 
     cpp = msp430.asm.cpp.Preprocessor()
     # extend include search path

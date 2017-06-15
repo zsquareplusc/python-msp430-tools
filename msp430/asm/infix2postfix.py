@@ -11,6 +11,11 @@ Parse algebraic expressions (infix) and output postfix notation.
 
 import re
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 
 class Scanner(object):
 

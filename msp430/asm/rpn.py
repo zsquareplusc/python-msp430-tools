@@ -61,11 +61,11 @@ def words_in_string(data, name='<string>', include_newline=False):
     Yield word for word of a string, with comments removed. Words are annotated
     with position in source string.
     """
-    for n, line in enumerate(data.splitlines()):
+    for n, line in enumerate(data.splitlines(), 1):
         for word in m_comment.sub('', line).split():
-            yield Word(word, name, n + 1, line)
+            yield Word(word, name, n, line)
         if include_newline:
-            yield Word('\n', name, n + 1, line)
+            yield Word('\n', name, n, line)
 
 
 def words_in_file(filename, fileobj=None, include_newline=False):
@@ -75,17 +75,18 @@ def words_in_file(filename, fileobj=None, include_newline=False):
     """
     if fileobj is None:
         fileobj = codecs.open(filename, 'r', 'utf-8')
-    for n, line in enumerate(fileobj):
+    for n, line in enumerate(fileobj, 1):
         for word in m_comment.sub('', line).split():
-            yield Word(word, filename, n + 1, line)
+            yield Word(word, filename, n, line)
         if include_newline:
-            yield Word('\n', filename, n + 1, line)
+            yield Word('\n', filename, n, line)
 
 
 class RPNError(Exception):
     """interpreter error"""
     def __init__(self, message, filename=None, lineno=None, column=None, offset=None, text=None):
         Exception.__init__(self, message)
+        self.message = message
         self.filename = filename or '<unknown>'
         self.lineno = lineno
         self.column = column

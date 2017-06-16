@@ -18,9 +18,14 @@ import sys
 import os
 import re
 import logging
+import binascii
 import codecs
 from msp430.asm import infix2postfix
 from msp430.asm import rpn
+
+
+def hexlify(text):
+    return binascii.hexlify(text.encode('utf-8')).decode('utf-8')
 
 
 def line_joiner(line_iterator):
@@ -409,13 +414,13 @@ class Preprocessor(object):
                         for arg in args:
                             definition = re.sub(
                                     r'(^|[^\w_])#(%s)([^\w_]|$)' % arg,
-                                    r'\1"%%(%s)s"\3' % arg.encode('hex'),
+                                    r'\1"%%(%s)s"\3' % hexlify(arg),
                                     definition)
                             definition = re.sub(
                                     r'(^|[^\w_])(%s)([^\w_]|$)' % arg,
-                                    r'\1%%(%s)s\3' % arg.encode('hex'),
+                                    r'\1%%(%s)s\3' % hexlify(arg),
                                     definition)
-                        self.macros[name] = ([x.encode('hex') for x in args], definition)
+                        self.macros[name] = ([hexlify(x) for x in args], definition)
                         self.log.debug("defined macro %r => %r" % (name, self.macros[name]))
                     continue
                 elif m.lastgroup == 'DEFINE':

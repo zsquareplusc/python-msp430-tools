@@ -15,6 +15,7 @@ import sys
 import codecs
 from msp430.asm import mcu_definition_parser
 from msp430.asm import rpn, peripherals
+from msp430.asm.cpp import hexlify
 
 
 class LinkError(rpn.RPNError):
@@ -62,7 +63,7 @@ class Segment(object):
         if by_address:
             self.subsegments.sort()
         else:
-            self.subsegments.sort(lambda a, b: cmp(a.order, b.order))
+            self.subsegments.sort(key=lambda x: x.order)
         for segment in self.subsegments:
             segment.sort_subsegments(by_address)
 
@@ -78,11 +79,13 @@ class Segment(object):
 
     def __lt__(self, other):
         """Compare function that allows to sort segments by their start_address."""
+        if self.start_address is None: return False
+        if other.start_address is None: return True
         return self.start_address < other.start_address
 
-    def __cmp__(self, other):
-        """Compare function that allows to sort segments by their start_address."""
-        return cmp(self.start_address, other.start_address)
+    #~ def __cmp__(self, other):
+        #~ """Compare function that allows to sort segments by their start_address."""
+        #~ return cmp(self.start_address, other.start_address)
 
     def __repr__(self):
         return 'Segment[%s, %s, %s%s%s]' % (
@@ -431,7 +434,7 @@ class Linker(rpn.RPN):
             if self.errors_are_fatal:
                 self.linker_errorr('Jump out of range (distance %d)' % (distance,))
         else:
-            instruction |= 0x3ff & (distance / 2)
+            instruction |= 0x3ff & (distance // 2)
         self.current_segment.write_16bit(instruction)
         self.address += 2
 
@@ -504,7 +507,7 @@ class Linker(rpn.RPN):
     def name_symbol(self, name):
         """Name mangling for local symbols, otherwise return original name."""
         if name[0] == '.':
-            name = ".%s%s" % (self.source_filename.encode('hex'), name[1:])
+            name = ".%s%s" % (hexlify(self.source_filename), name[1:])
         return name
 
     def clear_local_symbols(self):
@@ -590,23 +593,23 @@ def to_TI_Text(segments):
         # need to start a new block if address jumping
         if address - 1 != last_address or address == 0x10000:
             if out and row_count != 0:  # except for the 1st one
-                out.append("\n")
-            out.append("@%04x\n" % (address,))
+                out.append(b"\n")
+            out.append(b"@%04x\n" % (address,))
             row_count = 0
         last_address = address
         # output byte
-        out.append("%02x" % byte)
+        out.append(b"%02x" % byte)
         row_count += 1
         # after 16 bytes (a row) insert a newline
         if row_count == 16:
-            out.append("\n")
+            out.append(b"\n")
             row_count = 0
         else:
-            out.append(" ")
+            out.append(b" ")
     if row_count != 0:
-        out.append("\n")
-    out.append("q\n")
-    return ''.join(out)
+        out.append(b"\n")
+    out.append(b"q\n")
+    return b''.join(out)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -743,6 +746,7 @@ Output is in "TI-Text" format.""")
         segment_definitions = mcu_definition_parser.expand_definition(mem_maps, options.mcu_name)
     except Exception as msg:
         sys.stderr.write('ERROR loading segment descriptions: %s\n' % (msg,))
+        raise
         sys.exit(1)
 
     linker.segments_from_definition(segment_definitions)

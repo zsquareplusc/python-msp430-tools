@@ -29,6 +29,12 @@ import pkgutil
 import logging
 from msp430.asm import rpn
 
+try:
+    unicode
+except NameError:
+    unicode = str
+    unichr = chr
+
 
 class DocumentTree(object):
     """\
@@ -99,12 +105,13 @@ class SeekableIterator(object):
         self.some_list = some_list
         self.position = 0
 
-    def next(self):
+    def __next__(self):
         if self.position < len(self.some_list):
             item = self.some_list[self.position]
             self.position += 1
             return item
         raise StopIteration()
+    next = __next__
 
     def seek(self, difference):
         new_position = self.position + difference
@@ -131,7 +138,7 @@ class Frame(list):
         stack._frame_iterator = iterable
         try:
             while True:
-                instruction = iterable.next()
+                instruction = next(iterable)
                 instruction(stack)
         except StopIteration:
             pass
@@ -654,12 +661,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word('LIT')
     def instruction_literal(self, stack):
         """Low level instruction to get a literal and push it on the stack."""
-        stack.push(stack._frame_iterator.next())
+        stack.push(next(stack._frame_iterator))
 
     @rpn.word('BRANCH')
     def instruction_seek(self, stack):
         """Get offset from sequence and jump to this position."""
-        difference = stack._frame_iterator.next()
+        difference = next(--stack._frame_iterator)
         stack._frame_iterator.seek(difference - 1)
 
     @rpn.word('BRANCH0')
@@ -668,7 +675,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         Get offset from sequence and a boolean from stack. Jump if boolean was
         false.
         """
-        difference = stack._frame_iterator.next()
+        difference = next(stack._frame_iterator)
         if not stack.pop():
             stack._frame_iterator.seek(difference - 1)
 
@@ -838,7 +845,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             raise ValueError('limitation, comment end ")" followed by data: %r' % (word,))
 
     def instruction_output_text(self, stack):
-        words = stack._frame_iterator.next()
+        words = next(stack._frame_iterator)
         self.doctree.write(words)
 
     @immediate
@@ -854,7 +861,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     words.append(word[:-1])
                 break
             words.append(word)
-        text = codecs.escape_decode(u' '.join(words))[0]
+        text = codecs.escape_decode(u' '.join(words))[0].decode('utf-8')
         if self.compiling:
             self.frame.append(self.instruction_literal)
             self.frame.append(text)
@@ -874,7 +881,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     words.append(word[:-1])
                 break
             words.append(word)
-        text = codecs.escape_decode(u' '.join(words))[0]
+        text = codecs.escape_decode(u' '.join(words))[0].decode('utf-8')
         if self.compiling:
             self.frame.append(self.instruction_output_text)
             self.frame.append(text)
@@ -893,7 +900,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             self.frame.append(self.word_depends_on)
             self.frame.append(word)
         else:
-            word = stack._frame_iterator.next()
+            word = next(stack._frame_iterator)
             self._compile_remember(word)
 
     def _compile_remember(self, word):
@@ -926,10 +933,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.doctree.write('\t.word %s\n\n' % self.create_asm_label('EXIT'))
 
     def _compile_thread(self, frame):
-        next = iter(frame).next
+        frame_iterator = iter(frame)
         try:
             while True:
-                entry = next()
+                entry = next(frame_iterator)
                 if callable(entry):
                     if entry == self.instruction_output_text:
                         label = self.create_label()
@@ -942,11 +949,11 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                         frame.chapter = self.doctree.chapter_name
                         self.target_namespace[label] = frame
                         self._compile_remember(label)
-                        text = next()
+                        text = next(frame_iterator)
                         frame.append(self.instruction_output_text)
                         frame.append('\t.asciiz "%s"\n' % (codecs.escape_encode(text)[0],))
                     elif entry == self.instruction_literal:
-                        value = next()
+                        value = next(frame_iterator)
                         if isinstance(value, Frame):
                             self.doctree.write('\t.word %s, %s\n' % (
                                     self.create_asm_label('LIT'),
@@ -959,12 +966,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                         self._compile_remember('LIT')
                     elif entry == self.instruction_seek:
                         # branch needs special case as offset needs to be recalculated
-                        offset = next()
+                        offset = next(frame_iterator)
                         self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH'), offset * 2))
                         self._compile_remember('BRANCH')
                     elif entry == self.instruction_branch_if_false:
                         # branch needs special case as offset needs to be recalculated
-                        offset = next()
+                        offset = next(frame_iterator)
                         self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH0'), offset * 2))
                         self._compile_remember('BRANCH0')
                     elif hasattr(entry, 'rpn_name'):
@@ -1024,7 +1031,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         parameter) or be part of a Frame.
         """
         if word is None:
-            word = self._frame_iterator.next()
+            word = next(self._frame_iterator)
         # when interpreting, execute the actual functionality
         # track what is done
         self.compiled_words.add(word)
@@ -1115,7 +1122,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             else:
                 # as fallback, check internal library too
                 try:
-                    data = pkgutil.get_data('msp430.asm', 'forth/%s' % (name,))
+                    data = pkgutil.get_data('msp430.asm', 'forth/%s' % (name,)).decode('utf-8')
                 except IOError:
                     raise ValueError('file not found: %s' % (name,))
                 else:
@@ -1151,7 +1158,7 @@ def main():
     parser = OptionParser(usage="""\
 %prog [options] [FILE...]|-]
 
-If no input files are specified data is read from stdin.""")
+If no input files are spnnecified data is read from stdin.""")
     parser.add_option(
             "-o", "--outfile",
             dest="outfile",
@@ -1180,19 +1187,21 @@ If no input files are specified data is read from stdin.""")
             default=False,
             help="interactive mode is started")
 
-    parser.add_option("-D", "--define",
-                      action="append",
-                      dest="defines",
-                      metavar="SYM[=VALUE]",
-                      default=[],
-                      help="define symbol")
+    parser.add_option(
+            "-D", "--define",
+            action="append",
+            dest="defines",
+            metavar="SYM[=VALUE]",
+            default=[],
+            help="define symbol")
 
-    parser.add_option("-I", "--include-path",
-                      action="append",
-                      dest="include_paths",
-                      metavar="PATH",
-                      default=[],
-                      help="Add directory to the search path list for includes")
+    parser.add_option(
+            "-I", "--include-path",
+            action="append",
+            dest="include_paths",
+            metavar="PATH",
+            default=[],
+            help="Add directory to the search path list for includes")
 
     (options, args) = parser.parse_args()
 

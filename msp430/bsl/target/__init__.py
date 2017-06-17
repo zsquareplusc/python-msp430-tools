@@ -24,23 +24,23 @@ import msp430.memory
 
 
 F1x_baudrate_args = {
-     9600:[0x8580, 0x0000],
-    19200:[0x86e0, 0x0001],
-    38400:[0x87e0, 0x0002],
-    57600:[0x0000, 0x0003],     # nonstandard XXX BSL dummy BCSCTL settings!
-   115200:[0x0000, 0x0004],     # nonstandard XXX BSL dummy BCSCTL settings!
+     9600: [0x8580, 0x0000],
+    19200: [0x86e0, 0x0001],
+    38400: [0x87e0, 0x0002],
+    57600: [0x0000, 0x0003],     # nonstandard XXX BSL dummy BCSCTL settings!
+   115200: [0x0000, 0x0004],     # nonstandard XXX BSL dummy BCSCTL settings!
 }
 F2x_baudrate_args = {
-     9600:[0x8880, 0x0000],
-    19200:[0x8b00, 0x0001],
-    38400:[0x8c80, 0x0002],
+     9600: [0x8880, 0x0000],
+    19200: [0x8b00, 0x0001],
+    38400: [0x8c80, 0x0002],
 }
 F4x_baudrate_args = {
-     9600:[0x9800, 0x0000],
-    19200:[0xb000, 0x0001],
-    38400:[0xc800, 0x0002],
-    57600:[0x0000, 0x0003],     # nonstandard XXX BSL dummy BCSCTL settings!
-   115200:[0x0000, 0x0004],     # nonstandard XXX BSL dummy BCSCTL settings!
+     9600: [0x9800, 0x0000],
+    19200: [0xb000, 0x0001],
+    38400: [0xc800, 0x0002],
+    57600: [0x0000, 0x0003],     # nonstandard XXX BSL dummy BCSCTL settings!
+   115200: [0x0000, 0x0004],     # nonstandard XXX BSL dummy BCSCTL settings!
 }
 
 
@@ -62,7 +62,6 @@ class SerialBSL(bsl.BSL):
         # delay after control line changes
         self.control_delay = 0.05
 
-
     def open(self, port, baudrate=9600, ignore_answer=False):
         self.ignore_answer = ignore_answer
         self.logger.info('Opening serial port %r' % port)
@@ -83,10 +82,8 @@ class SerialBSL(bsl.BSL):
                 timeout=1,
             )
 
-
     def __del__(self):
         self.close()
-
 
     def close(self):
         """Close serial port"""
@@ -94,7 +91,6 @@ class SerialBSL(bsl.BSL):
             self.logger.info('closing serial port')
             self.serial.close()
             self.serial = None
-
 
     def sync(self):
         """\
@@ -122,7 +118,6 @@ class SerialBSL(bsl.BSL):
             self.logger.error('Sync failed, aborting...')
             raise bsl.BSLTimeout('could not sync')
 
-
     def bsl(self, cmd, message='', expect=None):
         """\
         Low level access to the serial communication.
@@ -148,7 +143,7 @@ class SerialBSL(bsl.BSL):
         self.logger.debug('Command 0x%02x %s' % (cmd, message.encode('hex')))
         # prepare command with checksum
         txdata = struct.pack('<cBBB', bsl.DATA_FRAME, cmd, len(message), len(message)) + message
-        txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   #append checksum
+        txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   # append checksum
         #~ self.logger.debug('Sending command: %r' % (txdata,))
         # transmit command
         self.serial.write(txdata)
@@ -208,7 +203,6 @@ class SerialBSL(bsl.BSL):
             self.logger.debug('unexpected answer %r' % (ans,))
             raise bsl.BSLError('unexpected answer: %r' % (ans,))
 
-
     def set_RST(self, level=True):
         """\
         Controls RST/NMI pin (0: GND; 1: VCC; unless inverted flag is set)
@@ -222,7 +216,6 @@ class SerialBSL(bsl.BSL):
         else:
             self.serial.setDTR(level)
         time.sleep(self.control_delay)
-
 
     def set_TEST(self, level=True):
         """\
@@ -243,7 +236,6 @@ class SerialBSL(bsl.BSL):
                 self.serial.setRTS(level)
         time.sleep(self.control_delay)
 
-
     def set_baudrate(self, baudrate):
         """\
         Change the BSL baud rate on the target and switch the serial port.
@@ -256,7 +248,7 @@ class SerialBSL(bsl.BSL):
         elif family == msp430.target.F4x:
             table = F4x_baudrate_args
         else:
-            raise BSLError('No baud rate table for %s' % (family,))
+            raise bsl.BSLError('No baud rate table for %s' % (family,))
         self.logger.info('changing baud rate to %s' % (baudrate,))
         try:
             a, l = table[baudrate]
@@ -266,7 +258,6 @@ class SerialBSL(bsl.BSL):
             self.BSL_CHANGEBAUD(a, l)
             time.sleep(0.010)   # recommended delay
             self.serial.baudrate = baudrate
-
 
     def start_bsl(self, prompt_before_release=False):
         """\
@@ -284,7 +275,7 @@ class SerialBSL(bsl.BSL):
         self.set_TEST(True)     # TEST pin: GND
         self.set_TEST(False)    # TEST pin: Vcc
         if prompt_before_release:
-            raw_input('BSL start pattern sent, type [ENTER] to release RST and continue:')
+            input('BSL start pattern sent, type [ENTER] to release RST and continue:')
         self.set_RST(True)      # RST  pin: Vcc
         self.set_TEST(True)     # TEST pin: GND
         time.sleep(0.250)       # give MSP430's oscillator time to stabilize
@@ -303,101 +294,111 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
     def add_extra_options(self):
         group = OptionGroup(self.parser, "Communication settings")
 
-        group.add_option("-p", "--port",
-                dest="port",
-                help="Use com-port",
-                default='hwgrep://USB')
-        group.add_option("--invert-test",
-                dest="invert_test",
-                action="store_true",
-                help="invert RTS line",
-                default=False)
-        group.add_option("--invert-reset",
-                dest="invert_reset",
-                action="store_true",
-                help="invert DTR line",
-                default=False)
-        group.add_option("--swap-reset-test",
-                dest="swap_reset_test",
-                action="store_true",
-                help="exchange RST and TEST signals (DTR/RTS)",
-                default=False)
-        group.add_option("--test-on-tx",
-                dest="test_on_tx",
-                action="store_true",
-                help="TEST/TCK signal is muxed on TX line",
-                default=False)
+        group.add_option(
+            "-p", "--port",
+            dest="port",
+            help="Use com-port",
+            default='hwgrep://USB')
+        group.add_option(
+            "--invert-test",
+            dest="invert_test",
+            action="store_true",
+            help="invert RTS line",
+            default=False)
+        group.add_option(
+            "--invert-reset",
+            dest="invert_reset",
+            action="store_true",
+            help="invert DTR line",
+            default=False)
+        group.add_option(
+            "--swap-reset-test",
+            dest="swap_reset_test",
+            action="store_true",
+            help="exchange RST and TEST signals (DTR/RTS)",
+            default=False)
+        group.add_option(
+            "--test-on-tx",
+            dest="test_on_tx",
+            action="store_true",
+            help="TEST/TCK signal is muxed on TX line",
+            default=False)
 
         self.parser.add_option_group(group)
 
         group = OptionGroup(self.parser, "BSL settings")
 
-        group.add_option("--no-start",
-                dest="start_pattern",
-                action="store_false",
-                help="no not use ROM-BSL start pattern on RST+TEST/TCK",
-                default=True)
+        group.add_option(
+            "--no-start",
+            dest="start_pattern",
+            action="store_false",
+            help="no not use ROM-BSL start pattern on RST+TEST/TCK",
+            default=True)
 
-        group.add_option("-s", "--speed",
-                dest="speed",
-                type=int,
-                help="change baud rate (default 9600)",
-                default=None)
+        group.add_option(
+            "-s", "--speed",
+            dest="speed",
+            type=int,
+            help="change baud rate (default 9600)",
+            default=None)
 
-        group.add_option("--password",
-                dest="password",
-                action="store",
-                help="transmit password before doing anything else, password loaded from (TI-Text/ihex/etc) file",
-                default=None,
-                metavar="FILE")
+        group.add_option(
+            "--password",
+            dest="password",
+            action="store",
+            help="transmit password before doing anything else, password loaded from (TI-Text/ihex/etc) file",
+            default=None,
+            metavar="FILE")
 
-        group.add_option("--ignore-answer",
-                dest="ignore_answer",
-                action="store_true",
-                help="do not wait for answer to BSL commands",
-                default=False)
+        group.add_option(
+            "--ignore-answer",
+            dest="ignore_answer",
+            action="store_true",
+            help="do not wait for answer to BSL commands",
+            default=False)
 
-        group.add_option("--prompt-before-release",
-                dest="prompt_before_release",
-                action="store_true",
-                help="after sending the BSL start pattern, before releasing RST, prompt again",
-                default=False)
+        group.add_option(
+            "--prompt-before-release",
+            dest="prompt_before_release",
+            action="store_true",
+            help="after sending the BSL start pattern, before releasing RST, prompt again",
+            default=False)
 
-        group.add_option("--control-delay",
-                dest="control_delay",
-                type="float",
-                help="set delay in seconds (float) for BSL start pattern",
-                default=0.01)
+        group.add_option(
+            "--control-delay",
+            dest="control_delay",
+            type="float",
+            help="set delay in seconds (float) for BSL start pattern",
+            default=0.01)
 
-        group.add_option("--replace-bsl",
-                dest="replace_bsl",
-                action="store_true",
-                help="download replacement BSL (V1.50) for F1x and F4x devices with 2k RAM",
-                default=False)
+        group.add_option(
+            "--replace-bsl",
+            dest="replace_bsl",
+            action="store_true",
+            help="download replacement BSL (V1.50) for F1x and F4x devices with 2k RAM",
+            default=False)
 
-        group.add_option("--erase-cycles",
-                dest="extra_erase_cycles",
-                type="int",
-                help="configure extra erase cycles (e.g. very old F149 chips require this for --main-erase)",
-                default=None)
+        group.add_option(
+            "--erase-cycles",
+            dest="extra_erase_cycles",
+            type="int",
+            help="configure extra erase cycles (e.g. very old F149 chips require this for --main-erase)",
+            default=None)
         self.parser.add_option_group(group)
-
 
     def parse_extra_options(self):
         if self.verbose > 1:   # debug infos
             if hasattr(serial, 'VERSION'):
                 sys.stderr.write("pySerial version: %s\n" % serial.VERSION)
 
-
     def close_connection(self):
         self.close()
-
 
     def open_connection(self):
         self.logger = logging.getLogger('BSL')
         self.open(
             self.options.port,
-            ignore_answer = self.options.ignore_answer,
+            ignore_answer=self.options.ignore_answer,
         )
         self.control_delay = self.options.control_delay
 
@@ -422,15 +423,14 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         if self.options.start_pattern:
             self.start_bsl(self.options.prompt_before_release)
 
-
         if self.options.do_mass_erase:
             self.extra_timeout = 6
             self.mass_erase()
             self.extra_timeout = None
-            self.BSL_TXPWORD('\xff'*32)
+            self.BSL_TXPWORD('\xff' * 32)
             # remove mass_erase from action list so that it is not done
             # twice
-            self.remove_action(self.mass_erase) 
+            self.remove_action(self.mass_erase)
         else:
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
@@ -448,7 +448,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
             elif family == msp430.target.F4x:
                 bsl_name = 'BL_150S_44x.txt'
             else:
-                raise BSLError('No replacement BSL for %s' % (family,))
+                raise bsl.BSLError('No replacement BSL for %s' % (family,))
 
             self.logger.info('Download replacement BSL as requested by --replace-bsl')
             replacement_bsl_txt = pkgutil.get_data('msp430.bsl', bsl_name)
@@ -490,13 +490,12 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
             self.BSL_LOADPC(0x0220)
         return SerialBSL.BSL_RXBLK(self, address, length)
 
-
     # override reset method: use control line
     def reset(self):
         """Reset the device."""
-        
+
         self.logger.info('Reset device')
-        
+
         # dual reset:
         # 1) use the control line
         # 2) while the control line is used to set the device in reset, also

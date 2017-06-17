@@ -26,21 +26,21 @@ import msp430.memory
 BSL_CHANGE_BAUD_RATE = 0x52    # Change baud rate
 
 BSL_BAUD_RATE_D1 = {
-    9600   : 0x02,
-    19200  : 0x03,
-    38400  : 0x04,
-    57600  : 0x05,
-    115200 : 0x06,
+    9600: 0x02,
+    19200: 0x03,
+    38400: 0x04,
+    57600: 0x05,
+    115200: 0x06,
 }
 
 # possible answers
 BSL5_UART_ERROR_CODES = {
-        0x51: 'Header incorrect',
-        0x52: 'Checksum incorrect',
-        0x53: 'Packet size zero',
-        0x54: 'Packet size exceeds buffer',
-        0x55: 'Unknown error',
-        0x56: 'Unknown baud rate',
+    0x51: 'Header incorrect',
+    0x52: 'Checksum incorrect',
+    0x53: 'Packet size zero',
+    0x54: 'Packet size exceeds buffer',
+    0x55: 'Unknown error',
+    0x56: 'Unknown baud rate',
 }
 
 BSL5_ACK = '\x00'

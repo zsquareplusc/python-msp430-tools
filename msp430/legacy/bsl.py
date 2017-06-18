@@ -901,7 +901,7 @@ class BootStrapLoader(LowLevel):
         dev_id, bslVerHi, bslVerLo = struct.unpack(">H8xBB4x", blkin[:-2])  # cut away checksum and extract data
 
         if self.cpu is None:                        # cpy type forced?
-            if deviceids.has_key(dev_id):
+            if dev_id in deviceids:
                 self.cpu = deviceids[dev_id]        # try to autodectect CPU type
                 if DEBUG:
                     sys.stderr.write("Autodetect successful: %04x -> %s\n" % (dev_id, self.cpu))

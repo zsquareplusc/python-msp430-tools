@@ -10,6 +10,7 @@ Simple MSP430 BSL5 implementation using the serial port.
 """
 
 import sys
+import functools
 from msp430.bsl5 import bsl5
 import serial
 import struct
@@ -129,7 +130,7 @@ class SerialBSL5(bsl5.BSL5):
         self.logger.debug('Command 0x%02x %s' % (cmd, message.encode('hex')))
         # prepare command with checksum
         txdata = struct.pack('<BHB', 0x80, 1 + len(message), cmd) + message
-        txdata += struct.pack('<H', reduce(crc_update, txdata, 0xffff))   # append checksum
+        txdata += struct.pack('<H', functools.reduce(crc_update, txdata, 0xffff))   # append checksum
         #~ self.logger.debug('Sending command: %r' % (txdata.encode('hex'),))
         # transmit command
         self.serial.write(txdata)
@@ -165,7 +166,7 @@ class SerialBSL5(bsl5.BSL5):
             if len(crc_str) != 2:
                 raise bsl5.BSL5Timeout('timeout while reading answer (CRC)')
             crc = struct.unpack("<H", crc_str)
-            crc_expected = reduce(crc_update, head + data, 0xffff)
+            crc_expected = functools.reduce(crc_update, head + data, 0xffff)
             if crc != crc_expected:
                 raise bsl5.BSLException('CRC error in answer')
             if expect is not None and length != expect:

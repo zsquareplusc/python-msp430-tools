@@ -116,6 +116,7 @@ class ClientSocketConnector(threading.Thread):
 def identity(x):
     return x
 
+
 # decoder for Stop Reply Packets
 def decodeStopReplyPackets(message):
     #~ print "decodeStopReplyPackets"
@@ -208,13 +209,13 @@ class GDBClient(ClientSocketConnector):
         elif packet[0:1] == 'o' or packet[0:1] == 'O':
             message = packet[1:]
             if len(message) & 1:
-                sys.stderr.write("Odd length 'o' message - cutting off last character\n")     #XXX hack
+                sys.stderr.write("Odd length 'o' message - cutting off last character\n")  # XXX hack
                 message = message[:-1]
             self.output(message.decode('hex'))
         else:
             self.answer.put(packet.decode('hex'))
             #~ else:
-                #~ print "unwanted packet: %r" % packet            #XXX ugly
+                #~ print "unwanted packet: %r" % packet  # XXX ugly
 
     # --- callbacks ---
 
@@ -244,11 +245,11 @@ class GDBClient(ClientSocketConnector):
     def cont_with_signal(self, signal, startaddress=None):
         """Csig;addr -- continue with signal
         expected answer Stop Reply Packets"""
-        return self._remote_command('C%02x%s' % (
+        return self._remote_command(
+            'C%02x%s' % (
                 signal,
-                startaddress is not None and ';%x' % startaddress or ''
-            ), decoder=decodeStopReplyPackets
-        )
+                startaddress is not None and ';%x' % startaddress or ''),
+            decoder=decodeStopReplyPackets)
 
     #~ def gdbDetach(self):
         #~ """D -- detach
@@ -308,19 +309,19 @@ class GDBClient(ClientSocketConnector):
     def step(self, startaddress=None):
         """saddr -- step
         expected answer Stop Reply Packets"""
-        return self._remote_command('s%s' % (
-                startaddress is not None and '%x' % startaddress or ''
-            ), decoder=decodeStopReplyPackets
-        )
+        return self._remote_command(
+            's%s' % (
+                startaddress is not None and '%x' % startaddress or ''),
+            decoder=decodeStopReplyPackets)
 
     def step_with_signal(self, signal, startaddress=None):
         """Ssig;addr -- step with signal
         expected answer Stop Reply Packets"""
-        return self._remote_command('S%02x%s' % (
+        return self._remote_command(
+            'S%02x%s' % (
                 signal,
-                startaddress is not None and ';%x' % startaddress or ''
-            ), decoder=decodeStopReplyPackets
-        )
+                startaddress is not None and ';%x' % startaddress or ''),
+            decoder=decodeStopReplyPackets)
 
     def write_memory_binary(self, startaddress, data):
         """maddr,data -- write memory

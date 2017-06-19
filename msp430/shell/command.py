@@ -16,6 +16,8 @@ import os
 import shutil
 import stat
 import glob
+import optparse
+import sys
 
 
 def expanded(paths):
@@ -125,10 +127,6 @@ def is_writeable(path):
 
 #############################################
 
-import optparse
-import sys
-import os
-
 
 def command_cat(parser, argv):
     """show file contents"""
@@ -184,7 +182,8 @@ def command_rm(parser, argv):
 
 
 def command_mkdir(parser, argv):
-    parser.add_option("-p",
+    parser.add_option(
+        "-p",
         dest="create_missing",
         help="Create any missing intermediate pathname components.",
         default=False,
@@ -280,18 +279,18 @@ def command_list(parser, argv):
 
 
 COMMANDS = {
-        'cat': (command_cat,     'Show file contents.',            '%prog [-|FILE]...'),
-        'cp': (command_cp,       'Copy files.',                    '%prog SOURCE... DESTINATION\n       %prog -t DIRECTORY SOURCE...'),
-        'expand': (command_expand, 'Expand globbing patterns.',    '%prog [PATH...]'),
-        'false': (command_false, 'Simply return exit code 1',      '%prog'),
-        'mkdir': (command_mkdir, 'Create directories.',            '%prog [-p] DIRECTORY'),
-        'mv': (command_mv,       'Move/rename files.',             '%prog [options] SOURCE... TARGET'),
-        'rm': (command_rm,       'Delete files/directories.',      '%prog [options] FILE...'),
-        'true': (command_true,   'Simply return exit code 0',      '%prog'),
-        'touch': (command_touch, 'Update file date, create file.', '%prog [options] FILE...'),
-        'list': (command_list,   'This text.',                     '%prog'),
-        'which': (command_which, 'Find files in teh PATH',         '%prog [options] FILE...'),
-    }
+    'cat': (command_cat,     'Show file contents.',            '%prog [-|FILE]...'),
+    'cp': (command_cp,       'Copy files.',                    '%prog SOURCE... DESTINATION\n       %prog -t DIRECTORY SOURCE...'),
+    'expand': (command_expand, 'Expand globbing patterns.',    '%prog [PATH...]'),
+    'false': (command_false, 'Simply return exit code 1',      '%prog'),
+    'mkdir': (command_mkdir, 'Create directories.',            '%prog [-p] DIRECTORY'),
+    'mv': (command_mv,       'Move/rename files.',             '%prog [options] SOURCE... TARGET'),
+    'rm': (command_rm,       'Delete files/directories.',      '%prog [options] FILE...'),
+    'true': (command_true,   'Simply return exit code 0',      '%prog'),
+    'touch': (command_touch, 'Update file date, create file.', '%prog [options] FILE...'),
+    'list': (command_list,   'This text.',                     '%prog'),
+    'which': (command_which, 'Find files in teh PATH',         '%prog [options] FILE...'),
+}
 
 
 def main():
@@ -320,7 +319,8 @@ def main():
             result = 0
         sys.exit(result)
     except Exception as e:
-        if debug: raise
+        if debug:
+            raise
         sys.stderr.write('ERROR: %s\n' % (e,))
         sys.exit(1)
     parser.error('Expected command name, try "list".')

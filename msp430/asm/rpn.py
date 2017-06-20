@@ -16,6 +16,7 @@ import pprint
 import codecs
 import re
 import logging
+import math
 
 try:
     unicode
@@ -252,7 +253,7 @@ class RPNBase(list):
             e = int(math.log10(abs(obj)))
             e = int(e / 3) * 3
             if e:
-                return "%ge%s" % ((obj/10**e), e)
+                return "%ge%s" % ((obj / 10**e), e)
             else:
                 return "%g" % (obj)
         else:
@@ -474,12 +475,14 @@ class RPNCompareOps(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 # create a class with a typical set of operations
 class RPN(RPNBase, RPNStackOps, RPNSimpleMathOps, RPNMoreMathOps,
           RPNBitOps, RPNLogicOps, RPNCompareOps):
     pass
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
 def eval(words, stack=[], namespace={}):
     """evaluate code with given stack and return the topmost object from the stack"""

@@ -309,7 +309,7 @@ def main():
     try:
         command, help, usage = COMMANDS[name]
     except KeyError:
-        sys.stderr.write('ERROR: No such command implemented: %s' % (name,))
+        sys.stderr.write('ERROR: No such command implemented: %s\n' % (name,))
         sys.exit(1)
 
     parser = optparse.OptionParser(usage=usage, prog=name)

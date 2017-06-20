@@ -96,7 +96,7 @@ def print_precedence_list():
 #~ print_precedence_list()
 
 
-def infix2postfix(expression, variable_prefix='', scanner=Scanner, precedence=default_precedence):
+def infix2postfix(expression, variable_prefix='', scanner=Scanner, precedence=default_precedence):  # noqa
     """\
     Convert an expression to postfix notation (RPN), respecting parentheses and
     operator precedences.
@@ -150,16 +150,16 @@ def infix2postfix(expression, variable_prefix='', scanner=Scanner, precedence=de
         elif token_type == 'NUMBER':
             output_string.append(token)
         elif token_type == 'OPERATOR' or token_type == 'UNARYOPERATOR':
-            if (not operator_stack
-                    or operator_stack[-1] == '('
-                    or precedence[operator_stack[-1]] < precedence[token]):
+            if (not operator_stack or
+                    operator_stack[-1] == '(' or
+                    precedence[operator_stack[-1]] < precedence[token]):
                 operator_stack.append(token)
             else:
                 while True:
                     output_string.append(operator_stack.pop())
-                    if (not operator_stack
-                            or operator_stack[-1] == '('
-                            or precedence[token] >= precedence[operator_stack[-1]]):
+                    if (not operator_stack or
+                            operator_stack[-1] == '(' or
+                            precedence[token] >= precedence[operator_stack[-1]]):
                         break
                 operator_stack.append(token)
         elif token_type == 'RIGHT':

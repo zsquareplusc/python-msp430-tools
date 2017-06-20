@@ -70,21 +70,21 @@ class Scanner(infix2postfix.Scanner):
     ''', re.VERBOSE | re.IGNORECASE | re.UNICODE)
 
 cpp_precedence_list = [
-        # lowest precedence
-        ['||', 'or'],
-        ['&&', 'and'],
-        ['|', '^', '&'],
-        ['==', '!='],
-        ['<', '<=', '>', '>='],
-        ['<<', '>>'],
-        ['+', '-'],
-        ['*', '/', '%'],
-        ['!', 'not'],
-        ['~', 'neg', '0 +'],
-        ['defined'],
-        ['(', ')'],
-        # highest precedence
-    ]
+    # lowest precedence
+    ['||', 'or'],
+    ['&&', 'and'],
+    ['|', '^', '&'],
+    ['==', '!='],
+    ['<', '<=', '>', '>='],
+    ['<<', '>>'],
+    ['+', '-'],
+    ['*', '/', '%'],
+    ['!', 'not'],
+    ['~', 'neg', '0 +'],
+    ['defined'],
+    ['(', ')'],
+    # highest precedence
+]
 
 precedence = infix2postfix.convert_precedence_list(cpp_precedence_list)
 
@@ -292,7 +292,7 @@ class Preprocessor(object):
             for line in line_joiner(iter(infile)):
                 lineno += 1
                 #~ print "|", line.rstrip()
-                line = self.re_inlinecomment.sub('', line)  #.strip()
+                line = self.re_inlinecomment.sub('', line)  # .strip()
                 if in_comment:
                     p = line.find('*/')
                     if p >= 0:
@@ -460,7 +460,7 @@ class Preprocessor(object):
                     error_found = True
                     continue
                 elif m.lastgroup == 'PRAGMA':
-                    pass  #=> line will be output below
+                    pass  # => line will be output below
                 elif m.lastgroup == 'NONPREPROC':
                     line = self.expand(line)
                 else:
@@ -490,6 +490,7 @@ class Preprocessor(object):
         else:
             self.log.info('done "%s"' % (filename),)
         return error_found
+
 
 class Discard(object):
     """File like target object that consumes and discards all data"""

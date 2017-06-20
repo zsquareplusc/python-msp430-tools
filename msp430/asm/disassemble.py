@@ -432,8 +432,7 @@ class MSP430Disassembler(object):
         dst_hi = 0
         # single operand
         if ((opcode & 0xf000) == 0x1000 and
-                ((opcode >> 7) & 0x1f in singleOperandInstructions)
-        ):
+                ((opcode >> 7) & 0x1f in singleOperandInstructions)):
             bytemode = (opcode >> 6) & 1
             asrc = (opcode >> 4) & 3
             src = opcode & 0xf
@@ -464,17 +463,23 @@ class MSP430Disassembler(object):
                     address_mode = '.illegal'
             if not (src == 2 or src == 3):
                 if asrc == 0:
-                    if src == 0: self.cycles += 1 # destination PC adds one
-                    if name == 'push': self.cycles += 2
-                    if name == 'call': self.cycles += 2
+                    if src == 0:
+                        self.cycles += 1  # destination PC adds one
+                    if name == 'push':
+                        self.cycles += 2
+                    if name == 'call':
+                        self.cycles += 2
                 elif asrc == 1 or asrc == 2:
                     self.cycles += 1
                 elif asrc == 3:
                     self.cycles += 1
-                    if name == 'call': self.cycles += 1
+                    if name == 'call':
+                        self.cycles += 1
             else:  # this happens for immediate values provided by the constant generators
-                if name == 'push': self.cycles += 2 - 1
-                if name == 'call': self.cycles += 3
+                if name == 'push':
+                    self.cycles += 2 - 1
+                if name == 'call':
+                    self.cycles += 3
 
             if '%' in x:
                 x = x % {'x': (src_hi << 16) | self.word()}
@@ -541,26 +546,30 @@ class MSP430Disassembler(object):
             insnid = (opcode >> 4) & 0xf
             #~ print insnid
             if insnid == 0:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 self.instruction(
                         'mova',
                         src='@%s' % regnames[src],
                         dst=regnames[dst])
             elif insnid == 1:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 self.instruction(
                         'mova',
                         src='@%s+' % regnames[src],
                         dst=regnames[dst])
             elif insnid == 2:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 address_low = self.word()
                 self.instruction(
                         'mova',
                         src='&0x%08x' % ((src << 16) | address_low),
                         dst=regnames[dst])
             elif insnid == 3:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 offset = self.word()
                 self.instruction(
                         'mova',
@@ -568,7 +577,8 @@ class MSP430Disassembler(object):
                         dst=regnames[dst])
 
             elif insnid == 4:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 insnid_r = (opcode >> 8) & 0x3
                 n = (opcode >> 10) & 0x3
                 self.cycles += n
@@ -581,7 +591,8 @@ class MSP430Disassembler(object):
                 elif insnid_r == 3:
                     self.instruction('rrum.a', src='#%d' % (n,), dst=regnames[dst])
             elif insnid == 5:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 insnid_r = (opcode >> 8) & 0x3
                 n = (opcode >> 10) & 0x3
                 self.cycles += n
@@ -595,58 +606,75 @@ class MSP430Disassembler(object):
                     self.instruction('rrum.w', src='#%d' % (n,), dst=regnames[dst])
 
             elif insnid == 6:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 address_low = self.word()
-                self.instruction('mova',
-                        src=regnames[src],
-                        dst='&0x%08x' % ((dst<<16) | address_low))
+                self.instruction(
+                    'mova',
+                    src=regnames[src],
+                    dst='&0x%08x' % ((dst << 16) | address_low))
             elif insnid == 7:
                 offset = self.word()
-                self.instruction('mova',
-                        src=regnames[src],
-                        dst='%04x(%s)' % (offset, regnames[dst]))
+                self.instruction(
+                    'mova',
+                    src=regnames[src],
+                    dst='%04x(%s)' % (offset, regnames[dst]))
             elif insnid == 8:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 value_low = self.word()
-                self.instruction('mova',
-                        src='#0x%08x' % ((src<<16) | value_low),
-                        dst=regnames[dst])
+                self.instruction(
+                    'mova',
+                    src='#0x%08x' % ((src << 16) | value_low),
+                    dst=regnames[dst])
             elif insnid == 9:
                 value_low = self.word()
-                self.instruction('cmpa',
-                        src='#0x%08x' % ((src<<16) | value_low),
-                        dst=regnames[dst])
+                self.instruction(
+                    'cmpa',
+                    src='#0x%08x' % ((src << 16) | value_low),
+                    dst=regnames[dst])
             elif insnid == 10:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 value_low = self.word()
-                self.instruction('adda',
-                        src='#0x%08x' % ((src<<16) | value_low),
-                        dst=regnames[dst])
+                self.instruction(
+                    'adda',
+                    src='#0x%08x' % ((src << 16) | value_low),
+                    dst=regnames[dst])
             elif insnid == 11:
-                if dst == 0: self.cycles += 2
+                if dst == 0:
+                    self.cycles += 2
                 value_low = self.word()
-                self.instruction('suba',
-                        src='#0x%08x' % ((src<<16) | value_low),
-                        dst=regnames[dst])
+                self.instruction(
+                    'suba',
+                    src='#0x%08x' % ((src << 16) | value_low),
+                    dst=regnames[dst])
             elif insnid == 12:
-                if dst == 0: self.cycles += 2
-                self.instruction('mova',
-                        src=regnames[src],
-                        dst=regnames[dst])
+                if dst == 0:
+                    self.cycles += 2
+                self.instruction(
+                    'mova',
+                    src=regnames[src],
+                    dst=regnames[dst])
             elif insnid == 13:
-                self.instruction('cmpa',
-                        src=regnames[src],
-                        dst=regnames[dst])
+                self.instruction(
+                    'cmpa',
+                    src=regnames[src],
+                    dst=regnames[dst])
             elif insnid == 14:
-                if dst == 0: self.cycles += 2
-                self.instruction('adda',
-                        src=regnames[src],
-                        dst=regnames[dst])
+                if dst == 0:
+                    self.cycles += 2
+                self.instruction(
+                    'adda',
+                    src=regnames[src],
+                    dst=regnames[dst])
             elif insnid == 15:
-                if dst == 0: self.cycles += 2
-                self.instruction('suba',
-                        src=regnames[src],
-                        dst=regnames[dst])
+                if dst == 0:
+                    self.cycles += 2
+                self.instruction(
+                    'suba',
+                    src=regnames[src],
+                    dst=regnames[dst])
 
         # extended instructions 2
         elif self.msp430x and (opcode & 0xf800) == 0x1000:
@@ -692,7 +720,7 @@ class MSP430Disassembler(object):
             return
 
         # unknown instruction
-        if self.used_words: # if an instruction was set it would be the empty list
+        if self.used_words:  # if an instruction was set it would be the empty list
             self.instruction('illegal-insn-0x%04x' % opcode)
 
     def disassemble(self, output, source_only=False):

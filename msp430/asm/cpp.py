@@ -271,7 +271,7 @@ class Preprocessor(object):
             line = ''.join(res)
             recusion_limit -= 1
         if recusion_limit == 0:
-            self.log.error('recursive define, stopped expansion: %r ' % ' '.join(words))
+            self.log.error('recursive define, stopped expansion: %r ' % (line,))
         #~ print "expand -> %r" % (res)          #DEBUG
         return line.replace('##', '')
 

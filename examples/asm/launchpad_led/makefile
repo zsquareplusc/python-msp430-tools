@@ -16,10 +16,11 @@ LDFLAGS = -v --mcu MSP430G2231 --symbols MSP430G2231
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # commands
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-AS = python -m msp430.asm.as
-LD = python -m msp430.asm.ld
-RM = python -m msp430.shell.command rm -f
-CAT = python -m msp430.shell.command cat
+PY = python
+AS = $(PY) -m msp430.asm.as
+LD = $(PY) -m msp430.asm.ld
+RM = $(PY) -m msp430.shell.command rm -f
+CAT = $(PY) -m msp430.shell.command cat
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # the rules used to build
@@ -47,13 +48,13 @@ led.titext: led.o4
 .PHONY: download-jtag download-bsl download-gdb
 
 download-jtag: led.titext
-	python -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
+	$(PY) -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
 
 download-bsl: led.titext
-	python -m msp430.bsl.target -e $^
+	$(PY) -m msp430.bsl.target -e $^
 
 download-gdb: led.titext
-	python -m msp430.gdb.target -e $^
+	$(PY) -m msp430.gdb.target -e $^
 
 download-mspdebug: led.titext
 	mspdebug rf2500 "prog $^" exit

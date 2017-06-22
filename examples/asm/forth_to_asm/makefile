@@ -13,23 +13,24 @@ export PYTHONPATH
 MCU = msp430g2231
 ASFLAGS =
 LDFLAGS = -v --mcu $(MCU)
-CPPFLAGS = 
+CPPFLAGS = -I /usr/msp430/include/
 FORTHFLAGS = -DMCU=$(MCU)
 H2FORTHFLAGS = $(CPPFLAGS)
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # commands
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-CPP = python -m msp430.asm.cpp
-AS = python -m msp430.asm.as
-LD = python -m msp430.asm.ld
-FORTH = python -m msp430.asm.forth
-H2FORTH = python -m msp430.asm.h2forth
-LIB = python -m msp430.asm.lib
+PY = python
+CPP = $(PY) -m msp430.asm.cpp
+AS = $(PY) -m msp430.asm.as
+LD = $(PY) -m msp430.asm.ld
+FORTH = $(PY) -m msp430.asm.forth
+H2FORTH = $(PY) -m msp430.asm.h2forth
+LIB = $(PY) -m msp430.asm.lib
 
-RM = python -m msp430.shell.command rm -f
-CAT = python -m msp430.shell.command cat
-DIS = python -m msp430.asm.disassemble
+RM = $(PY) -m msp430.shell.command rm -f
+CAT = $(PY) -m msp430.shell.command cat
+DIS = $(PY) -m msp430.asm.disassemble
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # the rules used to build
@@ -77,13 +78,13 @@ msp430.forth:
 .PHONY: download-jtag download-bsl download-gdb
 
 download-jtag: led.titext
-	python -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
+	$(PY) -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
 
 download-bsl: led.titext
-	python -m msp430.bsl.target -e $^
+	$(PY) -m msp430.bsl.target -e $^
 
 download-gdb: led.titext
-	python -m msp430.gdb.target -e $^
+	$(PY) -m msp430.gdb.target -e $^
 
 download-mspdebug: led.titext
 	mspdebug rf2500 "prog $^" exit

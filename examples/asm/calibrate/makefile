@@ -18,12 +18,13 @@ CPPFLAGS = -D_GNU_ASSEMBLER_ -D__ASSEMBLER__ -D__MSP430G2132__
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # commands
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-CPP = python -m msp430.asm.cpp
-AS = python -m msp430.asm.as
-LD = python -m msp430.asm.ld
-RM = python -m msp430.shell.command rm -f
-CAT = python -m msp430.shell.command cat
-DIS = python -m msp430.asm.disassemble
+PY = python
+CPP = $(PY) -m msp430.asm.cpp
+AS = $(PY) -m msp430.asm.as
+LD = $(PY) -m msp430.asm.ld
+RM = $(PY) -m msp430.shell.command rm -f
+CAT = $(PY) -m msp430.shell.command cat
+DIS = $(PY) -m msp430.asm.disassemble
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # the rules used to build
@@ -54,13 +55,13 @@ calibrate.titext: calibrate.o4
 .PHONY: download-jtag download-bsl download-gdb
 
 download-jtag: calibrate.titext
-	python -m msp430.jtag.target -p TIUSB -e  $^ --spy-bi-wire
+	$(PY) -m msp430.jtag.target -p TIUSB -e  $^ --spy-bi-wire
 
 download-bsl: calibrate.titext
-	python -m msp430.bsl.target -e $^
+	$(PY) -m msp430.bsl.target -e $^
 
 download-gdb: calibrate.titext
-	python -m msp430.gdb.target -e $^
+	$(PY) -m msp430.gdb.target -e $^
 
 download-mspdebug: calibrate.titext
 	mspdebug rf2500 "prog $^" exit

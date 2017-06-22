@@ -9,15 +9,17 @@
 PYTHONPATH = ../../..
 export PYTHONPATH
 
+PY = python
+
 # set the assembler
-AS = python -m msp430.asm.as
+AS = $(PY) -m msp430.asm.as
 ASFLAGS = -x -v
 
 # set up the linker
-LD = python -m msp430.asm.ld
+LD = $(PY) -m msp430.asm.ld
 LDFLAGS = -v --mcu MSP430F5529
 
-RM = python -m msp430.shell.command rm -f
+RM = $(PY) -m msp430.shell.command rm -f
 
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # the rules used to build
@@ -44,10 +46,10 @@ clean:
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 .PHONY: download-jtag download-bsl download-gdb
 download-jtag: led.txt
-	python -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
+	$(PY) -m msp430.jtag.target -e -l /opt/mspgcc/lib $^ --no-close -r
 download-bsl: led.txt
-	python -m msp430.bsl5.uart -e $^
+	$(PY) -m msp430.bsl5.uart -e $^
 download-usb: led.txt
-	python -m msp430.bsl5.hid -e $^
+	$(PY) -m msp430.bsl5.hid -e $^
 download-gdb: led.txt
-	python -m msp430.gdb.target -e $^
+	$(PY) -m msp430.gdb.target -e $^

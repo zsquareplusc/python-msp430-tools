@@ -55,7 +55,7 @@ setup(
             'msp430-jtag = msp430.jtag.target:main',
             #~ 'msp430-jtag-legacy = scripts/msp430-jtag-legacy.py',
             #~ 'msp430-ram-usage = scripts/msp430-ram-usage.py',
-            #~ 'msp430-tool = scripts/msp430-tool.py',
+            'msp430-tool = msp430.tool:main',
         ],
     },
     scripts=[

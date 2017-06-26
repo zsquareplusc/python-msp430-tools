@@ -54,7 +54,7 @@ setup(
             'msp430-hexdump = msp430.memory.hexdump:main',
             'msp430-jtag = msp430.jtag.target:main',
             #~ 'msp430-jtag-legacy = scripts/msp430-jtag-legacy.py',
-            #~ 'msp430-ram-usage = scripts/msp430-ram-usage.py',
+            'msp430-ram-usage = msp430.ram_usage:main',
             'msp430-tool = msp430.tool:main',
         ],
     },

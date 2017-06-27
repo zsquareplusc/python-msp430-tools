@@ -48,7 +48,7 @@ setup(
             'msp430-bsl-telosb = msp430.bsl.target.telosb.main',
             'msp430-compare = msp430.memory.compare:main',
             'msp430-convert = msp430.memory.convert:main',
-            #~ 'msp430-downloader = scripts/msp430-downloader.py',
+            'msp430-downloader = msp430.downloader:main',
             #~ 'msp430-gdb = msp430.gdb.target:main',
             'msp430-generate = msp430.memory.generate:main',
             'msp430-hexdump = msp430.memory.hexdump:main',

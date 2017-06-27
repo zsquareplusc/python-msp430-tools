@@ -60,10 +60,7 @@ setup(
     },
     scripts=[
         'scripts/msp430-bsl-legacy',
-        'scripts/msp430-downloader',
         'scripts/msp430-jtag-legacy',
-        'scripts/msp430-ram-usage',
-        'scripts/msp430-tool',
     ],
     license="Simplified BSD License",
     long_description=open('README.rst').read(),

@@ -44,7 +44,7 @@ setup(
         'console_scripts': [
             'msp430-bsl = msp430.bsl.target:main',
             'msp430-bsl-fcdprog = msp430.bsl.target.fcdprog:main',
-            #~ 'msp430-bsl-legacy = scripts/msp430-bsl-legacy.py',
+            'msp430-bsl-legacy = msp430.legacy.bsl-main:main',
             'msp430-bsl-telosb = msp430.bsl.target.telosb.main',
             'msp430-compare = msp430.memory.compare:main',
             'msp430-convert = msp430.memory.convert:main',
@@ -53,15 +53,11 @@ setup(
             'msp430-generate = msp430.memory.generate:main',
             'msp430-hexdump = msp430.memory.hexdump:main',
             'msp430-jtag = msp430.jtag.target:main',
-            #~ 'msp430-jtag-legacy = scripts/msp430-jtag-legacy.py',
+            'msp430-jtag-legacy = msp430.legacy.jtag:main',
             'msp430-ram-usage = msp430.ram_usage:main',
             'msp430-tool = msp430.tool:main',
         ],
     },
-    scripts=[
-        'scripts/msp430-bsl-legacy',
-        'scripts/msp430-jtag-legacy',
-    ],
     license="Simplified BSD License",
     long_description=open('README.rst').read(),
     classifiers = [

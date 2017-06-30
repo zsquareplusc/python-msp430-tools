@@ -19,9 +19,10 @@ VERSION = "2.0"
 DEBUG = 0   # disable debug messages by default
 
 # enumeration of output formats for uploads
-HEX             = 0
-INTELHEX        = 1
-BINARY          = 2
+HEX = 0
+INTELHEX = 1
+BINARY = 2
+
 
 def usage():
     """print some help message"""
@@ -126,6 +127,7 @@ wrong password. NAKs during programming indicate that the flash was not
 erased before programming.
 """ % (sys.argv[0], VERSION))
 
+
 def legacy_memory(memory):
     # msp430.legacy.bsl doesn't expect seg.data to be type bytearray
     # XXX note this affects the Segments in the memory, no copy is made
@@ -138,29 +140,30 @@ def legacy_memory(memory):
 def main():
     global DEBUG
     import getopt
-    filetype    = None
-    filename    = None
-    comPort     = 0     # Default setting.
-    speed       = None
-    unpatched   = 0
-    reset       = 0
-    wait        = 0     # wait at the end
-    goaddr      = None
-    bslobj      = bsl.BootStrapLoader()
-    toinit      = []
-    todo        = []
-    startaddr   = None
-    size        = 2
-    outputformat= HEX
-    notimeout   = 0
-    bslrepl     = None
-    mayuseBSL   = 1
-    forceBSL    = 0
+    filetype = None
+    filename = None
+    comPort = 0     # Default setting.
+    speed = None
+    unpatched = 0
+    reset = 0
+    wait = 0     # wait at the end
+    goaddr = None
+    bslobj = bsl.BootStrapLoader()
+    toinit = []
+    todo = []
+    startaddr = None
+    size = 2
+    outputformat = HEX
+    notimeout = 0
+    bslrepl = None
+    mayuseBSL = 1
+    forceBSL = 0
 
     sys.stderr.write("MSP430 Bootstrap Loader Version: %s\n" % VERSION)
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],
+        opts, args = getopt.getopt(
+            sys.argv[1:],
             "hc:P:wf:m:eEpvrg:UDudsxbiITNB:S:V14",
             ["help", "comport=", "password=", "wait", "framesize=",
              "erasecycles=", "masserase", "erasecheck", "program",
@@ -203,7 +206,7 @@ def main():
             elif maxData < 16:
                 maxData = 16
             bslobj.maxData = maxData - (maxData % 16)
-            sys.stderr.write( "Max. number of data bytes within one frame set to %i.\n" % maxData)
+            sys.stderr.write("Max. number of data bytes within one frame set to %i.\n" % maxData)
         elif o in ("-m", "--erasecycles"):
             try:
                 meraseCycles = int(a)              # try to convert decimal
@@ -216,7 +219,7 @@ def main():
                 sys.exit(2)
             if meraseCycles > 20:
                 sys.stderr.write("Warning: erasecycles set to a large number (>20): %d\n" % meraseCycles)
-            sys.stderr.write( "Number of mass erase cycles set to %i.\n" % meraseCycles)
+            sys.stderr.write("Number of mass erase cycles set to %i.\n" % meraseCycles)
             bslobj.meraseCycles = meraseCycles
         elif o in ("-e", "--masserase"):
             toinit.append(bslobj.actionMassErase)  # Erase entire Flash
@@ -253,7 +256,7 @@ def main():
                     sys.stderr.write("Segment address must be a valid number in dec, hex or octal or a range adr1-adr2\n")
                     sys.exit(2)
         elif o in ("-E", "--erasecheck"):
-            toinit.append(bslobj.actionEraseCheck) # Erase Check (by file)
+            toinit.append(bslobj.actionEraseCheck)  # Erase Check (by file)
         elif o in ("-p", "--programm"):
             todo.append(bslobj.actionProgram)      # Program file
         elif o in ("-v", "--verify"):
@@ -265,7 +268,7 @@ def main():
                 goaddr = int(a)                    # try to convert decimal
             except ValueError:
                 try:
-                    goaddr = int(a[2:],16)         # try to convert hex
+                    goaddr = int(a[2:], 16)         # try to convert hex
                 except ValueError:
                     sys.stderr.write("Go address must be a valid number\n")
                     sys.exit(2)
@@ -280,7 +283,7 @@ def main():
                 startaddr = int(a)                  # try to convert decimal
             except ValueError:
                 try:
-                    startaddr = int(a,16)           # try to convert hex
+                    startaddr = int(a, 16)           # try to convert hex
                 except ValueError:
                     sys.stderr.write("Upload address must be a valid number\n")
                     sys.exit(2)
@@ -289,7 +292,7 @@ def main():
                 size = int(a)
             except ValueError:
                 try:
-                    size = int(a,16)
+                    size = int(a, 16)
                 except ValueError:
                     sys.stderr.write("Size must be a valid number\n")
                     sys.exit(2)
@@ -309,9 +312,9 @@ def main():
         elif o in ("-N", "--notimeout"):
             notimeout = 1
         elif o in ("-B", "--bsl"):
-            bslrepl = legacy_memory(memory.load(a)) # File to program
+            bslrepl = legacy_memory(memory.load(a))  # File to program
         elif o in ("-V", "--bslversion"):
-            todo.append(bslobj.actionReadBSLVersion) # load replacement BSL as first item
+            todo.append(bslobj.actionReadBSLVersion)  # load replacement BSL as first item
         elif o in ("-S", "--speed"):
             try:
                 speed = int(a)                      # try to convert decimal
@@ -352,7 +355,7 @@ def main():
         usage()
         sys.exit(2)
 
-    if DEBUG:   #debug infos
+    if DEBUG:   # debug infos
         sys.stderr.write("Debug level set to %d\n" % DEBUG)
         sys.stderr.write("Python version: %s\n" % sys.version)
 
@@ -374,7 +377,7 @@ def main():
         reset = 0
 
     if toinit:
-        if DEBUG > 0:       #debug
+        if DEBUG > 0:       # debug
             #show a nice list of sheduled actions
             sys.stderr.write("TOINIT list:\n")
             for f in toinit:
@@ -383,7 +386,7 @@ def main():
                 except AttributeError:
                     sys.stderr.write("   %r\n" % f)
     if todo:
-        if DEBUG > 0:       #debug
+        if DEBUG > 0:       # debug
             #show a nice list of sheduled actions
             sys.stderr.write("TODO list:\n")
             for f in todo:
@@ -403,30 +406,34 @@ def main():
         else:
             file = open(filename, "rb")             # or from a file
         if filetype == 0:                           # select load function
-            bslobj.data = legacy_memory(memory.load(filename, file, 'ihex')) # intel hex
+            bslobj.data = legacy_memory(memory.load(filename, file, 'ihex'))  # intel hex
         elif filetype == 1:
-            bslobj.data = legacy_memory(memory.load(filename, file, 'titext')) # TI's format
+            bslobj.data = legacy_memory(memory.load(filename, file, 'titext'))  # TI's format
         else:
             raise ValueError("Illegal filetype specified")
     else:                                           # no filetype given...
         if filename == '-':                         # for stdin:
-            bslobj.data = legacy_memory(memory.load(filename, sys.stdin, 'ihex')) # assume intel hex
+            bslobj.data = legacy_memory(memory.load(filename, sys.stdin, 'ihex'))  # assume intel hex
         elif filename:
-            bslobj.data = legacy_memory(memory.load(filename)) # autodetect otherwise
+            bslobj.data = legacy_memory(memory.load(filename))  # autodetect otherwise
 
-    if DEBUG > 3: sys.stderr.write("File: %r" % filename)
+    if DEBUG > 3:
+        sys.stderr.write("File: %r" % filename)
 
     bslobj.comInit(comPort)                         # init port
 
     #initialization list
-    if toinit:  #erase and erase check
-        if DEBUG: sys.stderr.write("Preparing device ...\n")
+    if toinit:  # erase and erase check
+        if DEBUG:
+            sys.stderr.write("Preparing device ...\n")
         #bslobj.actionStartBSL(usepatch=0, adjsp=0)     # no workarounds needed
         #if speed: bslobj.actionChangeBaudrate(speed)   # change baud rate as fast as possible
-        for f in toinit: f()
+        for f in toinit:
+            f()
 
     if todo or goaddr or startaddr:
-        if DEBUG: sys.stderr.write("Actions ...\n")
+        if DEBUG:
+            sys.stderr.write("Actions ...\n")
         #connect to the BSL
         bslobj.actionStartBSL(
             usepatch=not unpatched,
@@ -438,7 +445,8 @@ def main():
 
     #work list
     if todo:
-        for f in todo: f()                          # work through todo list
+        for f in todo:
+            f()                          # work through todo list
 
     if reset:                                       # reset device first if desired
         bslobj.actionReset()
@@ -457,14 +465,15 @@ def main():
         else:
             data = bslobj.uploadData(startaddr, size)  # upload data
         if outputformat == HEX:                     # depending on output format
-            hexdump( (startaddr, data) )            # print a hex display
+            hexdump((startaddr, data))            # print a hex display
         elif outputformat == INTELHEX:
             # output a intel-hex file
             address = startaddr
             start = 0
             while start < len(data):
                 end = start + 16
-                if end > len(data): end = len(data)
+                if end > len(data):
+                    end = len(data)
                 sys.stdout.write(intelhex._ihexline(address, data[start:end]))
                 start += 16
                 address += 16
@@ -476,20 +485,23 @@ def main():
     if wait:                                        # wait at the end if desired
         sys.stderr.write("Press <ENTER> ...\n")     # display a prompt
         sys.stderr.flush()
-        raw_input()                                 # wait for newline
+        input()                                 # wait for newline
 
     bslobj.comDone()                                # Release serial communication port
+
 
 if __name__ == '__main__':
     try:
         main()
     except SystemExit:
-        raise               #let pass exit() calls
+        raise               # let pass exit() calls
     except KeyboardInterrupt:
-        if DEBUG: raise     #show full trace in debug mode
-        sys.stderr.write("User abort.\n")   #short messy in user mode
-        sys.exit(1)         #set errorlevel for script usage
-    except Exception, msg:  #every Exception is caught and displayed
-        if DEBUG: raise     #show full trace in debug mode
-        sys.stderr.write("\nAn error occoured:\n%s\n" % msg) #short messy in user mode
-        sys.exit(1)         #set errorlevel for script usage
+        if DEBUG:
+            raise     # show full trace in debug mode
+        sys.stderr.write("User abort.\n")   # short messy in user mode
+        sys.exit(1)         # set errorlevel for script usage
+    except Exception as msg:  # every Exception is caught and displayed
+        if DEBUG:
+            raise     # show full trace in debug mode
+        sys.stderr.write("\nAn error occoured:\n%s\n" % msg)  # short messy in user mode
+        sys.exit(1)         # set errorlevel for script usage

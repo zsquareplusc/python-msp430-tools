@@ -12,7 +12,6 @@
 import sys
 from msp430 import memory
 from msp430.jtag import jtag
-from msp430.memory import hexdump
 
 
 VERSION = "3.0"
@@ -64,7 +63,7 @@ Features of backends:
     | Using --funclet option                |   yes    |   no     |
     +=======================================+==========+==========+
 
-""" % { 
+""" % {
         'prog': sys.argv[0],
         'msp430': (sys.platform != 'win32') and 'libMSP430.so' or 'MSP430.dll',
         'msp430mspgcc': (sys.platform != 'win32') and 'libMSP430mspgcc.so' or 'MSP430mspgcc.dll',
@@ -108,7 +107,7 @@ def parseAddressRange(text):
 
 
 def main():
-    from optparse import OptionParser, OptionGroup, IndentedHelpFormatter, TitledHelpFormatter
+    from optparse import OptionParser, OptionGroup, TitledHelpFormatter
 
     # i dont like how texts are re-wrapped and paragraphs are joined. get rid
     # of that
@@ -116,7 +115,8 @@ def main():
         def format_description(self, description):
             return description
 
-    parser = OptionParser(usage="""\
+    parser = OptionParser(
+        usage="""\
 %prog [OPTIONS] [FILE [FILE...]]
 
 Version: %version
@@ -124,8 +124,8 @@ Version: %version
 If "-" is specified as file the data is read from stdin and TI-text format
 is expected by default.
 """,
-                formatter=Formatter(),
-                version=VERSION)
+        formatter=Formatter(),
+        version=VERSION)
 
     vars = {
         'prog': sys.argv[0],
@@ -134,35 +134,40 @@ is expected by default.
         'msp430mspgcc': (sys.platform != 'win32') and 'libMSP430mspgcc.so' or 'MSP430mspgcc.dll',
     }
 
-    parser.add_option("--help-backend",
-            dest="help_backend",
-            help="show help about the different backends",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "--help-backend",
+        dest="help_backend",
+        help="show help about the different backends",
+        default=False,
+        action='store_true')
 
-    parser.add_option("-d", "--debug",
-            dest="debug",
-            help="print debug messages",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "-d", "--debug",
+        dest="debug",
+        help="print debug messages",
+        default=False,
+        action='store_true')
 
-    parser.add_option("-v", "--verbose",
-            dest="verbose",
-            help="show more messages (can be given multiple times)",
-            default=0,
-            action='count')
+    parser.add_option(
+        "-v", "--verbose",
+        dest="verbose",
+        help="show more messages (can be given multiple times)",
+        default=0,
+        action='count')
 
-    parser.add_option("-q", "--quiet",
-            dest="quiet",
-            help="suppress all messages",
-            default=False,
-            action='store_true')
+    parser.add_option(
+        "-q", "--quiet",
+        dest="quiet",
+        help="suppress all messages",
+        default=False,
+        action='store_true')
 
-    parser.add_option("-R", "--ramsize",
-            dest="ramsize",
-            type="int",
-            help="specify the amount of RAM to be used to program flash (default: auto detected)",
-            default=None)
+    parser.add_option(
+        "-R", "--ramsize",
+        dest="ramsize",
+        type="int",
+        help="specify the amount of RAM to be used to program flash (default: auto detected)",
+        default=None)
 
     group = OptionGroup(parser, "Programing", """\
 File format is auto detected, unless --input-format is used.
@@ -170,17 +175,19 @@ Preferred file extensions are ".txt" for TI-Text format, ".a43" or ".hex" for
 Intel HEX. ELF files can also be loaded.
 """)
 
-    group.add_option("-i", "--input-format",
-            dest="input_format",
-            help="input format name (%s)" % (', '.join(memory.load_formats),),
-            default=None,
-            metavar="TYPE")
+    group.add_option(
+        "-i", "--input-format",
+        dest="input_format",
+        help="input format name (%s)" % (', '.join(memory.load_formats),),
+        default=None,
+        metavar="TYPE")
 
-    group.add_option("-S", "--progress",
-            dest="progress",
-            help="show progress while programming",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "-S", "--progress",
+        dest="progress",
+        help="show progress while programming",
+        default=False,
+        action='store_true')
 
     parser.add_option_group(group)
 
@@ -197,34 +204,43 @@ Note: --slowdown > 50 can result in failures for the RAM size auto detection
       inaccurate for large values.
 """ % vars)
 
-    group.add_option("--backend",
-            dest="backend",
-            help="select an alternate backend. See --help-backend for more information",
-            default=None)
+    group.add_option(
+        "--backend",
+        dest="backend",
+        help="select an alternate backend. See --help-backend for more information",
+        default=None)
 
-    group.add_option("-l", "--lpt",
-            dest="port_name",
-            metavar="PORT",
-            help='specify an other parallel port or serial port for the USBFET (the later requires %(msp430)s instead of %(msp430mspgcc)s).  (defaults to "LPT1" ("/dev/parport0" on Linux))' % vars,
-            default=None)
+    group.add_option(
+        "-l", "--lpt",
+        dest="port_name",
+        metavar="PORT",
+        help='specify an other parallel port or serial port for the USBFET (the later '
+             'requires %(msp430)s instead of %(msp430mspgcc)s).  (defaults to "LPT1" '
+             '("/dev/parport0" on Linux))' % vars,
+        default=None)
 
-    group.add_option("--spy-bi-wire-jtag",
-            dest="spy_bi_wire_jtag",
-            help="interface is 4 wire on a spy-bi-wire capable device",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "--spy-bi-wire-jtag",
+        dest="spy_bi_wire_jtag",
+        help="interface is 4 wire on a spy-bi-wire capable device",
+        default=False,
+        action='store_true')
 
-    group.add_option("--spy-bi-wire",
-            dest="spy_bi_wire",
-            help="interface is 2 wire on a spy-bi-wire capable device",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "--spy-bi-wire",
+        dest="spy_bi_wire",
+        help="interface is 2 wire on a spy-bi-wire capable device",
+        default=False,
+        action='store_true')
 
-    group.add_option("--slowdown",
-            dest="slowdown",
-            metavar="MICROSECONDS",
-            help="artificially slow down the communication. Can help with long lines, try values between 1 and 50 (parallel port interface with mspgcc's HIL library only). (experts only)",
-            default=None)
+    group.add_option(
+        "--slowdown",
+        dest="slowdown",
+        metavar="MICROSECONDS",
+        help="artificially slow down the communication. Can help with long "
+             "lines, try values between 1 and 50 (parallel port interface with "
+             "mspgcc's HIL library only). (experts only)",
+        default=None)
 
     parser.add_option_group(group)
 
@@ -235,32 +251,42 @@ Note: Writing and/or reading RAM before and/or after running a funclet may not
 Note: Only possible with %(msp430mspgcc)s, not other backends.
 """ % vars)
 
-    group.add_option("--funclet",
-            dest="funclet",
-            help="the given file is a funclet (a small program to be run in RAM)",
-            default=None,
-            metavar="FILENAME")
+    group.add_option(
+        "--funclet",
+        dest="funclet",
+        help="the given file is a funclet (a small program to be run in RAM)",
+        default=None,
+        metavar="FILENAME")
 
-    group.add_option("--parameter",
-            dest="funclet_parameter",
-            metavar="<KEY>=<VALUE>",
-            help='Pass parameters to funclets. Registers can be written like "R15=123" or "R4=0x55" A string can be written to memory with "0x2e0=hello" --parameter can be given more than once',
-            default=[],
-            action='append')
+    group.add_option(
+        "--parameter",
+        dest="funclet_parameter",
+        metavar="<KEY>=<VALUE>",
+        help='Pass parameters to funclets. Registers can be written like '
+             '"R15=123" or "R4=0x55" A string can be written to memory with '
+             '"0x2e0=hello" --parameter can be given more than once',
+        default=[],
+        action='append')
 
-    group.add_option("--result",
-            dest="funclet_result",
-            metavar="VALUE",
-            help='Read results from funclets. "Rall" reads all registers (case insensitive) "R15" reads R15 etc. Address ranges can be read with "0x2e0-0x2ff". See also --upload.  --result can be given more than once.',
-            default=[],
-            action='append')
+    group.add_option(
+        "--result",
+        dest="funclet_result",
+        metavar="VALUE",
+        help='Read results from funclets. "Rall" reads all registers (case '
+             'insensitive) "R15" reads R15 etc. Address ranges can be read '
+             'with "0x2e0-0x2ff". See also --upload.  --result can be given '
+             'more than once.',
+        default=[],
+        action='append')
 
-    group.add_option("--timeout",
-            dest="funclet_timeout",
-            metavar="VALUE",
-            type="float",
-            help='Abort the funclet after the given time in seconds if it does not exit no itself. (default 1)',
-            default=1)
+    group.add_option(
+        "--timeout",
+        dest="funclet_timeout",
+        metavar="VALUE",
+        type="float",
+        help='Abort the funclet after the given time in seconds if it does '
+             'not exit no itself. (default 1)',
+        default=1)
 
     parser.add_option_group(group)
 
@@ -281,47 +307,54 @@ NOTE: SegmentA on F2xx is NOT erased with --masserase, that must be
       done separately with --erase=0x10c0 or --eraseinfo".
 """)
 
-    group.add_option("-e", "--masserase",
-            dest="do_mass_erase",
-            help="mass erase (clear all flash memory)",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "-e", "--masserase",
+        dest="do_mass_erase",
+        help="mass erase (clear all flash memory)",
+        default=False,
+        action='store_true')
 
-    group.add_option("-m", "--mainerase",
-            dest="do_main_erase",
-            help="erase main flash memory only",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "-m", "--mainerase",
+        dest="do_main_erase",
+        help="erase main flash memory only",
+        default=False,
+        action='store_true')
 
-    group.add_option("--eraseinfo",
-            dest="do_info_erase",
-            help="erase info flash memory only (0x1000-0x10ff)",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "--eraseinfo",
+        dest="do_info_erase",
+        help="erase info flash memory only (0x1000-0x10ff)",
+        default=False,
+        action='store_true')
 
-    group.add_option("--erase",
-            dest="erase_list",
-            help="selectively erase segment at the specified address or address range",
-            default=[],
-            action='append')
+    group.add_option(
+        "--erase",
+        dest="erase_list",
+        help="selectively erase segment at the specified address or address range",
+        default=[],
+        action='append')
 
-    group.add_option("-E", "--erasecheck",
-            dest="do_erase_check",
-            help="erase check by file",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "-E", "--erasecheck",
+        dest="do_erase_check",
+        help="erase check by file",
+        default=False,
+        action='store_true')
 
-    group.add_option("-P", "--program",
-            dest="do_program",
-            help="program file",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "-P", "--program",
+        dest="do_program",
+        help="program file",
+        default=False,
+        action='store_true')
 
-    group.add_option("-V", "--verify",
-            dest="do_verify",
-            help="verify by file",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "-V", "--verify",
+        dest="do_verify",
+        help="verify by file",
+        default=False,
+        action='store_true')
 
     parser.add_option_group(group)
 
@@ -330,11 +363,12 @@ WARNING: This is not reversible, use with care!  Note: Not supported with the
          simple parallel port adapter (7V source required).",
 """)
 
-    group.add_option("--secure",
-            dest="do_secure",
-            help="blow JTAG security fuse",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "--secure",
+        dest="do_secure",
+        help="blow JTAG security fuse",
+        default=False,
+        action='store_true')
 
     parser.add_option_group(group)
 
@@ -343,53 +377,60 @@ It is possible to use address ranges such as 0xf000-0xf0ff or 0xf000/256.
 Multiple --upload options are allowed.
 """)
 
-    group.add_option("-u", "--upload",
-            dest="upload_list",
-            metavar="ADDRESS",
-            help='upload a data block, can be passed multiple times',
-            default=[],
-            action='append')
+    group.add_option(
+        "-u", "--upload",
+        dest="upload_list",
+        metavar="ADDRESS",
+        help='upload a data block, can be passed multiple times',
+        default=[],
+        action='append')
 
-    group.add_option("-o", "--output",
-            dest="output",
-            help="write result to given file",
-            metavar="DESTINATION")
+    group.add_option(
+        "-o", "--output",
+        dest="output",
+        help="write result to given file",
+        metavar="DESTINATION")
 
-    group.add_option("-f", "--output-format",
-            dest="output_format",
-            help="output format name (%s)" % (', '.join(memory.save_formats),),
-            default="hex",
-            metavar="TYPE")
+    group.add_option(
+        "-f", "--output-format",
+        dest="output_format",
+        help="output format name (%s)" % (', '.join(memory.save_formats),),
+        default="hex",
+        metavar="TYPE")
 
     parser.add_option_group(group)
 
     group = OptionGroup(parser, "Do before exit")
 
-    group.add_option("-g", "--go",
-            dest="do_run",
-            metavar="ADDRESS",
-            type="int",
-            help='start program execution at specified address, this implies option --wait',
-            default=None,
-            action='store')
+    group.add_option(
+        "-g", "--go",
+        dest="do_run",
+        metavar="ADDRESS",
+        type="int",
+        help='start program execution at specified address, this implies option --wait',
+        default=None,
+        action='store')
 
-    group.add_option("-r", "--reset",
-            dest="do_reset",
-            help="perform a normal device reset that will start the program that is specified in the reset interrupt vector",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "-r", "--reset",
+        dest="do_reset",
+        help="perform a normal device reset that will start the program that is specified in the reset interrupt vector",
+        default=False,
+        action='store_true')
 
-    group.add_option("-w", "--wait",
-            dest="wait",
-            help="wait for <ENTER> before closing the port",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "-w", "--wait",
+        dest="wait",
+        help="wait for <ENTER> before closing the port",
+        default=False,
+        action='store_true')
 
-    group.add_option("--no-close",
-            dest="no_close",
-            help="do not close port on exit, allows to power devices from the parallel port interface",
-            default=False,
-            action='store_true')
+    group.add_option(
+        "--no-close",
+        dest="no_close",
+        help="do not close port on exit, allows to power devices from the parallel port interface",
+        default=False,
+        action='store_true')
 
     parser.add_option_group(group)
 
@@ -407,17 +448,15 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
     if options.output_format not in memory.save_formats:
         parser.error('Output format %s not supported.' % (options.output_format))
 
-
-    reset       = False
-    goaddr      = None
-    jtagobj     = jtag.JTAG()
-    toinit      = []
-    todo        = []
-    uploadlist  = []
-    funclet     = None
-    parameters  = []
-    results     = []
-
+    reset = False
+    goaddr = None
+    jtagobj = jtag.JTAG()
+    toinit = []
+    todo = []
+    uploadlist = []
+    funclet = None
+    parameters = []
+    results = []
 
     if options.help_backend:
         help_on_backends()
@@ -438,7 +477,6 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
         jtag.interface = 'spy-bi-wire'
     if options.spy_bi_wire_jtag:
         jtag.interface = 'spy-bi-wire-jtag'
-
 
     if options.do_mass_erase:
         toinit.append(jtagobj.actionMassErase)      # Erase Flash
@@ -463,7 +501,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
                     adr = adr + modulo
             else:
                 toinit.append(jtagobj.makeActionSegmentErase(adr))
-        except ValueError, e:
+        except ValueError as e:
             parser.error("--erase: %s" % e)
     if options.do_info_erase:
         # F2xx XXX: on F1xx/F4xx are segments erased twice
@@ -500,8 +538,8 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             if end is not None:
                 uploadlist.append((start, end))
             else:
-                uploadlist.append((start, start+15))
-        except ValueError, e:
+                uploadlist.append((start, start + 15))
+        except ValueError as e:
             parser.error("--upload: %s" % e)
 
     # others
@@ -519,7 +557,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
                 value = int(value, 0)
                 parameters.append((jtagobj.setCPURegister, (regnum, value)))
             else:
-                address = int(key,0)
+                address = int(key, 0)
                 parameters.append((jtagobj.downloadData, (address, value)))
         else:
             parser.erro("Expected <key>=<value> pair in --parameter option, but no '=' found.")
@@ -537,9 +575,9 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
                 start, end = parseAddressRange(a)
                 if end is None:
                     end = start
-            except ValueError, e:
+            except ValueError as e:
                 parser.error("--result: %s" % e)
-            results.append(('0x%04x: %%r' % start, jtagobj.uploadData, (start, end-start)))
+            results.append(('0x%04x: %%r' % start, jtagobj.uploadData, (start, end - start)))
 
     if options.quiet:
         jtagobj.verbose = 0
@@ -552,11 +590,10 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             # XXX and posix platforms?!
             HIL_SetSlowdown = ctypes.cdll.HIL.HIL_SetSlowdown
         HIL_SetSlowdown = ctypes.windll.HIL.HIL_SetSlowdown
-        HIL_SetSlowdown.argtypes  = [ctypes.c_ulong]
+        HIL_SetSlowdown.argtypes = [ctypes.c_ulong]
         #~ HIL_SetSlowdown.restype   = ctypes.c_int # actually void
         # set slowdown
         HIL_SetSlowdown(options.slowdown)
-
 
     if options.verbose:
         if options.quiet:
@@ -574,16 +611,13 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             if not todo:                                # if there are no actions yet
                 todo.insert(0, jtagobj.actionProgram)   # add some useful actions...
     else:                                               # number of args is wrong
-        sys.stderr.write("\nUnsuitable number of arguments\n")
-        usage()
-        sys.exit(2)
+        parser.error("Unsuitable number of arguments")
 
     if options.verbose:   # debug infos
         sys.stderr.write("Debug is %s\n" % DEBUG)
         sys.stderr.write("Verbosity level set to %d\n" % options.verbose)
         sys.stderr.write("Python version: %s\n" % sys.version)
         #~ sys.stderr.write("JTAG backend: %s\n" % jtag.backend)
-
 
     # sanity check of options
     if goaddr and reset:
@@ -601,7 +635,6 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             sys.stderr.write("Warning: option --wait ignored as --upload is specified!\n")
         options.wait = False
 
-
     # prepare output
     if options.output is None:
         out = sys.stdout
@@ -610,7 +643,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             import os, msvcrt
             msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
     else:
-        out = file(options.output, 'wb')
+        out = open(options.output, 'wb')
 
     # prepare data to download
     data = memory.Memory()                  # prepare downloaded data
@@ -623,7 +656,8 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
 
     jtagobj.data = data                     # prepare downloaded data
 
-    if options.verbose > 5: sys.stderr.write("File(s): %r\n" % args)
+    if options.verbose > 5:
+        sys.stderr.write("File(s): %r\n" % args)
 
     # debug messages
     if toinit:
@@ -658,12 +692,15 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
 
         # initialization list
         if toinit:  # erase and erase check
-            if options.verbose: sys.stderr.write("Preparing device ...\n")
-            for f in toinit: f()
+            if options.verbose:
+                sys.stderr.write("Preparing device ...\n")
+            for f in toinit:
+                f()
 
         # work list
         if todo:
-            for f in todo: f()                          # work through TODO list
+            for f in todo:
+                f()                          # work through TODO list
 
         if reset:                                       # reset device first if desired
             jtagobj.reset()
@@ -678,7 +715,7 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             jtagobj.actionRun(goaddr)                   # load PC and execute
 
         for format, function, args in results:
-            print format % function(*args)
+            print(format % function(*args))
 
         # upload data block and output
         if uploadlist:
@@ -699,9 +736,9 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
             jtagobj.reset(1, 1)                         # reset and release target
             release_done = 1
             if not options.quiet:
-                sys.stderr.write("Press <ENTER> ...\n") # display a prompt
+                sys.stderr.write("Press <ENTER> ...\n")  # display a prompt
                 sys.stderr.flush()
-            raw_input()                                 # wait for newline
+            input()                                 # wait for newline
 
         abort_due_to_error = 0
     finally:
@@ -720,10 +757,12 @@ if __name__ == '__main__':
     except SystemExit:
         raise                                           # let pass exit() calls
     except KeyboardInterrupt:
-        if DEBUG: raise                                 # show full trace in debug mode
+        if DEBUG:
+            raise                                 # show full trace in debug mode
         sys.stderr.write("User abort.\n")               # short messy in user mode
         sys.exit(1)                                     # set error level for script usage
-    except Exception, msg:                              # every Exception is caught and displayed
-        if DEBUG: raise                                 # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg) # short messy in user mode
+    except Exception as msg:                              # every Exception is caught and displayed
+        if DEBUG:
+            raise                                 # show full trace in debug mode
+        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short messy in user mode
         sys.exit(1)                                     # set error level for script usage

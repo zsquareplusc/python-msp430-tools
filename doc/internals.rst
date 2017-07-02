@@ -853,7 +853,7 @@ interface to JTAG adapters (USB and parallel port).
 MSP430 clock calibration utility.
 
 This tool can measure the internal oscillator of F1xx, F2xx and F4xx devices
-that are connected to the JTAG. It can  display the supported frequencies, or
+that are connected to the JTAG. It can display the supported frequencies, or
 run a software FLL to find the settings for a specified frequency.
 
 This module can be executed as command line tool (``python -m
@@ -885,7 +885,7 @@ msp430.jtag.dco``).
 
 JTAG programmer for the MSP430 embedded processor.
 
-Requires Python 2+ and the binary extension _parjtag or ctypes
+Requires Python 2.7+ and the binary extension _parjtag or ctypes
 and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so
 and HIL.dll/libHIL.so
 

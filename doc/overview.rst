@@ -2,7 +2,7 @@
  Overview
 ==========
 This is about the python-msp430-tools, that provide a number of tools related
-to the MSP430 embedded processor.
+to the MSP430 microcontroller.
 
 Python 2.6 or newer should be used. The Python package "msp430" can be
 installed with ``python setup.py install``. These modules can be used as

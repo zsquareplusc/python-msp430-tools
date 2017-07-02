@@ -9,7 +9,7 @@ The module :mod:`msp430.shell` provides some useful scripts for the shell.
 
 This tool emulates a number of shell utilities. The idea is that makefiles or
 similar build tools can use these commands to be OS independent (so that the
-same set of commands works on Windows, GNU/Linux, etc.).
+same set of commands works on Windows, MacOS, GNU/Linux, etc.).
 
 Command collection:
 

@@ -6,11 +6,11 @@
 python-msp430-tools documentation
 =================================
 
-This page's online home is at: http://packages.python.org/python-msp430-tools/
+This page's online home is at: http://python-msp430-tools.readthedocs.io
 
 Package home (PyPI): http://pypi.python.org/pypi/python-msp430-tools
 
-Developement / Project page: https://launchpad.net/python-msp430-tools
+Developement / Project page: https://github.com/zsquareplusc/python-msp430-tools
 
 Contents:
 

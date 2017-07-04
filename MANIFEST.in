@@ -1,9 +1,7 @@
-include README.txt
+include README.rst
 include LICENSE.txt
-include CHANGES.txt
 include MANIFEST.in
 include setup.py
-recursive-include msp430 *.py *.txt
 recursive-include examples *.py *.txt *.S *akefile *.ini *.nsi *.m43 *.forth
 
 include msp430/asm/forth/*.forth
@@ -16,21 +14,6 @@ include msp430/asm/librarian/asm/write.S
 include msp430/asm/librarian/asm/timer_a_uart/putchar.S
 include msp430/asm/librarian/asm/timer_a_uart/putchar_outmod.S
 include msp430/asm/librarian/asm/timer_a_uart/receive_interrupt.S
-
-include scripts/msp430-bsl
-include scripts/msp430-bsl-fcdprog
-include scripts/msp430-bsl-legacy
-include scripts/msp430-bsl-telosb
-include scripts/msp430-compare
-include scripts/msp430-convert
-include scripts/msp430-downloader
-include scripts/msp430-gdb
-include scripts/msp430-generate
-include scripts/msp430-hexdump
-include scripts/msp430-jtag
-include scripts/msp430-jtag-legacy
-include scripts/msp430-ram-usage
-include scripts/msp430-tool
 
 include doc/*.rst
 include doc/*.txt

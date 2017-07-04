@@ -7,7 +7,7 @@
 # details.
 
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 import sys
 import glob
 
@@ -18,19 +18,7 @@ setup(
     author="Chris Liechti",
     author_email="cliechti@gmx.net",
     url="https://github.com/zsquareplusc/python-msp430-tools",
-    packages=[
-        'msp430',
-        'msp430.asm',
-        'msp430.bsl',
-        'msp430.bsl.target',
-        'msp430.bsl5',
-        'msp430.gdb',
-        'msp430.jtag',
-        'msp430.legacy',
-        'msp430.listing',
-        'msp430.memory',
-        'msp430.shell',
-    ],
+    packages=find_packages(),
     package_dir={'msp430': 'msp430'},
     package_data={'msp430': [
         'asm/definitions/msp430-mcu-list.txt',
@@ -44,7 +32,7 @@ setup(
         'console_scripts': [
             'msp430-bsl = msp430.bsl.target:main',
             'msp430-bsl-fcdprog = msp430.bsl.target.fcdprog:main',
-            'msp430-bsl-legacy = msp430.legacy.bsl-main:main',
+            'msp430-bsl-legacy = msp430.legacy.bsl_main:main',
             'msp430-bsl-telosb = msp430.bsl.target.telosb.main',
             'msp430-compare = msp430.memory.compare:main',
             'msp430-convert = msp430.memory.convert:main',

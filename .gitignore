@@ -18,4 +18,7 @@ examples/asm/forth_to_asm_advanced/msp430.forth
 examples/asm/forth_to_asm_advanced/*.S
 examples/asm/forth_to_asm_advanced/*.s-cpp
 examples/asm/forth_to_asm_advanced/*.map
-
+*.pyc
+xxx.txt
+__pycache__
+python_msp430_tools.egg-info

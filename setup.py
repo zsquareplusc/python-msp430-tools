@@ -14,7 +14,7 @@ import glob
 setup(
     name="python-msp430-tools",
     description="Python MSP430 Tools",
-    version="0.7",
+    version="0.8",
     author="Chris Liechti",
     author_email="cliechti@gmx.net",
     url="https://github.com/zsquareplusc/python-msp430-tools",

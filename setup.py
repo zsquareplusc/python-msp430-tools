@@ -33,7 +33,7 @@ setup(
             'msp430-bsl = msp430.bsl.target:main',
             'msp430-bsl-fcdprog = msp430.bsl.target.fcdprog:main',
             'msp430-bsl-legacy = msp430.legacy.bsl_main:main',
-            'msp430-bsl-telosb = msp430.bsl.target.telosb.main',
+            'msp430-bsl-telosb = msp430.bsl.target.telosb:main',
             'msp430-compare = msp430.memory.compare:main',
             'msp430-convert = msp430.memory.convert:main',
             'msp430-downloader = msp430.downloader:main',

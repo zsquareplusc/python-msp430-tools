@@ -12,7 +12,7 @@ Functions to measure the DCO clock and functions to do a software FLL to
 callibrate the clock to a gived frequency.
 """
 
-import cStringIO
+from io import BytesIO
 from msp430 import memory
 from msp430.jtag import jtag
 import logging
@@ -35,7 +35,7 @@ def getDCOFreq(dcoctl, bcsctl1, bcsctl2=0):
 
     return: frequency in Hz
     """
-    funclet = memory.load('counter', cStringIO.StringIO(COUNTER_FUNCLET), format='titext')
+    funclet = memory.load('counter', BytesIO(COUNTER_FUNCLET), format='titext')
 
     funclet[0].data = funclet[0].data[:6] \
         + chr(dcoctl) + chr(bcsctl1) + chr(bcsctl2) \
@@ -127,7 +127,7 @@ def getDCOPlusFreq(scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1):
 
     return: frequency in Hz.
     """
-    funclet = memory.load("counter", cStringIO.StringIO(COUNTERPLUS_FUNCLET), format='titext')
+    funclet = memory.load("counter", BytesIO(COUNTERPLUS_FUNCLET), format='titext')
     funclet[0].data = funclet[0].data[:6] \
         + chr(scfi0) + chr(scfi1) \
         + chr(scfqctl) + chr(fll_ctl0) \

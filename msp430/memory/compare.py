@@ -27,7 +27,7 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, html=False):
     """
     hexdumps = []
     for mem in (mem1, mem2):
-        dump = BytesIO.StringIO()
+        dump = BytesIO()
         msp430.memory.hexdump.save(mem, dump)
         hexdumps.append(dump)
 

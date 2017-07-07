@@ -940,12 +940,12 @@ class BootStrapLoader(LowLevel):
                 if DEBUG:
                     sys.stderr.write("Using built in BSL replacement for F4x devices\n")
                     sys.stderr.flush()
-                replacementBSL.loadTIText(BytesIO.StringIO(F4X_BSL))  # parse embedded BSL
+                replacementBSL.loadTIText(BytesIO(F4X_BSL))  # parse embedded BSL
             else:
                 if DEBUG:
                     sys.stderr.write("Using built in BSL replacement for F1x devices\n")
                     sys.stderr.flush()
-                replacementBSL.loadTIText(BytesIO.StringIO(F1X_BSL))  # parse embedded BSL
+                replacementBSL.loadTIText(BytesIO(F1X_BSL))  # parse embedded BSL
 
         # now download the new BSL, if allowed and needed (version lower than the
         # the replacement) or forced
@@ -968,7 +968,7 @@ class BootStrapLoader(LowLevel):
                 # Programming and verification is done in one pass.
                 # The patch file is only read and parsed once.
                 segments = Memory()                     # data to program
-                segments.loadTIText(BytesIO.StringIO(PATCH))  # parse embedded patch
+                segments.loadTIText(BytesIO(PATCH))  # parse embedded patch
                 # program patch
                 self.programData(segments, self.ACTION_PROGRAM | self.ACTION_VERIFY)
                 self.patchLoaded = 1

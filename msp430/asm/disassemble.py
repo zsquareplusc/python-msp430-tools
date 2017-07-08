@@ -367,7 +367,7 @@ class MSP430Disassembler(object):
         self.instructions = []
         self.labels = {}
         self.label_num = 1
-        self.next_word = None
+        self.words = None
         self.address = None
         self.first_address = None
         if self.msp430x:
@@ -416,7 +416,7 @@ class MSP430Disassembler(object):
         """get next 16 bits from instruction stream"""
         if self.first_address is None:
             self.first_address = self.address
-        word = self.next_word()
+        word = next(self.words)
         self.cycles += 1
         self.address += 2
         self.used_words.append(word)
@@ -728,7 +728,7 @@ class MSP430Disassembler(object):
         lines = []
         for segment in sorted(self.memory.segments):
             self.restart(segment.startaddress)
-            self.next_word = words(segment.data).next
+            self.words = words(segment.data)
             lines.append((None, "; Segment starting at 0x%08x:" % (segment.startaddress,), '\n'))
             try:
                 while True:

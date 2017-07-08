@@ -32,6 +32,9 @@ class DataStream(object):
             self.current_offset = 0
 
     def next(self):
+        self.__next__()
+
+    def __next__(self):
         if self.current_data is None:
             raise StopIteration()
         result = (self.address, self.current_data[self.current_offset])

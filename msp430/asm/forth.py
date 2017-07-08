@@ -667,7 +667,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     @rpn.word('BRANCH')
     def instruction_seek(self, stack):
         """Get offset from sequence and jump to this position."""
-        difference = next(--stack._frame_iterator)
+        difference = next(stack._frame_iterator)
         stack._frame_iterator.seek(difference - 1)
 
     @rpn.word('BRANCH0')

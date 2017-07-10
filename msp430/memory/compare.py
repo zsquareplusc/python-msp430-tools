@@ -14,39 +14,111 @@ import sys
 from io import BytesIO
 import difflib
 import msp430.memory
-import msp430.memory.hexdump
 
 
 debug = False
 
 
-def compare(mem1, mem2, name1, name2, output=sys.stdout, html=False):
+def make_stream(memory):
+    addresses = []
+    stream = []
+    for segment in sorted(list(memory.segments)):
+        addresses.extend(range(segment.startaddress, segment.startaddress + len(segment.data)))
+        stream.extend(bytearray(segment.data))
+    return (addresses, stream)
+
+
+def combine(addresses1, addresses2, data):
+    for n, byte in enumerate(data):
+        yield (
+            addresses1[n] if addresses1 is not None else None,
+            addresses2[n] if addresses2 is not None else None,
+            byte)
+
+
+def rows(addressed_data):
+    stream = iter(addressed_data)
+    while True:
+        row = []
+        a1, a2, data = next(stream)
+        try:
+            row.append(data)
+            for i in range(1, 16):
+                an1, an2, data = next(stream)
+                row.append(data)
+                if a1 is not None and an1 != a1 + i: break
+                if a2 is not None and an2 != a2 + i: break
+        finally:
+            yield a1, a2, row
+
+
+def write_row(prefix, address1, address2, row, output):
+    values = ' '.join("%02x" % x for x in row)
+    ascii = ''.join(chr(x) if (32 <= x < 128) else '.' for x in row)
+    # pad width
+    values += ' ' * (47 - len(values))
+    ascii += ' ' * (16 - len(values))
+    # output line, insert gap at 8
+    output.write("%s %8s %8s:  %s %s  %s %s\n" % (
+        prefix,
+        '{:08x}'.format(address1) if address1 is not None else '-' * 8,
+        '{:08x}'.format(address2) if address2 is not None else '-' * 8,
+        values[:24], values[24:],
+        ascii[:8], ascii[8:]))
+
+
+def hexdump(prefix, addresses1, addresses2, data, output=sys.stdout):
+    """\
+    Print a hex dump.
+    """
+    for a1, a2, row in rows(combine(addresses1, addresses2, data)):
+        write_row(prefix, a1, a2, row, output)
+
+
+def compare(mem1, mem2, name1, name2, output=sys.stdout, show_equal=True):
     """\
     Compare and output hex dump of two memory object.
     :returns: True when files are identical, False otherwise.
     """
-    hexdumps = []
-    for mem in (mem1, mem2):
-        dump = BytesIO()
-        msp430.memory.hexdump.save(mem, dump)
-        hexdumps.append(dump)
 
-    # need lines for pythons difflib
-    lines = [['%s\n' % x for x in f.getvalue().splitlines()] for f in hexdumps]
+    addresses1, stream1 = make_stream(mem1)
+    addresses2, stream2 = make_stream(mem2)
 
-    n = 0
-    if html:
-        diff = difflib.HtmlDiff().make_file(lines[0], lines[1], name1, name2, numlines=n)
-    else:
-        diff = difflib.unified_diff(lines[0], lines[1], name1, name2, n=n)
+    s = difflib.SequenceMatcher(lambda x: x is None, a=stream1, b=stream2, autojunk=False)
+    #~ sys.stderr.write('similarity [0...1]: {:.2f}\n'.format(s.ratio()))  # XXX if verbose
+    equal = True
+    for opcode, i1, i2, j1, j2 in s.get_opcodes():
+        #~ print "=== %6s a[%d:%d] b[%d:%d]" % (opcode, i1, i2, j1, j2)
+        if opcode == 'equal':
+            if addresses1[i1] != addresses2[j1]:
+                equal = False
+            if show_equal:
+                hexdump(' ', addresses1[i1:i2], addresses2[j1:j2], stream1[i1:i2], output)
+            else:
+                output.write('= {:08x} {:08x}:  {} bytes identical{}\n'.format(
+                    addresses1[i1],
+                    addresses2[j1],
+                    i2 - i1,
+                    ' at different addresses' if addresses1[i1] != addresses2[j1] else ''))
+        elif opcode == 'insert':
+            hexdump('+', None, addresses2[j1:j2], stream2[j1:j2], output)
+            equal = False
+        elif opcode == 'replace':
+            #~ output.write('\n')
+            hexdump('<', addresses1[i1:i2], None, stream1[i1:i2], output)
+            #~ sys.stdout.write('--- is replaced with\n')
+            hexdump('>', None, addresses2[j1:j2], stream2[j1:j2], output)
+            #~ output.write('\n')
+            equal = False
+        elif opcode == 'delete':
+            hexdump('-', addresses1[i1:i2], None, stream1[i1:i2], output)
+            equal = False
 
-    lines = list(diff)
-    if len(lines):
-        output.writelines(lines)
-        return False
-    else:
+    if equal:
         output.write("files are identical\n")
         return True
+    else:
+        return False
 
 
 def inner_main():
@@ -88,9 +160,9 @@ the differences between the files.
         metavar="TYPE")
 
     parser.add_option(
-        "--html",
-        dest="html",
-        help="create HTML output",
+        "-a", "--show-all",
+        dest="show_all",
+        help="Do not hide equal parts",
         default=False,
         action='store_true')
 
@@ -125,7 +197,7 @@ the differences between the files.
         if options.verbose:
             sys.stderr.write('Loaded %s (%d segments)\n' % (filename, len(mem)))
 
-    same = compare(*(input_data + filenames), output=output, html=options.html)
+    same = compare(*(input_data + filenames), output=output, show_equal=options.show_all)
     sys.exit(not same)  # exit code 0 if same, otherwise 1
 
 

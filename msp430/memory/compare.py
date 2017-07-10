@@ -53,16 +53,16 @@ def rows(addressed_data):
 
 
 def write_row(prefix, address1, address2, row, output):
-    values = ' '.join("%02x" % x for x in row)
-    ascii = ''.join(chr(x) if (32 <= x < 128) else '.' for x in row)
+    values = ' '.join('{:02x}'.format(x) for x in row)
+    ascii = ''.join(chr(x) if 32 <= x < 128 else '.' for x in row)
     # pad width
     values += ' ' * (47 - len(values))
     ascii += ' ' * (16 - len(values))
     # output line, insert gap at 8
-    output.write("%s %8s %8s:  %s %s  %s %s\n" % (
+    output.write('{} {:^8s} {:^8s}:  {} {}  {} {}\n'.format(
         prefix,
-        '{:08x}'.format(address1) if address1 is not None else '-' * 8,
-        '{:08x}'.format(address2) if address2 is not None else '-' * 8,
+        '{:08x}'.format(address1) if address1 is not None else '--------',
+        '{:08x}'.format(address2) if address2 is not None else '--------',
         values[:24], values[24:],
         ascii[:8], ascii[8:]))
 
@@ -84,7 +84,7 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, show_equal=True):
     addresses1, stream1 = make_stream(mem1)
     addresses2, stream2 = make_stream(mem2)
 
-    s = difflib.SequenceMatcher(lambda x: x is None, a=stream1, b=stream2, autojunk=False)
+    s = difflib.SequenceMatcher(lambda x: x is None, stream1, stream2, autojunk=False)
     #~ sys.stderr.write('similarity [0...1]: {:.2f}\n'.format(s.ratio()))  # XXX if verbose
     equal = True
     for opcode, i1, i2, j1, j2 in s.get_opcodes():
@@ -133,43 +133,43 @@ the differences between the files.
 """)
 
     parser.add_option(
-        "-o", "--output",
-        dest="output",
-        help="write result to given file",
-        metavar="DESTINATION")
+        '-o', '--output',
+        dest='output',
+        help='write result to given file',
+        metavar='DESTINATION')
 
     parser.add_option(
-        "-d", "--debug",
-        dest="debug",
-        help="print debug messages",
+        '-d', '--debug',
+        dest='debug',
+        help='print debug messages',
         default=False,
         action='store_true')
 
     parser.add_option(
-        "-v", "--verbose",
-        dest="verbose",
-        help="print more details",
+        '-v', '--verbose',
+        dest='verbose',
+        help='print more details',
         default=False,
         action='store_true')
 
     parser.add_option(
-        "-i", "--input-format",
-        dest="input_format",
-        help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
+        '-i', '--input-format',
+        dest='input_format',
+        help='input format name ({})'.format(', '.join(msp430.memory.load_formats)),
         default=None,
-        metavar="TYPE")
+        metavar='TYPE')
 
     parser.add_option(
-        "-a", "--show-all",
-        dest="show_all",
-        help="Do not hide equal parts",
+        '-a', '--show-all',
+        dest='show_all',
+        help='Do not hide equal parts',
         default=False,
         action='store_true')
 
     (options, args) = parser.parse_args()
 
     if options.input_format is not None and options.input_format not in msp430.memory.load_formats:
-        parser.error('Input format %s not supported.' % (options.input_format))
+        parser.error('Input format {} not supported.'.format(options.input_format))
 
     global debug
     debug = options.debug
@@ -195,7 +195,7 @@ the differences between the files.
         filenames.append(filename)
 
         if options.verbose:
-            sys.stderr.write('Loaded %s (%d segments)\n' % (filename, len(mem)))
+            sys.stderr.write('Loaded {} ({} segments)\n'.format(filename, len(mem)))
 
     same = compare(*(input_data + filenames), output=output, show_equal=options.show_all)
     sys.exit(not same)  # exit code 0 if same, otherwise 1

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Chris Liechti <cliechti@gmx.net>
+# Copyright (c) 2010-2017 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
 # Simplified BSD License (see LICENSE.txt for full text)
 
@@ -14,17 +14,24 @@ import sys
 from io import BytesIO
 import difflib
 import msp430.memory
-
+from itertools import zip_longest
 
 debug = False
 
 
-def make_stream(memory):
+# from https://docs.python.org/3/library/itertools.html#itertools-recipes
+def grouper(n, iterable, fillvalue=None):
+    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return zip_longest(fillvalue=fillvalue, *args)
+
+
+def make_stream(memory, granularity=2):
     addresses = []
     stream = []
     for segment in sorted(list(memory.segments)):
-        addresses.extend(range(segment.startaddress, segment.startaddress + len(segment.data)))
-        stream.extend(bytearray(segment.data))
+        addresses.extend(range(segment.startaddress, segment.startaddress + len(segment.data), granularity))
+        stream.extend(grouper(granularity, bytes(segment.data), fillvalue=0))
     return (addresses, stream)
 
 
@@ -42,10 +49,10 @@ def rows(addressed_data):
         row = []
         a1, a2, data = next(stream)
         try:
-            row.append(data)
-            for i in range(1, 16):
+            row.extend(bytearray(data))
+            for i in range(len(data), 16, len(data)):
                 an1, an2, data = next(stream)
-                row.append(data)
+                row.extend(bytearray(data))
                 if a1 is not None and an1 != a1 + i: break
                 if a2 is not None and an2 != a2 + i: break
         finally:
@@ -75,14 +82,14 @@ def hexdump(prefix, addresses1, addresses2, data, output=sys.stdout):
         write_row(prefix, a1, a2, row, output)
 
 
-def compare(mem1, mem2, name1, name2, output=sys.stdout, show_equal=True):
+def compare(mem1, mem2, name1, name2, output=sys.stdout, show_equal=True, granularity=1):
     """\
     Compare and output hex dump of two memory object.
     :returns: True when files are identical, False otherwise.
     """
 
-    addresses1, stream1 = make_stream(mem1)
-    addresses2, stream2 = make_stream(mem2)
+    addresses1, stream1 = make_stream(mem1, granularity=granularity)
+    addresses2, stream2 = make_stream(mem2, granularity=granularity)
 
     s = difflib.SequenceMatcher(lambda x: x is None, stream1, stream2, autojunk=False)
     #~ sys.stderr.write('similarity [0...1]: {:.2f}\n'.format(s.ratio()))  # XXX if verbose
@@ -166,6 +173,13 @@ the differences between the files.
         default=False,
         action='store_true')
 
+    parser.add_option(
+        '-g', '--granularity',
+        dest='granularity',
+        type=int,
+        default=1,
+        help='compare x bytes at once, default: %default')
+
     (options, args) = parser.parse_args()
 
     if options.input_format is not None and options.input_format not in msp430.memory.load_formats:
@@ -197,7 +211,11 @@ the differences between the files.
         if options.verbose:
             sys.stderr.write('Loaded {} ({} segments)\n'.format(filename, len(mem)))
 
-    same = compare(*(input_data + filenames), output=output, show_equal=options.show_all)
+    same = compare(
+        *(input_data + filenames),
+        output=output,
+        show_equal=options.show_all,
+        granularity=options.granularity)
     sys.exit(not same)  # exit code 0 if same, otherwise 1
 
 

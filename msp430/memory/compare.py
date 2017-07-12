@@ -10,23 +10,28 @@ This is a little tool to compare .a43, .text, .elf or binary
 files.
 """
 
-import sys
-from io import BytesIO
+import argparse
 import difflib
+import sys
 import msp430.memory
-from itertools import zip_longest
+
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
 
 debug = False
 
 
 # from https://docs.python.org/3/library/itertools.html#itertools-recipes
 def grouper(n, iterable, fillvalue=None):
-    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+    """grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"""
     args = [iter(iterable)] * n
     return zip_longest(fillvalue=fillvalue, *args)
 
 
-def make_stream(memory, granularity=2):
+def make_stream(memory, granularity=1):
+    """create a list of bytes of length 'granularity' and a list of original addresses"""
     addresses = []
     stream = []
     for segment in sorted(list(memory.segments)):
@@ -36,6 +41,7 @@ def make_stream(memory, granularity=2):
 
 
 def combine(addresses1, addresses2, data):
+    """combine two address ranges (which may be None) and data"""
     for n, byte in enumerate(data):
         yield (
             addresses1[n] if addresses1 is not None else None,
@@ -44,6 +50,10 @@ def combine(addresses1, addresses2, data):
 
 
 def rows(addressed_data):
+    """\
+    iterate over dual-address and data sequence and make rows of up to
+    16 data bytes, also restart rows if addresses jump.
+    """
     stream = iter(addressed_data)
     while True:
         row = []
@@ -60,6 +70,7 @@ def rows(addressed_data):
 
 
 def write_row(prefix, address1, address2, row, output):
+    """output a hexdump line"""
     values = ' '.join('{:02x}'.format(x) for x in row)
     ascii = ''.join(chr(x) if 32 <= x < 128 else '.' for x in row)
     # pad width
@@ -128,94 +139,109 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, show_equal=True, granul
         return False
 
 
+class BinaryFileType(object):
+    def __init__(self, mode='r'):
+        self._mode = mode
+
+    def __call__(self, string):
+        if self._mode not in 'rw':
+            raise ValueError('invalid mode: {}'.format(self._mode))
+        if string == '-':
+            if self._mode == 'r':
+                fileobj = sys.stdin
+            else:
+                fileobj = sys.stdout
+            try:
+                return fileobj.buffer   # Python 3
+            except AttributeError:
+                return fileobj          # Python 2
+        try:
+            return open(string, self._mode + 'b')
+        except IOError as e:
+            raise argparse.ArgumentTypeError('can not open "{}": {}'.format(string, e))
+
+    def __repr__(self):
+        return '%s(%s)' % (type(self).__name__, self._mode)
+
+
 def inner_main():
-    from optparse import OptionParser
-    parser = OptionParser(usage="""\
-%prog [options] FILE1 FILE2
+    parser = argparse.ArgumentParser(usage="""\
+%(prog)s [options] FILE1 FILE2
 
 Compare tool.
 
-This tool reads binary, ELF or hex input files, creates a hex dump and shows
-the differences between the files.
+This tool reads binary, ELF or hex input files and shows the differences
+between the files a hex dump.
 """)
 
-    parser.add_option(
-        '-o', '--output',
-        dest='output',
-        help='write result to given file',
-        metavar='DESTINATION')
+    group = parser.add_argument_group('Input')
 
-    parser.add_option(
-        '-d', '--debug',
-        dest='debug',
-        help='print debug messages',
-        default=False,
-        action='store_true')
+    group.add_argument(
+        'FILE',
+        nargs=2,
+        help='files to compare',
+        type=BinaryFileType('r'))
 
-    parser.add_option(
-        '-v', '--verbose',
-        dest='verbose',
-        help='print more details',
-        default=False,
-        action='store_true')
-
-    parser.add_option(
+    group.add_argument(
         '-i', '--input-format',
-        dest='input_format',
-        help='input format name ({})'.format(', '.join(msp430.memory.load_formats)),
+        help='input format name',
+        choices=msp430.memory.load_formats,
         default=None,
         metavar='TYPE')
 
-    parser.add_option(
+    group.add_argument(
+        '-g', '--granularity',
+        type=int,
+        default=1,
+        help='compare x bytes at once, default: %(default)s')
+
+    group = parser.add_argument_group('Output')
+
+    group.add_argument(
+        '-o', '--output',
+        type=argparse.FileType('w'),
+        default='-',
+        help='write result to given file',
+        metavar='DESTINATION')
+
+    group.add_argument(
         '-a', '--show-all',
-        dest='show_all',
         help='Do not hide equal parts',
         default=False,
         action='store_true')
 
-    parser.add_option(
-        '-g', '--granularity',
-        dest='granularity',
-        type=int,
-        default=1,
-        help='compare x bytes at once, default: %default')
+    parser.add_argument(
+        '-v', '--verbose',
+        help='print more details',
+        default=False,
+        action='store_true')
 
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        '--develop',
+        action='store_true',
+        help='show tracebacks on errors (development of this tool)')
 
-    if options.input_format is not None and options.input_format not in msp430.memory.load_formats:
-        parser.error('Input format {} not supported.'.format(options.input_format))
+    args = parser.parse_args()
+    #~ print(args)
 
     global debug
-    debug = options.debug
-
-    output = sys.stdout
-    if options.output:
-        output = open(options.output, 'wb')
-
-    if len(args) != 2:
-        parser.error('expected exactly two arguments (files)')
+    debug = args.develop
 
     input_data = []
     filenames = []
-    for filename in args:
-        if filename == '-':                 # get data from stdin
-            fileobj = sys.stdin
-            filename = '<stdin>'
-        else:
-            fileobj = open(filename, "rb")  # or from a file
-
-        mem = msp430.memory.load(filename, fileobj, options.input_format)
+    for fileobj in args.FILE:
+        mem = msp430.memory.load(fileobj.name, fileobj, args.input_format)
         input_data.append(mem)
-        filenames.append(filename)
+        filenames.append(fileobj.name)
 
-        if options.verbose:
-            sys.stderr.write('Loaded {} ({} segments)\n'.format(filename, len(mem)))
+        if args.verbose:
+            sys.stderr.write('Loaded {} ({} segments)\n'.format(fileobj.name, len(mem)))
 
     same = compare(
         *(input_data + filenames),
-        output=output,
-        show_equal=options.show_all,
-        granularity=options.granularity)
+        output=args.output,
+        show_equal=args.show_all,
+        granularity=args.granularity)
     sys.exit(not same)  # exit code 0 if same, otherwise 1
 
 
@@ -225,7 +251,6 @@ def main():
     except SystemExit:
         raise                                   # let pass exit() calls
     except KeyboardInterrupt:
-        #~ if debug: raise                         # show full trace in debug mode
         sys.stderr.write("User abort.\n")       # short messy in user mode
         sys.exit(1)                             # set error level for script usage
     except Exception as msg:                    # every Exception is caught and displayed

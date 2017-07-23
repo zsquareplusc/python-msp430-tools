@@ -14,17 +14,41 @@ usage: convert file.txt >out.a43
 usage: convert file.txt -o out.a43
 """
 
-from msp430 import memory
+import argparse
 import sys
+import msp430.memory
 
-debug = False
+debug = True
+
+
+class BinaryFileType(object):
+    def __init__(self, mode='r'):
+        self._mode = mode
+
+    def __call__(self, string):
+        if self._mode not in 'rw':
+            raise ValueError('invalid mode: {}'.format(self._mode))
+        if string == '-':
+            if self._mode == 'r':
+                fileobj = sys.stdin
+            else:
+                fileobj = sys.stdout
+            try:
+                return fileobj.buffer   # Python 3
+            except AttributeError:
+                return fileobj          # Python 2
+        try:
+            return open(string, self._mode + 'b')
+        except IOError as e:
+            raise argparse.ArgumentTypeError('can not open "{}": {}'.format(string, e))
+
+    def __repr__(self):
+        return '%s(%s)' % (type(self).__name__, self._mode)
 
 
 def inner_main():
-    from optparse import OptionParser
-
-    parser = OptionParser(usage="""\
-%prog [options] [INPUT...]
+    parser = argparse.ArgumentParser(usage="""\
+%(prog)s [options] [INPUT...]
 
 Simple hex file conversion tool.
 
@@ -32,40 +56,44 @@ It is also possible to specify multiple input files and create a single,
 merged output.
 """)
 
-    parser.add_option(
-        "-o", "--output",
-        dest="output",
-        help="write result to given file",
-        metavar="DESTINATION")
+    group = parser.add_argument_group('Input')
 
-    parser.add_option(
-        "-i", "--input-format",
-        dest="input_format",
-        help="input format name (%s)" % (', '.join(memory.load_formats),),
+    group.add_argument(
+        'FILE',
+        nargs='*',
+        help='files to compare',
+        type=BinaryFileType('r'))
+
+    group.add_argument(
+        '-i', '--input-format',
+        help='input format name',
+        choices=msp430.memory.load_formats,
         default=None,
-        metavar="TYPE")
+        metavar='TYPE')
 
-    parser.add_option(
-        "-f", "--output-format",
-        dest="output_format",
-        help="output format name (%s)" % (', '.join(memory.save_formats),),
-        default="titext",
-        metavar="TYPE")
+    group = parser.add_argument_group('Output')
 
-    parser.add_option(
-        "-d", "--debug",
-        dest="debug",
-        help="print debug messages",
-        default=False,
-        action='store_true')
+    group.add_argument(
+        '-o', '--output',
+        type=argparse.FileType('w'),
+        default='-',
+        help='write result to given file',
+        metavar='DESTINATION')
 
-    (options, args) = parser.parse_args()
+    group.add_argument(
+        '-f', '--output-format',
+        help='output_format format name',
+        choices=msp430.memory.save_formats,
+        default='titext',
+        metavar='TYPE')
 
-    if options.input_format is not None and options.input_format not in memory.load_formats:
-        parser.error('Input format %s not supported.' % (options.input_format))
+    parser.add_argument(
+        '--develop',
+        action='store_true',
+        help='show tracebacks on errors (development of this tool)')
 
-    if options.output_format not in memory.save_formats:
-        parser.error('Output format %s not supported.' % (options.output_format))
+    args = parser.parse_args()
+    #~ print(args)
 
     if not args:
         # if no files are given, read from stdin
@@ -75,32 +103,16 @@ merged output.
             options.input_format = 'titext'
 
     global debug
-    debug = options.debug
-
-    # prepare output
-    if options.output is None:
-        try:
-            out = sys.stdout.buffer  # detach()
-        except AttributeError:
-            out = sys.stdout
-    else:
-        out = open(options.output, 'wb')
+    debug = args.develop
 
     # get input
-    data = memory.Memory()          # prepare downloaded data
+    data = msp430.memory.Memory()          # prepare downloaded data
 
-    for filename in args:
-        if filename == '-':
-            try:
-                fileobj = sys.stdin.detach()
-            except AttributeError:
-                fileobj = sys.stdin
-            data.merge(memory.load('<stdin>', fileobj, format=options.input_format))
-        else:
-            data.merge(memory.load(filename, format=options.input_format))
+    for fileobj in args.FILE:
+        data.merge(msp430.memory.load(fileobj.name, fileobj, args.input_format))
 
     # write ihex file
-    memory.save(data, out, options.output_format)
+    msp430.memory.save(data, args.output, args.output_format)
 
 
 def main():

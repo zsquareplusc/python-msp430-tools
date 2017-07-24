@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2002-2010 Chris Liechti <cliechti@gmx.net>
+# Copyright (c) 2002-2017 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
 # Simplified BSD License (see LICENSE.txt for full text)
 
@@ -32,7 +32,7 @@ class DataStream(object):
             self.current_offset = 0
 
     def next(self):
-        self.__next__()
+        return self.__next__()
 
     def __next__(self):
         if self.current_data is None:
@@ -74,13 +74,13 @@ def stream_merge(*streams):
                 next_stream = s
         if next_stream is not None:
             # got one, yield that
-            yield next_stream.next()
+            yield next(next_stream)
             # then remove all the elements with lower addresses from all
             # streams. if a stream is exhausted, remove it from the list
             # of streams
             for s in list(streams):  # iterate over copy as we delete
                 while s.address is not None and s.address <= address:
-                    s.next()
+                    next(s)
                 if s.address is None:
                     streams.remove(s)
         else:

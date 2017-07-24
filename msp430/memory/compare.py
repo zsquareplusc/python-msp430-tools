@@ -113,10 +113,11 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, show_equal=True, granul
             if show_equal:
                 hexdump(' ', addresses1[i1:i2], addresses2[j1:j2], stream1[i1:i2], output)
             else:
+                # XXX search for address jumps in the blocks just like hexdump does
                 output.write('= {:08x} {:08x}:  {} bytes identical{}\n'.format(
                     addresses1[i1],
                     addresses2[j1],
-                    i2 - i1,
+                    (i2 - i1) * granularity,
                     ' at different addresses' if addresses1[i1] != addresses2[j1] else ''))
         elif opcode == 'insert':
             hexdump('+', None, addresses2[j1:j2], stream2[j1:j2], output)
@@ -139,124 +140,55 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, show_equal=True, granul
         return False
 
 
-class BinaryFileType(object):
-    def __init__(self, mode='r'):
-        self._mode = mode
+def main():
+    import argparse
+    import msp430.commandline_helper
 
-    def __call__(self, string):
-        if self._mode not in 'rw':
-            raise ValueError('invalid mode: {}'.format(self._mode))
-        if string == '-':
-            if self._mode == 'r':
-                fileobj = sys.stdin
-            else:
-                fileobj = sys.stdout
-            try:
-                return fileobj.buffer   # Python 3
-            except AttributeError:
-                return fileobj          # Python 2
-        try:
-            return open(string, self._mode + 'b')
-        except IOError as e:
-            raise argparse.ArgumentTypeError('can not open "{}": {}'.format(string, e))
-
-    def __repr__(self):
-        return '%s(%s)' % (type(self).__name__, self._mode)
-
-
-def inner_main():
-    parser = argparse.ArgumentParser(usage="""\
-%(prog)s [options] FILE1 FILE2
-
+    class CompareTool(msp430.commandline_helper.CommandLineTool):
+        description = """\
 Compare tool.
 
 This tool reads binary, ELF or hex input files and shows the differences
 between the files a hex dump.
-""")
+"""
 
-    group = parser.add_argument_group('Input')
+        def configure_parser(self):
+            group = self.parser_add_input(nargs=2)
+            group.add_argument(
+                '-g', '--granularity',
+                type=int,
+                default=1,
+                help='compare x bytes at once, default: %(default)s')
 
-    group.add_argument(
-        'FILE',
-        nargs=2,
-        help='files to compare',
-        type=BinaryFileType('r'))
+            group = self.parser_add_output(textual=True)
+            group.add_argument(
+                '-a', '--show-all',
+                help='Do not hide equal parts',
+                default=False,
+                action='store_true')
 
-    group.add_argument(
-        '-i', '--input-format',
-        help='input format name',
-        choices=msp430.memory.load_formats,
-        default=None,
-        metavar='TYPE')
+            self.parser_add_verbose()
 
-    group.add_argument(
-        '-g', '--granularity',
-        type=int,
-        default=1,
-        help='compare x bytes at once, default: %(default)s')
+        def run(self, args):
+            input_data = []
+            filenames = []
+            for fileobj in args.SRC:
+                mem = msp430.memory.load(fileobj.name, fileobj, args.input_format)
+                input_data.append(mem)
+                filenames.append(fileobj.name)
 
-    group = parser.add_argument_group('Output')
+                if args.verbose:
+                    sys.stderr.write('Loaded {} ({} segments)\n'.format(fileobj.name, len(mem)))
 
-    group.add_argument(
-        '-o', '--output',
-        type=argparse.FileType('w'),
-        default='-',
-        help='write result to given file',
-        metavar='DESTINATION')
+            same = compare(
+                *(input_data + filenames),
+                output=args.output,
+                show_equal=args.show_all,
+                granularity=args.granularity)
+            sys.exit(not same)  # exit code 0 if same, otherwise 1
 
-    group.add_argument(
-        '-a', '--show-all',
-        help='Do not hide equal parts',
-        default=False,
-        action='store_true')
+    CompareTool().main()
 
-    parser.add_argument(
-        '-v', '--verbose',
-        help='print more details',
-        default=False,
-        action='store_true')
-
-    parser.add_argument(
-        '--develop',
-        action='store_true',
-        help='show tracebacks on errors (development of this tool)')
-
-    args = parser.parse_args()
-    #~ print(args)
-
-    global debug
-    debug = args.develop
-
-    input_data = []
-    filenames = []
-    for fileobj in args.FILE:
-        mem = msp430.memory.load(fileobj.name, fileobj, args.input_format)
-        input_data.append(mem)
-        filenames.append(fileobj.name)
-
-        if args.verbose:
-            sys.stderr.write('Loaded {} ({} segments)\n'.format(fileobj.name, len(mem)))
-
-    same = compare(
-        *(input_data + filenames),
-        output=args.output,
-        show_equal=args.show_all,
-        granularity=args.granularity)
-    sys.exit(not same)  # exit code 0 if same, otherwise 1
-
-
-def main():
-    try:
-        inner_main()
-    except SystemExit:
-        raise                                   # let pass exit() calls
-    except KeyboardInterrupt:
-        sys.stderr.write("User abort.\n")       # short messy in user mode
-        sys.exit(1)                             # set error level for script usage
-    except Exception as msg:                    # every Exception is caught and displayed
-        if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short messy in user mode
-        sys.exit(1)                             # set error level for script usage
 
 if __name__ == '__main__':
     main()

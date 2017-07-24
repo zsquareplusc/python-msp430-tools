@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2004-2010 Chris Liechti <cliechti@gmx.net>
+# Copyright (c) 2004-2017 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
 # Simplified BSD License (see LICENSE.txt for full text)
 
@@ -18,116 +18,39 @@ import argparse
 import sys
 import msp430.memory
 
-debug = True
 
+def main():
+    import msp430.commandline_helper
 
-class BinaryFileType(object):
-    def __init__(self, mode='r'):
-        self._mode = mode
-
-    def __call__(self, string):
-        if self._mode not in 'rw':
-            raise ValueError('invalid mode: {}'.format(self._mode))
-        if string == '-':
-            if self._mode == 'r':
-                fileobj = sys.stdin
-            else:
-                fileobj = sys.stdout
-            try:
-                return fileobj.buffer   # Python 3
-            except AttributeError:
-                return fileobj          # Python 2
-        try:
-            return open(string, self._mode + 'b')
-        except IOError as e:
-            raise argparse.ArgumentTypeError('can not open "{}": {}'.format(string, e))
-
-    def __repr__(self):
-        return '%s(%s)' % (type(self).__name__, self._mode)
-
-
-def inner_main():
-    parser = argparse.ArgumentParser(usage="""\
-%(prog)s [options] [INPUT...]
-
+    class ConvertTool(msp430.commandline_helper.CommandLineTool):
+        description = """\
 Simple hex file conversion tool.
 
 It is also possible to specify multiple input files and create a single,
 merged output.
-""")
+"""
 
-    group = parser.add_argument_group('Input')
+        def configure_parser(self):
+            self.parser_add_input(nargs='*')
+            self.parser_add_output()
 
-    group.add_argument(
-        'FILE',
-        nargs='*',
-        help='files to compare',
-        type=BinaryFileType('r'))
+        def run(self, args):
+            if not args.SRC:
+                # if no files are given, read from stdin
+                args.FILE = [BinaryFileType('r')('-')]
+                # default to TI-Text if no format is given
+                if args.input_format is None:
+                    args.input_format = 'titext'
 
-    group.add_argument(
-        '-i', '--input-format',
-        help='input format name',
-        choices=msp430.memory.load_formats,
-        default=None,
-        metavar='TYPE')
+            # get input
+            data = msp430.memory.Memory()
+            for fileobj in args.SRC:
+                data.merge(msp430.memory.load(fileobj.name, fileobj, args.input_format))
 
-    group = parser.add_argument_group('Output')
+            # write ihex file
+            msp430.memory.save(data, args.output, args.output_format)
 
-    group.add_argument(
-        '-o', '--output',
-        type=argparse.FileType('w'),
-        default='-',
-        help='write result to given file',
-        metavar='DESTINATION')
-
-    group.add_argument(
-        '-f', '--output-format',
-        help='output_format format name',
-        choices=msp430.memory.save_formats,
-        default='titext',
-        metavar='TYPE')
-
-    parser.add_argument(
-        '--develop',
-        action='store_true',
-        help='show tracebacks on errors (development of this tool)')
-
-    args = parser.parse_args()
-    #~ print(args)
-
-    if not args:
-        # if no files are given, read from stdin
-        args = ['-']
-        # default to TI-Text if no format is given
-        if options.input_format is None:
-            options.input_format = 'titext'
-
-    global debug
-    debug = args.develop
-
-    # get input
-    data = msp430.memory.Memory()          # prepare downloaded data
-
-    for fileobj in args.FILE:
-        data.merge(msp430.memory.load(fileobj.name, fileobj, args.input_format))
-
-    # write ihex file
-    msp430.memory.save(data, args.output, args.output_format)
-
-
-def main():
-    try:
-        inner_main()
-    except SystemExit:
-        raise                                   # let pass exit() calls
-    except KeyboardInterrupt:
-        if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("User abort.\n")       # short messy in user mode
-        sys.exit(1)                             # set error level for script usage
-    except Exception as msg:                    # every Exception is caught and displayed
-        if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short messy in user mode
-        sys.exit(1)                             # set error level for script usage
+    ConvertTool().main()
 
 if __name__ == '__main__':
     main()

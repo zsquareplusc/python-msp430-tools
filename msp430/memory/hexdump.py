@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2009-2010 Chris Liechti <cliechti@gmx.net>
+# Copyright (c) 2009-2017 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
 # Simplified BSD License (see LICENSE.txt for full text)
 
@@ -10,6 +10,7 @@ This is a little tool to generate hex dumps from .a43, .text, .elf or binary
 files. It can also read and frite hex dumps to Memory objects.
 """
 
+import codecs
 import sys
 import msp430.memory
 
@@ -52,8 +53,10 @@ def hexdump(adr_data_tuple, output=sys.stdout):
                 ascii[:8], ascii[8:]))
 
 
-def save(memory, filelike):
+def save(memory, filelike, is_text=False):
     """output a hexdump to given file object"""
+    if not is_text:
+        filelike = codecs.getwriter('ascii')(filelike)
     for n, segment in enumerate(sorted(memory.segments)):
         if n:
             filelike.write('........:\n')
@@ -110,14 +113,11 @@ def load(filelike):
     return memory
 
 
-debug = False
+def main():
+    import msp430.commandline_helper
 
-
-def inner_main():
-    from optparse import OptionParser
-    parser = OptionParser(usage="""\
-%prog [options] [SOURCE...]
-
+    class HexDumpTool(msp430.commandline_helper.CommandLineTool):
+        description = """\
 Hexdump tool.
 
 This tool generates hex dumps from binary, ELF or hex input files.
@@ -125,82 +125,21 @@ This tool generates hex dumps from binary, ELF or hex input files.
 What is dumped?
 - Intel hex and TI-Text: only data
 - ELF: only segments that are programmed
-- binary: complete file, address column is byte offset in file""")
+- binary: complete file, address column is byte offset in file
+"""
 
-    parser.add_option(
-        "-o", "--output",
-        dest="output",
-        help="write result to given file",
-        metavar="DESTINATION")
+        def configure_parser(self):
+            self.parser_add_input()
+            self.parser_add_output(textual=True)
+            self.parser_add_verbose()
 
-    parser.add_option(
-        "--debug",
-        dest="debug",
-        help="print debug messages",
-        default=False,
-        action='store_true')
-
-    parser.add_option(
-        "-v", "--verbose",
-        dest="verbose",
-        help="print more details",
-        default=False,
-        action='store_true')
-
-    parser.add_option(
-        "-i", "--input-format",
-        dest="input_format",
-        help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
-        default=None,
-        metavar="TYPE")
-
-    (options, args) = parser.parse_args()
-
-    if not args:
-        parser.error("missing object file name")
-
-    if options.input_format is not None and options.input_format not in msp430.memory.load_formats:
-        parser.error('Input format %s not supported.' % (options.input_format))
-
-    global debug
-    debug = options.debug
-
-    output = sys.stdout
-    if options.output:
-        output = open(options.output, 'w')
-
-    for filename in args:
-        if filename == '-':                 # get data from stdin
-            try:
-                fileobj = sys.stdin.detach()
-            except AttributeError:
-                fileobj = sys.stdin
-            filename = '<stdin>'
-            if options.input_format is None:
-                parser.error('Input format must be specified when reading from stdin.')
-        else:
-            fileobj = open(filename, "rb")  # or from a file
-        mem = msp430.memory.load(filename, fileobj, options.input_format)
-
-        if options.verbose:
-            output.write('%s (%d segments):\n' % (filename, len(mem)))
-
-        save(mem, output)
-
-
-def main():
-    try:
-        inner_main()
-    except SystemExit:
-        raise                                   # let pass exit() calls
-    except KeyboardInterrupt:
-        if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("User abort.\n")       # short messy in user mode
-        sys.exit(1)                             # set error level for script usage
-    except Exception as msg:                    # every Exception is caught and displayed
-        if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short messy in user mode
-        sys.exit(1)                             # set error level for script usage
+        def run(self, args):
+            for fileobj in args.SRC:
+                mem = msp430.memory.load(fileobj.name, fileobj, args.input_format)
+                if args.verbose:
+                    args.output.write('%s (%d segments):\n' % (fileobj.name, len(mem)))
+                save(mem, args.output, is_text=True)
+    HexDumpTool().main()
 
 if __name__ == '__main__':
     main()

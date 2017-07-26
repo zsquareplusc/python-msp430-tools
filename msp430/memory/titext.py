@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2001-2010 Chris Liechti <cliechti@gmx.net>
+# Copyright (c) 2001-2017 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
 # Simplified BSD License (see LICENSE.txt for full text)
 
@@ -48,8 +48,8 @@ def load(filelike):
 def save(memory, filelike):
     """output TI-Text to given file object"""
     for segment in sorted(memory.segments):
-        filelike.write("@%04x\n" % segment.startaddress)
+        filelike.write(b"@%04x\n" % segment.startaddress)
         data = bytearray(segment.data)
         for i in range(0, len(data), 16):
-            filelike.write("%s\n" % " ".join(["%02x" % x for x in data[i:i + 16]]))
-    filelike.write("q\n")
+            filelike.write(b"%s\n" % b" ".join([b"%02x" % x for x in data[i:i + 16]]))
+    filelike.write(b"q\n")

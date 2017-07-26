@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2001-2010 Chris Liechti <cliechti@gmx.net>
+# Copyright (c) 2001-2017 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
 # Simplified BSD License (see LICENSE.txt for full text)
 
@@ -86,10 +86,10 @@ def _ihexline(address, buffer, end=False, record_type=0):
     out = []
     if end:  # special override if end parameter is given
         record_type = 1
-    out.append(':%02X%04X%02X' % (len(buffer), address & 0xffff, record_type))
+    out.append(b':%02X%04X%02X' % (len(buffer), address & 0xffff, record_type))
     sum = len(buffer) + ((address >> 8) & 255) + (address & 255) + (record_type & 255)
     for b in bytearray(buffer):
-        out.append('%02X' % (b & 255))
+        out.append(b'%02X' % (b & 255))
         sum += b & 255
-    out.append('%02X\r\n' % ((-sum) & 255))
-    return ''.join(out)
+    out.append(b'%02X\r\n' % ((-sum) & 255))
+    return b''.join(out)

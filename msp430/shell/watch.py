@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2011 Chris Liechti <cliechti@gmx.net>
+# Copyright (c) 2017 Chris Liechti <cliechti@gmx.net>
 # All Rights Reserved.
 # Simplified BSD License (see LICENSE.txt for full text)
 
@@ -32,7 +32,6 @@ def get_file_stats(filename):
 
 def watch(filenames, callback):
     """repeatedly check the given files and run the callback when one has changed"""
-
     last_stats = [get_file_stats(filename) for filename in filenames]
     while True:
         stats = [get_file_stats(filename) for filename in filenames]
@@ -43,26 +42,25 @@ def watch(filenames, callback):
 
 
 def main():
-    from optparse import OptionParser
+    import argparse
 
-    parser = OptionParser(usage='%prog FILENAME [FILENAME...] --execute "some_program --"')
+    parser = argparse.ArgumentParser(
+        epilog='example: %(prog)s test.txt --execute "echo --"')
 
-    parser.add_option(
+    parser.add_argument(
+        "FILENAME",
+        nargs="+")
+
+    parser.add_argument(
         "-x", "--execute",
-        action="store",
-        dest="execute",
-        default=None,
         metavar="COMMAND",
         help="run this command when watched file(s) changed, -- is replaced by first FILENAME")
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    if not args:
-        parser.error('at least one filename is required')
-
-    if options.execute:
-        cmd = options.execute.replace('--', args[0])
-        sys.stderr.write("watch: command line will be: %r\n" % cmd)
+    if args.execute:
+        cmd = args.execute.replace('--', args.FILENAME[0])
+        sys.stderr.write("watch: command line will be: {!r}\n".format(cmd))
     else:
         cmd = None
 
@@ -72,7 +70,10 @@ def main():
             #~ sys.stderr.write("watch: execute: %r\n" % cmd)
             subprocess.call(cmd, shell=True)
 
-    watch(args, callback=execute)
+    try:
+        watch(args.FILENAME, callback=execute)
+    except KeyboardInterrupt:
+        sys.stdout.write('\n')
 
 if __name__ == '__main__':
     main()

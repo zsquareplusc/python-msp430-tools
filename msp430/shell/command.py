@@ -16,7 +16,7 @@ import os
 import shutil
 import stat
 import glob
-import optparse
+import argparse
 import sys
 
 
@@ -127,179 +127,241 @@ def is_writeable(path):
 
 #############################################
 
+class Commandlet(object):
+    """helper for a bunch of small "commandlets" """
+    name = None
 
-def command_cat(parser, argv):
-    """show file contents"""
-    (options, args) = parser.parse_args(argv)
-    for path in expanded(args):
-        if path == '-':
-            try:
-                for line in sys.stdin:
-                    if not line:
-                        break
-                    sys.stdout.write(line)
-            except KeyboardInterrupt:
-                pass
+    def __init__(self):
+        self.parser = argparse.ArgumentParser(prog=self.name)
+        self.args = None
+
+    def parse_args(self, args):
+        """add remaining arguments and parse sys.argv"""
+        self.parser.add_argument(
+            '--develop',
+            action='store_true',
+            help='show tracebacks on errors (development of this tool)')
+
+        self.args = self.parser.parse_args(args)
+        return self.args
+
+    def main(self, args):
+        """main that builds the argument parser, calls run() and handles errors"""
+        try:
+            self.configure_parser()
+            self.parse_args(args)
+            exit_code = self.run(self.args)
+        except SystemExit:
+            raise
+        except KeyboardInterrupt:
+            sys.stderr.write('User aborted.\n')
+            sys.exit(1)
+        except Exception as msg:
+            if self.args is None or self.args.develop:
+                raise
+            sys.stderr.write('\nAn error occurred:\n{}\n'.format(msg))
+            sys.exit(2)
         else:
-            f = open(path)
-            for line in f:
+            sys.exit(exit_code)
+
+    # ----- override in subclass -----
+
+    def configure_parser(self):
+        """update the argument parser here"""
+
+    def run(self):
+        """override this in actual tool"""
+
+
+class Cat(Commandlet):
+    """Show file contents."""
+    name = 'cat'
+
+    def configure_parser(self):
+        self.parser.add_argument(
+            'FILE',
+            nargs='*',
+            help='filename or "-" for stdin')
+
+    def run(self, args):
+        for path in expanded(args.FILE):
+            for line in argparse.FileType('r')(path):
                 sys.stdout.write(line)
-            f.close()
 
 
-def command_true(parser, argv):
-    (options, args) = parser.parse_args(argv)
-    return 0
+class Truly(Commandlet):
+    """Simply return exit code 0"""
+    name = 'true'
+
+    def run(self, args):
+        return 0
 
 
-def command_false(parser, argv):
-    (options, args) = parser.parse_args(argv)
-    return 1
+class Falsly(Commandlet):
+    """Simply return exit code 1"""
+    name = 'false'
+
+    def run(self, args):
+        return 1
 
 
-def command_expand(parser, argv):
-    (options, args) = parser.parse_args(argv)
-    sys.stdout.write(' '.join(expanded(args)))
-    sys.stdout.write('\n')
+class Expand(Commandlet):
+    """Expand globbing patterns."""
+    name = 'expand'
+
+    def configure_parser(self):
+        self.parser.add_argument('PATTERN', nargs='*')
+
+    def run(self, args):
+        sys.stdout.write(' '.join(expanded(args.PATTERN)))
+        sys.stdout.write('\n')
 
 
-def command_rm(parser, argv):
-    parser.add_option(
-        "-r", "--recursive",
-        dest="recursive",
-        help="Delete subdirectories too.",
-        default=False,
-        action='store_true')
-    parser.add_option(
-        "-f", "--force",
-        dest="force",
-        help="Ignore missing, also delete write protected files.",
-        default=False,
-        action='store_true')
-    (options, args) = parser.parse_args(argv)
+class Remove(Commandlet):
+    """Delete files/directories."""
+    name = 'rm'
 
-    rm(expanded(args), options.force, options.recursive)
+    def configure_parser(self):
+        self.parser.add_argument('PATH', nargs='*')
+        self.parser.add_argument(
+            '-r', '--recursive',
+            help='Delete subdirectories too.',
+            default=False,
+            action='store_true')
+        self.parser.add_argument(
+            '-f', '--force',
+            help='Ignore missing, also delete write protected files.',
+            default=False,
+            action='store_true')
 
-
-def command_mkdir(parser, argv):
-    parser.add_option(
-        "-p",
-        dest="create_missing",
-        help="Create any missing intermediate pathname components.",
-        default=False,
-        action='store_true')
-    (options, args) = parser.parse_args(argv)
-
-    if not args:
-        parser.error('Expected DIRECTORY')
-
-    for path in args:
-        mkdir(path, options.create_missing)
+    def run(self, args):
+        rm(expanded(args.PATH), args.force, args.recursive)
 
 
-def command_touch(parser, argv):
-    """update file date"""
-    (options, args) = parser.parse_args(argv)
-    touch(expanded(args))
+class Makedir(Commandlet):
+    """Create directories."""
+    name = 'mkdir'
+
+    def configure_parser(self):
+        self.parser.add_argument('DIRECTORY', nargs='+')
+        self.parser.add_argument(
+            '-p',
+            dest='create_missing',
+            help='Create any missing intermediate pathname components.',
+            default=False,
+            action='store_true')
+
+    def run(self, args):
+        for path in args.DIRECTORY:
+            mkdir(path, args.create_missing)
 
 
-def command_cp(parser, argv):
-    """copy files"""
-    parser.add_option(
-        "-t", "--target-directory",
-        dest="target_directory",
-        help="Copy all SOURCE arguments into DIRECTORY.",
-        default=None,
-        metavar="DIRECTORY")
-    (options, args) = parser.parse_args(argv)
-    if options.target_directory:
-        target = options.target_directory
-    else:
-        if len(args) < 2:
-            parser.error('Expected at least one SOURCE and DESTINATION argument')
-        target = args.pop()
-    if not args:
-        parser.error('Missing SOURCE')
-    cp(expanded(args), target)
+class Touch(Commandlet):
+    """Update file date, create file."""
+    name = 'touch'
+
+    def configure_parser(self):
+        self.parser.add_argument('PATH', nargs='+')
+
+    def run(self, args):
+        touch(expanded(args.PATH))
 
 
-def command_mv(parser, argv):
-    """move or rename files"""
-    parser.add_option(
-        "-f", "--force",
-        dest="force",
-        help="Do not ask any questions. (ignored)",
-        default=False,
-        action='store_true')
-    (options, args) = parser.parse_args(argv)
-    if len(args) < 2:
-        parser.error('Expected at least one SOURCE and TARGET argument.')
-    target = args.pop()
-    mv(expanded(args), target)
+class Copy(Commandlet):
+    """Copy files."""
+    name = 'cp'
+
+    def configure_parser(self):
+        self.parser.add_argument('SRC', nargs='+')
+        self.parser.add_argument('DST', nargs='?')
+        self.parser.add_argument(
+            '-t', '--target-directory',
+            help='Copy all SRC arguments into DIRECTORY.',
+            metavar="DIRECTORY")
+
+    def run(self, args):
+        if args.target_directory:
+            args.DST = args.target_directory
+        else:
+            args.DST = args.SRC.pop(-1)
+        cp(expanded(args.SRC), args.DST)
 
 
-def command_which(parser, argv):
-    """find files on PATH"""
-    parser.add_option(
-        "-v", "--verbose",
-        dest="stop_first",
-        help="Show all hits (default: stop after 1st).",
-        default=True,
-        action='store_false')
-    (options, args) = parser.parse_args(argv)
-    path = os.environ['PATH'].split(os.pathsep)
-    if sys.platform.startswith('win'):
-        # windows implicitly searches the current dir too
-        path.insert(0, '.')
-    for name in args:
-        names = [name]
-        # windows not only finds the name it also finds it with several
-        # different extensions, need to check these too...
+class Move(Commandlet):
+    """Move/rename files."""
+    name = 'mv'
+
+    def configure_parser(self):
+        self.parser.add_argument('SRC', nargs='+')
+        self.parser.add_argument('DST', nargs=1)
+        self.parser.add_argument(
+            '-f', '--force',
+            help='Do not ask any questions. (ignored)',
+            default=False,
+            action='store_true')
+
+    def run(self, args):
+        mv(expanded(args.SRC), args.DST)
+
+
+class Which(Commandlet):
+    """Find files in teh PATH."""
+    name = 'which'
+
+    def configure_parser(self):
+        self.parser.add_argument('NAME', nargs='+')
+        self.parser.add_argument(
+            '-v', '--verbose',
+            dest='stop_first',
+            help='Show all hits (default: stop after 1st).',
+            default=True,
+            action='store_false')
+
+    def run(self, args):
+        path = os.environ['PATH'].split(os.pathsep)
         if sys.platform.startswith('win'):
-            try:
-                extensions = os.environ['PATHEXT'].split(os.pathsep)
-                names.extend(['%s%s' % (name, ext) for ext in extensions])
-            except KeyError:
-                sys.stderr.write('Warning, environment variable PATHEXT not set!\n')
-        # for each name search through the path
-        for filename in names:
-            for location in path:
-                p = os.path.join(location, filename)
-                if os.path.exists(p):
-                    sys.stdout.write('%s\n' % p)
-                    if options.stop_first:
-                        return
+            # windows implicitly searches the current dir too
+            path.insert(0, '.')
+        for name in args.NAME:
+            names = [name]
+            # windows not only finds the name it also finds it with several
+            # different extensions, need to check these too...
+            if sys.platform.startswith('win'):
+                try:
+                    extensions = os.environ['PATHEXT'].split(os.pathsep)
+                    names.extend(['{}{}'.format(name, ext) for ext in extensions])
+                except KeyError:
+                    sys.stderr.write('Warning, environment variable PATHEXT not set!\n')
+            # for each name search through the path
+            for filename in names:
+                for location in path:
+                    p = os.path.join(location, filename)
+                    if os.path.exists(p):
+                        sys.stdout.write('{}\n'.format(p))
+                        if args.stop_first:
+                            return
 
 
-def command_list(parser, argv):
-    sys.stderr.write('Command collection:\n')
-    for name, (command, help, usage) in sorted(COMMANDS.items()):
-        sys.stderr.write('- %-7s %s\n' % (name, help))
-    sys.stderr.write('\nMore help with "%s COMMAND --help"\n' % (os.path.basename(sys.argv[0]),))
+class List(Commandlet):
+    """List subcommands of this tool."""
+    name = 'list'
+
+    def run(self, args):
+        sys.stderr.write('Command collection:\n')
+        for name, command_class in sorted(COMMANDS.items()):
+            sys.stderr.write('- {:<7} {}\n'.format(name, command_class.__doc__))
+        sys.stderr.write('\nMore help with "{} COMMAND --help"\n'.format(os.path.basename(sys.argv[0])))
 
 
-COMMANDS = {
-    'cat': (command_cat,     'Show file contents.',            '%prog [-|FILE]...'),
-    'cp': (command_cp,       'Copy files.',                    '%prog SOURCE... DESTINATION\n       %prog -t DIRECTORY SOURCE...'),
-    'expand': (command_expand, 'Expand globbing patterns.',    '%prog [PATH...]'),
-    'false': (command_false, 'Simply return exit code 1',      '%prog'),
-    'mkdir': (command_mkdir, 'Create directories.',            '%prog [-p] DIRECTORY'),
-    'mv': (command_mv,       'Move/rename files.',             '%prog [options] SOURCE... TARGET'),
-    'rm': (command_rm,       'Delete files/directories.',      '%prog [options] FILE...'),
-    'true': (command_true,   'Simply return exit code 0',      '%prog'),
-    'touch': (command_touch, 'Update file date, create file.', '%prog [options] FILE...'),
-    'list': (command_list,   'This text.',                     '%prog'),
-    'which': (command_which, 'Find files in teh PATH',         '%prog [options] FILE...'),
-}
+# automatically find all commands, exclude base class
+COMMANDS = {c.name: c for c in globals().values()
+                      if type(c) is type and
+                         issubclass(c, Commandlet) and
+                         c.name is not None}
 
 
 def main():
-    debug = False
-    if len(sys.argv) > 1 and sys.argv[1] == '--debug':
-        del sys.argv[1]
-        debug = True
-
-    if len(sys.argv) >= 2 and sys.argv[1][0] != '-':
+    if len(sys.argv) >= 2:
         name = sys.argv[1]
         args = sys.argv[2:]
     else:
@@ -307,23 +369,13 @@ def main():
         args = sys.argv[1:]
 
     try:
-        command, help, usage = COMMANDS[name]
+        command_class = COMMANDS[name]
     except KeyError:
-        sys.stderr.write('ERROR: No such command implemented: %s\n' % (name,))
+        sys.stderr.write('ERROR: No such command implemented: {}\n'.format(name))
         sys.exit(1)
 
-    parser = optparse.OptionParser(usage=usage, prog=name)
-    try:
-        result = command(parser, args)
-        if result is None:
-            result = 0
-        sys.exit(result)
-    except Exception as e:
-        if debug:
-            raise
-        sys.stderr.write('ERROR: %s\n' % (e,))
-        sys.exit(1)
-    parser.error('Expected command name, try "list".')
+    command_class().main(args)
+
 
 if __name__ == '__main__':
     main()

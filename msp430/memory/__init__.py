@@ -31,9 +31,6 @@ class DataStream(object):
             self.address = segment.startaddress
             self.current_offset = 0
 
-    def next(self):
-        return self.__next__()
-
     def __next__(self):
         if self.current_data is None:
             raise StopIteration()
@@ -50,6 +47,7 @@ class DataStream(object):
                 self.current_data = None
                 self.address = None
         return result
+    next = __next__
 
     def __repr__(self):
         return "DS[%s %s]" % (self.address, len(self.segments))

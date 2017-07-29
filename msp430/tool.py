@@ -24,15 +24,16 @@ COMMANDS = {
     'dis': 'msp430.asm.disassemble',
 }
 
+
 def usage_error():
     sys.stderr.write(
-            'Command line stub for python-msp430-tools\n'
-            'USAGE: {prog} COMMAND [args]\n'
-            'Supported COMMANDs are:\n'
-            '{tools}'
-            '\n'.format(
-                prog=sys.argv[0],
-                tools='\n'.join('- {}'.format(x) for x in sorted(COMMANDS.keys()))))
+        'Command line stub for python-msp430-tools\n'
+        'USAGE: {prog} COMMAND [args]\n'
+        'Supported COMMANDs are:\n'
+        '{tools}'
+        '\n'.format(
+            prog=sys.argv[0],
+            tools='\n'.join('- {}'.format(x) for x in sorted(COMMANDS.keys()))))
     sys.exit(1)
 
 

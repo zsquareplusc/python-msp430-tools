@@ -127,11 +127,11 @@ class CommandLineTool(object):
         except SystemExit:
             raise
         except KeyboardInterrupt:
-            sys.stderr.write("User aborted.\n")
+            sys.stderr.write('User aborted.\n')
             sys.exit(1)
         except Exception as msg:
             if self.args is None or self.args.develop: raise
-            sys.stderr.write("\nAn error occurred:\n%s\n" % msg)
+            sys.stderr.write('\nAn error occurred:\n{}\n'.format(msg))
             sys.exit(2)
 
     # ----- override in subclass -----

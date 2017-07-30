@@ -19,7 +19,7 @@ import sys
 import EasyDialogs
 import msp430.jtag
 import msp430.memory
-from StringIO import StringIO
+from io import BytesIO, StringIO
 import traceback
 import ConfigParser
 from msp430.jtag import jtag
@@ -156,7 +156,7 @@ def main():
         # get binary from zip file
         if options.filename:
             binary = msp430.memory.Memory()   # prepare downloaded data
-            binary.loadFile(options.filename, fileobj=StringIO(archive.read(options.filename)))
+            binary.loadFile(options.filename, fileobj=BytesIO(archive.read(options.filename)))
         # get readme from zip file and display it
         if options.readme:
             readme_text = archive.read(options.readme)

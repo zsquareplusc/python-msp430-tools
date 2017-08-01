@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-# Serial Bootstrap Loader software for the MSP430 embedded proccessor.
+# -*- coding: utf-8 -*-
 #
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
 # (C) 2001-2004 Chris Liechti <cliechti@gmx.net>
-# this is distributed under a free software license, see license.txt
 #
-# http://mspgcc.sf.net
+# SPDX-License-Identifier:    BSD-3-Clause
 #
-# $Id: msp430-bsl.py,v 1.12 2006/04/23 21:28:24 cliechti Exp $
-
+# Serial Bootstrap Loader software for the MSP430 embedded proccessor.
 import sys
 from msp430.memory.hexdump import hexdump
 from msp430.memory import intelhex

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2012 Christopher Wilson <cwilson@cdwilson.us>
-# All Rights Reserved.
-# Simplified BSD License (see LICENSE.txt for full text)
-
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2012 Christopher Wilson <cwilson@cdwilson.us
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 import time
 from optparse import OptionGroup
 from msp430.bsl.target import SerialBSLTarget
@@ -13,7 +13,7 @@ from msp430.bsl.target import SerialBSLTarget
 class TelosBTarget(SerialBSLTarget):
     """\
     Telos B target
-    
+
     The Telos B wireless sensor mote has an onboard ADG715 I2C switch that
     controls the TCK and RST signals on the MCU. This switch is normally
     disabled, preventing TCK or RST from being accidentally driven low by
@@ -31,14 +31,14 @@ class TelosBTarget(SerialBSLTarget):
       |   |_________|   |__________
      _|_
      \_/ <--GND
-    
+
     The Telos B schematic can be downloaded from
     http://webs.cs.berkeley.edu/tos/hardware/telos/telos-revb-2004-09-27.pdf
-    
+
     I2C code adapted from tos-bsl found at
     http://code.google.com/p/tinyos-main/
     """
-    
+
     def __init__(self):
         SerialBSLTarget.__init__(self)
         self.i2c_switch_addr = 0x90
@@ -58,7 +58,7 @@ class TelosBTarget(SerialBSLTarget):
             group = self.parser.get_option_group("--speed")
             self.parser.remove_option("--speed")
             group.add_option(option)
-        
+
         group = OptionGroup(self.parser, "I2C switch settings")
 
         group.add_option("--invert-scl",
@@ -72,7 +72,7 @@ class TelosBTarget(SerialBSLTarget):
                 action="store_true",
                 help="invert I2C switch SDA line",
                 default=False)
-        
+
         group.add_option("--swap-scl-sda",
                 dest="swap_scl_sda",
                 action="store_true",
@@ -83,13 +83,13 @@ class TelosBTarget(SerialBSLTarget):
 
     def parse_extra_options(self):
         SerialBSLTarget.parse_extra_options(self)
-        
+
         if self.options.invert_scl:
             self.invertSCL = True
-        
+
         if self.options.invert_sda:
             self.invertSDA = True
-        
+
         if self.options.swap_scl_sda:
             self.swapSCLSDA = True
 
@@ -97,7 +97,7 @@ class TelosBTarget(SerialBSLTarget):
         """\
         Controls SCL pin (0: VCC; 1: GND; unless inverted flag is set)
         """
-        
+
         # invert signal if configured
         if self.invertSCL:
             level = not level
@@ -107,13 +107,13 @@ class TelosBTarget(SerialBSLTarget):
         else:
             self.serial.setRTS(not level)
         time.sleep(self.i2c_control_delay)
-            
+
 
     def set_SDA(self, level):
         """\
         Controls SDA pin (0: VCC; 1: GND; unless inverted flag is set)
         """
-        
+
         # invert signal if configured
         if self.invertSDA:
             level = not level
@@ -126,21 +126,21 @@ class TelosBTarget(SerialBSLTarget):
 
     def i2c_start(self):
         """Bit bang start sequence on I2C bus"""
-        
+
         self.set_SDA(True)
         self.set_SCL(True)
         self.set_SDA(False)
 
     def i2c_stop(self):
         """Bit bang stop sequence on I2C bus"""
-        
+
         self.set_SDA(False)
         self.set_SCL(True)
         self.set_SDA(True)
 
     def i2c_write_bit(self, bit):
         """Bit bang a single bit on I2C bus"""
-        
+
         self.set_SCL(False)
         self.set_SDA(bit)
         self.set_SCL(True)
@@ -148,7 +148,7 @@ class TelosBTarget(SerialBSLTarget):
 
     def i2c_write_byte(self, byte):
         """Bit bang a single byte on I2C bus"""
-        
+
         self.i2c_write_bit(byte & 0x80);
         self.i2c_write_bit(byte & 0x40);
         self.i2c_write_bit(byte & 0x20);

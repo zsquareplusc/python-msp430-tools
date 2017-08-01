@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-# $Id: msp430-downloader.py,v 1.12 2007/03/13 11:34:00 cliechti Exp $
+# -*- coding: utf-8 -*-
+#
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2007-2017 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 """
 Simple tool to download to a MSP430.
 

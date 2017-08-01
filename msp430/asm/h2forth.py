@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2011 Chris Liechti <cliechti@gmx.net>
-# All Rights Reserved.
-# Simplified BSD License (see LICENSE.txt for full text)
-
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2011 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 """\
 Conversion of C header files (specially for the MSP430) to Forth.
 

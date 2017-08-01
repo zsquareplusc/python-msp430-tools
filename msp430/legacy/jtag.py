@@ -1,9 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2002-2010 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 #
 # JTAG programmer for the MSP430 embedded processor.
-#
-# (C) 2002-2010 Chris Liechti <cliechti@gmx.net>
-# this is distributed under a free software license, see license.txt
 #
 # Requires Python 2+ and the binary extension _parjtag or ctypes
 # and MSP430mspgcc.dll/libMSP430mspgcc.so or MSP430.dll/libMSP430.so

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2011 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 """\
 Librarian - Access source code library based on templates.
 

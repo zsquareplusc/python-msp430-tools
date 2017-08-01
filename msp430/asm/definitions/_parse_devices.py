@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013 Chris Liechti <cliechti@gmx.net>
-# All Rights Reserved.
-# Simplified BSD License (see LICENSE.txt for full text)
-
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2013 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 """\
 Parse TI's device.csv and output lines for msp430-mcu-list.txt.  The output is
 not final, it has to manually pasted into the correct template sections in the

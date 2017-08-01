@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2012 Christopher Wilson <cwilson@cdwilson.us>
-# All Rights Reserved.
-# Simplified BSD License (see LICENSE.txt for full text)
-
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2002 Christopher Wilson <cwilson@cdwilson.us>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 from msp430.bsl.target import SerialBSLTarget
 
 
 class FCDProgTarget(SerialBSLTarget):
     """\
     Flying Camp Design MSP430 BSL Programmer target
-    
+
     http://www.flyingcampdesign.com
     """
-    
+
     def __init__(self):
         SerialBSLTarget.__init__(self)
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Chris Liechti <cliechti@gmx.net>
-# All Rights Reserved.
-# Simplified BSD License (see LICENSE.txt for full text)
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2010 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 #
 # parts based on clutchski@gmail.com ' fileutils.py (which is public domain).
-
 """\
 Implement POSIX like commands such as cp, mv, rm, ...
 """

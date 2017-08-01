@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2017 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 """
 This is a little tool to parse msp430-readelf's output and format it nicely.
 It can be useful to get an overview of the RAM usage and free stack memory.

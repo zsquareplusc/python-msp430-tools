@@ -1,7 +1,12 @@
 #!/usr/bin/env python
-
-# command line stub for
-# https://launchpad.net/python-msp430-tools
+# -*- coding: utf-8 -*-
+#
+# command line stub
+#
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2011-2017 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 
 import sys
 

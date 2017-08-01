@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2002-2010 Chris Liechti <cliechti@gmx.net>
-# All Rights Reserved.
-# Simplified BSD License (see LICENSE.txt for full text)
-
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2002-2010 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
 """\
 This module defines a default target that represents a MSP430 device. It
 defines some common operations and the basics of a command line frontend using

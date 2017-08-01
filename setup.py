@@ -1,12 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# This file is part of https://github.com/zsquareplusc/python-msp430-tools
+# (C) 2017 Chris Liechti <cliechti@gmx.net>
+#
+# SPDX-License-Identifier:    BSD-3-Clause
+#
 # This is a setup script for pythons distutils. It will install the
 # python-msp430-tools extension when run as: python setup.py install
-
-# Author: Chris Liechti <cliechti@gmx.net>
-#
-# This is open source software under the BSD license. See LICENSE.txt for more
-# details.
-
-
 from setuptools import setup, find_packages
 import sys
 import glob

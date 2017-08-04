@@ -181,7 +181,9 @@ inaccurate for large values.
             "-p", "--port",
             dest="port_name",
             metavar="PORT",
-            help='specify an other parallel port or serial port for the USBFET (the later requires %(msp430)s instead of %(msp430mspgcc)s).  (defaults to "LPT1" ("/dev/parport0" on Linux))' % self.text_variables,
+            help='specify an other parallel port or serial port for the USBFET '
+                 '(the later requires %(msp430)s instead of %(msp430mspgcc)s).'
+                 '  (defaults to "LPT1" ("/dev/parport0" on Linux))' % self.text_variables,
             default=None)
 
         group.add_option(
@@ -202,7 +204,9 @@ inaccurate for large values.
             "--slowdown",
             dest="slowdown",
             metavar="MICROSECONDS",
-            help="artificially slow down the communication. Can help with long lines, try values between 1 and 50 (parallel port interface with mspgcc's HIL library only). (experts only)",
+            help="artificially slow down the communication. Can help with long"
+                 " lines, try values between 1 and 50 (parallel port interface"
+                 " with mspgcc's HIL library only). (experts only)",
             default=None)
 
         group.add_option(

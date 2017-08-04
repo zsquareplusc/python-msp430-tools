@@ -15,13 +15,11 @@ USAGE: generate.py -l size_in_bytes
 """
 
 from msp430 import memory
-import sys
 import struct
 import random
 
 
 def main():
-    import argparse
     import msp430.commandline_helper
 
     class GeneratorTool(msp430.commandline_helper.CommandLineTool):

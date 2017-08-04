@@ -10,10 +10,8 @@ This is a little tool to compare .a43, .text, .elf or binary
 files.
 """
 
-import argparse
 import difflib
 import sys
-import msp430.memory
 
 try:
     from itertools import zip_longest
@@ -141,7 +139,6 @@ def compare(mem1, mem2, name1, name2, output=sys.stdout, show_equal=True, granul
 
 
 def main():
-    import argparse
     import msp430.commandline_helper
 
     class CompareTool(msp430.commandline_helper.CommandLineTool):

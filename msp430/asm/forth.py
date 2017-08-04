@@ -64,7 +64,8 @@ class DocumentTree(object):
         self.current_section = self.current_chapter.setdefault(name, [])
 
     def write(self, text):
-        if not isinstance(text, str): raise ValueError(text)
+        if not isinstance(text, str):
+            raise ValueError(text)
         self.current_section.append(text)
 
     def push_state(self):

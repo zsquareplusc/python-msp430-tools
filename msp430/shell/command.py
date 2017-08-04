@@ -125,8 +125,8 @@ def is_writeable(path):
         return (os.stat(path).st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)) != 0
     raise OSError('no such file or directory: %s' % (path,))
 
-#############################################
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 class Commandlet(object):
     """helper for a bunch of small "commandlets" """
     name = None

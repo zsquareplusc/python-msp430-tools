@@ -17,24 +17,24 @@ ARCHIVE_NAME = 'upstream.tar.bz2'
 
 # set up environment
 if os.path.exists('upstream'):
-    print "ERROR upstream directory already exists. Manually remove to proceed"
+    sys.stderr.write("ERROR upstream directory already exists. Manually remove to proceed\n")
     sys.exit(1)
 
 os.mkdir('upstream')
 
 if os.path.exists(ARCHIVE_NAME):
-    print "%s found on disk using it. To download latest data, rename or delete the file." % (ARCHIVE_NAME)
+    sys.stderr.write("%s found on disk using it. To download latest data, rename or delete the file.\n" % (ARCHIVE_NAME))
 else:
     # download archive from MSPGCC (git web interface)
-    print "Downloading archive from sf.net (~15MB). This may take a few minutes..."
+    sys.stderr.write("Downloading archive from sf.net (~15MB). This may take a few minutes...\n")
     archive = urllib2.urlopen(URL)
     archfile = open(ARCHIVE_NAME, 'wb')
     archfile.write(archive.read())
     archfile.close()
-    print "Download complete."
+    sys.stderr.write("Download complete.\n")
 
 
-print "Extracting the archive contents..."
+sys.stderr.writet("Extracting the archive contents...\n")
 tar = tarfile.open(ARCHIVE_NAME, 'r')
 for tarinfo in tar:
     #~ print tarinfo.name, "is", tarinfo.size, "bytes in size and is",
@@ -45,4 +45,4 @@ for tarinfo in tar:
                 tar.extractfile(tarinfo),
                 open(target_name, 'wb'))
 tar.close()
-print "Completed"
+sys.stderr.write("Completed\n")

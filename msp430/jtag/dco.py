@@ -21,8 +21,8 @@ import logging
 
 debug = False
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def nice_frequency(frequency):
     """return a string of the frequency with SI unit and a reasonable number
        of digits"""
@@ -407,7 +407,7 @@ if __name__ == '__main__':
         if debug: raise                     # show full trace in debug mode
         sys.stderr.write("\nUser abort.\n")  # short message in user mode
         sys.exit(1)                         # set error level for script usage
-    except Exception, msg:                  # every Exception is caught and displayed
+    except Exception as msg:                # every Exception is caught and displayed
         if debug: raise                     # show full trace in debug mode
         sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short message in user mode
         sys.exit(1)                         # set error level for script usage

@@ -14,10 +14,6 @@ usage: convert file.txt >out.a43
 usage: convert file.txt -o out.a43
 """
 
-import argparse
-import sys
-import msp430.memory
-
 
 def main():
     import msp430.commandline_helper
@@ -37,7 +33,7 @@ merged output.
         def run(self, args):
             if not args.SRC:
                 # if no files are given, read from stdin
-                args.FILE = [BinaryFileType('r')('-')]
+                args.FILE = [msp430.commandline_helper.BinaryFileType('r')('-')]
                 # default to TI-Text if no format is given
                 if args.input_format is None:
                     args.input_format = 'titext'

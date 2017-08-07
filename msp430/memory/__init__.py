@@ -103,10 +103,6 @@ class Segment(object):
     def __repr__(self):
         return "Segment(startaddress = 0x%04x, data=%r)" % (self.startaddress, self.data)
 
-    def __cmp__(self, other):
-        """Compare two segments. Implemented to support sorting a list of segments by address"""
-        return cmp(self.startaddress, other.startaddress)
-
     def __lt__(self, other):
         """Compare two segments. Implemented to support sorting a list of segments by address"""
         return self.startaddress < other.startaddress

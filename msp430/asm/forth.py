@@ -319,7 +319,7 @@ class ForthMiscOps(object):
             stack.push(stack[-1])
 
     @rpn.word('ROT')
-    def word_is_rot(self, stack):
+    def word_rot(self, stack):
         """Rotate 3 items on the stack. 3rd gets 1st."""
         a = stack.pop()
         b = stack.pop()
@@ -329,7 +329,7 @@ class ForthMiscOps(object):
         stack.push(c)
 
     @rpn.word('-ROT')
-    def word_is_nrot(self, stack):
+    def word_nrot(self, stack):
         """Rotate 3 items on the stack. 1st gets 3rd."""
         a = stack.pop()
         b = stack.pop()

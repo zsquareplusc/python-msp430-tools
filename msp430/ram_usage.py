@@ -54,12 +54,10 @@ def main():
         default=None,
         help="fail if free space for stack is not as large as this")
 
-
     (options, args) = parser.parse_args()
 
     if len(args) != 1:
         parser.error("missing object file name")
-
 
     # regexp to parse lines like the following one
     #   959: 000002aa     0 OBJECT  GLOBAL DEFAULT    6 rxdata

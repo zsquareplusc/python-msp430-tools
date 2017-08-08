@@ -23,65 +23,61 @@ import pkgutil
 def main():
     import sys
     import os
-    from optparse import OptionParser
+    import argparse
     logging.basicConfig()
 
-    parser = OptionParser(usage='%prog [options] temlate-name')
-    parser.add_option("-o", "--outfile",
-                      dest="outfile",
-                      help="name of the object file",
-                      metavar="FILE")
-    parser.add_option("--debug",
-                      action="store_true",
-                      dest="debug",
-                      default=False,
-                      help="print debug messages to stdout")
-    parser.add_option("-D", "--define",
-                      action="append",
-                      dest="defines",
-                      metavar="SYM[=VALUE]",
-                      default=[],
-                      help="define symbol")
-    parser.add_option("-l", "--list",
-                      action="store_true",
-                      dest="list",
-                      default=False,
-                      help="List available snippets")
+    parser = argparse.ArgumentParser()
 
-    (options, args) = parser.parse_args()
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('TEMLATE_NAME', nargs='?')
+    group.add_argument(
+        '-l', '--list',
+        action='store_true',
+        default=False,
+        help='List available snippets')
 
-    if options.outfile:
-        outfile = codecs.open(options.outfile, 'w', 'utf-8')
-    else:
-        if sys.version_info >= (3, 0):
-            outfile = sys.stdout
-        else:
-            outfile = codecs.getwriter("utf-8")(sys.stdout)
+    parser.add_argument(
+        '-o', '--outfile',
+        type=argparse.FileType('w'),
+        default='-',
+        help='name of the object file (default: %(default)s)',
+        metavar="FILE")
+    parser.add_argument(
+        '-D', '--define',
+        action='append',
+        dest='defines',
+        metavar='SYM[=VALUE]',
+        default=[],
+        help='define symbol')
+    parser.add_argument(
+        '--develop',
+        action='store_true',
+        default=False,
+        help='print debug messages to stdout')
 
-    if options.list:
-        outfile.write('List of available snippets:\n')
-        # XXX this method wont work when package is zipped (e.g. py2exe)
+    args = parser.parse_args()
+
+    if args.list:
+        args.outfile.write('List of available snippets:\n')
+        # XXX this method won't work when package is zipped (e.g. py2exe)
         d = os.path.join(os.path.dirname(sys.modules['msp430.asm'].__file__), 'librarian')
         for root, dirs, files in os.walk(d):
             for filename in files:
-                outfile.write('    %s\n' % (os.path.join(root, filename)[1 + len(d):],))
+                args.outfile.write('    %s\n' % (os.path.join(root, filename)[1 + len(d):],))
         sys.exit(0)
-
-    if len(args) != 1:
-        parser.error("Expected name of template as argument.")
 
     # load desired snippet
     try:
-        template = pkgutil.get_data('msp430.asm', 'librarian/%s' % args[0]).decode('utf-8')
+        template = pkgutil.get_data('msp430.asm', 'librarian/{}'.format(args.TEMLATE_NAME)).decode('utf-8')
     except IOError:
-        sys.stderr.write('lib: %s: File not found\n' % (args[0]),)
-        if options.debug:
+        sys.stderr.write('lib: {}: File not found\n'.format(args.TEMLATE_NAME))
+        if args.develop:
             raise
         sys.exit(1)
 
     # collect predefined symbols
     defines = {}
-    for definition in options.defines:
+    for definition in args.defines:
         if '=' in definition:
             symbol, value = definition.split('=', 1)
         else:
@@ -93,7 +89,7 @@ def main():
         template = template.replace(key, value)
 
     # write final result
-    outfile.write(template)
+    args.outfile.write(template)
 
 
 if __name__ == '__main__':

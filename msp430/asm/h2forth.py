@@ -16,63 +16,67 @@ import logging
 import codecs
 import msp430.asm.cpp
 
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
 def main():
     import sys
     import os
-    from optparse import OptionParser
+    import argparse
     logging.basicConfig()
 
-    parser = OptionParser()
-    parser.add_option("-o", "--outfile",
-                      dest="outfile",
-                      help="name of the object file",
-                      metavar="FILE")
-    parser.add_option("-v", "--verbose",
-                      action="store_true",
-                      dest="verbose",
-                      default=False,
-                      help="print status messages")
-    parser.add_option("--debug",
-                      action="store_true",
-                      dest="debug",
-                      default=False,
-                      help="print debug messages to stdout")
-    parser.add_option("-D", "--define",
-                      action="append",
-                      dest="defines",
-                      metavar="SYM[=VALUE]",
-                      default=[],
-                      help="define symbol")
-    parser.add_option("-I", "--include-path",
-                      action="append",
-                      dest="include_paths",
-                      metavar="PATH",
-                      default=[],
-                      help="Add directory to the search path list for includes")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'HEADERFILE',
+        nargs='?',
+        default='-',
+        help='name of the input file (default: %(default)s)')
 
-    (options, args) = parser.parse_args()
+    group = parser.add_argument_group('Input')
 
-    if len(args) > 1:
-        sys.stderr.write("Only one file at a time allowed.\n")
-        sys.exit(1)
+    group.add_argument(
+        '-I', '--include-path',
+        action='append',
+        metavar="PATH",
+        default=[],
+        help='Add directory to the search path list for includes')
 
-    if options.debug:
+    group.add_argument(
+        '-D', '--define',
+        action='append',
+        dest='defines',
+        metavar='SYM[=VALUE]',
+        default=[],
+        help='define symbol')
+
+    group = parser.add_argument_group('Output')
+
+    group.add_argument(
+        '-o', '--outfile',
+        type=argparse.FileType('w'),
+        default='-',
+        help='name of the output file (default: %(default)s)',
+        metavar="FILE")
+
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        default=False,
+        help='print status messages')
+
+    parser.add_argument(
+        '--develop',
+        action='store_true',
+        default=False,
+        help='print debug messages')
+
+    args = parser.parse_args()
+
+    if args.develop:
         logging.getLogger('cpp').setLevel(logging.DEBUG)
-    elif options.verbose:
+    elif args.verbose:
         logging.getLogger('cpp').setLevel(logging.INFO)
     else:
         logging.getLogger('cpp').setLevel(logging.WARN)
-
-    if options.outfile:
-        outfile = codecs.open(options.outfile, 'w', 'utf-8')
-    else:
-        if sys.version_info >= (3, 0):
-            outfile = sys.stdout
-        else:
-            outfile = codecs.getwriter("utf-8")(sys.stdout)
 
     cpp = msp430.asm.cpp.Preprocessor()
     # extend include search path
@@ -81,27 +85,27 @@ def main():
     cpp.include_path.append(d)
     cpp.include_path.append(os.path.join(d, 'upstream'))
     # user provided directories (-I)
-    cpp.include_path.extend(options.include_paths)
+    cpp.include_path.extend(args.include_path)
     # insert predefined symbols (XXX function like macros not yet supported)
-    for definition in options.defines:
+    for definition in args.defines:
         if '=' in definition:
             symbol, value = definition.split('=', 1)
         else:
             symbol, value = definition, '1'
         cpp.namespace.defines[symbol] = value
 
-    if not args or args[0] == '-':
+    if not args.HEADERFILE or args.HEADERFILE == '-':
         infilename = '<stdin>'
         infile = codecs.getreader("utf-8")(sys.stdin)
     else:
         # search include path for files
         for path in cpp.include_path:
-            infilename = os.path.join(path, args[0])
+            infilename = os.path.join(path, args.HEADERFILE)
             if os.path.exists(infilename):
                 infile = codecs.open(infilename, 'r', 'utf-8')
                 break
         else:
-            sys.stderr.write('h2forth: %s: File not found\n' % (infilename,))
+            sys.stderr.write('h2forth: {}: File not found\n'.format(infilename))
             sys.exit(1)
 
     try:
@@ -109,13 +113,13 @@ def main():
         if error_found:
             sys.exit(1)
     except msp430.asm.cpp.PreprocessorError as e:
-        sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
-        if options.debug:
+        sys.stderr.write('{e.filename}:{e.line}: {e}\n'.format(e=e))
+        if args.develop:
             if hasattr(e, 'text'):
-                sys.stderr.write('%s:%s: input line: %r\n' % (e.filename, e.line, e.text))
+                sys.stderr.write('{e.filename}:{e.line}: input line: {e.text!r}\n'.format(e=e))
         sys.exit(1)
 
-    outfile.write(': <UNDEFINED> 0 ;\n')
+    args.outfile.write(': <UNDEFINED> 0 ;\n')
     #~ for definition in cpp.macros:
         #~ print definition
     for name, definition in sorted(cpp.namespace.defines.items()):
@@ -127,13 +131,14 @@ def main():
             try:
                 value = cpp.namespace.eval(definition)
             except msp430.asm.cpp.PreprocessorError as e:
-                sys.stderr.write('cannot convert expression: %s\n' % (e,))
+                sys.stderr.write('cannot convert expression: {}\n'.format(e))
             except msp430.asm.rpn.RPNError as e:
-                sys.stderr.write('cannot convert expression: %s\n' % (e,))
+                sys.stderr.write('cannot convert expression: {}\n'.format(e))
             else:
-                outfile.write('%r CONSTANT %s\n' % (value, name))
+                args.outfile.write('{!r} CONSTANT {}\n'.format(value, name))
         else:
-            outfile.write('1 CONSTANT %s\n' % (name,))
+            args.outfile.write('1 CONSTANT {}\n'.format(name))
+
 
 if __name__ == '__main__':
     main()

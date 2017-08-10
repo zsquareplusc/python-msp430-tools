@@ -410,46 +410,47 @@ def load_from_file(filename):
 
 # test only
 if __name__ == '__main__':
-    from optparse import OptionParser
+    import argparse
+    import sys
     from pprint import pprint
 
-    parser = OptionParser()
+    parser = argparse.ArgumentParser()
 
-    parser.add_option(
-        "-l", "--list",
-        action="store_true",
-        dest="list",
+    parser.add_argument('MCUNAME', nargs='*')
+
+    parser.add_argument(
+        '-l', '--list',
+        action='store_true',
         default=False,
-        help="list available MCU names")
+        help='list available MCU names')
 
-    parser.add_option(
-        "-d", "--dump",
-        action="store_true",
-        dest="dump",
+    parser.add_argument(
+        '-d', '--dump',
+        action='store_true',
         default=False,
-        help="dump all data instead of pretty printing")
+        help='dump all data instead of pretty printing')
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
     try:
         memory_maps = load_internal()
     except rpn.RPNError as e:
-        print("%s:%s: %s" % (e.filename, e.lineno, e))
+        sys.stderr.write(u'{e.filename}:{e.lineno}: {e}\n'.format(e=e))
     else:
-        if options.list:
+        if args.list:
             for mcu in sorted(memory_maps):
-                print(mcu)
+                sys.stdout.write('{}\n'.format(mcu))
             #~ pprint(memory_maps)
-        for mcu in args:
-            print('== memory map for %s ==' % mcu)
+        for mcu in args.MCUNAME:
+            print('== memory map for {} =='.format(mcu))
             memmap = expand_definition(memory_maps, mcu)
-            if options.dump:
+            if args.dump:
                 pprint(memmap)
             else:
                 for name, segment in sorted(memmap.items()):
                     if not name.startswith('__') and 'start' in segment:
-                        print('%-12s %08x-%08x %s' % (
-                                name,
-                                segment['start'],
-                                segment['end'],
-                                ','.join(segment['flags'])))
+                        sys.stdout.write('{:12} {:08x}-{:08x} {}\n'.format(
+                            name,
+                            segment['start'],
+                            segment['end'],
+                            ','.join(segment['flags'])))

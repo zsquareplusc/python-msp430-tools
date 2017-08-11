@@ -71,8 +71,9 @@ class SymbolDefinitions(rpn.RPN):
             self.included_files.append(name)
             #~ print "XXX including %r" % name
             # XXX currently only internal imports are supported
-            data = pkgutil.get_data('msp430.asm', 'definitions/%s.peripheral' % (name,))
-            self.interpret(rpn.words_in_string(data, name='definitions/%s.peripheral' % (name,)))
+            long_name = 'definitions/{}.peripheral'.format(name)
+            data = pkgutil.get_data('msp430.asm', long_name).decode('utf-8')
+            self.interpret(rpn.words_in_string(data, name=long_name))
 
     @rpn.word('BIT')
     def word_BIT(self, stack):
@@ -216,36 +217,38 @@ def load_internal(name):
     """\
     Load symbols from internal definition given name.
     """
-    data = pkgutil.get_data('msp430.asm', 'definitions/%s.peripheral' % (name,))
+    data = pkgutil.get_data('msp430.asm', 'definitions/{}.peripheral'.format(name)).decode('utf-8')
     return parse_words(rpn.words_in_string(data))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # test only
 if __name__ == '__main__':
-    from optparse import OptionParser
+    import argparse
+    import os
+    import sys
     from pprint import pprint
-    import os.path
 
-    parser = OptionParser()
+    parser = argparse.ArgumentParser()
 
-    parser.add_option(
-        "--test",
-        action="store_true",
-        dest="test",
+    parser.add_argument('MCUNAME', nargs='*')
+
+    parser.add_argument(
+        '--test',
+        action='store_true',
         default=False,
-        help="test run using internal data")
+        help='test run using internal data')
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
     try:
-        if options.test:
-            symbols = load_symbols(os.path.join(os.path.dirname(__file__), 'definitions', 'F1xx.txt'))
+        if args.test:
+            symbols = load_internal('MSP430G2231')
             pprint(symbols.peripherals)
 
-        for filename in args:
+        for filename in args.MCUNAME:
             symbols = load_symbols(filename)
             pprint(symbols.peripherals)
     except rpn.RPNError as e:
-        print("%s:%s: %s" % (e.filename, e.lineno, e))
+        sys.stderr.write(u'{e.filename}:{e.lineno}: {e}\n'.format(e=e))
         #~ raise

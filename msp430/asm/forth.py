@@ -1154,74 +1154,68 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
 
 
 def main():
-    from optparse import OptionParser
+    import argparse
     logging.basicConfig(level=logging.ERROR)
 
-    parser = OptionParser(usage="""\
-%prog [options] [FILE...]|-]
+    parser = argparse.ArgumentParser()
 
-If no input files are spnnecified data is read from stdin.""")
-    parser.add_option(
-            "-o", "--outfile",
-            dest="outfile",
-            help="write outputs to given file",
-            metavar="FILE",
-            default=None)
+    parser.add_argument(
+        'FORTHFILE',
+        nargs='*',
+        help='name of the input file(s)')
 
-    parser.add_option(
-            "-v", "--verbose",
-            action="store_true",
-            dest="verbose",
-            default=False,
-            help="print status messages")
+    group = parser.add_argument_group('Input')
 
-    parser.add_option(
-            "--debug",
-            action="store_true",
-            dest="debug",
-            default=False,
-            help="print debug messages")
+    group.add_argument(
+        '-I', '--include-path',
+        action='append',
+        metavar="PATH",
+        default=[],
+        help='Add directory to the search path list for includes')
 
-    parser.add_option(
-            "-i", "--interactive",
-            action="store_true",
-            dest="interactive",
-            default=False,
-            help="interactive mode is started")
+    group.add_argument(
+        '-D', '--define',
+        action='append',
+        dest='defines',
+        metavar='SYM[=VALUE]',
+        default=[],
+        help='define symbol')
 
-    parser.add_option(
-            "-D", "--define",
-            action="append",
-            dest="defines",
-            metavar="SYM[=VALUE]",
-            default=[],
-            help="define symbol")
+    group = parser.add_argument_group('Output')
 
-    parser.add_option(
-            "-I", "--include-path",
-            action="append",
-            dest="include_paths",
-            metavar="PATH",
-            default=[],
-            help="Add directory to the search path list for includes")
+    group.add_argument(
+        '-o', '--outfile',
+        type=argparse.FileType('w'),
+        default='-',
+        help='name of the output file (default: %(default)s)',
+        metavar="FILE")
 
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        '-i', '--interactive',
+        action='store_true',
+        default=False,
+        help='interactive mode is started')
 
-    if options.debug:
-        logging.getLogger().setLevel(logging.DEBUG)
-    elif options.verbose:
-        logging.getLogger().setLevel(logging.INFO)
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        default=False,
+        help='print status messages')
+
+    parser.add_argument(
+        '--develop',
+        action='store_true',
+        default=False,
+        help='print debug messages')
+
+    args = parser.parse_args()
+
+    if args.develop:
+        logging.getLogger('cpp').setLevel(logging.DEBUG)
+    elif args.verbose:
+        logging.getLogger('cpp').setLevel(logging.INFO)
     else:
-        logging.getLogger().setLevel(logging.WARN)
-
-    # prepare output
-    if options.outfile is not None:
-        out = codecs.open(options.outfile, 'w', 'utf-8')
-    else:
-        if sys.version_info >= (3, 0):
-            out = sys.stdout
-        else:
-            out = codecs.getwriter("utf-8")(sys.stdout)
+        logging.getLogger('cpp').setLevel(logging.WARN)
 
     if sys.version_info < (3, 0):
         # XXX make stderr unicode capable
@@ -1229,19 +1223,19 @@ If no input files are spnnecified data is read from stdin.""")
 
     instructions = []
     include_paths = []
-    for filename in args:
+    for filename in args.FORTHFILE:
         if filename == '-':
-            if options.verbose:
+            if args.verbose:
                 sys.stderr.write(u'reading stdin...\n')
             instructions.extend(rpn.words_in_file('<stdin>', fileobj=sys.stdin, include_newline=True))
             include_paths.append('.')
         else:
-            if options.verbose:
-                sys.stderr.write(u'reading file "%s"...\n' % filename)
+            if args.verbose:
+                sys.stderr.write(u'reading file "{}"...\n'.format(filename))
             try:
                 instructions.extend(rpn.words_in_file(filename, include_newline=True))
             except IOError as e:
-                sys.stderr.write('forth: %s: File not found\n' % (filename,))
+                sys.stderr.write('forth: {}: File not found\n'.format(filename))
                 sys.exit(1)
             include_paths.append(os.path.dirname(os.path.abspath(filename)))
 
@@ -1251,10 +1245,10 @@ If no input files are spnnecified data is read from stdin.""")
         # default to source directory as include path
         forth.include_path = include_paths
         # extend include search path
-        forth.include_path.extend(options.include_paths)
+        forth.include_path.extend(args.include_path)
 
         # insert defined symbols
-        for definition in options.defines:
+        for definition in args.defines:
             if '=' in definition:
                 symbol, value = definition.split('=', 1)
             else:
@@ -1263,17 +1257,17 @@ If no input files are spnnecified data is read from stdin.""")
 
         #~ forth.doctree.chapter(filename)
         forth.interpret(iter(instructions))
-        forth.doctree.render(out)
+        forth.doctree.render(args.outfile)
     except rpn.RPNError as e:
-        sys.stderr.write(u"%s:%s: %s\n" % (e.filename, e.lineno, e))
-        if options.debug and e.text:
-            sys.stderr.write(u"%s:%s: input line was: %r\n" % (e.filename, e.lineno, e.text))
-        #~ if options.debug: raise
+        sys.stderr.write(u'{e.filename}:{e.lineno}: {e}\n'.format(e=e))
+        if args.develop and e.text:
+            sys.stderr.write(u'{e.filename}:{e.lineno}: {e.text!r}\n'.format(e=e))
+        #~ if args.develop: raise
         sys.exit(1)
     finally:
         # enter interactive loop when desired
-        if options.interactive:
-            rpn.interpreter_loop(debug=options.debug, rpn_instance=forth)
+        if args.interactive:
+            rpn.interpreter_loop(debug=args.develop, rpn_instance=forth)
 
 if __name__ == '__main__':
     main()

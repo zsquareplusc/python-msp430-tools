@@ -23,6 +23,11 @@ try:
 except NameError:
     unicode = str
 
+try:
+    raw_input
+except NameError:
+    raw_input = input
+
 m_comment = re.compile('(#.*$)', re.UNICODE)    # regexp to remove line comments
 
 
@@ -509,7 +514,7 @@ def interpreter_loop(namespace={}, debug=False, rpn_class=RPN, rpn_instance=None
         try:
             print()
             print(rpn_instance)
-            words = input('> ')
+            words = raw_input('> ')
             rpn_instance.interpret_sequence(words.split(), filename='<stdin>')
         except KeyboardInterrupt:
             print()

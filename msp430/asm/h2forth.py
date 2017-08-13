@@ -96,7 +96,7 @@ def main():
 
     if not args.HEADERFILE or args.HEADERFILE == '-':
         infilename = '<stdin>'
-        infile = codecs.getreader("utf-8")(sys.stdin)
+        infile = argparse.FileType('r')('-')
     else:
         # search include path for files
         for path in cpp.include_path:

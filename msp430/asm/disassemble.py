@@ -791,114 +791,68 @@ class MSP430Disassembler(object):
 debug = False
 
 
-def inner_main():
-    from optparse import OptionParser
-    parser = OptionParser(usage="""\
-%prog [options] [SOURCE...]
-
-MSP430(X) disassembler.
-""")
-
-    parser.add_option(
-        "-o", "--output",
-        dest="output",
-        help="write result to given file",
-        metavar="DESTINATION")
-
-    parser.add_option(
-        "--debug",
-        dest="debug",
-        help="print debug messages",
-        default=False,
-        action='store_true')
-
-    parser.add_option(
-        "-v", "--verbose",
-        dest="verbose",
-        help="print more details",
-        default=False,
-        action='store_true')
-
-    parser.add_option(
-        "-i", "--input-format",
-        dest="input_format",
-        help="input format name (%s)" % (', '.join(msp430.memory.load_formats),),
-        default=None,
-        metavar="TYPE")
-
-    parser.add_option(
-        "-x", "--msp430x",
-        action="store_true",
-        dest="msp430x",
-        default=False,
-        help="Enable MSP430X instruction set")
-
-    parser.add_option(
-        "--source",
-        dest="source",
-        default=False,
-        action='store_true',
-        help="omit hex dump, just output assembler source")
-
-    parser.add_option(
-        "--symbols",
-        dest="symbols",
-        help="read register names for given architecture (e.g. F1xx)",
-        metavar="NAME")
-
-    (options, args) = parser.parse_args()
-
-    if not args:
-        parser.error("missing object file name")
-
-    if options.input_format is not None and options.input_format not in msp430.memory.load_formats:
-        parser.error('Input format %s not supported.' % (options.input_format))
-
-    global debug
-    debug = options.debug
-
-    if options.symbols is not None:
-        named_symbols = NamedSymbols()
-        named_symbols.load(options.symbols)
-    else:
-        named_symbols = None
-
-    output = sys.stdout
-    if options.output:
-        output = open(options.output, 'wb')
-
-    for filename in args:
-        if filename == '-':                 # get data from stdin
-            fileobj = sys.stdin
-            filename = '<stdin>'
-        else:
-            try:
-                fileobj = open(filename, "rb")  # or from a file
-            except IOError as e:
-                sys.stderr.write('disassemble: %s: File not found\n' % (filename,))
-                sys.exit(1)
-        mem = msp430.memory.load(filename, fileobj, options.input_format)
-
-        if options.verbose:
-            output.write('%s (%d segments):\n' % (filename, len(mem)))
-
-        dis = MSP430Disassembler(mem, msp430x=options.msp430x, named_symbols=named_symbols)
-        dis.disassemble(output, options.source)
-
-
 def main():
-    try:
-        inner_main()
-    except SystemExit:
-        raise                                   # let pass exit() calls
-    except KeyboardInterrupt:
-        if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("User abort.\n")       # short messy in user mode
-        sys.exit(1)                             # set error level for script usage
-    except Exception as msg:                    # every Exception is caught and displayed
-        if debug: raise                         # show full trace in debug mode
-        sys.stderr.write("\nAn error occurred:\n%s\n" % msg)  # short messy in user mode
-        sys.exit(1)                             # set error level for script usage
+    import argparse
+    import msp430.commandline_helper
+
+    class DisassemblerTool(msp430.commandline_helper.CommandLineTool):
+        description = """\
+Simple hex file conversion tool.
+
+It is also possible to specify multiple input files and create a single,
+merged output.
+"""
+
+        def configure_parser(self):
+            self.parser_add_input(nargs='*')
+            self.parser_add_output(textual=True)
+            self.parser_add_verbose()
+
+            self.parser.add_argument(
+                '-x', '--msp430x',
+                action='store_true',
+                default=False,
+                help='Enable MSP430X instruction set')
+
+            self.parser.add_argument(
+                '--symbols',
+                help='read register names for given architecture (e.g. F1xx)',
+                metavar='NAME')
+
+            self.parser.add_argument(
+                "--source",
+                default=False,
+                action='store_true',
+                help='omit hex dump, just output assembler source')
+
+        def run(self, args):
+            if not args.SRC:
+                # if no files are given, read from stdin
+                args.FILE = [msp430.commandline_helper.BinaryFileType('r')('-')]
+                # default to TI-Text if no format is given
+                if args.input_format is None:
+                    args.input_format = 'titext'
+
+            global debug
+            debug = args.develop
+
+            if args.symbols is not None:
+                named_symbols = NamedSymbols()
+                named_symbols.load(args.symbols)
+            else:
+                named_symbols = None
+
+            for fileobj in args.SRC:
+                mem = msp430.memory.load(fileobj.name, fileobj, args.input_format)
+
+                if args.verbose:
+                    args.output.write('{} ({} segments):\n'.format(fileobj.name, len(mem)))
+
+                dis = MSP430Disassembler(mem, msp430x=args.msp430x, named_symbols=named_symbols)
+                dis.disassemble(args.output, args.source)
+
+    DisassemblerTool().main()
+
 
 if __name__ == '__main__':
     main()

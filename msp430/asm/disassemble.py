@@ -8,8 +8,6 @@
 """\
 Disassembler for TI MSP430(X)
 """
-
-import sys
 import msp430.memory
 import msp430.asm.peripherals
 
@@ -27,7 +25,7 @@ def addressMode(bytemode, asrc=None, ad=None, src=None, dest=None):
     # source first
     if asrc is not None:
         if src == 2 and asrc > 1:  # R3/CG2
-            x = "#%d" % (None, None, 4, 8)[asrc]
+            x = "#{}".format((None, None, 4, 8)[asrc])
         elif src == 3:  # CG3
             if asrc == 3:
                 if bytemode:
@@ -35,7 +33,7 @@ def addressMode(bytemode, asrc=None, ad=None, src=None, dest=None):
                 else:
                     x = "#0xffff"
             else:
-                x = "#%d" % (0, 1, 2)[asrc]
+                x = "#{}".format((0, 1, 2)[asrc])
         else:
             if asrc == 0:   # register mode
                 x = regnames[src]
@@ -50,18 +48,18 @@ def addressMode(bytemode, asrc=None, ad=None, src=None, dest=None):
                     x = '0x%%(x)04x(%s)' % regnames[src]
                     c += 1  # read
             elif asrc == 2:   # indirect
-                x = '@%s' % regnames[src]
+                x = '@{}'.format(regnames[src])
             elif asrc == 3:
                 if src == 0:    # immediate
                     x = bytemode and '#0x%(x)02x' or '#0x%(x)04x'
                 else:           # indirect auto increment
-                    x = '@%s+' % regnames[src]
+                    x = '@{}+'.format(regnames[src])
             else:
                 raise ValueError("addressing mode error")
     # dest
     if ad is not None:
         if ad == 0:
-            y = '%s' % regnames[dest]
+            y = '{}'.format(regnames[dest])
             if dest == 0 and asrc != 1:
                 c += 1  # modifying PC gives one cycle penalty
         else:
@@ -71,7 +69,6 @@ def addressMode(bytemode, asrc=None, ad=None, src=None, dest=None):
                 c += 2  # read modify write
             elif dest == 2:  # abs
                 y = '&0x%(y)04x'
-                #~ y = '&0x%(y)04x'
                 c += 2  # read modify write
             else:           # indexed
                 y = '%%(y)s(%s)' % regnames[dest]
@@ -144,7 +141,7 @@ class NamedSymbols(object):
         if opt[0:1] == '&' and self.peripherals is not None:
             adr = int(opt[1:], 0)
             if adr in self.peripherals.registers_by_address:
-                return '&%s' % (self.peripherals.registers_by_address[adr]['__name__'], )
+                return '&{}'.format(self.peripherals.registers_by_address[adr]['__name__'])
         return opt
 
     def symbols_for_bits(self, arg, opt):
@@ -165,8 +162,8 @@ class NamedSymbols(object):
                     if value in self.peripherals.registers_by_name[reg]['__values__']:
                         result.append(self.peripherals.registers_by_name[reg]['__values__'][value])
                     else:
-                        result.append('0x%x' % value)
-                return '#%s' % '|'.join(result)
+                        result.append('0x{:x}'.format(value))
+                return '#{}'.format('|'.join(result))
         return arg
 
 
@@ -297,17 +294,24 @@ class Instruction:
 
     def __str__(self):
         if self.src is not None and self.dst is not None:
-            return ("%%-%ds %%s, %%s" % INSN_WIDTH) % ("%s%s" % (self.name, self.address_mode), self.src, self.dst)
+            return '{name:<{width}} {src}, {dst}'.format(
+                width=INSN_WIDTH,
+                name='{}{}'.format(self.name, self.address_mode),
+                src=self.src,
+                dst=self.dst)
         elif self.dst is not None:
-            return ("%%-%ds %%s" % INSN_WIDTH) % ("%s%s" % (self.name, self.address_mode), self.dst)
+            return '{name:<{width}} {dst}'.format(
+                width=INSN_WIDTH,
+                name='{}{}'.format(self.name, self.address_mode),
+                dst=self.dst)
         else:
-            return ("%%-%ds" % INSN_WIDTH) % (self.name,)
+            return '{name:<{width}}'.format(width=INSN_WIDTH, name=self.name)
 
     def str_width_label(self, label):
         if not self.jumps():
             raise ValueError('only possible with jump insns')
         if self.dst is not None and self.dst[0:1] == '#' and self.src is None:
-            return ("%%-%ds #%%s" % INSN_WIDTH) % (self.name, label)
+            return '{name:<{width}} {label}'.format(width=INSN_WIDTH, name=self.name, label=label)
         raise ValueError('only possible with dst only insns')
 
     def jumps(self):
@@ -345,10 +349,10 @@ class JumpInstruction(Instruction):
         return address + self.offset
 
     def __str__(self):
-        return ("%%-%ds %%+d" % INSN_WIDTH) % (self.name, self.offset)
+        return '{name:{width}} {offset:+d}'.format(width=INSN_WIDTH, name=self.name, offset=self.offset)
 
     def str_width_label(self, label):
-        return ("%%-%ds %%s" % INSN_WIDTH) % (self.name, label)
+        return '{name:{width}} {label}'.format(width=INSN_WIDTH, name=self.name, label=label)
 
     def ends_a_block(self):
         """helper for a nice output. return true if execution does not continue
@@ -371,9 +375,9 @@ class MSP430Disassembler(object):
         self.address = None
         self.first_address = None
         if self.msp430x:
-            self.adr_fmt = "0x%08x"
+            self.adr_fmt = "#010x"
         else:
-            self.adr_fmt = "0x%04x"
+            self.adr_fmt = "#06x"
 
     def restart(self, address):
         """reset internal state. used to restart decoding on each segment"""
@@ -393,24 +397,24 @@ class MSP430Disassembler(object):
     def jump_instruction(self, name, offset):
         """save a jump instruction"""
         self._save_instruction(JumpInstruction(
-                self.first_address,
-                name,
-                offset,
-                used_words=self.used_words,
-                cycles=self.cycles,
-                named_symbols=self.named_symbols))
+            self.first_address,
+            name,
+            offset,
+            used_words=self.used_words,
+            cycles=self.cycles,
+            named_symbols=self.named_symbols))
 
     def instruction(self, name, address_mode='', src=None, dst=None):
         """save a non-jump instruction"""
         self._save_instruction(Instruction(
-                self.first_address,
-                name,
-                address_mode,
-                src=src,
-                dst=dst,
-                used_words=self.used_words,
-                cycles=self.cycles,
-                named_symbols=self.named_symbols))
+            self.first_address,
+            name,
+            address_mode,
+            src=src,
+            dst=dst,
+            used_words=self.used_words,
+            cycles=self.cycles,
+            named_symbols=self.named_symbols))
 
     def word(self):
         """get next 16 bits from instruction stream"""
@@ -494,11 +498,11 @@ class MSP430Disassembler(object):
             adst = (opcode >> 7) & 1
             asrc = (opcode >> 4) & 3
             x, y, c = addressMode(
-                    bytemode,
-                    src=(opcode >> 8) & 0xf,
-                    ad=adst,
-                    asrc=asrc,
-                    dest=opcode & 0xf)
+                bytemode,
+                src=(opcode >> 8) & 0xf,
+                ad=adst,
+                asrc=asrc,
+                dest=opcode & 0xf)
             name = doubleOperandInstructions[(opcode >> 12) & 0xf]
             self.cycles += c
             if extension_word is not None:
@@ -549,32 +553,32 @@ class MSP430Disassembler(object):
                 if dst == 0:
                     self.cycles += 2
                 self.instruction(
-                        'mova',
-                        src='@%s' % regnames[src],
-                        dst=regnames[dst])
+                    'mova',
+                    src='@{}'.format(regnames[src]),
+                    dst=regnames[dst])
             elif insnid == 1:
                 if dst == 0:
                     self.cycles += 2
                 self.instruction(
-                        'mova',
-                        src='@%s+' % regnames[src],
-                        dst=regnames[dst])
+                    'mova',
+                    src='@{}+'.format(regnames[src]),
+                    dst=regnames[dst])
             elif insnid == 2:
                 if dst == 0:
                     self.cycles += 2
                 address_low = self.word()
                 self.instruction(
-                        'mova',
-                        src='&0x%08x' % ((src << 16) | address_low),
-                        dst=regnames[dst])
+                    'mova',
+                    src='&0x{:08x}'.format((src << 16) | address_low),
+                    dst=regnames[dst])
             elif insnid == 3:
                 if dst == 0:
                     self.cycles += 2
                 offset = self.word()
                 self.instruction(
-                        'mova',
-                        src='0x%04x(%s)' % (offset, regnames[src]),
-                        dst=regnames[dst])
+                    'mova',
+                    src='0x{:04x}({})'.format(offset, regnames[src]),
+                    dst=regnames[dst])
 
             elif insnid == 4:
                 if dst == 0:
@@ -583,13 +587,13 @@ class MSP430Disassembler(object):
                 n = (opcode >> 10) & 0x3
                 self.cycles += n
                 if insnid_r == 0:
-                    self.instruction('rrcm.a', src='#%d' % (n,), dst=regnames[dst])
+                    self.instruction('rrcm.a', src='#{}'.format(n), dst=regnames[dst])
                 elif insnid_r == 1:
-                    self.instruction('rram.a', src='#%d' % (n,), dst=regnames[dst])
+                    self.instruction('rram.a', src='#{}'.format(n), dst=regnames[dst])
                 elif insnid_r == 2:
-                    self.instruction('rlam.a', src='#%d' % (n,), dst=regnames[dst])
+                    self.instruction('rlam.a', src='#{}'.format(n), dst=regnames[dst])
                 elif insnid_r == 3:
-                    self.instruction('rrum.a', src='#%d' % (n,), dst=regnames[dst])
+                    self.instruction('rrum.a', src='#{}'.format(n), dst=regnames[dst])
             elif insnid == 5:
                 if dst == 0:
                     self.cycles += 2
@@ -597,13 +601,13 @@ class MSP430Disassembler(object):
                 n = (opcode >> 10) & 0x3
                 self.cycles += n
                 if insnid_r == 0:
-                    self.instruction('rrcm.w', src='#%d' % (n,), dst=regnames[dst])
+                    self.instruction('rrcm.w', src='#{}'.format(n), dst=regnames[dst])
                 elif insnid_r == 1:
-                    self.instruction('rram.w', src='#%d' % (n,), dst=regnames[dst])
+                    self.instruction('rram.w', src='#{}'.format(n), dst=regnames[dst])
                 elif insnid_r == 2:
-                    self.instruction('rlam.w', src='#%d' % (n,), dst=regnames[dst])
+                    self.instruction('rlam.w', src='#{}'.format(n), dst=regnames[dst])
                 elif insnid_r == 3:
-                    self.instruction('rrum.w', src='#%d' % (n,), dst=regnames[dst])
+                    self.instruction('rrum.w', src='#{}'.format(n), dst=regnames[dst])
 
             elif insnid == 6:
                 if dst == 0:
@@ -612,26 +616,26 @@ class MSP430Disassembler(object):
                 self.instruction(
                     'mova',
                     src=regnames[src],
-                    dst='&0x%08x' % ((dst << 16) | address_low))
+                    dst='&0x{:08x}'.format((dst << 16) | address_low))
             elif insnid == 7:
                 offset = self.word()
                 self.instruction(
                     'mova',
                     src=regnames[src],
-                    dst='%04x(%s)' % (offset, regnames[dst]))
+                    dst='{:04x}({})'.format(offset, regnames[dst]))
             elif insnid == 8:
                 if dst == 0:
                     self.cycles += 2
                 value_low = self.word()
                 self.instruction(
                     'mova',
-                    src='#0x%08x' % ((src << 16) | value_low),
+                    src='#0x{:08x}'.format((src << 16) | value_low),
                     dst=regnames[dst])
             elif insnid == 9:
                 value_low = self.word()
                 self.instruction(
                     'cmpa',
-                    src='#0x%08x' % ((src << 16) | value_low),
+                    src='#0x{:08x}'.format((src << 16) | value_low),
                     dst=regnames[dst])
             elif insnid == 10:
                 if dst == 0:
@@ -639,7 +643,7 @@ class MSP430Disassembler(object):
                 value_low = self.word()
                 self.instruction(
                     'adda',
-                    src='#0x%08x' % ((src << 16) | value_low),
+                    src='#0x{:08x}'.format((src << 16) | value_low),
                     dst=regnames[dst])
             elif insnid == 11:
                 if dst == 0:
@@ -647,7 +651,7 @@ class MSP430Disassembler(object):
                 value_low = self.word()
                 self.instruction(
                     'suba',
-                    src='#0x%08x' % ((src << 16) | value_low),
+                    src='#0x{:08x}'.format((src << 16) | value_low),
                     dst=regnames[dst])
             elif insnid == 12:
                 if dst == 0:
@@ -687,32 +691,32 @@ class MSP430Disassembler(object):
                     self.instruction('calla', dst=regnames[dst])
                 elif call_mode == 5:
                     offset = self.word()
-                    self.instruction('calla', dst='0x%04x(%s)' % (offset, regnames[dst]))
+                    self.instruction('calla', dst='0x{:04x}({})'.format(offset, regnames[dst]))
                 elif call_mode == 6:
-                    self.instruction('calla', dst='@%s' % regnames[dst])
+                    self.instruction('calla', dst='@{}'.format(regnames[dst]))
                 elif call_mode == 7:
-                    self.instruction('calla', dst='@%s+' % regnames[dst])
+                    self.instruction('calla', dst='@{}+'.format(regnames[dst]))
                 elif call_mode == 8:
                     address_low = self.word()
-                    self.instruction('calla', dst='&0x%08x' % ((dst << 16) | address_low))
+                    self.instruction('calla', dst='&0x{:08x}'.format((dst << 16) | address_low))
                 elif call_mode == 9:
                     address_low = self.word()
-                    self.instruction('calla', dst='0x%08x' % ((dst << 16) | address_low))
+                    self.instruction('calla', dst='0x{:08x}'.format((dst << 16) | address_low))
                 elif call_mode == 11:
                     value_low = self.word()
-                    self.instruction('calla', dst='#0x%08x' % ((dst << 16) | value_low))
+                    self.instruction('calla', dst='#0x{:08x}'.format((dst << 16) | value_low))
             elif opcode & 0xff00 == 0b0001010000000000:
                 n = (opcode >> 4) & 0xf
-                self.instruction('pushm.a', src='#%d' % n, dst=regnames[dst])
+                self.instruction('pushm.a', src='#{}'.format(n), dst=regnames[dst])
             elif opcode & 0xff00 == 0b0001010100000000:
                 n = (opcode >> 4) & 0xf
-                self.instruction('pushm.w', src='#%d' % n, dst=regnames[dst])
+                self.instruction('pushm.w', src='#{}'.format(n), dst=regnames[dst])
             elif opcode & 0xff00 == 0b0001011000000000:
                 n = (opcode >> 4) & 0xf
-                self.instruction('pop.a', src='#%d' % n, dst=regnames[dst])
+                self.instruction('pop.a', src='#{}'.format(n), dst=regnames[dst])
             elif opcode & 0xff00 == 0b0001011100000000:
                 n = (opcode >> 4) & 0xf
-                self.instruction('pop.w', src='#%d' % n, dst=regnames[dst])
+                self.instruction('pop.w', src='#{}'.format(n), dst=regnames[dst])
 
         # extension word
         elif self.msp430x and (opcode & 0xf800) == 0x1800:
@@ -721,7 +725,7 @@ class MSP430Disassembler(object):
 
         # unknown instruction
         if self.used_words:  # if an instruction was set it would be the empty list
-            self.instruction('illegal-insn-0x%04x' % opcode)
+            self.instruction('illegal-insn-0x{:04x}'.format(opcode))
 
     def disassemble(self, output, source_only=False):
         """Iterate through the segments and disassemble, output at the end"""
@@ -729,7 +733,7 @@ class MSP430Disassembler(object):
         for segment in sorted(self.memory.segments):
             self.restart(segment.startaddress)
             self.words = words(segment.data)
-            lines.append((None, "; Segment starting at 0x%08x:" % (segment.startaddress,), '\n'))
+            lines.append((None, '; Segment starting at 0x{:08x}:'.format(segment.startaddress), '\n'))
             try:
                 while True:
                     self.process_word()
@@ -737,30 +741,35 @@ class MSP430Disassembler(object):
                 pass
 
             for insn in self.instructions:
-                bytes = ' '.join(['%04x' % x for x in insn.used_words])
+                bytes = ' '.join(['{:04x}'.format(x) for x in insn.used_words])
                 instext = str(insn)
                 # does this instruction jump? if so, get a label for the jump target
                 if insn.jumps():
                     l_adr = insn.targetAddress(insn.address + 2)
                     if l_adr not in self.labels:
                         # create a new label
-                        label = '.L%04d' % self.label_num
+                        label = '.L{:04d}'.format(self.label_num)
                         self.label_num += 1
                         self.labels[l_adr] = label
                     # update note with information about the values
                     if isinstance(insn, JumpInstruction):
                         instext = insn.str_width_label(self.labels[l_adr])
-                        note = ' %+d --> %s' % (insn.offset, self.adr_fmt % l_adr)
+                        note = ' {:+d} --> {adr:{fmt}}'.format(insn.offset, fmt=self.adr_fmt, adr=l_adr)
                     else:
                         instext = insn.str_width_label(self.labels[l_adr])
-                        note = ' --> %s' % (self.adr_fmt % l_adr, )
+                        note = ' --> {adr:{fmt}}'.format(fmt=self.adr_fmt, adr=l_adr)
                 else:
                     note = ''
                 # save generated line
                 lines.append((
-                        insn.address,
-                        "%s:  %-19s" % (self.adr_fmt % insn.address, bytes),
-                        "%-36s ; ca. %d cycle%s%s\n" % (instext, insn.cycles, 's' if insn.cycles != 1 else '', note)))
+                    insn.address,
+                    '{adr:{fmt}}:  {dump:19}'.format(
+                        fmt=self.adr_fmt, adr=insn.address,
+                        dump=bytes),
+                    '{text:36} ; ca. {cycles} cycle{plural}{note}\n'.format(
+                        text=instext,
+                        cycles=insn.cycles, plural='s' if insn.cycles != 1 else '',
+                        note=note)))
                 # after unconditional jumps, make an empty line
                 if insn.ends_a_block():
                     lines.append((None, '', '\n'))
@@ -769,30 +778,26 @@ class MSP430Disassembler(object):
         unused_labels = dict(self.labels)        # work on a copy
         for address, prefix, suffix in lines:
             if address in unused_labels:
-                label = "%s:" % unused_labels[address]
+                label = '{}:'.format(unused_labels[address])
                 del unused_labels[address]  # remove used label
             else:
                 label = ''
             # render lines with labels
             if source_only:
                 if address is None:
-                    output.write("%s %-7s %s" % (prefix, label, suffix))
+                    output.write('{} {:7} {}'.format(prefix, label, suffix))
                 else:
-                    output.write("%-7s %s" % (label, suffix))
+                    output.write('{:7} {}'.format(label, suffix))
             else:
-                output.write("%s %-7s %s" % (prefix, label, suffix))
+                output.write('{} {:7} {}'.format(prefix, label, suffix))
         # if there are labels left, print them in a list
         if unused_labels:
-            output.write("\nLabels that could not be placed:\n")
+            output.write('\nLabels that could not be placed:\n')
             for address, label in unused_labels.items():
-                output.write("    %s = 0x%04x\n" % (label, address))
-
-
-debug = False
+                output.write('    {} = 0x{:04x}\n'.format(label, address))
 
 
 def main():
-    import argparse
     import msp430.commandline_helper
 
     class DisassemblerTool(msp430.commandline_helper.CommandLineTool):
@@ -832,9 +837,6 @@ merged output.
                 # default to TI-Text if no format is given
                 if args.input_format is None:
                     args.input_format = 'titext'
-
-            global debug
-            debug = args.develop
 
             if args.symbols is not None:
                 named_symbols = NamedSymbols()

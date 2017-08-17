@@ -1055,50 +1055,63 @@ class MSP430Assembler(object):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def main():
-    from optparse import OptionParser
+    import argparse
 
-    parser = OptionParser(usage='%prog [options] source.S')
-    parser.add_option(
-            "-x", "--msp430x",
-            action="store_true",
-            dest="msp430x",
-            default=False,
-            help="Enable MSP430X instruction set")
-    parser.add_option(
-            "-o", "--outfile",
-            dest= "outfile",
-            help="name of the object file",
-            default=None,
-            metavar="FILE")
-    parser.add_option(
-            "--filename",
-            dest="input_filename",
-            help="Use this filename for input (useful when source is passed on stdin)",
-            metavar="FILE")
-    parser.add_option(
-            "-v", "--verbose",
-            action="store_true",
-            dest="verbose",
-            default=False,
-            help="print status messages to stderr")
-    parser.add_option(
-            "--debug",
-            action="store_true",
-            dest="debug",
-            default=False,
-            help="print debug messages to stderr")
-    parser.add_option(
-            "-i", "--instructions",
-            action="store_true",
-            dest="list_instructions",
-            default=False,
-            help="Show list of supported instructions and exit (see also -x)")
+    parser = argparse.ArgumentParser()
 
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        'SOURCE',
+        type=argparse.FileType('r'),
+        nargs='?',
+        default='-')
 
-    assembler = MSP430Assembler(msp430x=options.msp430x, debug=options.debug)
+    group = parser.add_argument_group('Input')
 
-    if options.list_instructions:
+    group.add_argument(
+        '--filename',
+        dest='input_filename',
+        help='Use this filename for input (useful when source is passed on stdin)',
+        metavar='FILE')
+
+    group = parser.add_argument_group('Output')
+
+    group.add_argument(
+        '-o', '--outfile',
+        type=argparse.FileType('w'),
+        help='name of the object file',
+        default='-',
+        metavar='FILE')
+
+    parser.add_argument(
+        '-i', '--instructions',
+        action='store_true',
+        dest='list_instructions',
+        default=False,
+        help='Show list of supported instructions and exit (see also -x)')
+
+    parser.add_argument(
+        '-x', '--msp430x',
+        action='store_true',
+        default=False,
+        help='Enable MSP430X instruction set')
+
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        default=False,
+        help='print status messages to stderr')
+
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        default=False,
+        help='print debug messages to stderr')
+
+    args = parser.parse_args()
+
+    assembler = MSP430Assembler(msp430x=args.msp430x, debug=args.debug)
+
+    if args.list_instructions:
         n_pseudo = n_real = 0
         for insn in sorted(assembler.instructions.keys()):
             sys.stdout.write('%-8s %s\n' % (insn, assembler.instructions[insn][2]))
@@ -1107,55 +1120,30 @@ def main():
             else:
                 n_real += 1
         sys.stdout.write('-- %d pseudo (internal) instructions, %d MSP430%s instructions\n' % (
-                    n_pseudo, n_real, options.msp430x and 'X' or ''))
+                    n_pseudo, n_real, args.msp430x and 'X' or ''))
         sys.exit(1)
 
-    if not args:
-        parser.error("Missing filename.")
-    if len(args) > 1:
-        parser.error("Only one file at a time allowed.")
-
-    filename = args[0]
-    if options.input_filename is None:
-        options.input_filename = filename
-
-    if options.outfile is not None:
-        out = codecs.open(options.outfile, 'w', 'utf-8')
-    else:
-        if sys.version_info >= (3, 0):
-            out = sys.stdout
-        else:
-            out = codecs.getwriter("utf-8")(sys.stdout)
+    filename = args.SOURCE.name
+    if args.input_filename is None:
+        args.input_filename = filename
 
     if sys.version_info < (3, 0):
         # XXX make stderr unicode capable
         sys.stderr = codecs.getwriter("utf-8")(sys.stderr)
 
-    if options.debug:
+    if args.debug:
         sys.stderr.write("%s\n" % (("BEGIN %s" % filename).center(70).replace(' ', '-')))
 
     try:
-        if not filename or filename == '-':
-            assembler.assemble(
-                    codecs.getreader("utf-8")(sys.stdin),
-                    options.input_filename,
-                    output=out)
-        else:
-            try:
-                f = codecs.open(filename, 'r', 'utf-8')
-                assembler.assemble(f, options.input_filename, output=out)
-                f.close()
-            except IOError as e:
-                sys.stderr.write('as: %s: File not found\n' % (filename,))
-                sys.exit(1)
+        assembler.assemble(args.SOURCE, args.input_filename, output=args.outfile)
     except AssemblerError as e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
-        if options.debug:
+        if args.debug:
             if hasattr(e, 'text'):
                 sys.stderr.write('%s:%s: input line: %r\n' % (e.filename, e.line, e.text))
         sys.exit(1)
 
-    if options.debug:
+    if args.debug:
         sys.stderr.write("%s\n" % (("END %s" % filename).center(70).replace(' ', '-')))
 
 

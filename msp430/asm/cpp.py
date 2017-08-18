@@ -500,80 +500,74 @@ class Discard(object):
 
 def main():
     import sys
-    from optparse import OptionParser
+    import argparse
     logging.basicConfig()
 
-    parser = OptionParser()
-    parser.add_option("-o", "--outfile",
-                      dest="outfile",
-                      help="name of the object file",
-                      metavar="FILE")
-    parser.add_option("-p", "--preload",
-                      dest="preload",
-                      help="process this file first. its output is discarded but definitions are kept.",
-                      metavar="FILE")
-    parser.add_option("-v", "--verbose",
-                      action="store_true",
-                      dest="verbose",
-                      default=False,
-                      help="print status messages")
-    parser.add_option("--debug",
-                      action="store_true",
-                      dest="debug",
-                      default=False,
-                      help="print debug messages to stdout")
-    parser.add_option("-D", "--define",
-                      action="append",
-                      dest="defines",
-                      metavar="SYM[=VALUE]",
-                      default=[],
-                      help="define symbol")
-    parser.add_option("-I", "--include-path",
-                      action="append",
-                      dest="include_paths",
-                      metavar="PATH",
-                      default=[],
-                      help="Add directory to the search path list for includes")
-    parser.add_option("--dependency-scan",
-                      action="store_true",
-                      dest="dependency_scan_only",
-                      default=False,
-                      help="just print names of includes, not actual content")
+    parser = argparse.ArgumentParser()
 
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        'SOURCE',
+        type=argparse.FileType('r'),
+        nargs='?',
+        default='-')
 
-    if len(args) > 1:
-        sys.stderr.write("Only one file at a time allowed.\n")
-        sys.exit(1)
+    group = parser.add_argument_group('Input')
 
-    if options.debug:
+    group.add_argument(
+        '-p', '--preload',
+        help='process this file first. its output is discarded but definitions are kept.',
+        metavar='FILE')
+
+    group.add_argument(
+        '-D', '--define',
+        action='append',
+        dest='defines',
+        metavar='SYM[=VALUE]',
+        default=[],
+        help='define symbol')
+
+    group.add_argument(
+        '-I', '--include-path',
+        action='append',
+        metavar='PATH',
+        default=[],
+        help='Add directory to the search path list for includes')
+
+    group = parser.add_argument_group('Output')
+
+    group.add_argument(
+        '-o', '--outfile',
+        type=argparse.FileType('w'),
+        help='name of the destination file',
+        default='-',
+        metavar='FILE')
+
+    parser.add_argument(
+        '--dependency-scan',
+        action='store_true',
+        default=False,
+        help='just print names of includes, not actual content')
+
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        default=False,
+        help='print status messages to stderr')
+
+    parser.add_argument(
+        '--develop',
+        action='store_true',
+        default=False,
+        help='print debug messages to stderr')
+
+    args = parser.parse_args()
+
+    if args.develop:
         logging.getLogger('cpp').setLevel(logging.DEBUG)
-    elif options.verbose:
+    elif args.verbose:
         logging.getLogger('cpp').setLevel(logging.INFO)
     else:
         logging.getLogger('cpp').setLevel(logging.WARN)
-
-    if options.outfile:
-        outfile = codecs.open(options.outfile, 'w', 'utf-8')
-    else:
-        if sys.version_info >= (3, 0):
-            outfile = sys.stdout
-        else:
-            outfile = codecs.getwriter("utf-8")(sys.stdout)
-
-    if not args or args[0] == '-':
-        infilename = '<stdin>'
-        if sys.version_info >= (3, 0):
-            infile = sys.stdin
-        else:
-            infile = codecs.getreader("utf-8")(sys.stdin)
-    else:
-        try:
-            infilename = args[0]
-            infile = codecs.open(infilename, 'r', 'utf-8')
-        except IOError as e:
-            sys.stderr.write('cpp: %s: File not found\n' % (infilename,))
-            sys.exit(1)
 
     cpp = Preprocessor()
     # extend include search path
@@ -582,9 +576,9 @@ def main():
     cpp.include_path.append(d)
     cpp.include_path.append(os.path.join(d, 'upstream'))
     # user provided directories (-I)
-    cpp.include_path.extend(options.include_paths)
+    cpp.include_path.extend(args.include_path)
     # insert predefined symbols (XXX function like macros not yet supported)
-    for definition in options.defines:
+    for definition in args.defines:
         if '=' in definition:
             symbol, value = definition.split('=', 1)
         else:
@@ -592,25 +586,25 @@ def main():
         cpp.namespace.defines[symbol] = value
 
     # process files now
-    if options.preload:
-        cpp.preprocess(open(options.preload), Discard(), options.preload)
+    if args.preload:
+        cpp.preprocess(open(args.preload), Discard(), args.preload)
 
-    if options.dependency_scan_only:
+    if args.dependency_scan:
         # add a callback that writes out filenames of includes
         # remember outfile as we're changing it below
-        def print_include(path, outfile=outfile):
+        def print_include(path, outfile=args.outfile):
             outfile.write('%s\n' % (path,))
-        outfile = Discard()  # discard following output
+        args.outfile = Discard()  # discard following output
     else:
         print_include = None
 
     try:
-        error_found = cpp.preprocess(infile, outfile, infilename, print_include)
+        error_found = cpp.preprocess(args.SOURCE, args.outfile, args.SOURCE.name, print_include)
         if error_found:
             sys.exit(2)
     except PreprocessorError as e:
         sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
-        if options.debug:
+        if args.develop:
             if hasattr(e, 'text'):
                 sys.stderr.write('%s:%s: input line: %r\n' % (e.filename, e.line, e.text))
         sys.exit(1)

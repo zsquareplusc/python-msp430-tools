@@ -101,7 +101,7 @@ class MSP430Assembler(object):
         if msp430x:
             # extended double operand instructions
             for name, (_, doc) in self._doubleopnames.items():
-                self.instructions["%sX" % name] = (2, self.assembleExtendedDoubleOperandInstruction, doc + ' (20 bit)')
+                self.instructions["{}X".format(name)] = (2, self.assembleExtendedDoubleOperandInstruction, doc + ' (20 bit)')
             # extended single operand instructions
             self.instructions.update({
                 u'POPM':    (2, self.assemblePUSHMPOPM,
@@ -160,7 +160,7 @@ class MSP430Assembler(object):
         try:
             return infix2postfix(value, variable_prefix=u'GET-SYMBOL ')
         except ValueError:
-            raise AssemblerError('invalid expression: %r' % (value,))
+            raise AssemblerError('invalid expression: {!r}'.format(value))
 
     def expand_label(self, label):
         """\
@@ -188,7 +188,7 @@ class MSP430Assembler(object):
         elif mode == '.A':
             return (1, 0)
         else:
-            raise AssemblerError('Unsupported mode: %r' % (mode,))
+            raise AssemblerError('Unsupported mode: {!r}'.format(mode))
 
     def _buildArg(self, insn, xxx, constreg=True):
         """\
@@ -239,8 +239,8 @@ class MSP430Assembler(object):
             if mode == 'SYMBOLIC':
                 return (1, 0, value, 1)         # symbolic mode
         except KeyError as e:
-            raise AssemblerError('Register name invalid: %s' % e)
-        raise AssemblerError('Bad argument type: %s %s' % (mode, value))
+            raise AssemblerError('Register name invalid: {}'.format(e))
+        raise AssemblerError('Bad argument type: {} {}'.format(mode, value))
 
     def _name_address_mode(self, asrc, src):
         """\
@@ -263,7 +263,7 @@ class MSP430Assembler(object):
                 return 'immediate mode'
             else:
                 return 'post increment mode'
-        raise ValueError('Unknown addressing mode %r' % (asrc,))
+        raise ValueError('Unknown addressing mode {!r}'.format(asrc))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -291,24 +291,24 @@ class MSP430Assembler(object):
         """Double operand instruction."""
         bw, al = self._addressing_mode(mode)
         if not al:
-            raise AssemblerError('Bad mode (%s) for this instruction: %s%s' % (mode, insn, mode))
+            raise AssemblerError('Bad mode ({}) for this instruction: {}{}'.format(mode, insn, mode))
 
         asrc, src, op1, rel1 = self._buildArg(insn, source)
         adst, dst, op2, rel2 = self._buildArg(insn, destination, constreg=False)
         if adst > 1:
-            raise AssemblerError('%s (%r) is not possible as destination.' % (
+            raise AssemblerError('{} ({!r}) is not possible as destination.'.format(
                 self._name_address_mode(adst, dst), destination[1]))
-        out = [u'0x%04x 16bit' % self._buildDoubleOperand(insn, bw, asrc, src, adst, dst)]
+        out = [u'{:#04x} 16bit'.format(self._buildDoubleOperand(insn, bw, asrc, src, adst, dst))]
         if op1:
             if rel1:
-                out.append(u'%s PC - 16bit' % self.argument(op1))
+                out.append(u'{} PC - 16bit'.format(self.argument(op1)))
             else:
-                out.append(u'%s 16bit' % self.argument(op1))
+                out.append(u'{} 16bit'.format(self.argument(op1)))
         if op2:
             if rel2:
-                out.append(u'%s PC - 16bit' % self.argument(op2))
+                out.append(u'{} PC - 16bit'.format(self.argument(op2)))
             else:
-                out.append(u'%s 16bit' % self.argument(op2))
+                out.append(u'{} 16bit'.format(self.argument(op2)))
         return ' '.join(out)
 
     def assembleExtendedDoubleOperandInstruction(self, insn, mode, source, destination):
@@ -318,7 +318,7 @@ class MSP430Assembler(object):
         asrc, src, op1, rel1 = self._buildArg(insn, source)
         adst, dst, op2, rel2 = self._buildArg(insn, destination, constreg=False)
         if adst > 1:
-            raise AssemblerError('%s (%r) is not possible as destination.' % (
+            raise AssemblerError('{} ({!r}) is not possible as destination.'.format(
                 self._name_address_mode(adst, dst), destination[1]))
         out = []
         # the core instruction
@@ -335,31 +335,31 @@ class MSP430Assembler(object):
             if op2:
                 if rel2:
                     if op1:
-                        argument2 = u'%s PC - 6 -' % self.argument(op2)
+                        argument2 = u'{} PC - 6 -'.format(self.argument(op2))
                     else:
-                        argument2 = u'%s PC - 4 -' % self.argument(op2)
+                        argument2 = u'{} PC - 4 -'.format(self.argument(op2))
                 else:
-                    argument2 = u'%s' % self.argument(op2)
+                    argument2 = u'{}'.format(self.argument(op2))
                 words += 1
                 out.append(argument2)
             if op1:
                 if rel1:
                     if op2:
-                        argument1 = u'%s PC - 6 -' % self.argument(op1)
+                        argument1 = u'{} PC - 6 -'.format(self.argument(op1))
                     else:
-                        argument1 = u'%s PC - 4 -' % self.argument(op1)
+                        argument1 = u'{} PC - 4 -'.format(self.argument(op1))
                 else:
-                    argument1 = u'%s' % self.argument(op1)
+                    argument1 = u'{}'.format(self.argument(op1))
                 words += 1
                 out.append(argument1)
-            out.append(u'0x%04x' % (opcode))
-            out.append(u'0x%04x %s 0xf0000 & 9 >> | %s 0xf0000 & 16 >> |' % (
+            out.append(u'{:#04x}'.format(opcode))
+            out.append(u'{:#04x} {} 0xf0000 & 9 >> | {} 0xf0000 & 16 >> |'.format(
                     0x1800 | al << 6, argument1, argument2))
             # assemble items from stack
             out.append(u' 16bit' * words)
         else:
-            out.append(u'0x%04x 16bit' % (0x1800 | zc << 8 | al << 6))
-            out.append(u'0x%04x 16bit' % (opcode))
+            out.append(u'{:#04x} 16bit'.format((0x1800 | zc << 8 | al << 6)))
+            out.append(u'{:#04x} 16bit'.format(opcode))
         return u' '.join(out)
 
     _singleopnames = {
@@ -381,15 +381,15 @@ class MSP430Assembler(object):
         """Single operand instruction"""
         bw, al = self._addressing_mode(mode)
         if not al:
-            raise AssemblerError('Bad mode (%s) for this instruction: %s%s' (mode, insn, mode))
+            raise AssemblerError('Bad mode ({}) for this instruction: {}{}'.format(mode, insn, mode))
 
         adst, dst, op, rel = self._buildArg(insn, destination, constreg=False)
-        out = [u'0x%04x 16bit' % self._buildSingleOperand(insn, bw, adst, dst)]
+        out = [u'{:#04x} 16bit'.format(self._buildSingleOperand(insn, bw, adst, dst))]
         if op:
             if rel:
-                out.append(u'%s PC - 16bit' % self.argument(op))
+                out.append(u'{} PC - 16bit'.format(self.argument(op)))
             else:
-                out.append(u'%s 16bit' % self.argument(op))
+                out.append(u'{} 16bit'.format(self.argument(op)))
         return u' '.join(out)
 
     def insn_RETI_0(self, insn, mode):
@@ -405,16 +405,16 @@ class MSP430Assembler(object):
         out = []
         if op:
             if rel:
-                argument = u'%s PC - 4 -' % self.argument(op)
+                argument = u'{} PC - 4 -'.format(self.argument(op))
             else:
-                argument = u'%s' % self.argument(op)
-            out.append(u'%s' % (argument,))
-            out.append(u'0x%04x' % (opcode | dst))
-            out.append(u'0x%04x %s 0xf0000 & 16 >> |' % (0x1800 | al << 6, argument))
+                argument = u'{}'.format(self.argument(op))
+            out.append(u'{}'.format(argument))
+            out.append(u'{:#04x}'.format(opcode | dst))
+            out.append(u'{:#04x} {} 0xf0000 & 16 >> |'.format(0x1800 | al << 6, argument))
             out.extend([u'16bit'] * 3)
         else:
-            out.append(u'0x%04x 16bit' % (0x1800 | al << 6))
-            out.append(u'0x%04x 16bit' % (opcode | dst))
+            out.append(u'{:#04x} 16bit'.format(0x1800 | al << 6))
+            out.append(u'{:#04x} 16bit'.format(opcode | dst))
         return u' '.join(out)
 
     def assembleExtendedRotate(self, insn, mode, destination):
@@ -436,18 +436,18 @@ class MSP430Assembler(object):
         out = []
         if op:
             if zc:
-                raise AssemblerError(u'Destination %s not supported with %s%s' % (destination, insn, mode))
+                raise AssemblerError(u'Destination {} not supported with {}{}'.format(destination, insn, mode))
             if rel:
-                argument = u'%s PC - 4 -' % self.argument(op)
+                argument = u'{} PC - 4 -'.format(self.argument(op))
             else:
-                argument = u'%s' % self.argument(op)
+                argument = u'{}'.format(self.argument(op))
             out.append(argument)
-            out.append(u'0x%04x' % (opcode))
-            out.append(u'0x%04x %s 0xf0000 & 16 >> |' % (0x1800 | al << 6, argument))
+            out.append(u'{:#04x}'.format(opcode))
+            out.append(u'{:#04x} {} 0xf0000 & 16 >> |'.format(0x1800 | al << 6, argument))
             out.extend([u'16bit'] * 3)
         else:
-            out.append(u'0x%04x 16bit' % (0x1800 | zc << 8 | al << 6))
-            out.append(u'0x%04x 16bit' % (opcode))
+            out.append(u'{:#04x} 16bit'.format(0x1800 | zc << 8 | al << 6))
+            out.append(u'{:#04x} 16bit'.format(opcode))
         return u' '.join(out)
 
     def insnx_MOVA_2(self, insn, mode, source, destination):
@@ -457,39 +457,39 @@ class MSP430Assembler(object):
 
         out = []
         if asrc == 0 and adst == 0:  # register mode - register mode
-            out.append(u'0x00c0 %s 8 << | %s | 16bit' % (src, dst))
+            out.append(u'0x00c0 {} 8 << | {} | 16bit'.format(src, dst))
         elif asrc == 1 and adst == 0:  # indexed/absolute mode - register mode
             if src == 0:    # symbolic mode
-                out.append(u' 0x0030 %s 8 << | %s | 16bit' % (src, dst))
-                out.append(u'%s PC - 16bit' % (self.argument(op1),))
+                out.append(u' 0x0030 {} 8 << | {} | 16bit'.format(src, dst))
+                out.append(u'{} PC - 16bit'.format(self.argument(op1)))
             elif src == 2:  # absolute mode
-                out.append(u'0x0020 %s 0xf0000 & 8 >> | %s | 16bit' % (self.argument(op1), dst))
-                out.append(u' %s 16bit' % (self.argument(op1),))
+                out.append(u'0x0020 {} 0xf0000 & 8 >> | {} | 16bit'.format(self.argument(op1), dst))
+                out.append(u' {} 16bit'.format(self.argument(op1)))
             else:           # indexed mode
-                out.append(u'0x0030 %s 8 << | %s | 16bit' % (src, dst))
-                out.append(u'%s 16bit' % (self.argument(op1),))
+                out.append(u'0x0030 {} 8 << | {} | 16bit'.format(src, dst))
+                out.append(u'{} 16bit'.format(self.argument(op1)))
         elif asrc == 2 and adst == 0:  # indirect mode - register mode
-            out.append(u'0x0000 %s 8 << | %s | 16bit' % (src, dst))
+            out.append(u'0x0000 {} 8 << | {} | 16bit'.format(src, dst))
         elif asrc == 3 and adst == 0:  # immediate/post_inc mods - register mode
             if src == 0:    # immediate mode
-                out.append(u'0x0080 %s 0xf0000 & 8 >> | %s | 16bit' % (self.argument(op1), dst))
-                out.append(u'%s 16bit' % (self.argument(op1),))
+                out.append(u'0x0080 {} 0xf0000 & 8 >> | {} | 16bit'.format(self.argument(op1), dst))
+                out.append(u'{} 16bit'.format(self.argument(op1)))
             else:           # post_inc
-                out.append(u'0x0010 %s 8 << | %s | 16bit' % (src, dst))
+                out.append(u'0x0010 {} 8 << | {} | 16bit'.format(src, dst))
         elif asrc == 0 and adst == 1:  # register mode - indexed mode
             if dst == 0:    # symbolic mode
-                out.append(u'0x0070 %s 8 << | %s | 16bit' % (src, dst))
-                out.append(u'%s PC - 16bit' % (self.argument(op2),))
+                out.append(u'0x0070 {} 8 << | {} | 16bit'.format(src, dst))
+                out.append(u'{} PC - 16bit'.format(self.argument(op2)))
             elif dst == 2:  # aboslute mode
-                out.append(u'0x0060 %s 8 << | %s 0xf0000 & 16 >> | 16bit' % (src, self.argument(op2)))
-                out.append(u'%s 16bit' % (self.argument(op2),))
+                out.append(u'0x0060 {} 8 << | {} 0xf0000 & 16 >> | 16bit'.format(src, self.argument(op2)))
+                out.append(u'{} 16bit'.format(self.argument(op2)))
             else:           # indexed mode
-                out.append(u'0x0070 %s 8 << | %s | 16bit' % (src, dst))
-                out.append(u'%s 16bit' % (self.argument(op2),))
+                out.append(u'0x0070 {} 8 << | {} | 16bit'.format(src, dst))
+                out.append(u'{} 16bit'.format(self.argument(op2)))
         if out:
             return u' '.join(out)
         else:
-            raise AssemblerError(u'Unsupported addressing modes for MOVA (%s and %s)' % (
+            raise AssemblerError(u'Unsupported addressing modes for MOVA ({} and {})'.format(
                     self._name_address_mode(asrc, src),
                     self._name_address_mode(adst, dst)))
 
@@ -499,20 +499,20 @@ class MSP430Assembler(object):
         adst, dst, op2, rel2 = self._buildArg(insn, destination, constreg=False)
 
         if adst != 0:
-            raise AssemblerError(u'%s (%r) is not possible as destination.' % (
+            raise AssemblerError(u'{} ({!r}) is not possible as destination.'.format(
                     self._name_address_mode(adst, dst), destination[1]))
 
         out = []
         if asrc == 0:       # register mode
-            out.append(u'0x%04x %s 8 << | %s | 16bit' % (reg, src, dst))
+            out.append(u'{:#04x} {} 8 << | {} | 16bit'.format(reg, src, dst))
         elif asrc == 3:     # immediate/post_inc modes
             if src == 0:    # immediate mode
-                out.append(u'0x%04x %s 0xf0000 & 8 >> | %s | 16bit' % (imm, self.argument(op1), dst))
-                out.append(u'%s 16bit' % (self.argument(op1),))
+                out.append(u'{:#04x} {} 0xf0000 & 8 >> | {} | 16bit'.format(imm, self.argument(op1), dst))
+                out.append(u'{} 16bit'.format(self.argument(op1)))
         if out:
             return u' '.join(out)
         else:
-            raise AssemblerError(u'%s (%r) is not possible as source.' % (
+            raise AssemblerError(u'{} ({!r}) is not possible as source.'.format(
                 self._name_address_mode(asrc, src), source[1]))
 
     def insnx_ADDA_2(self, insn, mode, source, destination):
@@ -537,54 +537,54 @@ class MSP430Assembler(object):
         elif mode in ('', '.w'):
             option = 1
         else:
-            raise AssemblerError('Unsupported mode (%s) for %s%s' % (mode, insn, mode))
+            raise AssemblerError('Unsupported mode ({}) for {}{}'.format(mode, insn, mode))
 
         if adst != 0:
-            raise AssemblerError('%s (%r) is not possible as destination.' % (
+            raise AssemblerError('{} ({!r}) is not possible as destination.'.format(
                     self._name_address_mode(adst, dst), destination[1]))
 
         if asrc == 3:       # immediate/post_inc mods - register mode
             if src == 0:    # immediate mode
                 count = int(op1)
                 if not 0 <= count <= 3:
-                    raise AssemblerError('Repetition count out of range (%d)' % (count,))
-                return u'0x%04x 16bit' % (
+                    raise AssemblerError('Repetition count out of range ({})'.format(count))
+                return u'{:#04x} 16bit'.format(
                         {'RRCM': 0x0040,
                          'RRAM': 0x0140,
                          'RLAM': 0x0240,
                          'RRUM': 0x0340,
                         }[insn] | (option << 4) | (count << 10) | dst)
-        raise AssemblerError(u'%s (%r) is not possible as count.' % (
+        raise AssemblerError(u'{} ({!r}) is not possible as count.'.format(
                 self._name_address_mode(asrc, src), source[1]))
 
     def insnx_CALLA_1(self, insn, mode, target):
         """Call subroutine (20 bit addresses)"""
         if mode:
-            raise AssemblerError('Bad mode (%s) for this instruction: %s%s' (mode, insn, mode))
+            raise AssemblerError('Bad mode ({}) for this instruction: {}{}'.format(mode, insn, mode))
 
         adst, dst, op, rel = self._buildArg(insn, target, constreg=False)
 
         out = []
         if adst == 0:       # register mode
-            out.append(u'0x%04x 16bit' % (0x1340 | dst))
+            out.append(u'{:#04x} 16bit'.format(0x1340 | dst))
         elif adst == 1:     # indexed/absolute mode
             if dst == 0:    # relative mode
-                out.append(u'%s PC - 2 -' % (self.argument(op),))
-                out.append(u'0x%04x %s PC 2 - 0xf0000 & >> 16 | 16bit 16bit' % (0x1390 | dst, self.argument(op)))
+                out.append(u'{} PC - 2 -'.format(self.argument(op)))
+                out.append(u'{:#04x} {} PC 2 - 0xf0000 & >> 16 | 16bit 16bit'.format(0x1390 | dst, self.argument(op)))
             elif dst == 2:  # absolute mode
-                out.append(u'0x%04x %s 0xf0000 & >> 16 | 16bit' % (0x1380 | dst, self.argument(op)))
-                out.append(u'%s 16bit' % (self.argument(op),))
+                out.append(u'{:#04x} {} 0xf0000 & >> 16 | 16bit'.format(0x1380 | dst, self.argument(op)))
+                out.append(u'{} 16bit'.format(self.argument(op)))
             else:           # indexed mode
-                out.append(u'0x%04x 16bit' % (0x1350 | dst))
-                out.append(u'%s 16bit' % (self.argument(op),))
+                out.append(u'{:#04x} 16bit'.format(0x1350 | dst))
+                out.append(u'{} 16bit'.format(self.argument(op)))
         elif adst == 2:     # indirect mode
-            out.append(u'0x%04x 16bit' % (0x1360 | dst))
+            out.append(u'{:#04x} 16bit'.format(0x1360 | dst))
         elif adst == 3:     # immediate/post_inc mods
             if dst == 0:    # immediate mode
-                out.append(u'0x%04x %s 0xf0000 & >> 16 | 16bit' % (0x13b0 | dst, self.argument(op)))
-                out.append(u'%s 16bit' % (self.argument(op),))
+                out.append(u'{:#04x} {} 0xf0000 & >> 16 | 16bit'.format(0x13b0 | dst, self.argument(op)))
+                out.append(u'{} 16bit'.format(self.argument(op)))
             else:           # post_inc
-                out.append(u'0x%04x 16bit' % (0x1370 | dst))
+                out.append(u'{:#04x} 16bit'.format(0x1370 | dst))
         return ' '.join(out)
 
     def assemblePUSHMPOPM(self, insn, mode, repeat, register):
@@ -597,24 +597,24 @@ class MSP430Assembler(object):
         elif mode in ('', '.w'):
             option = 1
         else:
-            raise AssemblerError(u'Unsupported mode (%s) for %s%s' % (mode, insn, mode))
+            raise AssemblerError(u'Unsupported mode ({}) for {}{}'.format(mode, insn, mode))
 
         if adst != 0:
-            raise AssemblerError(u'%s (%r) is not possible as destination.' % (
-                    self._name_address_mode(adst, dst), destination[1]))
+            raise AssemblerError(u'{} ({!r}) is not possible as destination.'.format(
+                    self._name_address_mode(adst, dst), register))
 
         out = []
         if asrc == 3:       # immediate/post_inc mods - register mode
             if src == 0:    # immediate mode
                 count = int(op1, 0)
                 if not 1 <= count <= 16:
-                    raise AssemblerError('Repetition count out of range (%d)' % (count,))
+                    raise AssemblerError('Repetition count out of range ({})'.format(count))
                 if insn == 'PUSHM':
-                    out = [u'0x%04x 16bit' % (0x1400 | (option << 8) | (count << 4) | dst)]
+                    out = [u'{:#04x} 16bit'.format(0x1400 | (option << 8) | (count << 4) | dst)]
                 else:     # POPM
-                    out = [u'0x%04x 16bit' % (0x1600 | (option << 8) | (count << 4) | (dst - count-1))]
+                    out = [u'{:#04x} 16bit'.format(0x1600 | (option << 8) | (count << 4) | (dst - count - 1))]
                 return u' '.join(out)
-        raise AssemblerError(u'%s (%r) is not possible as count.' % (
+        raise AssemblerError(u'{} ({!r}) is not possible as count.'.format(
                 self._name_address_mode(asrc, src), repeat))
 
     _jumpopnames = {
@@ -636,21 +636,21 @@ class MSP430Assembler(object):
         """(un)conditional, relative jump"""
         (t, target, match_obj) = xxx
         if mode:
-            raise AssemblerError(u'Bad mode (%s) for this instruction: %s%s' (mode, insn, mode))
+            raise AssemblerError(u'Bad mode ({}) for this instruction: {}{}'.format(mode, insn, mode))
         try:
             opcode = self._jumpopnames[insn][0]
         except KeyError:
-            raise AssemblerError(u"Not a valid jump instruction: %r" % (insn,))
+            raise AssemblerError(u"Not a valid jump instruction: {!r}".format(insn))
         if target[0:1] == '$':
             # relative jumps to current position (PC)
             try:
                 distance = int(target[1:], 0)
             except ValueError:
-                raise AssemblerError(u"Jump distance is not understood: %r (only $+N / $-N)" % (target,))
+                raise AssemblerError(u"Jump distance is not understood: {!r} (only $+N / $-N)".format(target))
         else:
             # jumps to labels, absolute addresses
-            distance = u'%s PC - 2 -' % self.argument(target)
-        return u'0x%04x %s JMP' % (opcode, distance)
+            distance = u'{} PC - 2 -'.format(self.argument(target))
+        return u'{:#04x} {} JMP'.format(opcode, distance)
 
     # These instructions are emulated by using one of the insn above most
     # depend on the constant registers to be efficient.
@@ -660,47 +660,47 @@ class MSP430Assembler(object):
 
     def insn_ADC_1(self, insn, mode, arg):
         """Add carry bit to destination"""
-        return self._emulation('ADDC', mode, u'#0, %s' % arg[1])
+        return self._emulation('ADDC', mode, u'#0, {}'.format(arg[1]))
 
     def insn_DADC_1(self, insn, mode, arg):
         """Add carry bit to destination (decimal mode)"""
-        return self._emulation('DADD', mode, u'#0, %s' % arg[1])
+        return self._emulation('DADD', mode, u'#0, {}'.format(arg[1]))
 
     def insn_DEC_1(self, insn, mode, arg):
         """Decrement destination by one"""
-        return self._emulation('SUB', mode, u'#1, %s' % arg[1])
+        return self._emulation('SUB', mode, u'#1, {}'.format(arg[1]))
 
     def insn_DECD_1(self, insn, mode, arg):
         """Decrement destination by two"""
-        return self._emulation('SUB', mode, u'#2, %s' % arg[1])
+        return self._emulation('SUB', mode, u'#2, {}'.format(arg[1]))
 
     def insn_INC_1(self, insn, mode, arg):
         """Increment destination by one"""
-        return self._emulation('ADD', mode, u'#1, %s' % arg[1])
+        return self._emulation('ADD', mode, u'#1, {}'.format(arg[1]))
 
     def insn_INCD_1(self, insn, mode, arg):
         """Increment destination by two"""
-        return self._emulation('ADD', mode, u'#2, %s' % arg[1])
+        return self._emulation('ADD', mode, u'#2, {}'.format(arg[1]))
 
     def insn_SBC_1(self, insn, mode, arg):
         """Subtract carry bit from destination"""
-        return self._emulation('SUBC', mode, u'#0, %s' % arg[1])
+        return self._emulation('SUBC', mode, u'#0, {}'.format(arg[1]))
 
     def insn_INV_1(self, insn, mode, arg):
         """Invert all bits of destination"""
-        return self._emulation('XOR', mode, u'#-1, %s' % arg[1])
+        return self._emulation('XOR', mode, u'#-1, {}'.format(arg[1]))
 
     def insn_RLA_1(self, insn, mode, arg):
         """Rotate left through arithmetically"""
-        return self._emulation('ADD', mode, u'%s, %s' % (arg[1], arg[1]))
+        return self._emulation('ADD', mode, u'{}, {}'.format(arg[1], arg[1]))
 
     def insn_RLC_1(self, insn, mode, arg):
         """Rotate left through carry"""
-        return self._emulation('ADDC', mode, u'%s, %s' % (arg[1], arg[1]))
+        return self._emulation('ADDC', mode, u'{}, {}'.format(arg[1], arg[1]))
 
     def insn_CLR_1(self, insn, mode, arg):
         """Clear (set to 0) destination"""
-        return self._emulation('MOV', mode, u'#0, %s' % arg[1])
+        return self._emulation('MOV', mode, u'#0, {}'.format(arg[1]))
 
     def insn_CLRC_0(self, insn, mode):
         """Clear carry bit"""
@@ -716,7 +716,7 @@ class MSP430Assembler(object):
 
     def insn_POP_1(self, insn, mode, arg):
         """Pop element from stack into destination"""
-        return self._emulation('MOV', mode, u'@SP+, %s' % arg[1])
+        return self._emulation('MOV', mode, u'@SP+, {}'.format(arg[1]))
 
     def insn_SETC_0(self, insn, mode):
         """Set carry bit"""
@@ -732,11 +732,11 @@ class MSP430Assembler(object):
 
     def insn_TST_1(self, insn, mode, arg):
         """Compare argument against zero"""
-        return self._emulation('CMP', mode, u'#0, %s' % arg[1])
+        return self._emulation('CMP', mode, u'#0, {}'.format(arg[1]))
 
     def insn_BR_1(self, insn, mode, arg):
         """Unconditionally jump to given target"""
-        return self._emulation('MOV', '', u'%s, PC' % arg[1])
+        return self._emulation('MOV', '', u'{}, PC'.format(arg[1]))
 
     def insn_DINT_0(self, insn, mode):
         """Clear GIE flag"""
@@ -760,73 +760,73 @@ class MSP430Assembler(object):
 
     def insnx_ADCX_1(self, insn, mode, arg):
         """Add carry bit to destination (20 bit)"""
-        return self._x_emulation('ADDCX', '',  u'#0, %s' % arg[1])
+        return self._x_emulation('ADDCX', '',  u'#0, {}'.format(arg[1]))
 
     def insnx_CLRX_1(self, insn, mode, arg):
         """Clear 20 bit"""
-        return self._x_emulation('MOVX', '', u'#0, %s' % arg[1])
+        return self._x_emulation('MOVX', '', u'#0, {}'.format(arg[1]))
 
     def insnx_DADCX_1(self, insn, mode, arg):
         """Add carry bit to destination (20 bit, decimal mode)"""
-        return self._x_emulation('DADDC', '', u'#0, %s' % arg[1])
+        return self._x_emulation('DADDC', '', u'#0, {}'.format(arg[1]))
 
     def insnx_DECX_1(self, insn, mode, arg):
         """Decrement destination by one (20 bit)"""
-        return self._x_emulation('SUBX', '', u'#1, %s' % arg[1])
+        return self._x_emulation('SUBX', '', u'#1, {}'.format(arg[1]))
 
     def insnx_DECDX_1(self, insn, mode, arg):
         """Decrement destination by two (20 bit)"""
-        return self._x_emulation('SUBX', '', u'#2, %s' % arg[1])
+        return self._x_emulation('SUBX', '', u'#2, {}'.format(arg[1]))
 
     def insnx_INCX_1(self, insn, mode, arg):
         """Increment destination by one (20 bit)"""
-        return self._x_emulation('ADDX', '', '#1, %s' % arg[1])
+        return self._x_emulation('ADDX', '', '#1, {}'.format(arg[1]))
 
     def insnx_INCDX_1(self, insn, mode, arg):
         """Increment destination by two (20 bit)"""
-        return self._x_emulation('ADDX', '', u'#2, %s' % arg[1])
+        return self._x_emulation('ADDX', '', u'#2, {}'.format(arg[1]))
 
     def insnx_INVX_1(self, insn, mode, arg):
         """Invert destination (20 bit)"""
-        return self._x_emulation('XORX', '', u'#-1, %s' % arg[1])
+        return self._x_emulation('XORX', '', u'#-1, {}'.format(arg[1]))
 
     def insnx_RLAX_1(self, insn, mode, arg):
         """Rotate left arithmetically (20 bit)"""
-        return self._x_emulation('ADDX', '', u'%s, %s' % (arg[1], arg[1]))
+        return self._x_emulation('ADDX', '', u'{}, {}'.format(arg[1], arg[1]))
 
     def insnx_RLCX_1(self, insn, mode, arg):
         """Rotate left through carry (20 bit)"""
-        return self._x_emulation('ADDCX', '', u'%s, %s' % (arg[1], arg[1]))
+        return self._x_emulation('ADDCX', '', u'{}, {}'.format(arg[1], arg[1]))
 
     def insnx_SBCX_1(self, insn, mode, arg):
         """Subtract carry bit (20 bit)"""
-        return self._x_emulation('SUBCX', '', u'#0, %s' % arg[1])
+        return self._x_emulation('SUBCX', '', u'#0, {}'.format(arg[1]))
 
     def insnx_TSTX_1(self, insn, mode, arg):
         """Compare destination against 0 (20 bit)"""
-        return self._x_emulation('CMPX', '', u'#0, %s' % arg[1])
+        return self._x_emulation('CMPX', '', u'#0, {}'.format(arg[1]))
 
     def insnx_POPX_1(self, insn, mode, arg):
         """Pop value from stack to destination (20 bit)"""
-        return self._x_emulation('MOVX', '', u'@SP+, %s' % arg[1])
+        return self._x_emulation('MOVX', '', u'@SP+, {}'.format(arg[1]))
 
     # more emulated instructions
 
     def insnx_BRA_1(self, insn, mode, arg):
         """Jump unconditionally (20 bit, any address)"""
-        return self.insnx_MOVA_2('MOVA', '', *self.tokenize_operands(u'%s, PC' % arg[1]))
+        return self.insnx_MOVA_2('MOVA', '', *self.tokenize_operands(u'{}, PC'.format(arg[1])))
 
     def insnx_CLRA_1(self, insn, mode, arg):
         """Clear 20 bit address resgiter"""
-        return self.insnx_MOVA_2('MOVA', '', *self.tokenize_operands(u'#0, %s' % arg[1]))
+        return self.insnx_MOVA_2('MOVA', '', *self.tokenize_operands(u'#0, {}'.format(arg[1])))
 
     def insnx_DECDA_1(self, insn, mode, arg):
         """Decrement destination address register by one"""
-        return self.insnx_SUBA_2('SUBA', '', *self.tokenize_operands(u'#2, %s' % arg[1]))
+        return self.insnx_SUBA_2('SUBA', '', *self.tokenize_operands(u'#2, {}'.format(arg[1])))
 
     def insnx_INCDA_1(self, insn, mode, arg):
         """Increment destination address register by two"""
-        return self.insnx_ADDA_2('ADDA', '', *self.tokenize_operands(u'#2, %s' % arg[1]))
+        return self.insnx_ADDA_2('ADDA', '', *self.tokenize_operands(u'#2, {}'.format(arg[1])))
 
     def insnx_RETA_0(self, insn, mode):
         """Return from subroutine (when invoked with CALLA)"""
@@ -834,7 +834,7 @@ class MSP430Assembler(object):
 
     def insnx_TSTA_1(self, insn, mode, arg):
         """Compare destination address register against 0"""
-        return self.insnx_CMPA_2('CMPA', '', *self.tokenize_operands(u'#0, %s' % arg[1]))
+        return self.insnx_CMPA_2('CMPA', '', *self.tokenize_operands(u'#0, {}'.format(arg[1])))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -853,16 +853,16 @@ class MSP430Assembler(object):
     def insn__dot_SECTION_1(self, insn, mode, name):
         """Select named section for output"""
         if name[0] != 'SYMBOLIC':
-            raise AssemblerError('Unsupported argument type: %r' % name[1])
-        return u'SEGMENT %s' % (name[1],)
+            raise AssemblerError('Unsupported argument type: {!r}'.format(name[1]))
+        return u'SEGMENT {}'.format(name[1])
 
     def insn__dot_SET_2(self, insn, mode, label, value):
         """Define a symbol with a value (can be used at link time)."""
         if label[0] != 'SYMBOLIC':
-            raise AssemblerError('Unsupported argument type: %r' % label[1])
+            raise AssemblerError('Unsupported argument type: {!r}'.format(label[1]))
         if value[0] != 'SYMBOLIC':
-            raise AssemblerError('Unsupported argument type: %r' % value[1])
-        return u'%s CONSTANT-SYMBOL %s' % (value[1], label[1])
+            raise AssemblerError('Unsupported argument type: {!r}'.format(value[1]))
+        return u'{} CONSTANT-SYMBOL {}'.format(value[1], label[1])
 
     def insn__dot_WEAKALIAS_2(self, insn, mode, label, value):
         """\
@@ -871,18 +871,18 @@ class MSP430Assembler(object):
         commands.
         """
         if label[0] != 'SYMBOLIC':
-            raise AssemblerError('Unsupported argument type: %r' % label[1])
+            raise AssemblerError('Unsupported argument type: {!r}'.format(label[1]))
         if value[0] != 'SYMBOLIC':
-            raise AssemblerError('Unsupported argument type: %r' % value[1])
-        return u'WEAK-ALIAS %s %s' % (label[1], value[1])
+            raise AssemblerError('Unsupported argument type: {!r}'.format(value[1]))
+        return u'WEAK-ALIAS {} {}'.format(label[1], value[1])
 
     def insn__dot_ASCII_N(self, insn, mode, *args):
         """Insert the given text as bytes."""
         result = []
         for am, value, m in args:
             if am != 'STRING':
-                raise AssemblerError('Bad argument (.ASCII only allows strings): %r' % value)
-            result.extend([u'%s 8bit' % (ord(x),) for x in codecs.escape_decode(m.group('STR'))[0]])
+                raise AssemblerError('Bad argument (.ASCII only allows strings): {!r}'.format(value))
+            result.extend([u'{} 8bit'.format(ord(x)) for x in codecs.escape_decode(m.group('STR'))[0]])
         return u' '.join(result)
 
     def insn__dot_ASCIIZ_N(self, insn, mode, *args):
@@ -894,8 +894,8 @@ class MSP430Assembler(object):
         result = []
         for am, value, m in args:
             if am != 'SYMBOLIC':
-                raise AssemblerError('Bad argument (.BYTE only allows expressions): %r' % value)
-            result.append(u'%s 8bit' % (self.argument(value),))
+                raise AssemblerError('Bad argument (.BYTE only allows expressions): {!r}'.format(value))
+            result.append(u'{} 8bit'.format(self.argument(value)))
         return u' '.join(result)
 
     def insn__dot_WORD_N(self, insn, mode, *args):
@@ -903,8 +903,8 @@ class MSP430Assembler(object):
         result = []
         for am, value, m in args:
             if am != 'SYMBOLIC':
-                raise AssemblerError('Bad argument (.WORD only allows expressions): %r' % value)
-            result.append(u'%s 16bit' % (self.argument(value),))
+                raise AssemblerError('Bad argument (.WORD only allows expressions): {!r}'.format(value))
+            result.append(u'{} 16bit'.format(self.argument(value)))
         return u' '.join(result)
 
     def insn__dot_LONG_N(self, insn, mode, *args):
@@ -912,13 +912,13 @@ class MSP430Assembler(object):
         result = []
         for am, value, m in args:
             if am != 'SYMBOLIC':
-                raise AssemblerError('Bad argument (.LONG only allows expressions): %r' % value)
-            result.append(u'%s 32bit' % (self.argument(value),))
+                raise AssemblerError('Bad argument (.LONG only allows expressions): {!r}'.format(value))
+            result.append(u'{} 32bit'.format(self.argument(value)))
         return u' '.join(result)
 
     def insn__dot_SKIP_1(self, insn, mode, amount):
         """Skip the given amount of bytes"""
-        return u'%s RESERVE' % (self.argument(amount[1]),)
+        return u'{} RESERVE'.format(self.argument(amount[1]))
 
     def insn__dot_EVEN_0(self, insn, mode):
         """Align address pointer to an even address"""
@@ -937,12 +937,12 @@ class MSP430Assembler(object):
             while pos < len(arg_str):
                 m = re_operand.match(arg_str, pos)
                 if m is None:
-                    raise AssemblerError(u'Can not parse argument: %r...' % (
-                        arg_str[pos:pos + 10],))
+                    raise AssemblerError(u'Can not parse argument: {!r}...'.format(
+                        arg_str[pos:pos + 10]))
                 pos = m.end()
                 token_type = m.lastgroup
                 if token_type is None:
-                    raise AssemblerError(u'Can not parse argument: %r...' % (arg_str,))
+                    raise AssemblerError(u'Can not parse argument: {!r}...'.format(arg_str))
                 elif token_type not in ('DELIMITER', 'SPACE'):
                     token = m.group(token_type)
                     # registers and symbols can not be told appart with a
@@ -956,12 +956,11 @@ class MSP430Assembler(object):
 
     def assemble(self, f, filename=None, output=sys.stdout):
         """Build a list of pseudo instructions from the source."""
-        c_comment = 0
         lineno = 0
         if filename:
-            output.write(u'FILENAME %s\n' % (filename,))   # XXX escape string (whitespace, encoding)
+            output.write(u'FILENAME {}\n'.format(filename))   # XXX escape string (whitespace, encoding)
         if self.debug:
-            sys.stderr.write(u'Parsing "%s":\n' % (filename,))
+            sys.stderr.write(u'Parsing "{}":\n'.format(filename))
 
         try:
             while True:
@@ -978,7 +977,7 @@ class MSP430Assembler(object):
                     lineno = int(m.group(1)) - 1
                     if filename != m.group(2):
                         filename = m.group(2)
-                        output.write(u'FILENAME %s\n' % (filename,))   # XXX escape string (whitespace, encoding)
+                        output.write(u'FILENAME {}\n'.format(filename))   # XXX escape string (whitespace, encoding)
                     continue
 
                 # remove line comments
@@ -992,12 +991,12 @@ class MSP430Assembler(object):
                 if g:
                     name = self.expand_label(g.group('NAME').strip())
                     if self.debug:
-                        sys.stderr.write('%s:%d: %s = %s\n' % (
+                        sys.stderr.write('{}:{}: {} = {}\n'.format(
                             filename,
                             lineno,
                             name,
                             g.group('EXPR').strip()))
-                    output.write('%d LINE    %s CONSTANT-SYMBOL %s\n' % (
+                    output.write('{} LINE    {} CONSTANT-SYMBOL {}\n'.format(
                             lineno,
                             self.argument(g.group('EXPR').strip()),
                             name))
@@ -1013,38 +1012,38 @@ class MSP430Assembler(object):
                     arg_str = g.group(u'OPERANDS')
                     args = self.tokenize_operands(arg_str)
                     if self.debug:
-                        sys.stderr.write(u'%s:%d: %-16s %-8s %s\n' % (
+                        sys.stderr.write(u'{}:{}: {:<16} {:<8} {}\n'.format(
                             filename,
                             lineno,
                             label is not None and label + u':' or u'',
-                            u'%s%s' % (insn, mode),
+                            u'{}{}'.format(insn, mode),
                             u', '.join(x[1] for x in args)))
                     if label:
-                        output.write(u'%d LINE    CREATE-SYMBOL %s\n' % (lineno, label))
+                        output.write(u'{} LINE    CREATE-SYMBOL {}\n'.format(lineno, label))
                     if insn:
                         if insn in self.instructions:
                             n_args, function, doc = self.instructions[insn]
 
                             if n_args is not None and len(args) != n_args:
                                 raise AssemblerError(
-                                        u'Bad number of arguments for %s (found %d, required %d)' % (
+                                        u'Bad number of arguments for {} (found {}, required {})'.format(
                                                 insn, len(args), n_args))
                             else:
                                 iop = function(insn, mode, *args)
                                 if iop:
-                                    output.write(u'%d LINE    ' % (lineno,))
+                                    output.write(u'{} LINE    '.format(lineno))
                                     output.write(iop)
                                     if self.debug:
                                         # in debug mode add source line as comment
                                         output.write(u' ' * max(0, (60 - len(iop))))
-                                        output.write(u' # %s%s %s\n' % (
+                                        output.write(u' # {}{} {}\n'.format(
                                                 insn,
                                                 mode,
                                                 u', '.join(x[1] for x in args)))
                                     else:
                                         output.write('\n')
                         else:
-                            raise AssemblerError(u'Syntax Error: unknown instruction %r' % (insn,))
+                            raise AssemblerError(u'Syntax Error: unknown instruction {!r}'.format(insn))
         except AssemblerError as e:
             # annotate exception with location in source file
             e.line = lineno
@@ -1114,12 +1113,12 @@ def main():
     if args.list_instructions:
         n_pseudo = n_real = 0
         for insn in sorted(assembler.instructions.keys()):
-            sys.stdout.write('%-8s %s\n' % (insn, assembler.instructions[insn][2]))
+            sys.stdout.write('{:8} {}\n'.format(insn, assembler.instructions[insn][2]))
             if insn[0] == '.':
                 n_pseudo += 1
             else:
                 n_real += 1
-        sys.stdout.write('-- %d pseudo (internal) instructions, %d MSP430%s instructions\n' % (
+        sys.stdout.write('-- {} pseudo (internal) instructions, {} MSP430{} instructions\n'.format(
                     n_pseudo, n_real, args.msp430x and 'X' or ''))
         sys.exit(1)
 
@@ -1129,22 +1128,22 @@ def main():
 
     if sys.version_info < (3, 0):
         # XXX make stderr unicode capable
-        sys.stderr = codecs.getwriter("utf-8")(sys.stderr)
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr)
 
     if args.debug:
-        sys.stderr.write("%s\n" % (("BEGIN %s" % filename).center(70).replace(' ', '-')))
+        sys.stderr.write('{:-^70}\n'.format((' BEGIN {} '.format(filename))))
 
     try:
         assembler.assemble(args.SOURCE, args.input_filename, output=args.outfile)
     except AssemblerError as e:
-        sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
+        sys.stderr.write(u'{e.filename}:{e.lineno}: {e}\n'.format(e=e))
         if args.debug:
             if hasattr(e, 'text'):
-                sys.stderr.write('%s:%s: input line: %r\n' % (e.filename, e.line, e.text))
+                sys.stderr.write(u'{e.filename}:{e.lineno}: input line: {e.text!r}\n'.format(e=e))
         sys.exit(1)
 
     if args.debug:
-        sys.stderr.write("%s\n" % (("END %s" % filename).center(70).replace(' ', '-')))
+        sys.stderr.write('{:-^70}\n'.format((' END {} '.format(filename))))
 
 
 if __name__ == '__main__':

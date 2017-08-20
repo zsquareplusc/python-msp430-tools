@@ -117,7 +117,7 @@ class Evaluator(rpn.RPN):
         self.builtins['||'] = self.builtins['or']
 
     def _translate_defined(self, match):
-        return u'DEFINED %s' % match.group(1)
+        return u'DEFINED {}'.format(match.group(1))
 
     @rpn.word('LOOKUP')
     def word_LOOKUP(self, stack):
@@ -150,13 +150,13 @@ class Evaluator(rpn.RPN):
                     precedence=precedence,
                     variable_prefix='LOOKUP ')
         except ValueError:
-            raise PreprocessorError('error in expression: %r' % (expression,))
+            raise PreprocessorError('error in expression: {!r}'.format(expression))
         #~ print "RPN: %r" % (rpn_expr,) # XXX debug
         # hack: replace "LOOKUP <word> DEFINED" with "DEFINED <word>"
         rpn_expr = self.re_defined_translation.sub(self._translate_defined, rpn_expr)
         self.interpret_sequence(rpn_expr.split(' '))
         if len(self) != 1:
-            raise PreprocessorError('error in expression: %r stack: %s' % (expression, self))
+            raise PreprocessorError('error in expression: {!r} stack: {}'.format(expression, self))
         return self.pop()
 
 
@@ -177,7 +177,7 @@ class AnnoatatedLineWriter(object):
         """
         # emit line number and file hints for the next stage
         if self.marker != lineno:
-            self.output.write('# %d "%s"\n' % (lineno, self.filename))
+            self.output.write('# {} "{}"\n'.format(lineno, self.filename))
         self.marker = lineno + 1
         try:
             self.output.write(text)
@@ -230,7 +230,7 @@ class Preprocessor(object):
             values = [x.strip() for x in match_obj.group('ARGS').split(',')]
             args, expansion = self.macros[name]
             if len(args) != len(values):
-                raise PreprocessorError('Macro invocation with wrong number of parameters. Expected %d got %d: %r' % (
+                raise PreprocessorError('Macro invocation with wrong number of parameters. Expected {} got {}: {!r}'.format(
                         len(args), len(values), values))
             self.expansion_done = True
             return expansion % dict(zip(args, values))
@@ -251,7 +251,7 @@ class Preprocessor(object):
             while pos < len(line):
                 m = self.re_splitter.match(line, pos)
                 if m is None:
-                    raise PreprocessorError(u'No match in macro replacement code: %r...' % (
+                    raise PreprocessorError(u'No match in macro replacement code: {!r}...'.format(
                         line[pos:pos + 10],))
                 pos = m.end()
                 token_type = m.lastgroup
@@ -266,18 +266,18 @@ class Preprocessor(object):
                     else:
                         res.append(word)
                 else:
-                    raise PreprocessorError(u'No match in macro replacement code: %r...' % (
+                    raise PreprocessorError(u'No match in macro replacement code: {!r}...'.format(
                         line[pos:pos + 10],))
             line = ''.join(res)
             recusion_limit -= 1
         if recusion_limit == 0:
-            self.log.error('recursive define, stopped expansion: %r ' % (line,))
+            self.log.error('recursive define, stopped expansion: {!r} '.format(line))
         #~ print "expand -> %r" % (res)          #DEBUG
         return line.replace('##', '')
 
     def preprocess(self, infile, outfile, filename, include_callback=None):
         """Scan lines and process preprocessor directives"""
-        self.log.info("processing %s" % filename)
+        self.log.info("processing {}".format(filename))
         error_found = False
         empty_lines = 0
         process = True
@@ -316,11 +316,11 @@ class Preprocessor(object):
 
                 m = self.re_scanner.match(line)
                 if m is None:
-                    raise PreprocessorError("error: invalid preprocessing directive: %r" % line)
+                    raise PreprocessorError("error: invalid preprocessing directive: {!r}".format(line))
                 elif m.lastgroup == 'IF':
                     expression = m.group('IF_EXPR')
                     value = self.namespace.eval(expression)
-                    self.log.debug("#if %s -> %r" % (expression, value))
+                    self.log.debug("#if {!r} -> {!r}".format(expression, value))
                     hiddenstack.append((process, my_if_was_not_hidden, if_name, False))
                     if_name = expression
                     if process:
@@ -336,7 +336,7 @@ class Preprocessor(object):
                     # then do what #if would do
                     expression = m.group('ELIF_EXPR')
                     value = self.namespace.eval(expression)
-                    self.log.debug("#elif %s -> %r" % (expression, value))
+                    self.log.debug("#elif {!r} -> {!r}".format(expression, value))
                     # replace state on the stack
                     hiddenstack.append((process, my_if_was_not_hidden, if_name, True))
                     if_name = expression
@@ -349,7 +349,7 @@ class Preprocessor(object):
                 elif m.lastgroup == 'IFDEF':
                     symbol = m.group('IFDEF_NAME').strip()
                     value = symbol in self.namespace.defines
-                    self.log.debug("#ifdef %r -> %r" % (symbol, value))
+                    self.log.debug("#ifdef {!r} -> {!r}".format(symbol, value))
                     hiddenstack.append((process, my_if_was_not_hidden, if_name, False))
                     if_name = symbol
                     if process:
@@ -361,7 +361,7 @@ class Preprocessor(object):
                 elif m.lastgroup == 'IFNDEF':
                     symbol = m.group('IFNDEF_NAME').strip()
                     value = symbol not in self.namespace.defines
-                    self.log.debug("#ifndef %r -> %r" % (symbol, value))
+                    self.log.debug("#ifndef {!r} -> {!r}".format(symbol, value))
                     hiddenstack.append((process, my_if_was_not_hidden, if_name, False))
                     if_name = symbol
                     if process:
@@ -371,12 +371,12 @@ class Preprocessor(object):
                         my_if_was_not_hidden = False
                     continue
                 elif m.lastgroup == 'ELSE':
-                    self.log.debug("#else %r" % (if_name,))
+                    self.log.debug("#else {!r}".format(if_name))
                     if my_if_was_not_hidden:
                         process = not process
                     continue
                 elif m.lastgroup == 'ENDIF':
-                    self.log.debug("#endif %r" % (if_name,))
+                    self.log.debug("#endif {!r}".format(if_name))
                     while True:
                         (process, my_if_was_not_hidden, if_name, implicit_endif) = hiddenstack.pop()
                         if not implicit_endif:
@@ -386,7 +386,7 @@ class Preprocessor(object):
                     continue
                 elif m.lastgroup == 'INCLUDE':
                     include_name = m.group('INC_NAME')
-                    self.log.debug('including "%s"' % (include_name,))
+                    self.log.debug('including "{}"'.format(include_name))
                     for location in self.include_path:
                         path = os.path.normpath(os.path.join(location, include_name))
                         if os.path.exists(path):
@@ -396,7 +396,7 @@ class Preprocessor(object):
                             writer.marker = None  # force marker output
                             break
                     else:
-                        raise PreprocessorError('include file %r not found' % (include_name,))
+                        raise PreprocessorError('include file {!r} not found'.format(include_name))
                     continue
                 elif m.lastgroup == 'MACRO':
                     name = m.group('MACRO_NAME')
@@ -406,22 +406,22 @@ class Preprocessor(object):
                     else:
                         definition = ''
                     if name in self.macros:
-                        self.log.warn("%r redefinition ignored" % (name),)
+                        self.log.warn("{!r} redefinition ignored".format(name))
                     else:
                         # prepare the macro value to be used as format string
                         # (python's % operator)
                         definition = definition.replace('%', '%%')
                         for arg in args:
                             definition = re.sub(
-                                    r'(^|[^\w_])#(%s)([^\w_]|$)' % arg,
-                                    r'\1"%%(%s)s"\3' % hexlify(arg),
+                                    r'(^|[^\w_])#({})([^\w_]|$)'.format(arg),
+                                    r'\1"%({})s"\3'.format(hexlify(arg)),
                                     definition)
                             definition = re.sub(
-                                    r'(^|[^\w_])(%s)([^\w_]|$)' % arg,
-                                    r'\1%%(%s)s\3' % hexlify(arg),
+                                    r'(^|[^\w_])({})([^\w_]|$)'.format(arg),
+                                    r'\1%({})s\3'.format(hexlify(arg)),
                                     definition)
                         self.macros[name] = ([hexlify(x) for x in args], definition)
-                        self.log.debug("defined macro %r => %r" % (name, self.macros[name]))
+                        self.log.debug("defined macro {!r} => {!r}".format(name, self.macros[name]))
                     continue
                 elif m.lastgroup == 'DEFINE':
                     symbol = m.group('DEF_NAME')
@@ -430,30 +430,30 @@ class Preprocessor(object):
                     else:
                         definition = ''
                     if symbol in self.namespace.defines:
-                        self.log.warn("%r redefinition ignored" % (symbol,))
+                        self.log.warn("{!r} redefinition ignored".format(symbol))
                     else:
                         self.namespace.defines[symbol] = definition
-                        self.log.debug("defined %r => %r" % (symbol, self.namespace.defines[symbol]))
+                        self.log.debug("defined {!r} => {!r}".format(symbol, self.namespace.defines[symbol]))
                     continue
                 elif m.lastgroup == 'UNDEF':
                     symbol = m.group('UNDEF_NAME').strip()
-                    self.log.debug("undefined %s" % (symbol,))
+                    self.log.debug("undefined {}".format(symbol))
                     del self.namespace.defines[symbol]
                     continue
                 elif m.lastgroup == 'MESSAGE':
-                    sys.stderr.write(u'%s:%s: message: %s\n' % (
+                    sys.stderr.write(u'{}:{}: message: {}\n'.format(
                             filename,
                             lineno,
                             line.strip(),))
                     continue
                 elif m.lastgroup == 'WARNING':
-                    sys.stderr.write(u'%s:%s: warning: %s\n' % (
+                    sys.stderr.write(u'{}:{}: warning: {}\n'.format(
                             filename,
                             lineno,
                             line.strip(),))
                     continue
                 elif m.lastgroup == 'ERROR':
-                    sys.stderr.write(u'%s:%s: error: %s\n' % (
+                    sys.stderr.write(u'{}:{}: error: {}\n'.format(
                             filename,
                             lineno,
                             line.strip(),))
@@ -464,7 +464,7 @@ class Preprocessor(object):
                 elif m.lastgroup == 'NONPREPROC':
                     line = self.expand(line)
                 else:
-                    raise PreprocessorError('Invalid input: %r' % (line,))
+                    raise PreprocessorError('Invalid input: {!r}'.format(line))
 
                 if not line.strip():
                     empty_lines += 1
@@ -482,13 +482,13 @@ class Preprocessor(object):
             e.line = lineno
             e.filename = filename
             e.text = line
-            self.log.info('error while processing "%s"' % (line.strip(),))
+            self.log.info('error while processing "{}"'.format(line.strip()))
             raise
         except:
-            self.log.info('error while processing "%s"' % (line.strip(),))
+            self.log.info('error while processing "{}"'.format(line.strip()))
             raise
         else:
-            self.log.info('done "%s"' % (filename),)
+            self.log.info('done "{}"'.format(filename))
         return error_found
 
 
@@ -593,7 +593,7 @@ def main():
         # add a callback that writes out filenames of includes
         # remember outfile as we're changing it below
         def print_include(path, outfile=args.outfile):
-            outfile.write('%s\n' % (path,))
+            outfile.write('{}\n'.format(path))
         args.outfile = Discard()  # discard following output
     else:
         print_include = None
@@ -603,10 +603,10 @@ def main():
         if error_found:
             sys.exit(2)
     except PreprocessorError as e:
-        sys.stderr.write('%s:%s: %s\n' % (e.filename, e.line, e))
+        sys.stderr.write(u'{e.filename}:{e.lineno}: {e}\n'.format(e=e))
         if args.develop:
             if hasattr(e, 'text'):
-                sys.stderr.write('%s:%s: input line: %r\n' % (e.filename, e.line, e.text))
+                sys.stderr.write(u'{e.filename}:{e.lineno}: input line: {e.text!r}\n'.format(e=e))
         sys.exit(1)
 
 

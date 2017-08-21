@@ -593,130 +593,121 @@ def to_TI_Text(segments):
         # need to start a new block if address jumping
         if address - 1 != last_address or address == 0x10000:
             if out and row_count != 0:  # except for the 1st one
-                out.append(b"\n")
-            out.append(b"@%04x\n" % (address,))
+                out.append('\n')
+            out.append('@%04x\n' % (address,))
             row_count = 0
         last_address = address
         # output byte
-        out.append(b"%02x" % byte)
+        out.append('%02x' % byte)
         row_count += 1
         # after 16 bytes (a row) insert a newline
         if row_count == 16:
-            out.append(b"\n")
+            out.append('\n')
             row_count = 0
         else:
-            out.append(b" ")
+            out.append(' ')
     if row_count != 0:
-        out.append(b"\n")
-    out.append(b"q\n")
-    return b''.join(out)
+        out.append('\n')
+    out.append('q\n')
+    return ''.join(out)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 def main():
     import logging
-    from optparse import OptionParser
+    import argparse
     logging.basicConfig()
 
-    parser = OptionParser(usage="""\
-%prog [options] [FILE...]|-]
-
+    parser = argparse.ArgumentParser(description="""\
 If no input files are specified data is read from stdin.
 Output is in "TI-Text" format.""")
-    parser.add_option(
-        "-o", "--outfile",
-        dest="outfile",
-        help="name of the resulting binary (TI-Text)",
-        metavar="FILE",
+
+    group = parser.add_argument_group('Input')
+
+    group.add_argument(
+        'INPUT',
+        type=argparse.FileType('r'),
+        nargs='+',
+        default=['-'])
+
+    group.add_argument(
+        '-T', '--segmentfile',
+        help='linker definition file',
+        metavar='FILE',
         default=None)
 
-    parser.add_option(
-        "-T", "--segmentfile",
-        dest="segmentfile",
-        help="linker definition file",
-        metavar="FILE",
-        default=None)
-
-    parser.add_option(
-        "-m", "--mcu",
-        dest="mcu_name",
-        help="name of the MCU (used to load memory map)",
-        metavar="MCU",
+    group.add_argument(
+        '-m', '--mcu',
+        help='name of the MCU (used to load memory map)',
+        metavar='MCU',
         default='MSP430F1121')
 
-    parser.add_option(
-        "--mapfile",
-        dest="mapfile",
-        help="write map file",
-        metavar="FILE")
+    group = parser.add_argument_group('Output')
 
-    parser.add_option(
-        "-v", "--verbose",
-        action="count",
-        dest="verbose",
+    group.add_argument(
+        '-o', '--outfile',
+        type=argparse.FileType('w'),
+        help='name of the destination file',
+        default='-',
+        metavar='FILE')
+
+    group.add_argument(
+        '--mapfile',
+        type=argparse.FileType('w'),
+        help='write map file',
+        metavar='FILE')
+
+    parser.add_argument(
+        '-v', '--verbose',
+        action='count',
+        dest='verbose',
         default=0,
-        help="print status messages, gan be given multiple times to increase messages")
+        help='print status messages, can be given multiple times to increase messages')
 
-    parser.add_option(
-        "--debug",
-        action="store_true",
-        dest="debug",
+    parser.add_argument(
+        '--debug',
+        action='store_true',
         default=False,
-        help="print debug messages")
+        help='print debug messages')
 
-    parser.add_option(
-        "--symbols",
-        dest="symbols",
-        help="read register names for given architecture (e.g. F1xx)",
-        metavar="NAME")
+    parser.add_argument(
+        '--symbols',
+        help='read register names for given architecture (e.g. F1xx)',
+        metavar='NAME')
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    if options.debug:
+    print(args)
+
+    if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
-    elif options.verbose:
+    elif args.verbose:
         logging.getLogger().setLevel(logging.INFO)
     else:
         logging.getLogger().setLevel(logging.WARN)
-
-    # prepare output
-    if options.outfile is not None:
-        out = open(options.outfile, "wb")
-    else:
-        if sys.version_info >= (3, 0):
-            out = sys.stdout.buffer
-        else:
-            out = sys.stdout
 
     if sys.version_info < (3, 0):
         # XXX make stderr unicode capable
         sys.stderr = codecs.getwriter("utf-8")(sys.stderr)
 
     instructions = []
-    for filename in args:
-        if filename == '-':
-            if options.verbose > 2:
-                sys.stderr.write(u'reading stdin...\n')
-            instructions.append('reset')
-            instructions.extend(['filename', '<stdin>'])
-            instructions.extend(sys.stdin.read().split())
-        else:
-            if options.verbose > 2:
-                sys.stderr.write(u'reading file "%s"...\n' % filename)
-            instructions.append('reset')
-            instructions.extend(['filename', filename])
-            try:
-                instructions.extend(rpn.words_in_file(filename))
-            except IOError as e:
-                sys.stderr.write('ld: %s: File not found\n' % (filename,))
-                sys.exit(1)
+    for fileobj in args.INPUT:
+        if args.verbose > 2:
+            sys.stderr.write(u'reading file "%s"...\n' % fileobj.name)
+        instructions.append('reset')
+        instructions.extend(['filename', fileobj.name])
+        try:
+            instructions.extend(rpn.words_in_file(fileobj.name, fileobj=fileobj))
+        except IOError as e:
+            sys.stderr.write('ld: %s: File not found\n' % (fileobj.name,))
+            sys.exit(1)
 
     linker = Linker(instructions)
 
     # load symbols
-    if options.symbols is not None:
-        all_peripherals = peripherals.load_internal(options.symbols)
+    if args.symbols is not None:
+        all_peripherals = peripherals.load_internal(args.symbols)
         for peripheral in all_peripherals.peripherals.values():
             for reg_name, register in peripheral.items():
                 if reg_name.startswith('__'):
@@ -733,17 +724,17 @@ Output is in "TI-Text" format.""")
 
     # ========= load MCU definition =========
 
-    if options.verbose > 1:
+    if args.verbose > 1:
         sys.stderr.write("Step 1: load segment descriptions.\n")
 
     # load the file and get the desired MCU description
     try:
-        if options.segmentfile:
-            mem_maps = mcu_definition_parser.load_from_file(options.segmentfile)
+        if args.segmentfile:
+            mem_maps = mcu_definition_parser.load_from_file(args.segmentfile)
         else:
             mem_maps = mcu_definition_parser.load_internal()
-        options.mcu_name = options.mcu_name.upper()  # XXX hack
-        segment_definitions = mcu_definition_parser.expand_definition(mem_maps, options.mcu_name)
+        args.mcu = args.mcu.upper()  # XXX hack
+        segment_definitions = mcu_definition_parser.expand_definition(mem_maps, args.mcu)
     except Exception as msg:
         sys.stderr.write('ERROR loading segment descriptions: %s\n' % (msg,))
         raise
@@ -751,23 +742,23 @@ Output is in "TI-Text" format.""")
 
     linker.segments_from_definition(segment_definitions)
 
-    if options.verbose > 2:
+    if args.verbose > 2:
         sys.stderr.write('Segments available:\n')
         linker.top_segment.print_tree(sys.stderr)
 
     # ========= Do the actual linking =========
 
     try:
-        if options.verbose > 1:
+        if args.verbose > 1:
             sys.stderr.write("Step 2: generate machine code\n")
             sys.stderr.write("        Pass 1: determinate segment sizes.\n")
         linker.pass_one()
 
-        if options.verbose > 1:
+        if args.verbose > 1:
             sys.stderr.write("        Pass 2: calculate labels.\n")
         linker.pass_two()
 
-        if options.verbose > 1:
+        if args.verbose > 1:
             sys.stderr.write("        Pass 3: final output.\n")
         linker.pass_three()
     except LinkError as e:
@@ -775,35 +766,34 @@ Output is in "TI-Text" format.""")
         sys.exit(1)
     except rpn.RPNError as e:
         sys.stderr.write(u'%s:%s: %s\n' % (e.filename, e.lineno if e.lineno is not None else '?', e))
-        if options.debug and e.text:
+        if args.debug and e.text:
             sys.stderr.write(u"%s:%s: input line was: %r\n" % (e.filename, e.lineno, e.text))
-        if options.debug:
+        if args.debug:
             raise
         sys.exit(1)
 
     # ========= Output final result =========
 
-    if options.verbose > 1:
+    if args.verbose > 1:
         sys.stderr.write("Step 3: write machine code to file.\n")
 
-    out.write(to_TI_Text(linker.segments))
+    args.outfile.write(to_TI_Text(linker.segments))
 
-    if options.verbose > 1:
+    if args.verbose > 1:
         sys.stderr.write("Labels:\n")
         labels = linker.labels.keys()
         labels.sort()
         for i in labels:
             sys.stderr.write(u'    %-24s = 0x%08x\n' % (i, linker.labels[i]))
 
-    if options.mapfile:
-        mapfile = codecs.open(options.mapfile, "w", "utf-8")
+    if args.mapfile:
         labels = [(v, k) for k, v in linker.labels.items()]
         labels.sort()
         for address, label in labels:
-            mapfile.write(u'0x%04x %s\n' % (address, label))
-        mapfile.close()
+            args.mapfile.write(u'0x%04x %s\n' % (address, label))
+        args.mapfile.close()
 
-    if options.verbose:
+    if args.verbose:
         sys.stderr.write('Segments used:\n')
         linker.top_segment.sort_subsegments(by_address=True)
         linker.top_segment.print_tree(sys.stderr, hide_empty=True)

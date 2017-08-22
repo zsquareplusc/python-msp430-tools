@@ -53,7 +53,7 @@ class Segment(object):
         for segment in self.subsegments:
             if segment.name == segment_name:
                 return segment
-        raise KeyError('no subsegment with name %s found' % segment_name)
+        raise KeyError('no subsegment with name {} found'.format(segment_name))
 
     def sort_subsegments(self, by_address=False):
         """\
@@ -88,29 +88,29 @@ class Segment(object):
         #~ return cmp(self.start_address, other.start_address)
 
     def __repr__(self):
-        return 'Segment[%s, %s, %s%s%s]' % (
-                self.name,
-                self.start_address is not None and '0x%04x' % self.start_address or None,
-                self.end_address is not None and '0x%04x' % self.end_address or None,
-                self.programmable and ', programmable=True' or '',
-                self.little_endian and ', little_endian=True' or '')
+        return 'Segment[{}, {}, {}{}{}]'.format(
+            self.name,
+            self.start_address is not None and '0x{:04x}'.format(self.start_address) or None,
+            self.end_address is not None and '0x{:04x}'.format(self.end_address) or None,
+            self.programmable and ', programmable=True' or '',
+            self.little_endian and ', little_endian=True' or '')
 
     def print_tree(self, output, indent='', hide_empty=False):
         """Output segment and subsegments."""
         if None not in (self.end_address, self.start_address):
             size = self.end_address - self.start_address
             if size:
-                start = '0x%04x' % (self.start_address,)
-                end = '0x%04x' % (self.end_address - 1,)
+                start = '0x{:04x}'.format(self.start_address)
+                end = '0x{:04x}'.format(self.end_address - 1)
             else:
                 start = end = 'n/a'
-            size_str = '%d B' % (size,)
+            size_str = '{} B'.format(size)
         else:
             start = end = ''
             size = 0
             size_str = ''
         if not hide_empty or size:
-            output.write("%s%-24s%s%8s-%-8s %8s  %s%s%s%s\n" % (
+            output.write('{}{:<24}{}{:>8}-{:<8} {:>8}  {}{}{}{}\n'.format(
                 indent,
                 self.name,
                 ' ' * (8 - len(indent)),
@@ -119,7 +119,7 @@ class Segment(object):
                 size_str,
                 self.little_endian and 'LE' or 'BE',
                 self.programmable and ', downloaded' or '',
-                self.mirror_of and (', mirror of "%s"' % (self.mirror_of,)) or '',
+                self.mirror_of and (', mirror of "{}"'.format(self.mirror_of)) or '',
                 self.read_only and ', read_only' or '',
             ))
         for segment in self.subsegments:
@@ -146,8 +146,8 @@ class Segment(object):
                 address += len(segment.data)
         # save true end address, but not before checking if data fits in segment
         if None not in (address, self.end_address) and address > self.end_address:
-            raise LinkError('Segment %s contains too much data (total %d bytes, %d bytes in excess)' % (
-                                self.name, len(self.data), address - self.end_address))
+            raise LinkError('Segment {} contains too much data (total {} bytes, {} bytes in excess)'.format(
+                self.name, len(self.data), address - self.end_address))
         if address is not None:
             self.end_address = address
 
@@ -247,7 +247,7 @@ class Linker(rpn.RPN):
         try:
             segment = self.segments[name]
         except KeyError:
-            self.linker_error("There is no segment named %s" % (name,))
+            self.linker_error('There is no segment named {}'.format(name))
         self.current_segment = segment
         if segment.start_address is not None:
             address = segment.start_address
@@ -363,10 +363,10 @@ class Linker(rpn.RPN):
         value = self.pop()
         if self.check_labels is not None:
             if name in self.check_labels and self.check_labels[name] != value:
-                self.linker_error('redefinition of symbol %r with different value (previous: %r, new: %r)' % (
-                            name,
-                            self.labels[name],
-                            value))
+                self.linker_error('redefinition of symbol {!r} with different value (previous: {!r}, new: {!r})'.format(
+                    name,
+                    self.labels[name],
+                    value))
             self.check_labels[name] = value
         self.labels[name] = value
 
@@ -381,7 +381,7 @@ class Linker(rpn.RPN):
         name = self.name_symbol(self.next_word())
         alias = self.name_symbol(self.next_word())
         if name in self.weak_alias and self.weak_alias[name] != alias:
-            self.linker_error('Weak alias %r redefined (old value: %r)' % (name, self.weak_alias[name]))
+            self.linker_error('Weak alias {!r} redefined (old value: {!r})'.format(name, self.weak_alias[name]))
         self.weak_alias[name] = alias
 
     @rpn.word('CREATE-SYMBOL')
@@ -391,7 +391,7 @@ class Linker(rpn.RPN):
         #~ # this simple check does not work as we're doing multiple passes
         if self.check_labels is not None:
             if name in self.check_labels:
-                self.linker_error('Label %r redefined (old value: %r)' % (name, self.labels[name]))
+                self.linker_error('Label {!r} redefined (old value: {!r})'.format(name, self.labels[name]))
             self.check_labels[name] = self.address
         self.labels[name] = self.address
 
@@ -407,7 +407,7 @@ class Linker(rpn.RPN):
         except KeyError:
             # other wise it is undefined
             if self.errors_are_fatal:
-                self.linker_error('Label %r is not defined' % (name,))
+                self.linker_error('Label {!r} is not defined'.format(name))
             else:
                 value = 0
         self.push(value)
@@ -429,10 +429,10 @@ class Linker(rpn.RPN):
         instruction = self.pop()
         if distance & 1:
             if self.errors_are_fatal:
-                self.linker_error('Jump distance must be of even length (distance %d)' % (distance,))
+                self.linker_error('Jump distance must be of even length (distance {})'.format(distance))
         if distance < -512 * 2 or distance > 511 * 2:
             if self.errors_are_fatal:
-                self.linker_errorr('Jump out of range (distance %d)' % (distance,))
+                self.linker_errorr('Jump out of range (distance {})'.format(distance))
         else:
             instruction |= 0x3ff & (distance // 2)
         self.current_segment.write_16bit(instruction)
@@ -471,7 +471,7 @@ class Linker(rpn.RPN):
             elif definition['__type__'] == 'symbol':
                 symbols.append(definition)
             else:
-                self.linker_error('unknown record type in memory map: %r' % definition['__type__'])
+                self.linker_error('unknown record type in memory map: {!r}'.format(definition['__type__']))
 
         # step 2: create a hierarchical tree of segments
         for segment in self.segments.values():
@@ -496,7 +496,7 @@ class Linker(rpn.RPN):
                 elif location == 'end':
                     self.labels[name] = segment.end_address
                 else:
-                    self.linker_error('invalid location %r for symbol %r' % (location, name))
+                    self.linker_error('invalid location {!r} for symbol {!r}'.format(location, name))
 
     def update_mirrored_segments(self):
         """In all mirrored segments, update the copied data."""
@@ -507,7 +507,7 @@ class Linker(rpn.RPN):
     def name_symbol(self, name):
         """Name mangling for local symbols, otherwise return original name."""
         if name[0] == '.':
-            name = ".%s%s" % (hexlify(self.source_filename), name[1:])
+            name = '.{}{}'.format(hexlify(self.source_filename), name[1:])
         return name
 
     def clear_local_symbols(self):
@@ -544,9 +544,9 @@ class Linker(rpn.RPN):
             name = segment.name.replace('.', '')    # remove dots in names
             # create labels if addresses are defined
             if segment.start_address is not None:
-                self.labels['_%s_start' % name] = segment.start_address
+                self.labels['_{}_start'.format(name)] = segment.start_address
             if segment.end_address is not None:
-                self.labels['_%s_end' % name] = segment.end_address
+                self.labels['_{}_end'.format(name)] = segment.end_address
 
     def pass_three(self):
         """\
@@ -594,11 +594,11 @@ def to_TI_Text(segments):
         if address - 1 != last_address or address == 0x10000:
             if out and row_count != 0:  # except for the 1st one
                 out.append('\n')
-            out.append('@%04x\n' % (address,))
+            out.append('@{:04x}\n'.format(address))
             row_count = 0
         last_address = address
         # output byte
-        out.append('%02x' % byte)
+        out.append('{:02x}'.format(byte))
         row_count += 1
         # after 16 bytes (a row) insert a newline
         if row_count == 16:
@@ -678,7 +678,7 @@ Output is in "TI-Text" format.""")
 
     args = parser.parse_args()
 
-    print(args)
+    #~ print(args)
 
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -694,13 +694,13 @@ Output is in "TI-Text" format.""")
     instructions = []
     for fileobj in args.INPUT:
         if args.verbose > 2:
-            sys.stderr.write(u'reading file "%s"...\n' % fileobj.name)
+            sys.stderr.write(u'reading file "{}"...\n'.format(fileobj.name))
         instructions.append('reset')
         instructions.extend(['filename', fileobj.name])
         try:
             instructions.extend(rpn.words_in_file(fileobj.name, fileobj=fileobj))
         except IOError as e:
-            sys.stderr.write('ld: %s: File not found\n' % (fileobj.name,))
+            sys.stderr.write('ld: {}: File not found\n'.format(fileobj.name))
             sys.exit(1)
 
     linker = Linker(instructions)
@@ -736,7 +736,7 @@ Output is in "TI-Text" format.""")
         args.mcu = args.mcu.upper()  # XXX hack
         segment_definitions = mcu_definition_parser.expand_definition(mem_maps, args.mcu)
     except Exception as msg:
-        sys.stderr.write('ERROR loading segment descriptions: %s\n' % (msg,))
+        sys.stderr.write('ERROR loading segment descriptions: {}\n'.format(msg))
         raise
         sys.exit(1)
 
@@ -762,12 +762,13 @@ Output is in "TI-Text" format.""")
             sys.stderr.write("        Pass 3: final output.\n")
         linker.pass_three()
     except LinkError as e:
-        sys.stderr.write(u'%s:%s: %s\n' % (e.filename, e.lineno if e.lineno is not None else '?', e))
+        #~ if e.lineno is not None else '?'
+        sys.stderr.write(u'{e.filename}:{e.lineno}: {e}\n'.format(e=e))
         sys.exit(1)
     except rpn.RPNError as e:
-        sys.stderr.write(u'%s:%s: %s\n' % (e.filename, e.lineno if e.lineno is not None else '?', e))
+        sys.stderr.write(u'{e.filename}:{e.lineno}: {e}\n'.format(e=e))
         if args.debug and e.text:
-            sys.stderr.write(u"%s:%s: input line was: %r\n" % (e.filename, e.lineno, e.text))
+            sys.stderr.write(u'{e.filename}:{e.lineno}: input line: {e.text!r}\n'.format(e=e))
         if args.debug:
             raise
         sys.exit(1)
@@ -775,22 +776,21 @@ Output is in "TI-Text" format.""")
     # ========= Output final result =========
 
     if args.verbose > 1:
-        sys.stderr.write("Step 3: write machine code to file.\n")
+        sys.stderr.write('Step 3: write machine code to file.\n')
 
     args.outfile.write(to_TI_Text(linker.segments))
 
     if args.verbose > 1:
-        sys.stderr.write("Labels:\n")
-        labels = linker.labels.keys()
-        labels.sort()
+        sys.stderr.write('Labels:\n')
+        labels = sorted(linker.labels.keys())
         for i in labels:
-            sys.stderr.write(u'    %-24s = 0x%08x\n' % (i, linker.labels[i]))
+            sys.stderr.write(u'    {:<24} = 0x{:08x}\n'.format(i, linker.labels[i]))
 
     if args.mapfile:
         labels = [(v, k) for k, v in linker.labels.items()]
         labels.sort()
         for address, label in labels:
-            args.mapfile.write(u'0x%04x %s\n' % (address, label))
+            args.mapfile.write(u'0x{:04x} {}\n'.format(address, label))
         args.mapfile.close()
 
     if args.verbose:

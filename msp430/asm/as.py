@@ -298,7 +298,7 @@ class MSP430Assembler(object):
         if adst > 1:
             raise AssemblerError('{} ({!r}) is not possible as destination.'.format(
                 self._name_address_mode(adst, dst), destination[1]))
-        out = [u'{:#04x} 16bit'.format(self._buildDoubleOperand(insn, bw, asrc, src, adst, dst))]
+        out = [u'0x{:04x} 16bit'.format(self._buildDoubleOperand(insn, bw, asrc, src, adst, dst))]
         if op1:
             if rel1:
                 out.append(u'{} PC - 16bit'.format(self.argument(op1)))
@@ -352,14 +352,14 @@ class MSP430Assembler(object):
                     argument1 = u'{}'.format(self.argument(op1))
                 words += 1
                 out.append(argument1)
-            out.append(u'{:#04x}'.format(opcode))
-            out.append(u'{:#04x} {} 0xf0000 & 9 >> | {} 0xf0000 & 16 >> |'.format(
+            out.append(u'0x{:04x}'.format(opcode))
+            out.append(u'0x{:04x} {} 0xf0000 & 9 >> | {} 0xf0000 & 16 >> |'.format(
                     0x1800 | al << 6, argument1, argument2))
             # assemble items from stack
             out.append(u' 16bit' * words)
         else:
-            out.append(u'{:#04x} 16bit'.format((0x1800 | zc << 8 | al << 6)))
-            out.append(u'{:#04x} 16bit'.format(opcode))
+            out.append(u'0x{:04x} 16bit'.format((0x1800 | zc << 8 | al << 6)))
+            out.append(u'0x{:04x} 16bit'.format(opcode))
         return u' '.join(out)
 
     _singleopnames = {
@@ -384,7 +384,7 @@ class MSP430Assembler(object):
             raise AssemblerError('Bad mode ({}) for this instruction: {}{}'.format(mode, insn, mode))
 
         adst, dst, op, rel = self._buildArg(insn, destination, constreg=False)
-        out = [u'{:#04x} 16bit'.format(self._buildSingleOperand(insn, bw, adst, dst))]
+        out = [u'0x{:04x} 16bit'.format(self._buildSingleOperand(insn, bw, adst, dst))]
         if op:
             if rel:
                 out.append(u'{} PC - 16bit'.format(self.argument(op)))
@@ -409,12 +409,12 @@ class MSP430Assembler(object):
             else:
                 argument = u'{}'.format(self.argument(op))
             out.append(u'{}'.format(argument))
-            out.append(u'{:#04x}'.format(opcode | dst))
-            out.append(u'{:#04x} {} 0xf0000 & 16 >> |'.format(0x1800 | al << 6, argument))
+            out.append(u'0x{:04x}'.format(opcode | dst))
+            out.append(u'0x{:04x} {} 0xf0000 & 16 >> |'.format(0x1800 | al << 6, argument))
             out.extend([u'16bit'] * 3)
         else:
-            out.append(u'{:#04x} 16bit'.format(0x1800 | al << 6))
-            out.append(u'{:#04x} 16bit'.format(opcode | dst))
+            out.append(u'0x{:04x} 16bit'.format(0x1800 | al << 6))
+            out.append(u'0x{:04x} 16bit'.format(opcode | dst))
         return u' '.join(out)
 
     def assembleExtendedRotate(self, insn, mode, destination):
@@ -442,12 +442,12 @@ class MSP430Assembler(object):
             else:
                 argument = u'{}'.format(self.argument(op))
             out.append(argument)
-            out.append(u'{:#04x}'.format(opcode))
-            out.append(u'{:#04x} {} 0xf0000 & 16 >> |'.format(0x1800 | al << 6, argument))
+            out.append(u'0x{:04x}'.format(opcode))
+            out.append(u'0x{:04x} {} 0xf0000 & 16 >> |'.format(0x1800 | al << 6, argument))
             out.extend([u'16bit'] * 3)
         else:
-            out.append(u'{:#04x} 16bit'.format(0x1800 | zc << 8 | al << 6))
-            out.append(u'{:#04x} 16bit'.format(opcode))
+            out.append(u'0x{:04x} 16bit'.format(0x1800 | zc << 8 | al << 6))
+            out.append(u'0x{:04x} 16bit'.format(opcode))
         return u' '.join(out)
 
     def insnx_MOVA_2(self, insn, mode, source, destination):
@@ -504,10 +504,10 @@ class MSP430Assembler(object):
 
         out = []
         if asrc == 0:       # register mode
-            out.append(u'{:#04x} {} 8 << | {} | 16bit'.format(reg, src, dst))
+            out.append(u'0x{:04x} {} 8 << | {} | 16bit'.format(reg, src, dst))
         elif asrc == 3:     # immediate/post_inc modes
             if src == 0:    # immediate mode
-                out.append(u'{:#04x} {} 0xf0000 & 8 >> | {} | 16bit'.format(imm, self.argument(op1), dst))
+                out.append(u'0x{:04x} {} 0xf0000 & 8 >> | {} | 16bit'.format(imm, self.argument(op1), dst))
                 out.append(u'{} 16bit'.format(self.argument(op1)))
         if out:
             return u' '.join(out)
@@ -548,7 +548,7 @@ class MSP430Assembler(object):
                 count = int(op1)
                 if not 0 <= count <= 3:
                     raise AssemblerError('Repetition count out of range ({})'.format(count))
-                return u'{:#04x} 16bit'.format(
+                return u'0x{:04x} 16bit'.format(
                         {'RRCM': 0x0040,
                          'RRAM': 0x0140,
                          'RLAM': 0x0240,
@@ -566,25 +566,25 @@ class MSP430Assembler(object):
 
         out = []
         if adst == 0:       # register mode
-            out.append(u'{:#04x} 16bit'.format(0x1340 | dst))
+            out.append(u'0x{:04x} 16bit'.format(0x1340 | dst))
         elif adst == 1:     # indexed/absolute mode
             if dst == 0:    # relative mode
                 out.append(u'{} PC - 2 -'.format(self.argument(op)))
-                out.append(u'{:#04x} {} PC 2 - 0xf0000 & >> 16 | 16bit 16bit'.format(0x1390 | dst, self.argument(op)))
+                out.append(u'0x{:04x} {} PC 2 - 0xf0000 & >> 16 | 16bit 16bit'.format(0x1390 | dst, self.argument(op)))
             elif dst == 2:  # absolute mode
-                out.append(u'{:#04x} {} 0xf0000 & >> 16 | 16bit'.format(0x1380 | dst, self.argument(op)))
+                out.append(u'0x{:04x} {} 0xf0000 & >> 16 | 16bit'.format(0x1380 | dst, self.argument(op)))
                 out.append(u'{} 16bit'.format(self.argument(op)))
             else:           # indexed mode
-                out.append(u'{:#04x} 16bit'.format(0x1350 | dst))
+                out.append(u'0x{:04x} 16bit'.format(0x1350 | dst))
                 out.append(u'{} 16bit'.format(self.argument(op)))
         elif adst == 2:     # indirect mode
-            out.append(u'{:#04x} 16bit'.format(0x1360 | dst))
+            out.append(u'0x{:04x} 16bit'.format(0x1360 | dst))
         elif adst == 3:     # immediate/post_inc mods
             if dst == 0:    # immediate mode
-                out.append(u'{:#04x} {} 0xf0000 & >> 16 | 16bit'.format(0x13b0 | dst, self.argument(op)))
+                out.append(u'0x{:04x} {} 0xf0000 & >> 16 | 16bit'.format(0x13b0 | dst, self.argument(op)))
                 out.append(u'{} 16bit'.format(self.argument(op)))
             else:           # post_inc
-                out.append(u'{:#04x} 16bit'.format(0x1370 | dst))
+                out.append(u'0x{:04x} 16bit'.format(0x1370 | dst))
         return ' '.join(out)
 
     def assemblePUSHMPOPM(self, insn, mode, repeat, register):
@@ -610,9 +610,9 @@ class MSP430Assembler(object):
                 if not 1 <= count <= 16:
                     raise AssemblerError('Repetition count out of range ({})'.format(count))
                 if insn == 'PUSHM':
-                    out = [u'{:#04x} 16bit'.format(0x1400 | (option << 8) | (count << 4) | dst)]
+                    out = [u'0x{:04x} 16bit'.format(0x1400 | (option << 8) | (count << 4) | dst)]
                 else:     # POPM
-                    out = [u'{:#04x} 16bit'.format(0x1600 | (option << 8) | (count << 4) | (dst - count - 1))]
+                    out = [u'0x{:04x} 16bit'.format(0x1600 | (option << 8) | (count << 4) | (dst - count - 1))]
                 return u' '.join(out)
         raise AssemblerError(u'{} ({!r}) is not possible as count.'.format(
                 self._name_address_mode(asrc, src), repeat))
@@ -650,7 +650,7 @@ class MSP430Assembler(object):
         else:
             # jumps to labels, absolute addresses
             distance = u'{} PC - 2 -'.format(self.argument(target))
-        return u'{:#04x} {} JMP'.format(opcode, distance)
+        return u'0x{:04x} {} JMP'.format(opcode, distance)
 
     # These instructions are emulated by using one of the insn above most
     # depend on the constant registers to be efficient.

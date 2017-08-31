@@ -84,9 +84,9 @@ class DocumentTree(object):
             for name, text in sorted(sections.items()):
                 if text and heder_not_yet_done:
                     if chapter_name != ' DEFAULT ':
-                        output.write(u'; %s\n' % ('=' * 75))
-                        output.write(u'; == %s\n' % chapter_name)
-                        output.write(u'; %s\n' % ('=' * 75))
+                        output.write(u'; {}\n'.format('=' * 75))
+                        output.write(u'; == {}\n'.format(chapter_name))
+                        output.write(u'; {}\n'.format('=' * 75))
                     heder_not_yet_done = False
                 output.write(u''.join(text))
 
@@ -146,7 +146,7 @@ class Frame(list):
             stack._frame_iterator = old_iterator
 
     def __repr__(self):
-        return '%s[%s]' % (self.__class__.__name__, self.name,)
+        return '{}[{}]'.format(self.__class__.__name__, self.name)
 
 
 class InterruptFrame(Frame):
@@ -198,7 +198,7 @@ class Variable(object):
         self.frame[self.offset] = value
 
     def __repr__(self):
-        return '%s(%r, %r)' % (self.__class__.__name__, self.frame, self.offset)
+        return '{}({!r}, {!r})'.format(self.__class__.__name__, self.frame, self.offset)
 
 
 def immediate(function):
@@ -374,7 +374,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 pass
             else:
                 return element
-        raise KeyError('%r not in any namespace (host)' % (word,))
+        raise KeyError('{!r} not in any namespace (host)'.format(word))
 
     def look_up_target(self, word):
         """Find the word in one of the namespaces for the target and return the value"""
@@ -389,12 +389,12 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 pass
             else:
                 return element
-        raise KeyError('%r not in any namespace (target)' % (word,))
+        raise KeyError('{!r} not in any namespace (target)'.format(word))
 
     def create_label(self):
         """Create a new assembler label"""
         self.label_id += 1
-        return '__lbl%s' % (self.label_id,)
+        return '__lbl{}'.format(self.label_id)
 
     def create_asm_label(self, name):
         """\
@@ -460,7 +460,9 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 column = getattr(word, 'column', None)
                 offset = getattr(word, 'offset', None)
                 text = getattr(word, 'text', None)
-                raise ForthError("neither known symbol nor number: %r" % (word,), filename, lineno, column, offset, text)
+                raise ForthError(
+                    "neither known symbol nor number: {!r}".format(word),
+                    filename, lineno, column, offset, text)
         if self.compiling:
             self.frame.append(self.instruction_literal)
             self.frame.append(number)
@@ -473,7 +475,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         if isinstance(reference, Variable):
             stack.push(reference)
         else:
-            raise ValueError('limited support for @: no compatible object on stack: %r' % (reference,))
+            raise ValueError('limited support for @: no compatible object on stack: {!r}'.format(reference))
 
     @rpn.word('!')
     def word_store(self, stack):
@@ -481,13 +483,13 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         value = stack.pop()
         if isinstance(reference, Variable):
             if reference.frame != self.frame:
-                raise ValueError('!: Frame mismatch for variable %r != %r' % (reference.frame, self.frame))
+                raise ValueError('!: Frame mismatch for variable {!r} != {!r}'.format(reference.frame, self.frame))
             if isinstance(value, Variable):
                 reference.set(value.offset)
             else:
                 reference.set(value)
         else:
-            raise ValueError('limited support for !: no compatible object on stack %r' % (reference,))
+            raise ValueError('limited support for !: no compatible object on stack {!r}'.format(reference))
 
     @rpn.word('HERE')
     def word_here(self, stack):
@@ -825,7 +827,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             if '\n' in word:
                 break
         if not word.endswith('\n'):
-            raise ValueError('limitation, line comment end "\\n" followed by data: %r' % (word,))
+            raise ValueError('limitation, line comment end "\\n" followed by data: {!r}'.format(word))
 
     @immediate
     @rpn.word('(')
@@ -842,7 +844,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             if ')' in word:
                 break
         if not word.endswith(')'):
-            raise ValueError('limitation, comment end ")" followed by data: %r' % (word,))
+            raise ValueError('limitation, comment end ")" followed by data: {!r}'.format(word))
 
     def instruction_output_text(self, stack):
         words = next(stack._frame_iterator)
@@ -922,15 +924,15 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.doctree.chapter(frame.chapter)
         self.doctree.section(frame.name)
         self.doctree.write(u'.text\n.even\n')
-        self.doctree.write(u';%s\n' % ('-' * 76))
-        self.doctree.write(u'; compilation of word %s\n' % frame.name)
-        self.doctree.write(u';%s\n' % ('-' * 76))
-        self.doctree.write(u'%s:\n' % self.create_asm_label(frame.name))
+        self.doctree.write(u';{}\n'.format('-' * 76))
+        self.doctree.write(u'; compilation of word {}\n'.format(frame.name))
+        self.doctree.write(u';{}\n'.format('-' * 76))
+        self.doctree.write(u'{}:\n'.format(self.create_asm_label(frame.name)))
         # compilation of the thread
-        self.doctree.write('\tbr #%s\n' % self.create_asm_label('DOCOL'))
+        self.doctree.write('\tbr #{}\n'.format(self.create_asm_label('DOCOL')))
         #~ self.doctree.write('\tjmp %s\n' % self.create_asm_label('DOCOL'))
         self._compile_thread(frame)
-        self.doctree.write('\t.word %s\n\n' % self.create_asm_label('EXIT'))
+        self.doctree.write('\t.word {}\n\n'.format(self.create_asm_label('EXIT')))
 
     def _compile_thread(self, frame):
         frame_iterator = iter(frame)
@@ -940,7 +942,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                 if callable(entry):
                     if entry == self.instruction_output_text:
                         label = self.create_label()
-                        self.doctree.write('\t.word %s, %s\n' % (
+                        self.doctree.write('\t.word {}, {}\n'.format(
                                 self.create_asm_label('__write_text'),
                                 self.create_asm_label(label)))
                         self._compile_remember('__write_text')
@@ -951,15 +953,15 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                         self._compile_remember(label)
                         text = next(frame_iterator)
                         frame.append(self.instruction_output_text)
-                        frame.append('\t.asciiz "%s"\n' % (codecs.escape_encode(text)[0],))
+                        frame.append('\t.asciiz "{}"\n'.format(codecs.escape_encode(text)[0]))
                     elif entry == self.instruction_literal:
                         value = next(frame_iterator)
                         if isinstance(value, Frame):
-                            self.doctree.write('\t.word %s, %s\n' % (
+                            self.doctree.write('\t.word {}, {}\n'.format(
                                     self.create_asm_label('LIT'),
                                     self.create_asm_label(value.name),))
                         else:
-                            self.doctree.write('\t.word %s, %-6s ; 0x%04x\n' % (
+                            self.doctree.write('\t.word {}, {:6} ; 0x{:04x}\n'.format(
                                     self.create_asm_label('LIT'),
                                     value,
                                     value & 0xffff))
@@ -967,24 +969,24 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
                     elif entry == self.instruction_seek:
                         # branch needs special case as offset needs to be recalculated
                         offset = next(frame_iterator)
-                        self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH'), offset * 2))
+                        self.doctree.write('\t.word {}, {}\n'.format(self.create_asm_label('BRANCH'), offset * 2))
                         self._compile_remember('BRANCH')
                     elif entry == self.instruction_branch_if_false:
                         # branch needs special case as offset needs to be recalculated
                         offset = next(frame_iterator)
-                        self.doctree.write('\t.word %s, %s\n' % (self.create_asm_label('BRANCH0'), offset * 2))
+                        self.doctree.write('\t.word {}, {}\n'.format(self.create_asm_label('BRANCH0'), offset * 2))
                         self._compile_remember('BRANCH0')
                     elif hasattr(entry, 'rpn_name'):
                         # for built-ins just take the name of the function
-                        self.doctree.write('\t.word %s\n' % self.create_asm_label(entry.rpn_name.upper()))
+                        self.doctree.write('\t.word {}\n'.format(self.create_asm_label(entry.rpn_name.upper())))
                         self._compile_remember(entry.rpn_name)
                     elif isinstance(entry, Frame):
-                        self.doctree.write('\t.word %s\n' % self.create_asm_label(entry.name))
+                        self.doctree.write('\t.word {}\n'.format(self.create_asm_label(entry.name)))
                         self._compile_remember(entry.name)
                     else:
-                        raise ValueError('Cross compilation undefined for %r' % entry)
+                        raise ValueError('Cross compilation undefined for {!r}'.format(entry))
                 else:
-                    self.doctree.write('\t.word %r\n' % (entry,))
+                    self.doctree.write('\t.word {!r}\n'.format(entry))
                     #~ raise ValueError('Cross compilation undefined for %r' % entry)
         except StopIteration:
             pass
@@ -994,10 +996,10 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         self.doctree.chapter(frame.chapter)
         self.doctree.section(frame.name)
         self.doctree.write(u'.text\n.even\n')
-        self.doctree.write(u';%s\n' % ('-' * 76))
-        self.doctree.write(u'; compilation of native word %s\n' % frame.name)
-        self.doctree.write(u';%s\n' % ('-' * 76))
-        self.doctree.write(u'%s:\n' % self.create_asm_label(frame.name))
+        self.doctree.write(u';{}\n'.format('-' * 76))
+        self.doctree.write(u'; compilation of native word {}\n'.format(frame.name))
+        self.doctree.write(u';{}\n'.format('-' * 76))
+        self.doctree.write(u'{}:\n'.format(self.create_asm_label(frame.name)))
         # native code blocks are executed. They are expected to print out
         # assembler code
         frame(self)
@@ -1007,21 +1009,21 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         """Compilation of interrupt function"""
         self.doctree.section(frame.name)
         self.doctree.write(u'.text\n.even\n')
-        self.doctree.write(u';%s\n' % ('-' * 76))
-        self.doctree.write(u'; compilation of interrupt %s\n' % frame.name)
-        self.doctree.write(u';%s\n' % ('-' * 76))
+        self.doctree.write(u';{}\n'.format('-' * 76))
+        self.doctree.write(u'; compilation of interrupt {}\n'.format(frame.name))
+        self.doctree.write(u';{}\n'.format('-' * 76))
 
         # interrupt entry code
-        self.doctree.write(u'__vector_%s:\n' % (frame.vector))
+        self.doctree.write(u'__vector_{}:\n'.format(frame.vector))
         self.doctree.write(u'\tsub #4, RTOS     ; prepare to push 2 values on return stack\n')
         self.doctree.write(u'\tmov IP, 2(RTOS)  ; save IP on return stack\n')
         self.doctree.write(u'\tmov SP, 0(RTOS)  ; save SP pointer on return stack it points to SR on stack\n')
-        self.doctree.write(u'\tmov #%s, IP      ; Move address of thread of interrupt handler in IP\n' % self.create_asm_label(frame.name))
-        self.doctree.write('\tbr  #%s\n' % self.create_asm_label('DO-INTERRUPT'))
+        self.doctree.write(u'\tmov #{}, IP      ; Move address of thread of interrupt handler in IP\n'.format(self.create_asm_label(frame.name)))
+        self.doctree.write('\tbr  #{}\n'.format(self.create_asm_label('DO-INTERRUPT')))
         # the thread for the interrupt handler
-        self.doctree.write(u'%s:\n' % self.create_asm_label(frame.name))
+        self.doctree.write(u'{}:\n'.format(self.create_asm_label(frame.name)))
         self._compile_thread(frame)
-        self.doctree.write('\t.word %s\n\n' % self.create_asm_label('EXIT-INTERRUPT'))
+        self.doctree.write('\t.word {}\n\n'.format(self.create_asm_label('EXIT-INTERRUPT')))
         self._compile_remember('DO-INTERRUPT')
         self._compile_remember('EXIT-INTERRUPT')
 
@@ -1041,7 +1043,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         try:
             item = self.look_up_target(word)
         except KeyError:
-            raise ValueError('word %r is not available on the target' % (word,))
+            raise ValueError('word {!r} is not available on the target'.format(word))
         # translate, depending on type
         if isinstance(item, NativeFrame):
             self._compile_native_frame(item)
@@ -1050,7 +1052,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         elif isinstance(item, Frame):
             self._compile_frame(item)
         else:
-            raise ValueError('don\'t know how to compile word %r' % (word,))
+            raise ValueError('don\'t know how to compile word {!r}'.format(word))
 
     @immediate
     @rpn.word('CROSS-COMPILE')
@@ -1089,7 +1091,7 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
         # XXX check .use_ram attribute
         for name, variable in sorted(self.variables.items()):
             variable.name
-            self.doctree.write(u'%s:  .skip %d \n' % (
+            self.doctree.write(u'{}:  .skip {} \n'.format(
                     self.create_asm_label(variable.name),
                     2 * len(variable)))
             self.doctree.write('\n')
@@ -1114,21 +1116,21 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
             for prefix in self.include_path:
                 path = os.path.join(prefix, name)
                 if os.path.exists(path):
-                    self.logger.info('processing include %s' % (name,))
+                    self.logger.info('processing include {}'.format(name))
                     self.interpret(rpn.words_in_file(name))
-                    self.logger.info('done include %s' % (name,))
+                    self.logger.info('done include {}'.format(name))
                     self.included_files.append(name)
                     break
             else:
                 # as fallback, check internal library too
                 try:
-                    data = pkgutil.get_data('msp430.asm', 'forth/%s' % (name,)).decode('utf-8')
+                    data = pkgutil.get_data('msp430.asm', 'forth/{}'.format(name)).decode('utf-8')
                 except IOError:
-                    raise ValueError('file not found: %s' % (name,))
+                    raise ValueError('file not found: {}'.format(name))
                 else:
-                    self.logger.info('processing include %s' % (name,))
-                    self.interpret(rpn.words_in_string(data, name='forth/%s' % (name,), include_newline=True))
-                    self.logger.info('done include %s' % (name,))
+                    self.logger.info('processing include {}'.format(name))
+                    self.interpret(rpn.words_in_string(data, name='forth/{}'.format(name), include_newline=True))
+                    self.logger.info('done include {}'.format(name))
                     self.included_files.append(name)
         self.doctree.pop_state()  # restore previous chapter and section
 
@@ -1136,17 +1138,17 @@ class Forth(rpn.RPNBase, rpn.RPNStackOps, rpn.RPNSimpleMathOps,
     def word_SHOW(self, stack):
         """Show internals of given word. Used to debug."""
         name = self.next_word()
-        sys.stderr.write('SHOW %r\n' % name)
+        sys.stderr.write('SHOW {!r}\n'.format(name))
         try:
             value = self.look_up(name)
         except KeyError:
             sys.stderr.write('    value -> <undefined>\n')
         else:
-            sys.stderr.write('    value -> %r\n' % (value,))
+            sys.stderr.write('    value -> {!r}\n'.format(value))
             if isinstance(value, Frame):
                 sys.stderr.write('    contents -> \n')
                 for item in value:
-                    sys.stderr.write('        %r\n' % item)
+                    sys.stderr.write('        {!r}\n'.format(item))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1259,7 +1261,7 @@ def main():
     except rpn.RPNError as e:
         sys.stderr.write(u'{e.filename}:{e.lineno}: {e}\n'.format(e=e))
         if args.develop and e.text:
-            sys.stderr.write(u'{e.filename}:{e.lineno}: {e.text!r}\n'.format(e=e))
+            sys.stderr.write(u'{e.filename}:{e.lineno}: input line: {e.text!r}\n'.format(e=e))
         #~ if args.develop: raise
         sys.exit(1)
     finally:

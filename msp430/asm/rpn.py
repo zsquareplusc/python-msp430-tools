@@ -101,7 +101,7 @@ class RPNError(Exception):
 
     def __str__(self):
         if self.filename and self.lineno:
-            return '%s:%s: %s' % (self.filename, self.lineno, self.message)
+            return '{}:{}: {}'.format(self.filename, self.lineno, self.message)
         else:
             return str(self.message)
 
@@ -170,8 +170,8 @@ class RPNBase(list):
             column = getattr(word, 'column', None)
             offset = getattr(word, 'offset', None)
             text = getattr(word, 'text', None)
-            logging.getLogger('rpn').exception('%s:%s: Error in word "%s": %s' % (filename, lineno, word, e))
-            raise RPNError('Error in word "%s": %s' % (word, e), filename, lineno, column, offset, text)
+            logging.getLogger('rpn').exception('{}:{}: Error in word "{}": {}'.format(filename, lineno, word, e))
+            raise RPNError('Error in word "{}": {}'.format(word, e), filename, lineno, column, offset, text)
             # XXX consider showing the full traceback of the original exception
         finally:
             # restore state
@@ -187,7 +187,7 @@ class RPNBase(list):
                 pass
             else:
                 return element
-        raise KeyError('%r not in any namespace' % (word,))
+        raise KeyError('{!r} not in any namespace'.format(word))
 
     def next_word(self):
         return next(self._iterator)
@@ -219,7 +219,7 @@ class RPNBase(list):
             column = getattr(word, 'column', None)
             offset = getattr(word, 'offset', None)
             text = getattr(word, 'text', None)
-            raise RPNError("neither known symbol nor number: %r" % (word,), filename, lineno, column, offset, text)
+            raise RPNError('neither known symbol nor number: {!r}'.format(word), filename, lineno, column, offset, text)
 
     def push(self, obj):
         """Push an element on the stack"""
@@ -245,11 +245,11 @@ class RPNBase(list):
         """return a string describing the topmost elements from the stack"""
         if self:
             N = min(4, len(self))
-            tops = ["%s:%s" % ("xyzt"[i], self.printer(self[-i - 1])) for i in range(N)]
+            tops = ['{}:{}'.format('xyzt'[i], self.printer(self[-i - 1])) for i in range(N)]
             if len(self) > 4:
-                tops.append(' (%d more)' % (len(self) - 4,))
+                tops.append(' ({} more)'.format(len(self) - 4))
             return ' '.join(tops)
-        return "stack empty"
+        return 'stack empty'
 
     def printer(self, obj):
         """convert object to string, for floating point numbers, use engineering format"""
@@ -258,9 +258,9 @@ class RPNBase(list):
             e = int(math.log10(abs(obj)))
             e = int(e / 3) * 3
             if e:
-                return "%ge%s" % ((obj / 10**e), e)
+                return '{:g}e{}'.format((obj / 10**e), e)
             else:
-                return "%g" % (obj)
+                return '{:g}'.format(obj)
         else:
             return repr(obj)
 

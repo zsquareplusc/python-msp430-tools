@@ -17,7 +17,7 @@ def create_wordlist(obj, output, title):
         #~ info.setdefault('locations', []).append(obj.__class__.__name__)
         if func.__doc__ is not None:
             if info['doc']:
-                print "WARNING: multiple definitions of %r, skipping docs in forth.py" % (word,)
+                print("WARNING: multiple definitions of %r, skipping docs in forth.py" % (word,))
             else:
                 info['doc'] = u'%s\n' % inspect.getdoc(func)
                 # XXX cut prefixing whitespace
@@ -42,7 +42,7 @@ def create_wordlist(obj, output, title):
         #~ output.write('\nAvailability: %s\n' % ' and '.join(available))
         if 'locations' in info:
             output.write('\nDefined in file(s): %s\n' % ' and '.join('``%s``' % f for f in info['locations']))
-    print "%d words" % len(wordlist)
+    print("%d words" % len(wordlist))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

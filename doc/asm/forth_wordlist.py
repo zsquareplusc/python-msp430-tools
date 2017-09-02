@@ -17,7 +17,7 @@ wordlist = {}
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # scan the forth source files. this will yield words for host and target
 for filename in glob.glob('../../msp430/asm/forth/*.forth'):
-    print "scanning", filename
+    print("scanning", filename)
     last_comment = []
     for n, line in enumerate(open(filename)):
         m = re_doc_comment.match(line)
@@ -33,7 +33,7 @@ for filename in glob.glob('../../msp430/asm/forth/*.forth'):
                 info['stack'] = m.group('balance')
             info.setdefault('locations', []).append(u'%s:%s' % (filename[23:], n+1))
             if last_comment and info['doc']:
-                print "WARNING: multiple definitions of %r, skipping docs in %s" % (m.group('name'), filename)
+                print("WARNING: multiple definitions of %r, skipping docs in %s" % (m.group('name'), filename))
             else:
                 info['doc'] = u'\n'.join(last_comment)
             last_comment = []
@@ -50,7 +50,7 @@ for word, func in f.builtins.items():
     info.setdefault('locations', []).append(u'forth.py')
     if func.__doc__ is not None:
         if info['doc']:
-            print "WARNING: multiple definitions of %r, skipping docs in forth.py" % (word,)
+            print("WARNING: multiple definitions of %r, skipping docs in forth.py" % (word,))
         else:
             info['doc'] = u'%s\n' % inspect.getdoc(func)
             # XXX cut prefixing whitespace
@@ -76,4 +76,4 @@ for word, info in sorted(wordlist.items()):
         available.append('host')
     output.write('\nAvailability: %s\n' % ' and '.join(available))
     output.write('\nDefined in file(s): %s\n' % ' and '.join('``%s``' % f for f in info['locations']))
-print "%d words" % len(wordlist)
+print("%d words" % len(wordlist))

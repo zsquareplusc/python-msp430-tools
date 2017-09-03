@@ -37,8 +37,8 @@ def load(filelike):
                     segmentdata.append(int(i, 16))
                 except ValueError as e:
                     raise msp430.memory.error.FileFormatError(
-                            'File is no valid TI-Text: %s' % (e,),
-                            filename=getattr(filelike, "name", "<unknown>"),
+                            'File is no valid TI-Text: {}'.format(e),
+                            filename=getattr(filelike, 'name', '<unknown>'),
                             lineno=n + 1)
     if segmentdata:
         memory.segments.append(msp430.memory.Segment(startAddr, segmentdata))
@@ -48,8 +48,10 @@ def load(filelike):
 def save(memory, filelike):
     """output TI-Text to given file object"""
     for segment in sorted(memory.segments):
-        filelike.write(b"@%04x\n" % segment.startaddress)
+        filelike.write('@{:04x}\n'.format(segment.startaddress).encode('ascii'))
         data = bytearray(segment.data)
         for i in range(0, len(data), 16):
-            filelike.write(b"%s\n" % b" ".join([b"%02x" % x for x in data[i:i + 16]]))
-    filelike.write(b"q\n")
+            filelike.write('{}\n'.format(
+                ' '.join(['{:02x}'.format(x) for x in data[i:i + 16]])
+                ).encode('ascii'))
+    filelike.write(b'q\n')

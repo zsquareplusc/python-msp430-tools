@@ -50,7 +50,7 @@ def cp(paths, dest):
     paths = list(paths)   # convert generator/iterator -> list
     if len(paths) > 1:
         if not os.path.exists(dest) or not os.path.isdir(dest):
-            raise OSError("target '%s' is not a directory" % (dest,))
+            raise OSError('target "{}" is not a directory'.format(dest))
     # use imap because it terminates at the end of the shortest iterable
     for _ in itertools.imap(shutil.copy, paths, itertools.repeat(dest)):
         pass
@@ -61,16 +61,16 @@ def _rm_path(path, force=False, recursive=False):
         if force:
             return  # rm -f ignores missing paths
         else:
-            raise OSError('no such file or directory: %s' % (path,))
+            raise OSError('no such file or directory: {}'.format(path))
     elif not is_writeable(path):
         if force:
             # make file writeable in order to be able to delete it
             os.chmod(path, stat.S_IWRITE)
         else:
-            raise OSError('cannot rm write-protected file or directory: %s' % (path,))
+            raise OSError('cannot rm write-protected file or directory: {}'.format(path))
     if os.path.isdir(path):
         if not recursive:
-            raise OSError("cannot remove directory: %s" % (path,))
+            raise OSError('cannot remove directory: {}'.format(path))
         for child_path in os.listdir(path):
             rm(os.path.join(path, child_path), force, recursive)
         os.rmdir(path)
@@ -92,12 +92,12 @@ def mv(paths, dest):
     paths = list(paths)   # convert generator/iterator -> list
     if len(paths) > 1:
         if not os.path.exists(dest):
-            raise OSError("no such file or directory: '%s'" % (dest,))
+            raise OSError('no such file or directory: "{}"'.format(dest))
         if not os.path.isdir(dest):
-            raise OSError("target '%s' is not a directory" % (dest,))
+            raise OSError('target "{}" is not a directory'.format(dest))
     for path in paths:
         if not os.path.exists(path):
-            raise OSError('no such file or directory: %s' % (path,))
+            raise OSError('no such file or directory: {}'.format(path))
         shutil.move(path, dest)
 
 
@@ -111,7 +111,7 @@ def touch(paths):
             if is_writeable(path):
                 os.utime(path, None)
             else:
-                raise OSError("can't touch write-protected path: %s" % (path,))
+                raise OSError('can not touch write-protected path: {}'.format(path))
         else:
             open(path, 'w').close()
 
@@ -123,7 +123,7 @@ def is_writeable(path):
     """
     if os.path.exists(path):
         return (os.stat(path).st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)) != 0
-    raise OSError('no such file or directory: %s' % (path,))
+    raise OSError('no such file or directory: {}'.format(path))
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

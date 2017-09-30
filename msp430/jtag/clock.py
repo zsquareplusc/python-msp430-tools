@@ -53,7 +53,7 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
     return: (frequency, DCOCTL, BCSCTL1)
     """
     log = logging.getLogger('msp430.jtag.dco')
-    log.debug("setDCO target: %dHz < frequency < %dHz" % (fmin, fmax))
+    log.debug('setDCO target: {}Hz < frequency < {}Hz'.format(fmin, fmax))
     resolution = 128
     dco = 3 << 5
     bcs1 = maxrsel
@@ -65,12 +65,12 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
             resolution /= 2
             if resolution < 1:
                 resolution = 1
-            log.debug("switching to higher resolution (-> %d)" % (resolution,))
+            log.debug('switching to higher resolution (-> {})'.format(resolution))
             upper = False
             lower = False
         frequency = getDCOFreq(dco, bcs1, dcor and 1 or 0)
         if frequency > fmax:
-            log.debug("%luHz is too high, decreasing (was: BCSCTL1=0x%02x; DCOCTL=0x%02x)" % (frequency, bcs1, dco))
+            log.debug('{}Hz is too high, decreasing (was: BCSCTL1=0x{:02x}; DCOCTL=0x{:02x})'.format(frequency, bcs1, dco))
             upper = True
             dco -= resolution
             if dco <= 0:
@@ -85,9 +85,9 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
                         bcs1 = 0
                         dco = 0
                     else:
-                        raise IOError("Couldn't get DCO working with correct frequency. Device is not slower than %dHz." % (frequency,))
+                        raise IOError('Could not get DCO working with correct frequency. Device is not slower than {}Hz.'.format(frequency))
         elif frequency < fmin:
-            log.debug("%luHz is too low, increasing (was: BCSCTL1=0x%02x; DCOCTL=0x%02x)" % (frequency, bcs1, dco))
+            log.debug('{}Hz is too low, increasing (was: BCSCTL1=0x{:02x}; DCOCTL=0x{:02x})'.format(frequency, bcs1, dco))
             lower = True
             dco += resolution
             if dco > 255:
@@ -104,9 +104,9 @@ def setDCO(fmin, fmax, maxrsel=7, dcor=False):
                     else:
                         raise IOError("Couldn't get DCO working with correct frequency. Device is not faster than %dHz." % (frequency,))
         else:
-            log.debug("%luHz is OK (BCSCTL1=0x%02x; DCOCTL=0x%02x)" % (frequency, bcs1, dco))
+            log.debug('{}Hz is OK (BCSCTL1=0x{:02x}; DCOCTL=0x{:02x})'.format(frequency, bcs1, dco))
             return frequency, dco, bcs1
-    raise IOError("Couldn't get DCO working with correct frequency. Tolerance too tight? Last frequency was %dHz" % (frequency,))
+    raise IOError('Could not get DCO working with correct frequency. Tolerance too tight? Last frequency was {}Hz'.format(frequency,))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -127,7 +127,7 @@ def getDCOPlusFreq(scfi0, scfi1, scfqctl, fll_ctl0, fll_ctl1):
 
     return: frequency in Hz.
     """
-    funclet = memory.load("counter", BytesIO(COUNTERPLUS_FUNCLET), format='titext')
+    funclet = memory.load('counter', BytesIO(COUNTERPLUS_FUNCLET), format='titext')
     funclet[0].data = funclet[0].data[:6] \
         + chr(scfi0) + chr(scfi1) \
         + chr(scfqctl) + chr(fll_ctl0) \
@@ -148,7 +148,7 @@ def setDCOPlus(fmin, fmax):
     last = 27 << 5
     log = logging.getLogger('msp430.jtag.dco')
 
-    log.debug("setDCOPlus target: %dHz < frequency < %dHz" % (fmin, fmax))
+    log.debug('setDCOPlus target: {}Hz < frequency < {}Hz'.format(fmin, fmax))
 
     # Binary search through the available frequencies, selecting the highest
     # frequency whithin the acceptable range
@@ -158,16 +158,16 @@ def setDCOPlus(fmin, fmax):
         # Disable Modulation. Enable DCO+.
         frequency = getDCOPlusFreq(mid & 3, mid >> 2, 0x80, 0x80, 0)
         if frequency > fmax:
-            log.debug("%luHz is too high, decreasing" % frequency)
+            log.debug('{}Hz is too high, decreasing'.format(frequency))
             last = mid
         elif frequency < fmin:
-            log.debug("%luHz is too low, increasing" % frequency)
+            log.debug('{}Hz is too low, increasing'.format(frequency))
             first = mid
         else:
             break
 
     frequency = getDCOPlusFreq(mid & 3, mid >> 2, 0x80, 0x80, 0)
-    log.debug("%luHz" % frequency)
+    log.debug('{}Hz'.format(frequency))
     if fmin <= frequency <= fmax:
         return frequency, mid & 3, mid >> 2, 0x80, 0x80, 0
-    raise IOError("Couldn't get DCO working with correct frequency.")
+    raise IOError('Could not get DCO working with correct frequency')

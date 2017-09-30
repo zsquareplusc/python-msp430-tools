@@ -50,7 +50,7 @@ class DataStream(object):
     next = __next__
 
     def __repr__(self):
-        return "DS[%s %s]" % (self.address, len(self.segments))
+        return 'DS[{} {}]'.format(self.address, len(self.segments))
 
 
 def stream_merge(*streams):
@@ -101,7 +101,7 @@ class Segment(object):
         return len(self.data)
 
     def __repr__(self):
-        return "Segment(startaddress = 0x%04x, data=%r)" % (self.startaddress, self.data)
+        return "Segment(startaddress = 0x{:04x}, data={!r})".format(self.startaddress, self.data)
 
     def __lt__(self, other):
         """Compare two segments. Implemented to support sorting a list of segments by address"""
@@ -125,7 +125,7 @@ class Memory(object):
         return len(self.segments)
 
     def __repr__(self):
-        return "Memory:\n%s" % ('\n'.join([repr(seg) for seg in self.segments]),)
+        return 'Memory:\n{}'.format('\n'.join([repr(seg) for seg in self.segments]))
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -176,7 +176,7 @@ class Memory(object):
                 data.extend(seg.data[offset:offset + length])
                 address += length
         if len(data) != size:
-            raise ValueError("could not collect the requested data")
+            raise ValueError('could not collect the requested data')
         return bytes(data)
 
     def set(self, address, contents):
@@ -202,7 +202,7 @@ class Memory(object):
                 if not contents:
                     return         # stop if done
                 address += length
-        raise ValueError("could not write all data")
+        raise ValueError('could not write all data')
 
     def merge(self, other):
         """\
@@ -274,7 +274,7 @@ def load(filename, fileobj=None, format=None):
                         return titext.load(fileobj)
                     except error.FileFormatError:
                         raise error.FileFormatError(
-                                'file %s could not be loaded (auto detection failed)' % (filename,))
+                            'file {} could not be loaded (auto detection failed)'.format(filename))
         else:
             if format == 'titext':
                 return titext.load(fileobj)
@@ -286,7 +286,7 @@ def load(filename, fileobj=None, format=None):
                 return hexdump.load(fileobj)
             elif format == 'bin':
                 return bin.load(fileobj)
-            raise ValueError('unsupported file format %s' % (format,))
+            raise ValueError('unsupported file format {}'.format(format))
     finally:
         if close:
             fileobj.close()
@@ -303,7 +303,7 @@ def save(memory, fileobj, format='titext'):
         return bin.save(memory, fileobj)
     elif format == 'hex':
         return hexdump.save(memory, fileobj)
-    raise ValueError('unsupported file format %s' % (format,))
+    raise ValueError('unsupported file format {}'.format(format))
 
 
 load_formats = ['titext', 'ihex', 'bin', 'hex', 'elf']

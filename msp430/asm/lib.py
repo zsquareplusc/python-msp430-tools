@@ -63,7 +63,7 @@ def main():
         d = os.path.join(os.path.dirname(sys.modules['msp430.asm'].__file__), 'librarian')
         for root, dirs, files in os.walk(d):
             for filename in files:
-                args.outfile.write('    %s\n' % (os.path.join(root, filename)[1 + len(d):],))
+                args.outfile.write('    {}\n'.format(os.path.join(root, filename)[1 + len(d):]))
         sys.exit(0)
 
     # load desired snippet

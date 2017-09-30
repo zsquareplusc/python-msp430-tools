@@ -64,7 +64,7 @@ class SerialBSL(bsl.BSL):
 
     def open(self, port, baudrate=9600, ignore_answer=False):
         self.ignore_answer = ignore_answer
-        self.logger.info('Opening serial port %r' % port)
+        self.logger.info('Opening serial port {!r}'.format(port))
         try:
             self.serial = serial.serial_for_url(
                 port,
@@ -140,7 +140,7 @@ class SerialBSL(bsl.BSL):
         """
         # first synchronize with slave
         self.sync()
-        self.logger.debug('Command 0x%02x %s' % (cmd, message.encode('hex')))
+        self.logger.debug('Command 0x{:02x} {}'.format(cmd, message.encode('hex')))
         # prepare command with checksum
         txdata = struct.pack('<cBBB', bsl.DATA_FRAME, cmd, len(message), len(message)) + message
         txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   # append checksum
@@ -194,14 +194,14 @@ class SerialBSL(bsl.BSL):
                 raise bsl.BSLTimeout('timeout while reading answer (checksum)')
             if self.checksum(ans + head + data) ^ 0xffff == struct.unpack("<H", checksum)[0]:
                 if expect is not None and len(data) != expect:
-                    raise bsl.BSLError('expected %d bytes, got %d bytes' % (expect, len(data)))
-                self.logger.debug('Data frame: %s' % data.encode('hex'))
+                    raise bsl.BSLError('expected {} bytes, got {} bytes'.format(expect, len(data)))
+                self.logger.debug('Data frame: {}'.format(data.encode('hex')))
                 return data
             else:
                 raise bsl.BSLError('checksum error in answer')
         else:
-            self.logger.debug('unexpected answer %r' % (ans,))
-            raise bsl.BSLError('unexpected answer: %r' % (ans,))
+            self.logger.debug('unexpected answer {!r}'.format(ans))
+            raise bsl.BSLError('unexpected answer: {!r}'.format(ans))
 
     def set_RST(self, level=True):
         """\
@@ -248,12 +248,12 @@ class SerialBSL(bsl.BSL):
         elif family == msp430.target.F4x:
             table = F4x_baudrate_args
         else:
-            raise bsl.BSLError('No baud rate table for %s' % (family,))
-        self.logger.info('changing baud rate to %s' % (baudrate,))
+            raise bsl.BSLError('No baud rate table for {}'.format(family))
+        self.logger.info('changing baud rate to {}'.format(baudrate))
         try:
             a, l = table[baudrate]
         except:
-            raise ValueError('unsupported baud rate %s' % (baudrate,))
+            raise ValueError('unsupported baud rate {}'.format(baudrate))
         else:
             self.BSL_CHANGEBAUD(a, l)
             time.sleep(0.010)   # recommended delay
@@ -389,7 +389,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
     def parse_extra_options(self):
         if self.verbose > 1:   # debug infos
             if hasattr(serial, 'VERSION'):
-                sys.stderr.write("pySerial version: %s\n" % serial.VERSION)
+                sys.stderr.write('pySerial version: {}\n'.format(serial.VERSION))
 
     def close_connection(self):
         self.close()
@@ -434,7 +434,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
         else:
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
+                self.logger.info('Transmitting password: {}'.format(password.encode('hex')))
                 self.BSL_TXPWORD(password)
 
         # check for extended features (e.g. >64kB support)
@@ -448,7 +448,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
             elif family == msp430.target.F4x:
                 bsl_name = 'BL_150S_44x.txt'
             else:
-                raise bsl.BSLError('No replacement BSL for %s' % (family,))
+                raise bsl.BSLError('No replacement BSL for {$'.format(family))
 
             self.logger.info('Download replacement BSL as requested by --replace-bsl')
             replacement_bsl_txt = pkgutil.get_data('msp430.bsl', bsl_name)
@@ -457,7 +457,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
 
             bsl_start_address = struct.unpack("<H", replacement_bsl.get(0x0220, 2))[0]
             self.execute(bsl_start_address)
-            self.logger.info("Starting new BSL at 0x%04x" % (bsl_start_address,))
+            self.logger.info('Starting new BSL at 0x{:04x}'.format(bsl_start_address))
             time.sleep(0.050)   # give BSL some time to initialize
             #~ if self.options.password is not None:
                 #~ self.BSL_TXPWORD(password)

@@ -65,7 +65,7 @@ def main():
         cmd = None
 
     def execute():
-        sys.stderr.write("watch: file(s) changed %s\n" % datetime.datetime.now())
+        sys.stderr.write('watch: file(s) changed {}\n'.format(datetime.datetime.now()))
         if cmd is not None:
             #~ sys.stderr.write("watch: execute: %r\n" % cmd)
             subprocess.call(cmd, shell=True)

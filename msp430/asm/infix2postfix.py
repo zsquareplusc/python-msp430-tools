@@ -42,7 +42,7 @@ class Scanner(object):
                 return None, None
             m = self.scannerRE.match(self.source, self.pos)
             if m is None:
-                raise ValueError('invalid token: %r...' % (self.source[self.pos:self.pos + 10],))
+                raise ValueError('invalid token: {!r}...'.format(self.source[self.pos:self.pos + 10]))
             self.pos = m.end()
             token_type = m.lastgroup
             if token_type != 'SPACE':
@@ -91,7 +91,7 @@ default_precedence = convert_precedence_list(default_precedence_list)
 def print_precedence_list(precedence_list):
     print("Operator precedence from lowest to highest:")
     for priority, equals in enumerate(precedence_list):
-        print('%d: %s' % (priority, ' '.join(equals)))
+        print('{}: {}'.format(priority, ' '.join(equals)))
 
 #~ print_precedence_list()
 
@@ -146,7 +146,7 @@ def infix2postfix(expression, variable_prefix='', scanner=Scanner, precedence=de
         elif token_type == 'LEFT':
             operator_stack.append(token)
         elif token_type == 'VARIABLE':
-            output_string.append(u'%s%s' % (variable_prefix, token))
+            output_string.append(u'{}{}'.format(variable_prefix, token))
         elif token_type == 'NUMBER':
             output_string.append(token)
         elif token_type == 'OPERATOR' or token_type == 'UNARYOPERATOR':
@@ -167,7 +167,7 @@ def infix2postfix(expression, variable_prefix='', scanner=Scanner, precedence=de
                 output_string.append(operator_stack.pop())
             operator_stack.pop()    # the '(' itself
         else:
-            raise ValueError(u'unknown token: %r' % (token_type,))
+            raise ValueError(u'unknown token: {!r}'.format(token_type))
 
     if '(' in operator_stack:
         raise ValueError('Unbalanced (, )')

@@ -41,13 +41,13 @@ def hexdump(adr_data_tuple, output=sys.stdout):
     # conversion to byte array only needed for python 2.xx as bytes would return
     # characters instead of ints
     for address, row in sixteen(adr, bytearray(memstr)):
-        values = ' '.join("%02x" % x for x in row)
+        values = ' '.join('{:02x}'.format(x) for x in row)
         ascii = ''.join(chr(x) if (32 <= x < 128) else '.' for x in row)
         # pad width
         values += ' ' * (47 - len(values))
         ascii += ' ' * (16 - len(values))
         # output line, insert gap at 8
-        output.write("%08x:  %s %s  %s %s\n" % (
+        output.write('{:08x}:  {} {}  {} {}\n'.format(
                 address,
                 values[:24], values[24:],
                 ascii[:8], ascii[8:]))
@@ -105,8 +105,8 @@ def load(filelike):
             last_address += digits / 2
         except Exception as e:
             raise msp430.memory.error.FileFormatError(
-                    "line not valid hex dump (%s) : %r" % (e, line,),
-                    filename=getattr(filelike, "name", "<unknown>"),
+                    'line not valid hex dump ({}) : {!r}'.format(e, line),
+                    filename=getattr(filelike, 'name', '<unknown>'),
                     lineno=n + 1)
     if segmentdata:
         memory.segments.append(msp430.memory.Segment(segment_address, segmentdata))
@@ -137,8 +137,9 @@ What is dumped?
             for fileobj in args.SRC:
                 mem = msp430.memory.load(fileobj.name, fileobj, args.input_format)
                 if args.verbose:
-                    args.output.write('%s (%d segments):\n' % (fileobj.name, len(mem)))
+                    args.output.write('{} ({} segments):\n'.format(fileobj.name, len(mem)))
                 save(mem, args.output, is_text=True)
+
     HexDumpTool().main()
 
 if __name__ == '__main__':

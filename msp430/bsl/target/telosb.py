@@ -161,23 +161,23 @@ class TelosBTarget(SerialBSLTarget):
 
     def i2c_write_cmd(self, addr, cmdbyte):
         """Bit bang cmdbyte to slave addr on I2C bus"""
-        
+
         self.i2c_start()
         self.i2c_write_byte(addr)
         self.i2c_write_byte(cmdbyte)
         self.i2c_stop()
-    
+
     def i2c_switch_write_cmd(self, cmdbyte):
         """Bit bang cmdbyte to I2C switch"""
-        
+
         self.i2c_write_cmd(self.i2c_switch_addr, cmdbyte)
         time.sleep(self.control_delay)
-    
+
     def i2c_switch_write_bsl_sequence(self, sequence):
         """\
         Write a sequence (array) of state tuples (RST, TEST) to the BSL pins
         """
-        
+
         for RST, TEST in sequence:
             if not self.invertRST:
                 RST ^= 1
@@ -190,14 +190,14 @@ class TelosBTarget(SerialBSLTarget):
                 S0 = RST
                 S1 = TEST << 1
             self.i2c_switch_write_cmd(S0|S1)
-    
+
     def start_bsl(self):
         """\
         Start the ROM-BSL using the pulse pattern on TEST and RST.
         """
 
         self.logger.info('ROM-BSL start pulse pattern')
-        
+
         # enabling switch port x connects that port to GND
         # i.e. setting bit x in the cmdbyte drives that pin to GND
 
@@ -210,7 +210,7 @@ class TelosBTarget(SerialBSLTarget):
         # rst !s0: 0 0 0 0 1 1
         # tck !s1: 0 1 0 1 1 0
         #   s0|s1: 3 1 3 1 0 2
-        
+
         bsl_entry_sequence = [
             # (rst, test)
             (0, 1),
@@ -220,30 +220,30 @@ class TelosBTarget(SerialBSLTarget):
             (1, 0),
             (1, 1),
         ]
-        
+
         self.i2c_switch_write_bsl_sequence(bsl_entry_sequence)
-        
+
         time.sleep(0.250)        # give MSP430's oscillator time to stabilize
 
         self.serial.flushInput() # clear buffers
 
     def reset(self):
         """Reset the device."""
-        
+
         self.logger.info('Reset device')
 
         # "Reset sequence"
         # rst !s0: 0 1 1
         # tck !s1: 0 0 1
         #   s0|s1: 3 2 0
-        
+
         reset_sequence = [
             # (rst, test)
             (0, 0),
             (1, 0),
             (1, 1),
         ]
-        
+
         self.i2c_switch_write_bsl_sequence(reset_sequence)
 
 

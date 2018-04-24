@@ -61,6 +61,7 @@ class SerialBSL(bsl.BSL):
         self.blindWrite = False
         # delay after control line changes
         self.control_delay = 0.05
+        self.ignore_answer = False
 
     def open(self, port, baudrate=9600, ignore_answer=False):
         self.ignore_answer = ignore_answer
@@ -448,7 +449,7 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
             elif family == msp430.target.F4x:
                 bsl_name = 'BL_150S_44x.txt'
             else:
-                raise bsl.BSLError('No replacement BSL for {$'.format(family))
+                raise bsl.BSLError('No replacement BSL for {}'.format(family))
 
             self.logger.info('Download replacement BSL as requested by --replace-bsl')
             replacement_bsl_txt = pkgutil.get_data('msp430.bsl', bsl_name)

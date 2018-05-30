@@ -221,7 +221,7 @@ class ELFObject:
             # e.g. if file was too short struct size wont match
             raise ELFException("Not a valid ELF file")
         # verify if its a known format and realy an ELF file
-        if self.e_ident[0:4] != '\x7fELF' and\
+        if self.e_ident[0:4] != b'\x7fELF' and\
            self.e_ident[self.EI_CLASS] != self.ELFCLASS32 and\
            self.e_ident[self.EI_DATA] != self.ELFDATA2LSB and\
            self.e_ident[self.EI_VERSION] != 1:
@@ -233,7 +233,7 @@ class ELFObject:
             #load program headers
             fileobj.seek(self.e_phoff)
             for sectionnum in range(self.e_phnum):
-                shdr = (fileobj.read(self.e_phentsize) + '\0' * struct.calcsize(ELFProgramHeader.Elf32_Phdr))[0:struct.calcsize(ELFProgramHeader.Elf32_Phdr)]
+                shdr = (fileobj.read(self.e_phentsize) + b'\0' * struct.calcsize(ELFProgramHeader.Elf32_Phdr))[0:struct.calcsize(ELFProgramHeader.Elf32_Phdr)]
                 psection = ELFProgramHeader()
                 psection.fromString(shdr)
                 if psection.p_offset:   # skip if section has invalid offset in file
@@ -250,7 +250,7 @@ class ELFObject:
         self.sections = []
         fileobj.seek(self.e_shoff)
         for sectionnum in range(self.e_shnum):
-            shdr = (fileobj.read(self.e_shentsize) + '\0' * struct.calcsize(ELFSection.Elf32_Shdr))[0:struct.calcsize(ELFSection.Elf32_Shdr)]
+            shdr = (fileobj.read(self.e_shentsize) + b'\0' * struct.calcsize(ELFSection.Elf32_Shdr))[0:struct.calcsize(ELFSection.Elf32_Shdr)]
             elfsection = ELFSection()
             elfsection.fromString(shdr)
             self.sections.append(elfsection)
@@ -261,18 +261,18 @@ class ELFObject:
             data = fileobj.read(section.sh_size)
             section.data = bytearray(data)
             if section.sh_type == ELFSection.SHT_STRTAB:
-                section.values = data.split('\0')
+                section.values = data.split(b'\0')
             section.lma = self.getLMA(section)
 
         #get section names
         for section in self.sections:
             start = self.sections[self.e_shstrndx].data[section.sh_name:]
-            section.name = start.split('\0')[0]
+            section.name = start.split(b'\0')[0]
 
     def getSection(self, name):
         """get section by name"""
         for section in self.sections:
-            if section.name == '.text':
+            if section.name == b'.text':
                 return section
 
     def getProgrammableSections(self):

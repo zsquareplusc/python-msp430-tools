@@ -220,7 +220,7 @@ class ELFObject:
         except struct.error:
             # e.g. if file was too short struct size wont match
             raise ELFException("Not a valid ELF file")
-        # verify if its a known format and realy an ELF file
+        # verify if its a known format and really an ELF file
         if self.e_ident[0:4] != b'\x7fELF' and\
            self.e_ident[self.EI_CLASS] != self.ELFCLASS32 and\
            self.e_ident[self.EI_DATA] != self.ELFDATA2LSB and\
@@ -244,7 +244,7 @@ class ELFObject:
                 #~ phdr.data = fileobj.read(phdr.p_filesz)
                 #~ #pad if needed
                 #~ if phdr.p_filesz < phdr.p_memsz:
-                    #~ phdr.data = phdr.data + '\0' * (phdr.p_memsz-phdr.p_filesz)
+                    #~ phdr.data = phdr.data + b'\0' * (phdr.p_memsz-phdr.p_filesz)
 
         #load sections
         self.sections = []

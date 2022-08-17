@@ -266,18 +266,6 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
         else:
             jtag.init_backend(verbose=self.options.verbose)
 
-        if self.options.do_fet_update:
-            if jtag.backend == jtag.CTYPES_TI:
-                sys.stderr.write("NOTICE: Please wait while updating - do not interrupt!\n")
-                if jtag.MSP430_FET_FwUpdate(None, None, 0) == 0:
-                    sys.stderr.write("--fet-update done successfuly - terminating\n")
-                    sys.exit(0)
-                else:
-                    sys.stderr.write("ERROR: --fet-update failed\n")
-                    sys.exit(1)
-            else:
-                self.parser.error('--fet-update only supported with TI backend')
-
         if self.options.spy_bi_wire:
             jtag.interface = 'spy-bi-wire'
         if self.options.spy_bi_wire_jtag:
@@ -309,6 +297,19 @@ Dump information memory: "%(prog)s --upload=0x1000-0x10ff"
     def open_connection(self):
         """Connect to target"""
         self.jtagobj.open(self.options.port_name)   # try to open port
+
+        if self.options.do_fet_update:
+            if jtag.backend == jtag.CTYPES_TI:
+                sys.stderr.write("NOTICE: Please wait while updating - do not interrupt!\n")
+                if jtag.MSP430_FET_FwUpdate(None, None, 0) == 0:
+                    sys.stderr.write("--fet-update done successfully - terminating\n")
+                    sys.exit(0)
+                else:
+                    sys.stderr.write("ERROR: --fet-update failed\n")
+                    sys.exit(1)
+            else:
+                self.parser.error('--fet-update only supported with TI backend')
+
         if self.options.unlock_bsl:
             jtag._parjtag.configure(jtag.UNLOCK_BSL_MODE, True)
         if self.options.ramsize is not None:

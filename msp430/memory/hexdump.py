@@ -7,7 +7,7 @@
 # SPDX-License-Identifier:    BSD-3-Clause
 """
 This is a little tool to generate hex dumps from .a43, .text, .elf or binary
-files. It can also read and frite hex dumps to Memory objects.
+files. It can also read and write hex dumps to Memory objects.
 """
 
 import codecs

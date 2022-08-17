@@ -603,10 +603,10 @@ def main():
         if error_found:
             sys.exit(2)
     except PreprocessorError as e:
-        sys.stderr.write(u'{e.filename}:{e.lineno}: {e}\n'.format(e=e))
+        sys.stderr.write(u'{e.filename}:{e.line}: {e}\n'.format(e=e))
         if args.develop:
             if hasattr(e, 'text'):
-                sys.stderr.write(u'{e.filename}:{e.lineno}: input line: {e.text!r}\n'.format(e=e))
+                sys.stderr.write(u'{e.filename}:{e.line}: input line: {e.text!r}\n'.format(e=e))
         sys.exit(1)
 
 

@@ -77,13 +77,13 @@ This tool generates a hex file, of given size, ending on address
                 args.start_address = 0x10000 - args.length
 
             # create data
-            adresses = range(args.start_address, args.start_address + args.length, 2)
+            addresses = range(args.start_address, args.start_address + args.length, 2)
             if args.count:
-                data = b''.join(struct.pack("<H", x & 0xffff) for x in adresses)
+                data = b''.join(struct.pack("<H", x & 0xffff) for x in addresses)
             elif args.random:
-                data = b''.join(struct.pack("<H", random.getrandbits(16)) for x in adresses)
+                data = b''.join(struct.pack("<H", random.getrandbits(16)) for x in addresses)
             else:
-                data = b''.join(struct.pack("<H", args.const) for x in adresses)
+                data = b''.join(struct.pack("<H", args.const) for x in addresses)
 
             mem.append(memory.Segment(args.start_address, data))
 

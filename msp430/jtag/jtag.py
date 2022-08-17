@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of https://github.com/zsquareplusc/python-msp430-tools
-# (C) 2002-2012 Chris Liechti <cliechti@gmx.net>
+# (C) 2002-2022 Chris Liechti <cliechti@gmx.net>
 #
 # SPDX-License-Identifier:    BSD-3-Clause
 """\
 JTAG programmer for the TI MSP430 embedded processor.
 
 Requires Python 2+, ctypes and MSP430mspgcc.dll/libMSP430mspgcc.so or
-MSP430.dll/libMSP430.so and HIL.dll/libHIL.so
+MSP430.dll/libmsp430.so and HIL.dll/libHIL.so
 """
 
 import sys
@@ -180,22 +180,22 @@ def init_backend(force=None, verbose=0):
                 backend = CTYPES_MSPGCC
             elif force == CTYPES_TI:
                 #~ MSP430mspgcc = ctypes.windll.MSP430
-                MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll, verbose=verbose)
+                MSP430mspgcc, backend_info = locate_library('libmsp430.so', search_path, ctypes.cdll, verbose=verbose)
                 backend = CTYPES_TI
             elif force is None:
                 # autodetect
                 try:
                     # try to use the TI or third party library
-                    MSP430mspgcc, backend_info = locate_library('libMSP430.so', search_path, ctypes.cdll, verbose=verbose)
+                    MSP430mspgcc, backend_info = locate_library('libmsp430.so', search_path, ctypes.cdll, verbose=verbose)
                     backend = CTYPES_TI
                 except IOError:
-                    # when that fails, use the mspgcc implementation
+                    # when that fails, try to use the mspgcc implementation
                     MSP430mspgcc, backend_info = locate_library('libMSP430mspgcc.so', search_path, ctypes.cdll, verbose=verbose)
                     backend = CTYPES_MSPGCC
             else:
                 raise ValueError("no such backend: %r" % force)
         except IOError as e:
-            raise IOError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so" or "libMSP430.so": %s' % e)
+            raise IOError('The environment variable "LIBMSPGCC_PATH" must point to the folder that contains "libMSP430mspgcc.so" or "libmsp430.so": %s' % e)
 
     global MSP430_Initialize, MSP430_Open, MSP430_Identify, MSP430_Close
     global MSP430_Configure, MSP430_VCC, MSP430_Reset, MSP430_Erase
@@ -764,7 +764,7 @@ class JTAG(object):
 
 # simple, stupid module test, debug is set above
 if __name__ == '__main__':
-    init_backend(verbose=3)
+    init_backend(verbose=5)
     #~ init_backend(CTYPES_MSPGCC)
     #~ init_backend(CTYPES_TI)
     jtagobj = JTAG()

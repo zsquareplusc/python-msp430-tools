@@ -243,7 +243,7 @@ def init_backend(force=None, verbose=0):
                 #~ status = MSP430_Identify(ctypes.byref(buffer), 80, 0)
                 #~ if status != STATUS_OK:
                     #~ return STATUS_ERROR
-                if MSP430_OpenDevice("DEVICE_UNKNOWN", "", 0, 0, 0) != STATUS_OK:
+                if MSP430_OpenDevice(b"DEVICE_UNKNOWN", b"", 0, 0, 0) != STATUS_OK:
                     return STATUS_ERROR
                 if MSP430_GetFoundDevice(buffer, ctypes.sizeof(buffer)) != STATUS_OK:
                     return STATUS_ERROR
@@ -349,7 +349,7 @@ def init_backend(force=None, verbose=0):
         """implementation of the _parjtag module in python with the help of ctypes"""
 
         def open(self, port=None):
-            """Initilize library"""
+            """Initialize library"""
             version = ctypes.c_long(0)
             if port is None:
                 if sys.platform == 'win32':
@@ -358,7 +358,7 @@ def init_backend(force=None, verbose=0):
                     port = "/dev/parport0"
             if backend == CTYPES_TI and sys.platform == 'win32':
                 port = port.upper()
-            status = MSP430_Initialize(port, ctypes.byref(version))
+            status = MSP430_Initialize(port.encode('utf-8'), ctypes.byref(version))
             if status != STATUS_OK:
                 raise IOError("Could not initialize the library (port: %s)" % port)
             if verbose:
@@ -367,7 +367,7 @@ def init_backend(force=None, verbose=0):
                 # warn if firmware and MSP430.dll are incompatible
                 sys.stderr.write('ERROR: FET Firmware not compatible with MSP430 library!\n')
                 sys.stderr.write('         Consider using --fet-update.\n')
-                raise IOError('FET firmware error: FET:V2, DLL:V3 missmatch')
+                raise IOError('FET firmware error: FET:V2, DLL:V3 mismatch')
             elif version.value < 0:
                 # warn if firmware and MSP430.dll are incompatible
                 sys.stderr.write('WARNING: FET Firmware not compatible with MSP430 library!\n')
@@ -408,7 +408,7 @@ def init_backend(force=None, verbose=0):
                 #~ raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
             if backend == CTYPES_TI:
                 # switch off the RAM preserve mode, to speed up operations
-                # it also makes the behaviour closer to mspgcc the library
+                # it also makes the behavior closer to mspgcc the library
                 status = MSP430_Configure(RAM_PRESERVE_MODE, FALSE)
                 if status != STATUS_OK:
                     raise IOError("Could not configure the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
@@ -426,7 +426,7 @@ def init_backend(force=None, verbose=0):
                 raise IOError("Could not close the library: %s" % MSP430_Error_String(MSP430_Error_Number()))
 
         def reset(self, execute=0, release=0, resets=ALL_RESETS):
-            """Reset the device, optionaly start execution and/or release JTAG."""
+            """Reset the device, optionally start execution and/or release JTAG."""
             status = MSP430_Reset(resets, execute, release)
             if status != STATUS_OK:
                 raise IOError("Could not reset target (no connection?): %s" % MSP430_Error_String(MSP430_Error_Number()))

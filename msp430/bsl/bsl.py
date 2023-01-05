@@ -16,11 +16,11 @@ port access).
 import struct
 
 # possible answers
-BSL_SYNC = '\x80'
-CMD_FAILED = '\x70'
-DATA_FRAME = '\x80'
-DATA_ACK = '\x90'
-DATA_NAK = '\xA0'
+BSL_SYNC = b'\x80'
+CMD_FAILED = b'\x70'
+DATA_FRAME = b'\x80'
+DATA_ACK = b'\x90'
+DATA_NAK = b'\xA0'
 
 # commands for the MSP430 target
 BSL_TXPWORD = 0x10    # Receive password to unlock commands
@@ -60,15 +60,25 @@ class BSL(object):
             checksum ^= w
         return checksum & 0xffff
 
+    def bsl_retry(self, cmd, message=b'', expect=None):
+        for repetition in ('2', '1', None):
+            try:
+                return self.bsl(cmd, message, expect)
+            except (BSLError, BSLTimeout) as e:
+                if repetition:
+                    self.logger.warning(f'{e} -> retry...')
+                else:
+                    raise
+
     def BSL_TXBLK(self, address, data):
         #~ print "BSL_TXBLK(0x%02x, len=%r)" % (address, len(data))
         length = len(data)
         packet = struct.pack('<HH', address, length) + bytes(data)
-        self.bsl(BSL_TXBLK, packet, expect=0)
+        self.bsl_retry(BSL_TXBLK, packet, expect=0)
 
     def BSL_RXBLK(self, address, length):
         packet = struct.pack('<HH', address, length)
-        answer = self.bsl(BSL_RXBLK, packet, expect=length)
+        answer = self.bsl_retry(BSL_RXBLK, packet, expect=length)
         return answer
 
     def BSL_MERAS(self):
@@ -96,7 +106,7 @@ class BSL(object):
         self.bsl(BSL_TXPWORD, packet, expect=0)
 
     def BSL_TXVERSION(self):
-        answer = self.bsl(BSL_TXVERSION, "\0" * 4)
+        answer = self.bsl(BSL_TXVERSION, b"\0" * 4)
         return answer
 
     # - - - - - - High level functions - - - - - -
@@ -189,7 +199,7 @@ class BSL(object):
         """
         # try a write to the watchdog
         try:
-            self.BSL_TXBLK(0x0120, "\x08\x5a")
+            self.BSL_TXBLK(0x0120, b"\x08\x5a")
         except BSLError:
             # we can't verify the success of the reset...
             pass
@@ -199,7 +209,7 @@ class BSL(object):
 
 class DummyBSL(BSL):
     """Test code: show what the BSL command would send"""
-    def bsl(self, cmd, message='', expect=None, bad_crc=False):
+    def bsl(self, cmd, message=b'', expect=None, bad_crc=False):
         txdata = struct.pack('<cBBB', DATA_FRAME, cmd, len(message), len(message)) + message
         txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   # append checksum
         print(repr(txdata), len(txdata))
@@ -207,4 +217,4 @@ class DummyBSL(BSL):
 
 if __name__ == '__main__':
     dummy = DummyBSL()
-    dummy.BSL_TXPWORD('\xff' * 32)
+    dummy.BSL_TXPWORD(b'\xff' * 32)

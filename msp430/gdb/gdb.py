@@ -11,6 +11,7 @@ Interface to GDB server suing a TCP/IP connection.
 It can be used to talk to e.g. msp430-gdbproxy or mspdebug.
 """
 
+import binascii
 from struct import pack, unpack
 import socket
 import sys
@@ -138,15 +139,15 @@ def decodeStopReplyPackets(message):
 
 
 def hex2registers(message):
-    return list(unpack('<HHHHHHHHHHHHHHHH', bytes(message).decode('hex')))
+    return list(unpack('<HHHHHHHHHHHHHHHH', binascii.unhexlify(message)))
 
 
 def decodeRegister(message):
-    return unpack('<H', bytes(message).decode('hex'))[0]
+    return unpack('<H', binascii.unhexlify(message))[0]
 
 
 def encodeRegister(value):
-    return bytes(pack('<H', value).encode('hex'))
+    return bytes(binascii.hexlify(pack('<H', value)))
 
 
 class GDBClient(ClientSocketConnector):
@@ -211,9 +212,9 @@ class GDBClient(ClientSocketConnector):
             if len(message) & 1:
                 sys.stderr.write("Odd length 'o' message - cutting off last character\n")  # XXX hack
                 message = message[:-1]
-            self.output(message.decode('hex'))
+            self.output(binascii.unhexlify(message))
         else:
-            self.answer.put(packet.decode('hex'))
+            self.answer.put(binascii.unhexlify(packet))
             #~ else:
                 #~ print "unwanted packet: %r" % packet  # XXX ugly
 
@@ -279,7 +280,7 @@ class GDBClient(ClientSocketConnector):
     def write_memory(self, startaddress, data):
         """maddr,length -- read memory
         expected answer 'OK' or 'Enn'"""
-        return self._remote_command('M%x,%x:%s' % (startaddress, len(data), bytes(data).encode('hex')))
+        return self._remote_command('M%x,%x:%s' % (startaddress, len(data), binascii.hexlify(bytes(data))))
 
     def read_register(self, regnum):
         """pn... -- read reg (reserved)
@@ -349,7 +350,7 @@ class GDBClient(ClientSocketConnector):
     def monitor(self, command, nowait=False):
         """pass commands to the target interpreter
         expected answer 'OK' or 'Enn' or ''"""
-        return self.query('Rcmd,%s' % bytes(command).encode('hex'), nowait=nowait)
+        return self.query('Rcmd,%s' % binascii.hexlify(bytes(command)), nowait=nowait)
 
     # ---
     def interrupt(self):
@@ -369,7 +370,7 @@ class GDBClient(ClientSocketConnector):
             checksum = 0
             for character in cmd:
                 checksum = (checksum + ord(character)) & 0xff
-            message = '$%s#%02x' % (cmd, checksum)
+            message = b'$%s#%02x' % (cmd, checksum)
             self.write(message)
 
             if nowait:

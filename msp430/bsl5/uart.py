@@ -9,6 +9,7 @@
 Simple MSP430 BSL5 implementation using the serial port.
 """
 
+import binascii
 import sys
 import functools
 from msp430.bsl5 import bsl5
@@ -108,7 +109,7 @@ class SerialBSL5(bsl5.BSL5):
         answer = self.bsl(BSL_CHANGE_BAUD_RATE, packet, expect=0)
         self.check_answer(answer)
 
-    def bsl(self, cmd, message='', expect=None):
+    def bsl(self, cmd, message=b'', expect=None):
         """\
         Low level access to the serial communication.
 
@@ -127,11 +128,11 @@ class SerialBSL5(bsl5.BSL5):
         +-----+----+----+-----------+----+----+
         """
         # first synchronize with slave
-        self.logger.debug('Command 0x%02x %s' % (cmd, message.encode('hex')))
+        self.logger.debug('Command 0x%02x %s' % (cmd, binascii.hexlify(message)))
         # prepare command with checksum
         txdata = struct.pack('<BHB', 0x80, 1 + len(message), cmd) + message
         txdata += struct.pack('<H', functools.reduce(crc_update, txdata, 0xffff))   # append checksum
-        #~ self.logger.debug('Sending command: %r' % (txdata.encode('hex'),))
+        #~ self.logger.debug('Sending command: %r' % (binascii.hexlify(txdata),))
         # transmit command
         self.serial.write(txdata)
         # wait for command answer
@@ -379,7 +380,7 @@ class SerialBSL5Target(SerialBSL5, msp430.target.Target):
         else:
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                self.logger.info("Transmitting password: %s" % (password.encode('hex'),))
+                self.logger.info("Transmitting password: %s" % (binascii.hexlify(password),))
                 self.BSL_RX_PASSWORD(password)
 
         if self.options.speed is not None:

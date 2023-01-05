@@ -225,7 +225,7 @@ class BSL5(object):
 if __name__ == '__main__':
     class DummyBSL(BSL5):
         """Test code: show what the BSL command would send"""
-        def bsl(self, cmd, message='', expect=None):
+        def bsl(self, cmd, message=b'', expect=None):
             txdata = struct.pack('<cBBB', DATA_FRAME, cmd, len(message), len(message)) + message
             txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   # append checksum
             print(repr(txdata), len(txdata))

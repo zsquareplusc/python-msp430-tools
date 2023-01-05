@@ -17,6 +17,7 @@ import logging
 import time
 import pkgutil
 from io import BytesIO
+import binascii
 
 from optparse import OptionGroup
 import msp430.target
@@ -119,7 +120,7 @@ class SerialBSL(bsl.BSL):
             self.logger.error('Sync failed, aborting...')
             raise bsl.BSLTimeout('could not sync')
 
-    def bsl(self, cmd, message='', expect=None):
+    def bsl(self, cmd, message=b'', expect=None):
         """\
         Low level access to the serial communication.
 
@@ -141,7 +142,7 @@ class SerialBSL(bsl.BSL):
         """
         # first synchronize with slave
         self.sync()
-        self.logger.debug('Command 0x{:02x} {}'.format(cmd, message.encode('hex')))
+        self.logger.debug('Command 0x{:02x} {}'.format(cmd, binascii.hexlify(message)))
         # prepare command with checksum
         txdata = struct.pack('<cBBB', bsl.DATA_FRAME, cmd, len(message), len(message)) + message
         txdata += struct.pack('<H', self.checksum(txdata) ^ 0xffff)   # append checksum
@@ -196,7 +197,7 @@ class SerialBSL(bsl.BSL):
             if self.checksum(ans + head + data) ^ 0xffff == struct.unpack("<H", checksum)[0]:
                 if expect is not None and len(data) != expect:
                     raise bsl.BSLError('expected {} bytes, got {} bytes'.format(expect, len(data)))
-                self.logger.debug('Data frame: {}'.format(data.encode('hex')))
+                self.logger.debug('Data frame: {}'.format(binascii.hexlify(data)))
                 return data
             else:
                 raise bsl.BSLError('checksum error in answer')
@@ -428,14 +429,14 @@ class SerialBSLTarget(SerialBSL, msp430.target.Target):
             self.extra_timeout = 6
             self.mass_erase()
             self.extra_timeout = None
-            self.BSL_TXPWORD('\xff' * 32)
+            self.BSL_TXPWORD(b'\xff' * 32)
             # remove mass_erase from action list so that it is not done
             # twice
             self.remove_action(self.mass_erase)
         else:
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                self.logger.info('Transmitting password: {}'.format(password.encode('hex')))
+                self.logger.info('Transmitting password: {}'.format(binascii.hexlify(password)))
                 self.BSL_TXPWORD(password)
 
         # check for extended features (e.g. >64kB support)

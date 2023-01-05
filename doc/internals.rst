@@ -329,7 +329,7 @@ This module can be executed as command line tool (``python
 
         Close serial port
 
-    .. method:: bsl(cmd, message='', expect=None)
+    .. method:: bsl(cmd, message=b'', expect=None)
 
         :param cmd: Command number to send
         :param message: Byte string with data to send.
@@ -586,7 +586,7 @@ Currently implementations for Windows (pywinusb) and GNU/Linux are provided
 
 .. class:: HIDBSL5Base
 
-   .. method:: bsl(cmd, message='', expect=None, receive_response=True)
+   .. method:: bsl(cmd, message=b'', expect=None, receive_response=True)
 
         :param cmd: BSL command number.
         :param message: Byte string with data for command.
@@ -733,7 +733,7 @@ w/o USB hardware (it uses the UART).
 
         Low level command to change the BSL baud rate on the target.
 
-    .. method:: bsl(cmd, message='', expect=None)
+    .. method:: bsl(cmd, message=b'', expect=None)
 
         :param cmd: BSL command number.
         :param message: Byte string with data for command.

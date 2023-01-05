@@ -9,6 +9,7 @@
 Simple MSP430 BSL implementation using the USB HID interface.
 """
 
+import binascii
 import sys
 import os
 from msp430.bsl5 import bsl5
@@ -39,7 +40,7 @@ class HIDBSL5Base(bsl5.BSL5):
     def __del__(self):
         self.close()
 
-    def bsl(self, cmd, message='', expect=None, receive_response=True):
+    def bsl(self, cmd, message=b'', expect=None, receive_response=True):
         """\
         Low level access to the HID communication.
 
@@ -58,16 +59,16 @@ class HIDBSL5Base(bsl5.BSL5):
         """
         # first synchronize with slave
         self.logger.debug('Command 0x%02x (%d bytes)' % (cmd, 1 + len(message)))
-        #~ self.logger.debug('Command 0x%02x %s (%d bytes)' % (cmd, message.encode('hex'), 1+len(message)))
+        #~ self.logger.debug('Command 0x%02x %s (%d bytes)' % (cmd, binascii.hexlify(message), 1+len(message)))
         txdata = bytearray(struct.pack('<BBB', 0x3f, 1 + len(message), cmd) + message)
         txdata += b'\xac' * (64 - len(txdata))  # pad up to block size
-        #~ self.logger.debug('Sending command: %r %d Bytes' % (txdata.encode('hex'), len(txdata)))
+        #~ self.logger.debug('Sending command: %r %d Bytes' % (binascii.hexlify(txdata), len(txdata)))
         # transmit command
         self.write_report(txdata)
         if receive_response:
             self.logger.debug('Reading answer...')
             report = self.read_report()
-            self.logger.debug('report = %r' % report.encode('hex'))
+            self.logger.debug('report = %r' % binascii.hexlify(report))
             pi = report[0]
             if pi == '\x3f':
                 length = ord(report[1])
@@ -234,7 +235,7 @@ class HIDBSL5Target(HIDBSL5, msp430.target.Target):
         else:
             if self.options.password is not None:
                 password = msp430.memory.load(self.options.password).get_range(0xffe0, 0xffff)
-                self.logger.info("Transmitting password: %s" % (str(password).encode('hex'),))
+                self.logger.info("Transmitting password: %s" % (binascii.hexlify(password),))
                 self.BSL_RX_PASSWORD(password)
 
         # download full BSL

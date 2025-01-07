@@ -59,11 +59,11 @@ def load(filelike):
 
 def save(memory, filelike):
     """write a string containing intel hex to given file object"""
+    last_upper_address_bits = 0
     for seg in sorted(memory.segments):
         address = seg.startaddress
         data = seg.data
         start = 0
-        last_upper_address_bits = 0
         while start < len(data):
             # check for addresses >64k and output offset command when the value
             # changes

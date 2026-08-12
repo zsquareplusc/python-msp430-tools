@@ -272,7 +272,7 @@ def load(filename, fileobj=None, format=None):
                 except error.FileFormatError:
                     fileobj.seek(0)
                     try:
-                        return titext.load(fileobj)
+                        return intelhex.load(fileobj)
                     except error.FileFormatError:
                         raise error.FileFormatError(
                             'file {} could not be loaded (auto detection failed)'.format(filename))

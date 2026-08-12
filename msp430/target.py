@@ -257,7 +257,7 @@ class Target(object):
             data = segment.data
             # pad length if odd number of bytes
             if len(data) & 1:
-                data += '\xff'
+                data += b'\xff'
             self.memory_write(segment.startaddress, data)
         if self.verbose and not quiet:
             sys.stderr.write('Programming: OK\n')
@@ -284,7 +284,7 @@ class Target(object):
             if self.verbose > 1:
                 sys.stderr.write("Erase check segment at 0x%04x %d bytes\n" % (segment.startaddress, len(segment.data)))
             data = self.memory_read(segment.startaddress, len(segment.data))
-            if data != '\xff' * len(segment.data):
+            if data != b'\xff' * len(segment.data):
                 raise Exception("erase check failed at 0x%04x" % (segment.startaddress,))
             # XXX show hex DIFF
         if self.verbose:

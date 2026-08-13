@@ -1,7 +1,7 @@
 include README.rst
 include LICENSE.txt
 include MANIFEST.in
-include setup.py
+include pyproject.toml
 recursive-include examples *.py *.txt *.S *akefile *.ini *.nsi *.m43 *.forth
 
 include msp430/asm/forth/*.forth
